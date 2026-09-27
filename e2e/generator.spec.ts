@@ -3,13 +3,13 @@ import { expect, lightOnly, onlyAtWidths, openMenu, test } from "./fixtures";
 
 const section = (page: Page, label: string) => page.locator(`section[aria-label="${label}"]`);
 const tab = (page: Page, label: string) => section(page, label).locator("pre");
-const strum = (page: Page, label: string) => section(page, label).getByLabel("Strum pattern");
+const strum = (page: Page, label: string) => section(page, label).locator("[data-strum]");
 /** A section's tab plus its strum line, as one string for before/after comparisons. */
 const sectionText = async (page: Page, label: string) => `${await tab(page, label).textContent()}${await strum(page, label).textContent()}`;
 const panel = (page: Page) => page.getByRole("heading", { name: "POWER CHORDS" }).locator("xpath=../..");
 /** Chord names on the first (Chorus) row of the Power Chords panel (the default progression has 4 chords). */
 async function panelChords(page: Page): Promise<string[]> {
-  const labels = await panel(page).locator('[aria-label$=" tab"]').evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")!.replace(/ tab$/, "")));
+  const labels = await panel(page).locator("[data-chip] > div:nth-child(2)").allTextContents();
   return labels.slice(0, 4);
 }
 const key = (page: Page, name: string) => page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name, exact: true });

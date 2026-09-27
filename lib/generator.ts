@@ -7,7 +7,11 @@ import {
   type NoteName,
   type ResolvedChord,
   type TabString,
+  type FrettedNote,
   OPEN_STRING_MIDI,
+  describeChord,
+  describeFretted,
+  frettedMidi,
   TAB_STRINGS,
   leadLickRootFret,
   pitchClassOf,
@@ -228,6 +232,10 @@ export type RenderedSection = {
   /** The feel the section actually renders in (Breakdown forces half-time). */
   feel: FeelId;
   chords: ResolvedChord[];
+  /** Solo only: the lick's notes, with each note's distance from the previous one in eighth notes. */
+  lead?: { midi: number[]; gap: number; names: string[] }[];
+  /** What the tab says, in words, for screen readers (the ASCII tab itself is hidden from them). */
+  spoken: string;
 };
 
 export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSection {
@@ -237,7 +245,12 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   if (t.type === "lead-lick") {
     const { notes, gaps, doubleStop } = leadLick(inputs.key, inputs.seed);
     const cols = notes.map((n) => (doubleStop ? { e: String(n.fret), B: String(n.fret) } : { [n.string]: String(n.fret) }));
-    return { id, label: t.label, tabLines: formatTab(cols, gaps), strum: null, caption: t.caption, feel, chords: [] };
+    const lead = notes.map((n, i) => {
+      const placed: FrettedNote[] = doubleStop ? [{ string: "e", fret: n.fret }, { string: "B", fret: n.fret }] : [n];
+      return { midi: placed.map(frettedMidi), gap: gaps[i], names: placed.map(describeFretted) };
+    });
+    const spoken = `${t.label}, lead lick in ${inputs.key}: ${lead.map((l) => l.names.join(" with ")).join("; ")}.`;
+    return { id, label: t.label, tabLines: formatTab(cols, gaps), strum: null, caption: t.caption, feel, chords: [], lead, spoken };
   }
 
   const chords =
@@ -250,6 +263,10 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   // Chorus variation comes from swapping the progression, not its phrasing (interaction-spec §3).
   const strum = id === "chorus" ? base : varyGlyphs(base, inputs.seed);
 
+  const spoken =
+    `${t.label}, key of ${inputs.key}, one chord per bar: ` +
+    chords.map((c) => (rootOnly ? `${c.name} root note only, ${describeFretted({ string: c.chord.rootString, fret: c.chord.rootFret })}` : describeChord(c))).join("; ") +
+    ".";
   return {
     id,
     label: t.label,
@@ -258,6 +275,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
     caption: t.caption,
     feel,
     chords,
+    spoken,
   };
 }
 

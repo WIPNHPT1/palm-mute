@@ -22,6 +22,7 @@ export function TitleBoard({ reduced }: { reduced: boolean }) {
   useLayoutEffect(() => {
     const el = board.current!;
     const fit = () => {
+      if (!el.isConnected) return; // fonts.ready can resolve after you've already left the page
       el.style.setProperty("--flap", "100px");
       const size = Math.min(MAX_FLAP_PX, (el.clientWidth / el.scrollWidth) * 100);
       el.style.setProperty("--flap", `${size.toFixed(2)}px`);

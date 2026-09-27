@@ -30,12 +30,12 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`flex-1 rounded-[5px] px-[4px] py-[6px] text-center font-mono tablet:px-[14px] ${stretchOnTablet ? "desktop:flex-none" : "tablet:flex-none"} ${
+            className={`min-h-[44px] flex-1 rounded-[5px] px-[4px] py-[5px] text-center font-mono tablet:px-[14px] ${stretchOnTablet ? "desktop:flex-none" : "tablet:flex-none"} ${
               active ? "bg-ink text-text-on-dark" : "text-text-muted hover:text-text-primary"
             }`}
           >
-            <div className={`text-[10px] tablet:text-[11.5px] ${active ? "font-bold" : ""}`}>{o.label}</div>
-            {o.sub && <div className={`mt-[2px] text-[8.5px] tablet:text-[9px] ${active ? "text-chip-tab" : "text-text-faintest"}`}>{o.sub}</div>}
+            <div className={`text-[12px] leading-[1.2] ${active ? "font-bold" : ""}`}>{o.label}</div>
+            {o.sub && <div className={`mt-[2px] text-[12px] leading-[1.2] ${active ? "text-chip-tab" : "text-text-faint"}`}>{o.sub}</div>}
           </button>
         );
       })}

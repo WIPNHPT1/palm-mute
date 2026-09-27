@@ -19,6 +19,8 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
   // fit the headline to its column
   useEffect(() => {
     const fit = () => {
+      // fonts.ready can resolve after you've already left the page
+      if (!kin.current || !wrap.current) return;
       const w = innerWidth, set = kin.current!.querySelector<HTMLElement>(w < 834 ? ".ci-kin-narrow" : ".ci-kin-wide")!;
       const cw = wrap.current!.clientWidth - 6; // allowance for the outline stroke
       // indents are a share of the content column, so wide screens keep the same proportions
@@ -29,9 +31,19 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
       const lines = [...set.querySelectorAll<HTMLElement>(".ci-kl")];
       const widths = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
       const max = w >= 1280 ? 150 : w >= 834 ? 120 : 80;
-      const size = Math.max(24, Math.min(max, ...widths.map((lw, i) => ((cw - (indents[i] ?? 0)) / lw) * 100)));
+      let size = Math.max(24, Math.min(max, ...widths.map((lw, i) => ((cw - (indents[i] ?? 0)) / lw) * 100)));
       kin.current!.style.setProperty("--kin-size", `${size.toFixed(2)}px`);
-      lines.forEach((l, i) => l.style.setProperty("--slack", `${Math.max(0, cw - (indents[i] ?? 0) - (widths[i] * size) / 100).toFixed(1)}px`));
+      // Text doesn't scale exactly linearly (font hinting on Linux/Windows can add several px), so
+      // re-measure at the fitted size and shrink until the widest line really fits.
+      let actual = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
+      for (let pass = 0; pass < 3; pass++) {
+        const worst = Math.min(...actual.map((a, i) => (cw - (indents[i] ?? 0)) / a));
+        if (worst >= 1 || size <= 24) break;
+        size = Math.max(24, size * worst * 0.998);
+        kin.current!.style.setProperty("--kin-size", `${size.toFixed(2)}px`);
+        actual = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
+      }
+      lines.forEach((l, i) => l.style.setProperty("--slack", `${Math.max(0, cw - (indents[i] ?? 0) - actual[i]).toFixed(1)}px`));
     };
     fit();
     document.fonts.ready.then(fit);

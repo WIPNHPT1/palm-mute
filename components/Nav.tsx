@@ -26,7 +26,7 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
       aria-checked={dark}
       aria-label="Dark mode"
       onClick={onToggle}
-      className="flex items-center gap-[8px] font-mono text-[11px] tracking-[0.06em] text-text-on-dark-faint hover:text-text-on-dark"
+      className="flex min-h-[44px] items-center gap-[8px] font-mono text-[12px] tracking-[0.06em] text-text-on-dark-faint hover:text-text-on-dark"
     >
       <span className={`relative block h-[16px] w-[30px] rounded-[8px] transition-colors ${dark ? "bg-accent" : "bg-ink-soft"}`}>
         <span
@@ -85,7 +85,7 @@ export function Nav() {
     <>
       <header className="sticky top-0 z-50 bg-ink text-text-on-dark">
         <div className="mx-auto flex h-[64px] max-w-[1440px] items-center justify-between px-[20px] tablet:h-[76px] tablet:px-[32px] desktop:px-[56px]">
-          <Link href="/" className="font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
+          <Link href="/" className="flex min-h-[44px] items-center font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
             <Wordmark />
           </Link>
           <button
@@ -143,7 +143,7 @@ export function Nav() {
               href={REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[11px] tracking-[0.06em] text-text-on-dark-faint hover:text-text-on-dark"
+              className="flex min-h-[44px] items-center font-mono text-[12px] tracking-[0.06em] text-text-on-dark-faint hover:text-text-on-dark"
             >
               GITHUB ↗
             </a>

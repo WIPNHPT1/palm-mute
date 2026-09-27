@@ -25,14 +25,15 @@ export function FeelToggle({
     <div className="flex flex-col gap-[10px]">
       <SegmentedControl label="Feel" options={options} value={feel} onChange={onFeelChange} />
       {feel === "mid-tempo" && (
-        <div className="flex items-center gap-[8px] font-mono text-[10px] text-text-muted">
-          <span className="uppercase tracking-[0.08em] text-text-faint">Tempo</span>
+        // Phones: the slider gets its own full-width row so it stays a comfortable size.
+        <div className="flex flex-wrap items-center gap-[4px] font-mono text-[12px] text-text-muted tablet:flex-nowrap">
+          <span className="mr-[4px] uppercase tracking-[0.08em] text-text-faint">Tempo</span>
           <button
             type="button"
             aria-label="Decrease tempo"
             onClick={() => onBpmChange(midTempoBpm - 1)}
             disabled={midTempoBpm <= MID_TEMPO.min}
-            className="h-[22px] w-[22px] rounded-small border border-line bg-paper text-[12px] disabled:opacity-40"
+            className="h-[44px] w-[44px] shrink-0 rounded-mid border border-line bg-paper text-[16px] disabled:opacity-40"
           >
             −
           </button>
@@ -43,18 +44,18 @@ export function FeelToggle({
             max={MID_TEMPO.max}
             value={midTempoBpm}
             onChange={(e) => onBpmChange(Number(e.target.value))}
-            className="min-w-0 flex-1 accent-accent"
+            className="order-last h-[44px] min-w-0 basis-full accent-accent tablet:order-none tablet:basis-auto tablet:flex-1"
           />
           <button
             type="button"
             aria-label="Increase tempo"
             onClick={() => onBpmChange(midTempoBpm + 1)}
             disabled={midTempoBpm >= MID_TEMPO.max}
-            className="h-[22px] w-[22px] rounded-small border border-line bg-paper text-[12px] disabled:opacity-40"
+            className="h-[44px] w-[44px] shrink-0 rounded-mid border border-line bg-paper text-[16px] disabled:opacity-40"
           >
             +
           </button>
-          <span className="w-[52px] text-right font-bold text-text-primary">{midTempoBpm} BPM</span>
+          <span className="ml-auto w-[62px] shrink-0 text-right font-bold text-text-primary tablet:ml-0">{midTempoBpm} BPM</span>
         </div>
       )}
     </div>
