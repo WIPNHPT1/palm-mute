@@ -4,6 +4,8 @@
   "maxSpan": 3,
   "maxMove": 5,
   "rhythmRootStrings": ["E", "A", "D"],
+  "_rareShapes": "Shapes a rhythm part must never use: the D-root 3-note shape puts its octave on the B string (e.g. D6 G8 B9), which reads and sounds wrong to most guitarists (owner call, 2026-09-27). D-root 2-note shapes stay available as a last resort (the dRoot weight).",
+  "rareShapes": ["D3"],
   "zone": {
     "_note": "A section's zone runs from `below` frets under its target position to `above` frets over it (a 5-6 fret hand zone).",
     "below": 1,
@@ -22,7 +24,7 @@
     "zone": 2.0,
     "register": 0.4,
     "openBonus": -1.0,
-    "dRoot": 2.5,
+    "dRoot": 6.0,
     "threeNoteInFastMuted": 1.0,
     "inverted": 0.5,
     "notPreferredShape": 0.5,

@@ -39,3 +39,24 @@ test.describe("tabs", () => {
     });
   }
 });
+
+// Rhythm parts use standard power-chord shapes on the E, A, D and G strings only: never the rare
+// D-root 3-note shape with its octave on the B string (DECISIONS.md), so B and high e stay empty.
+test("chord sections never put notes on the B or high e strings", async ({ page }, info) => {
+  test.skip(info.project.use.viewport?.width !== 1440 || info.project.use.colorScheme === "dark", "runs once per browser");
+  test.slow();
+  await page.goto("/generator/");
+  for (const k of ["A", "A# / Bb", "B", "C", "C# / Db", "D", "D# / Eb", "E", "F", "F# / Gb", "G", "G# / Ab"]) {
+    await key(page, k).click();
+    // The rows the Power Chords panel shows (npm run verify covers all six progressions in every key).
+    for (const progression of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V"]) {
+      await page.getByRole("button", { name: `Use ${progression} for the Chorus` }).click();
+      for (const label of ["Intro", "Verse", "Chorus", "Breakdown"]) {
+        const highStrings = await page
+          .locator(`section[aria-label="${label}"] svg[data-tab] text[data-row="string"]`)
+          .evaluateAll((rows) => rows.map((r) => r.textContent ?? "").filter((t) => /^[Be]\|/.test(t) && /\d/.test(t)));
+        expect(highStrings, `${k} ${progression} ${label}`).toEqual([]);
+      }
+    }
+  }
+});
