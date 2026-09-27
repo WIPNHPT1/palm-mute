@@ -19,6 +19,8 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
   // fit the headline to its column
   useEffect(() => {
     const fit = () => {
+      // fonts.ready can resolve after you've already left the page
+      if (!kin.current || !wrap.current) return;
       const w = innerWidth, set = kin.current!.querySelector<HTMLElement>(w < 834 ? ".ci-kin-narrow" : ".ci-kin-wide")!;
       const cw = wrap.current!.clientWidth - 6; // allowance for the outline stroke
       // indents are a share of the content column, so wide screens keep the same proportions

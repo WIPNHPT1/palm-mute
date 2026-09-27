@@ -24,7 +24,7 @@ export { expect };
 export const ROUTES = [
   { path: "/", h1: "Songwriting formulas from the bands that built pop-punk.", title: "Count In · Palm/Mute" },
   { path: "/generator/", h1: "SONG GENERATOR", title: "Generator · Palm/Mute" },
-  { path: "/chords/", h1: "CHORDS", title: "Palm/Mute · Pop-punk song generator" },
+  { path: "/chords/", h1: "CHORDS", title: "Chords · Palm/Mute" },
 ] as const;
 
 export function projectWidth(info: TestInfo): number {

@@ -23,6 +23,9 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Fret limits | **Chords: 12. Lead solos: 15. Intro melodies: 12** (config values, not hard-coded) | Repo owner, 2026-09-27 |
 | Tab layout in cards | **Wrap 2 bars per line** inside the card; never scroll sideways; readable at 320px | Repo owner, 2026-09-27 |
 | Test tooling | **Playwright** as a dev dependency, run in CI (Chromium + WebKit, 320–1920px, light + dark) | Repo owner, 2026-09-27 |
+| Accessibility floor (Generator, Chords, shared nav/footer) | **Tap targets ≥ 44×44px; no text below 12px** (tab art excepted, and it's hidden behind spoken note names); **small text ≥ 4.5:1** in both themes, fixed in the tokens: light `text-faint` #72675A / `text-faintest` #766B5B, dark `accent` #E85A42 / `text-faint` #9A8E7B / `text-faintest` #928573 / `text-on-accent` #140F0C (dark text on the red button), new `accent-on-ink` for red text on ink | `/next-phases` Phase 2, 2026-09-27 |
+| Playback | Section and song playback play **exactly what the cards show**, so a locked section plays in the key and feel it was locked in. Progressions and sections loop; **Play song plays once**, top to bottom. Leaving a page stops playback | `/next-phases` Phase 2, 2026-09-27 |
+| "Use in my song" and a locked Chorus | It's an explicit hand-off, so a locked Chorus takes the new key and progression too (and stays locked). Clicking a Power Chords row does **not** change a locked Chorus; the card offers "Update to …" instead | `/next-phases` Phase 2, 2026-09-27 |
 
 ### Defaults for the next phases (owner can change any of these)
 

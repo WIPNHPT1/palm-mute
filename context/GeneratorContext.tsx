@@ -2,6 +2,7 @@
 
 // App state (interaction-spec.md §1–2). Mounted in the root layout so key/feel/locks survive
 // Generator ↔ Chords navigation (interaction-spec §4).
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import * as audio from "@/lib/audio/engine";
 import {
@@ -14,11 +15,11 @@ import {
   getTemplate,
   nextProgressionId,
   nextSeed,
-  patternForFeel,
   playbackBpm,
   renderSection,
 } from "@/lib/generator";
-import { type NoteName, chordMidiNotes, resolveProgression } from "@/lib/musicTheory";
+import type { NoteName } from "@/lib/musicTheory";
+import { type PlaybackBar, progressionBars, sectionBars, songBars } from "@/lib/playback";
 import { type OriginalityStatus, checkOriginality } from "@/lib/originalityCheck";
 
 type SectionState = {
@@ -38,9 +39,12 @@ export type GeneratorState = {
   progressionId: string;
   sections: Record<SectionId, SectionState>;
   originalityStatus: OriginalityStatus;
-  /** Progression currently looping in the audio engine, if any. */
-  playingProgressionId: string | null;
+  /** What's playing, if anything: `progression:<id>`, `section:<id>` or `song` (see PlayTarget). */
+  playing: PlayTarget | null;
 };
+
+/** Something with a play button. Progressions and sections loop; the song plays once. */
+export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "song";
 
 type Action =
   | { type: "setKey"; key: NoteName }
@@ -49,7 +53,10 @@ type Action =
   | { type: "generate"; seeds: Partial<Record<SectionId, number>>; progressionId: string; originality: OriginalityStatus }
   | { type: "regenerate"; id: SectionId; seed: number; progressionId?: string }
   | { type: "toggleLock"; id: SectionId }
-  | { type: "setPlaying"; progressionId: string | null };
+  | { type: "setProgression"; progressionId: string }
+  | { type: "updateLocked"; id: SectionId }
+  | { type: "useInSong"; key: NoteName; progressionId: string }
+  | { type: "setPlaying"; target: PlayTarget | null };
 
 const DEFAULTS = { key: "A" as NoteName, feel: "fast-punk" as FeelId, progressionId: "I-V-vi-IV" };
 
@@ -64,7 +71,7 @@ function initialState(): GeneratorState {
     midTempoBpm: MID_TEMPO.default,
     sections,
     originalityStatus: "pass",
-    playingProgressionId: null,
+    playing: null,
   };
 }
 
@@ -106,8 +113,30 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       const frozen = locked ? inputsFor(state, action.id) : null;
       return { ...state, sections: { ...state.sections, [action.id]: { ...s, locked, frozen } } };
     }
+    case "setProgression":
+      return { ...state, progressionId: action.progressionId };
+    case "updateLocked": {
+      // "Update to {key}": a locked section takes the current key (and, for the Chorus, progression),
+      // keeping its own seed and feel, and stays locked.
+      const s = state.sections[action.id];
+      if (!s.locked || !s.frozen) return state;
+      const frozen = { ...s.frozen, key: state.key, progressionId: state.progressionId };
+      return { ...state, sections: { ...state.sections, [action.id]: { ...s, frozen } } };
+    }
+    case "useInSong": {
+      // Chords page → Generator: the key, plus the progression as the Chorus. An explicit hand-off, so
+      // a locked Chorus takes it too (and stays locked).
+      const chorus = state.sections.chorus;
+      const frozen = chorus.locked && chorus.frozen ? { ...chorus.frozen, key: action.key, progressionId: action.progressionId } : chorus.frozen;
+      return {
+        ...state,
+        key: action.key,
+        progressionId: action.progressionId,
+        sections: { ...state.sections, chorus: { ...chorus, frozen } },
+      };
+    }
     case "setPlaying":
-      return { ...state, playingProgressionId: action.progressionId };
+      return { ...state, playing: action.target };
   }
 }
 
@@ -120,7 +149,12 @@ type GeneratorContextValue = {
   generate: () => void;
   regenerateSection: (id: SectionId) => void;
   toggleLock: (id: SectionId) => void;
-  togglePlay: (progressionId: string) => void;
+  setProgression: (progressionId: string) => void;
+  updateLocked: (id: SectionId) => void;
+  sendToSong: (key: NoteName, progressionId: string) => void;
+  /** Starts the target, or stops it if it's the one playing. */
+  togglePlay: (target: PlayTarget) => void;
+  stopPlayback: () => void;
 };
 
 const GeneratorContext = createContext<GeneratorContextValue | null>(null);
@@ -159,54 +193,70 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   );
 
   // --- Audio -----------------------------------------------------------------
+  // Playback always renders from what's on screen, so it follows key, feel, progression, regenerate
+  // and lock changes: whenever the bars for the playing target change, playback restarts with them.
+  const barsFor = useCallback(
+    (target: PlayTarget): PlaybackBar[] => {
+      if (target === "song") return songBars(SECTION_IDS.map((id) => rendered[id]));
+      if (target.startsWith("section:")) return sectionBars(rendered[target.slice(8) as SectionId]);
+      return progressionBars(state.key, target.slice(12), state.feel);
+    },
+    [rendered, state.key, state.feel],
+  );
+
   // A token guards against a slow async start() finishing after the user already hit stop.
   const playToken = useRef(0);
+  const bpm = playbackBpm(state.feel, state.midTempoBpm);
+  const bpmRef = useRef(bpm);
+  bpmRef.current = bpm;
 
-  const startPlayback = useCallback(async (progressionId: string, key: NoteName, feel: FeelId, midTempoBpm: number) => {
+  const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[]) => {
     const token = ++playToken.current;
     const ok = await audio.play({
-      chords: resolveProgression(key, progressionId).map((c) => chordMidiNotes(c.chord)),
-      strum: patternForFeel(feel).glyphs,
-      feel,
-      bpm: playbackBpm(feel, midTempoBpm),
-      palmMuted: feel !== "mid-tempo",
+      bars,
+      bpm: bpmRef.current,
+      loop: target !== "song",
+      onEnd: () => {
+        if (token === playToken.current) dispatch({ type: "setPlaying", target: null });
+      },
     });
     if (token !== playToken.current) return;
-    if (!ok) dispatch({ type: "setPlaying", progressionId: null });
+    if (!ok) dispatch({ type: "setPlaying", target: null });
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    playToken.current++;
+    audio.stop();
+    dispatch({ type: "setPlaying", target: null });
   }, []);
 
   const togglePlay = useCallback(
-    (progressionId: string) => {
-      if (state.playingProgressionId === progressionId) {
-        playToken.current++;
-        audio.stop();
-        dispatch({ type: "setPlaying", progressionId: null });
-        return;
-      }
-      dispatch({ type: "setPlaying", progressionId });
-      void startPlayback(progressionId, state.key, state.feel, state.midTempoBpm);
+    (target: PlayTarget) => {
+      if (state.playing === target) return stopPlayback();
+      dispatch({ type: "setPlaying", target });
+      void start(target, barsFor(target));
     },
-    [state.playingProgressionId, state.key, state.feel, state.midTempoBpm, startPlayback],
+    [state.playing, barsFor, start, stopPlayback],
   );
 
-  // Key or feel change while playing → restart with the re-resolved chords / new drum template.
-  const playing = state.playingProgressionId;
-  const lastPlayed = useRef({ key: state.key, feel: state.feel });
+  const playing = state.playing;
+  const playingBars = useMemo(() => (playing ? JSON.stringify(barsFor(playing)) : null), [playing, barsFor]);
+  const lastBars = useRef(playingBars);
   useEffect(() => {
-    if (!playing) {
-      lastPlayed.current = { key: state.key, feel: state.feel };
-      return;
-    }
-    if (lastPlayed.current.key === state.key && lastPlayed.current.feel === state.feel) return;
-    lastPlayed.current = { key: state.key, feel: state.feel };
-    void startPlayback(playing, state.key, state.feel, state.midTempoBpm);
-    // midTempoBpm deliberately omitted: tempo changes go through setBpm below, no restart.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.key, state.feel, playing, startPlayback]);
+    const previous = lastBars.current;
+    lastBars.current = playingBars;
+    if (!playing || !playingBars || previous === null || previous === playingBars) return;
+    void start(playing, JSON.parse(playingBars));
+  }, [playing, playingBars, start]);
 
+  // Tempo changes (Mid-Tempo stepper) go straight to the transport, no restart.
   useEffect(() => {
-    if (playing) audio.setBpm(playbackBpm(state.feel, state.midTempoBpm));
-  }, [state.midTempoBpm, state.feel, playing]);
+    if (playing) audio.setBpm(bpm);
+  }, [bpm, playing]);
+
+  // Leaving a page stops the music (there's no stop button anywhere else).
+  const pathname = usePathname();
+  useEffect(() => stopPlayback, [pathname, stopPlayback]);
 
   useEffect(() => () => audio.stop(), []);
 
@@ -220,9 +270,13 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       generate,
       regenerateSection,
       toggleLock: (id) => dispatch({ type: "toggleLock", id }),
+      setProgression: (progressionId) => dispatch({ type: "setProgression", progressionId }),
+      updateLocked: (id) => dispatch({ type: "updateLocked", id }),
+      sendToSong: (key, progressionId) => dispatch({ type: "useInSong", key, progressionId }),
       togglePlay,
+      stopPlayback,
     }),
-    [state, rendered, generate, regenerateSection, togglePlay],
+    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;
