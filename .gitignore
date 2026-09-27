@@ -40,3 +40,8 @@ next-env.d.ts
 
 # macOS AppleDouble files (external drives)
 ._*
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

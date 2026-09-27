@@ -19,6 +19,29 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Home headline | Font size fitted to the widest line so nothing clips; designed line breaks (6 lines under 834px, 4 above); lines start on their margins and scroll motion stays within each line's free space | Repo owner, 2026-09-27 |
 | Power-chord diagram | Shows **G5** as the chord library voices it (E string 3rd fret + A string 5th fret), both notes fretted and joined, ✕ on the four muted strings, text legend | Repo owner, 2026-09-27 |
 | Song titles | **90 hand-written titles** (approved list), no "(… Mix)" suffix, each ≤ 22 characters so the split-flap board always shows one line (letters fitted to the title, 13px minimum on a 320px phone, 34px max). **Shuffle bag**: no title repeats until all 90 have been shown; one deck per visit | Repo owner, 2026-09-27 |
+| Next four phases: build order | **1 Tests → 2 UX fixes → 3 Power-chord engine → 4 Intro melody and solo**, one PR each | Repo owner, 2026-09-27 |
+| Fret limits | **Chords: 12. Lead solos: 15. Intro melodies: 12** (config values, not hard-coded) | Repo owner, 2026-09-27 |
+| Tab layout in cards | **Wrap 2 bars per line** inside the card; never scroll sideways; readable at 320px | Repo owner, 2026-09-27 |
+| Test tooling | **Playwright** as a dev dependency, run in CI (Chromium + WebKit, 320–1920px, light + dark) | Repo owner, 2026-09-27 |
+
+### Defaults for the next phases (owner can change any of these)
+
+Set by the `/next-phases` routine on 2026-09-27; listed in each PR so the owner can overrule them.
+
+| Question | Default |
+|---|---|
+| Chord library (engine brief §13.3) | Generate `data/chord-library.json` from the shape data. Chords-page chips show the voicing the engine picks for that progression |
+| Pre-chorus / final-chorus lift (engine §13.4) | Not now: keep the 5 sections |
+| Neck control (engine §13.5) | Automatic only; no Low/Mid/High control |
+| 16th-note gallops (engine §13.6) | Off |
+| Default intro style (melody §11.2) | Hook (Octaves and Harmony also available) |
+| Lengths (melody §11.4) | Intro 4 bars, solo 8 bars (both selectable) |
+| Technique notation (melody §11.5) | Standard: `b`, `r`, `h`, `p`, `/`, `\`, `~` |
+| "Use in my song" (melody §11.6) | Replaces the Generator's Intro or Solo section (still lockable) |
+| Feel on the Chords page (melody §11.7) | A full Feel control, sharing state with the Generator |
+| Locked section after a key change | Keep "frozen once locked", but show "Locked in {key}" on the card, with a one-tap "Update to {new key}" action |
+| Originality badge on the Generator | Replace "ORIGINALITY CHECK · PASS" with "CHORD PATTERNS ONLY · NO TABS STORED" |
+| Audio when leaving a page | Stop playback when leaving the Generator or the Chords page |
 
 ## Notes on the owner calls
 
