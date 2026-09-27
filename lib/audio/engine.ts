@@ -14,6 +14,8 @@ export type PlaybackRequest = {
   loop: boolean;
   /** Called when a one-shot request reaches its end. */
   onEnd?: () => void;
+  /** Called as each bar starts sounding (index into `bars`), in time with the audio. */
+  onBar?: (bar: number) => void;
 };
 
 declare global {
@@ -118,8 +120,13 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
 
     sequence = new T.Sequence(
       (time, step) => {
-        const bar = req.bars[Math.floor(step / CELLS_PER_BAR)];
+        const barIndex = Math.floor(step / CELLS_PER_BAR);
+        const bar = req.bars[barIndex];
         const cell = step % CELLS_PER_BAR;
+        if (cell === 0 && req.onBar) {
+          const onBar = req.onBar;
+          T.getDraw().schedule(() => mine === generation && onBar(barIndex), time);
+        }
         const hit = bar.cells[cell];
         if (hit?.dead) {
           v.dead.triggerAttackRelease("32n", time, hit.velocity);

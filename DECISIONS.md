@@ -9,7 +9,7 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Locked sections across key changes | Frozen once locked — key/feel changes don't touch a locked section | Recommended default |
 | Dark mode | **Build a real dark theme** (overrides the "disable for v1" default) | Repo owner, 2026-09-27 |
 | Audio approach | Synthesized (Tone.js synths, no sample pack) | Recommended default |
-| Chorus highlight | Always the Chorus card | Recommended default |
+| Section card highlight | **Red border = sounding now** (replaces "always the Chorus card"): a section's play button lights its card, and Play song moves the light card by card with the music; nothing is red when nothing plays. Locked cards get an ink border; the Chorus says which progression it plays ("Chords: I-V-vi-IV"); section numbers are neutral. Red now means "in use / happening" everywhere on the page | Repo owner, 2026-09-27 |
 | Desktop breakpoint | **1280px** (tokens say 1440) so common laptop widths get the 5-column layout | Repo owner, 2026-09-27 |
 | Solo regeneration | **Note-level variations** (was rhythm-only for v1) | Repo owner, 2026-09-27 |
 | Navigation | **Hamburger menu at every size** — overrides the mockups' inline desktop/tablet links. The mockups' mobile link row under the header was also removed, since the menu covers navigation everywhere | Repo owner, 2026-09-27 |
