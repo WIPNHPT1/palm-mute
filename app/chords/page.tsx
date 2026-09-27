@@ -23,7 +23,7 @@ export default function ChordsPage() {
   const sorted = sortProgressions(progressions, sort);
 
   return (
-    <div className="flex flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:min-h-[calc(100vh-76px)] desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
+    <div className="flex flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
       <MobileNavRow />
       <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" />
 

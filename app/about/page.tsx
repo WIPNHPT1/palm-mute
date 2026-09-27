@@ -24,7 +24,7 @@ const STEPS = [
 
 export default function AboutPage() {
   return (
-    <div className="flex flex-col gap-[16px] px-[20px] pb-[30px] pt-[22px] tablet:gap-[20px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[32px] desktop:gap-[22px] desktop:min-h-[calc(100vh-76px)] desktop:px-[56px] desktop:pb-[26px] desktop:pt-[40px]">
+    <div className="flex flex-col gap-[16px] px-[20px] pb-[30px] pt-[22px] tablet:gap-[20px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[32px] desktop:gap-[22px] desktop:flex-1 desktop:px-[56px] desktop:pb-[26px] desktop:pt-[40px]">
       <MobileNavRow />
 
       <div className="max-w-[760px]">
