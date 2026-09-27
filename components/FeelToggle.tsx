@@ -25,8 +25,10 @@ export function FeelToggle({
     <div className="flex flex-col gap-[10px]">
       <SegmentedControl label="Feel" options={options} value={feel} onChange={onFeelChange} />
       {feel === "mid-tempo" && (
-        // Phones: the slider gets its own full-width row so it stays a comfortable size.
-        <div className="flex flex-wrap items-center gap-[4px] font-mono text-[12px] text-text-muted tablet:flex-nowrap">
+        // The tempo row takes the width of the Feel buttons and never adds to it (w-0 + min-w-full), so
+        // picking Mid-Tempo can't widen the card and squeeze its neighbours. The live BPM is shown on
+        // the Mid-Tempo button itself. Phones: the slider gets its own full-width row.
+        <div className="flex w-0 min-w-full flex-wrap items-center gap-[4px] font-mono text-[12px] text-text-muted tablet:flex-nowrap">
           <span className="mr-[4px] uppercase tracking-[0.08em] text-text-faint">Tempo</span>
           <button
             type="button"
@@ -44,6 +46,7 @@ export function FeelToggle({
             max={MID_TEMPO.max}
             value={midTempoBpm}
             onChange={(e) => onBpmChange(Number(e.target.value))}
+            aria-valuetext={`${midTempoBpm} BPM`}
             className="order-last h-[44px] min-w-0 basis-full accent-accent tablet:order-none tablet:basis-auto tablet:flex-1"
           />
           <button
@@ -55,7 +58,6 @@ export function FeelToggle({
           >
             +
           </button>
-          <span className="ml-auto w-[62px] shrink-0 text-right font-bold text-text-primary tablet:ml-0">{midTempoBpm} BPM</span>
         </div>
       )}
     </div>

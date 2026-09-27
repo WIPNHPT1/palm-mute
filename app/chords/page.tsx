@@ -51,7 +51,8 @@ export default function ChordsPage() {
         <ControlCard label="Feel">
           <FeelToggle feel={state.feel} midTempoBpm={state.midTempoBpm} onFeelChange={setFeel} onBpmChange={setMidTempoBpm} />
         </ControlCard>
-        <ControlCard label="Sort" className="tablet:flex-1">
+        {/* min-w-fit: never narrower than its three options; on a narrow row it wraps instead of clipping. */}
+        <ControlCard label="Sort" className="min-w-fit tablet:flex-1">
           <SegmentedControl label="Sort" options={SORT_OPTIONS} value={sort} onChange={setSort} stretchOnTablet />
         </ControlCard>
       </div>
