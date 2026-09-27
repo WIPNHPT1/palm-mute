@@ -11,7 +11,8 @@
     "verify": "tsx scripts/verify-data-layer.ts && tsx scripts/verify-voicings.ts && tsx scripts/verify-melody.ts",
     "test:e2e": "playwright test",
     "generate:chords": "tsx scripts/generate-chord-library.ts",
-    "build:brand": "tsx scripts/build-brand-assets.ts"
+    "build:brand": "tsx scripts/build-brand-assets.ts",
+    "build:readme": "tsx scripts/build-readme-assets.ts"
   },
   "dependencies": {
     "next": "^15.0.0",

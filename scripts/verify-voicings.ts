@@ -1,6 +1,6 @@
 // Power-chord engine invariants (docs/power-chord-engine-brief.md §11), for every key × progression ×
 // feel × section × 50 seeds, plus reference tabs at seed 0. Part of `npm run verify`.
-// `npm run verify -- --update-fixtures` rewrites scripts/fixtures/reference-tabs.json (then hand-check the diff).
+// `npx tsx scripts/verify-voicings.ts --update-fixtures` rewrites scripts/fixtures/reference-tabs.json (then hand-check the diff).
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
