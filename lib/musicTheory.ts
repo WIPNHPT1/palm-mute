@@ -91,26 +91,6 @@ export function chordMidiNotes(chord: PowerChord): number[] {
   ];
 }
 
-export type FrettedNote = { string: TabString; fret: number };
-
-export function frettedMidi(n: FrettedNote): number {
-  return OPEN_STRING_MIDI[n.string] + n.fret;
-}
-
-const STRING_NAMES: Record<TabString, string> = { E: "low E", A: "A", D: "D", G: "G", B: "B", e: "high e" };
-const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
-
-/** "E on the D string, 2nd fret" / "A on the A string, open": what a screen reader says instead of tab dashes. */
-export function describeFretted(n: FrettedNote): string {
-  return `${noteNameFor(frettedMidi(n))} on the ${STRING_NAMES[n.string]} string, ${n.fret === 0 ? "open" : `${ordinal(n.fret)} fret`}`;
-}
-
-/** "A5: A on the A string, open, and E on the D string, 2nd fret". */
-export function describeChord(c: ResolvedChord): string {
-  const { rootString, rootFret, fifthString, fifthFret } = c.chord;
-  return `${c.name}: ${describeFretted({ string: rootString, fret: rootFret })}, and ${describeFretted({ string: fifthString, fret: fifthFret })}`;
-}
-
 /**
  * Solo lead-lick anchor: the key root's fret on the low-E string,
  * `(rootPitchClass - 4 + 12) mod 12` per song-section-templates.json → leadLickFormula.

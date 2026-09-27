@@ -6,8 +6,6 @@ import { PlayButton } from "@/components/PlayButton";
 import { TabBlock } from "@/components/TabBlock";
 import type { RenderedSection } from "@/lib/generator";
 
-const GLYPH_WORDS = { "▼": "down", "▲": "up", "·": "rest" } as const;
-
 /** 44×44 icon button whose negative margins keep the header as tight as the small icons it shows. */
 const ICON_BUTTON = "-my-[14px] flex h-[44px] w-[44px] items-center justify-center rounded-mid";
 
@@ -78,20 +76,16 @@ export function SectionCard({
           </button>
         </div>
       </div>
-      <TabBlock lines={section.tabLines} spoken={section.spoken} />
-      {section.strum && (
-        <div className="font-mono text-[10px] tracking-[3px] text-accent">
-          <span aria-hidden="true" data-strum>
-            {section.strum.join("")}
-          </span>
-          <span className="sr-only">Strum: {section.strum.map((g) => GLYPH_WORDS[g]).join(", ")}</span>
-        </div>
-      )}
+      <TabBlock groups={section.tab} spoken={section.spoken} />
       <div className="mt-auto flex flex-col gap-[9px]">
       <div className="flex items-center justify-between gap-[6px]">
         <div className="min-w-0 font-mono text-[12px] leading-[1.35] text-text-faint">
           {locked && lockedIn && <div className="font-bold text-text-muted">Locked in {lockedIn}</div>}
           <div>{section.caption}</div>
+          <div data-frets>
+            {section.frets[1] === 0 ? "Open strings" : `Frets ${section.frets[0] === 0 ? "open" : section.frets[0]}–${section.frets[1]}`}
+            {section.repeat > 1 ? ` · ×${section.repeat}` : ""}
+          </div>
         </div>
         <PlayButton playing={playing} onClick={onTogglePlay} label={section.label} iconSize={12} className="-my-[10px] -mr-[12px]" />
       </div>

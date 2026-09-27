@@ -2,7 +2,8 @@
 
 import { ProgressionRow } from "@/components/ProgressionRow";
 import type { PlayTarget } from "@/context/GeneratorContext";
-import { type NoteName, keyDisplayName, progressions, resolveProgression } from "@/lib/musicTheory";
+import { libraryVoicings } from "@/lib/generator";
+import { type NoteName, keyDisplayName, progressions } from "@/lib/musicTheory";
 
 /**
  * Generator's Power Chords panel: the Chorus progression first, then the next most common two.
@@ -39,7 +40,7 @@ export function PowerChordsPanel({
             key={p.id}
             variant="panel"
             progression={p}
-            chords={resolveProgression(keyName, p.id)}
+            chords={libraryVoicings(keyName, p.id)}
             variantIndex={progressions.indexOf(p)}
             highlighted={p.id === selectedId}
             selected={p.id === selectedId}

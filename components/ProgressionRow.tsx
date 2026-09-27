@@ -4,6 +4,7 @@ import { ChordChip } from "@/components/ChordChip";
 import { PlayButton } from "@/components/PlayButton";
 import { Waveform } from "@/components/Waveform";
 import type { Progression, ResolvedChord } from "@/lib/musicTheory";
+import type { Voicing } from "@/lib/voicings";
 
 /**
  * A progression: waveform glyph, roman-numeral name, chord chips and a play toggle.
@@ -30,7 +31,8 @@ export function ProgressionRow({
   className = "",
 }: {
   progression: Progression;
-  chords: ResolvedChord[];
+  /** Each chord with the voicing its chip shows (lib/generator.ts libraryVoicings). */
+  chords: { chord: ResolvedChord; voicing: Voicing }[];
   variantIndex: number;
   highlighted: boolean;
   playing: boolean;
@@ -84,8 +86,8 @@ export function ProgressionRow({
         />
       </div>
       <div className={`pointer-events-none relative flex flex-wrap tablet:flex-grow ${card ? "gap-[6px]" : "gap-[5px]"}`}>
-        {chords.map((c, i) => (
-          <ChordChip key={`${c.name}-${i}`} chord={c} degree={progression.degrees[i]} />
+        {chords.map(({ chord, voicing }, i) => (
+          <ChordChip key={`${chord.name}-${i}`} chord={chord} notes={voicing.notes} degree={progression.degrees[i]} />
         ))}
       </div>
     </div>

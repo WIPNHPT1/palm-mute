@@ -1,0 +1,15 @@
+{
+  "_note": "Power-chord shapes (docs/power-chord-engine-brief.md §4). Each note is a string plus a fret offset from the shape's root fret f, and its role: R = root, 5 = fifth, 8 = octave. The engine places every shape at every root fret where all notes fit between 0 and the fret limit, then checks the pitches in code. A shape is 'open' when placed at f = 0.",
+  "shapes": [
+    { "id": "E2", "label": "E-root 2-note", "rootString": "E", "tags": ["twoNote"], "notes": [{ "string": "E", "offset": 0, "role": "R" }, { "string": "A", "offset": 2, "role": "5" }] },
+    { "id": "A2", "label": "A-root 2-note", "rootString": "A", "tags": ["twoNote"], "notes": [{ "string": "A", "offset": 0, "role": "R" }, { "string": "D", "offset": 2, "role": "5" }] },
+    { "id": "D2", "label": "D-root 2-note", "rootString": "D", "tags": ["twoNote"], "notes": [{ "string": "D", "offset": 0, "role": "R" }, { "string": "G", "offset": 2, "role": "5" }] },
+    { "id": "E3", "label": "E-root 3-note", "rootString": "E", "tags": ["threeNote"], "notes": [{ "string": "E", "offset": 0, "role": "R" }, { "string": "A", "offset": 2, "role": "5" }, { "string": "D", "offset": 2, "role": "8" }] },
+    { "id": "A3", "label": "A-root 3-note", "rootString": "A", "tags": ["threeNote"], "notes": [{ "string": "A", "offset": 0, "role": "R" }, { "string": "D", "offset": 2, "role": "5" }, { "string": "G", "offset": 2, "role": "8" }] },
+    { "id": "D3", "label": "D-root 3-note", "rootString": "D", "tags": ["threeNote"], "notes": [{ "string": "D", "offset": 0, "role": "R" }, { "string": "G", "offset": 2, "role": "5" }, { "string": "B", "offset": 3, "role": "8" }] },
+    { "id": "EInv", "label": "Inverted (fifth on the bottom)", "rootString": "A", "tags": ["inverted"], "notes": [{ "string": "E", "offset": 0, "role": "5" }, { "string": "A", "offset": 0, "role": "R" }] },
+    { "id": "AInv", "label": "Inverted (fifth on the bottom)", "rootString": "D", "tags": ["inverted"], "notes": [{ "string": "A", "offset": 0, "role": "5" }, { "string": "D", "offset": 0, "role": "R" }] },
+    { "id": "OctA", "label": "Octave riff, A-string root", "rootString": "A", "tags": ["octaveRiff"], "notes": [{ "string": "A", "offset": 0, "role": "R" }, { "string": "G", "offset": 2, "role": "8" }], "muted": ["D"] },
+    { "id": "OctE", "label": "Octave riff, E-string root", "rootString": "E", "tags": ["octaveRiff"], "notes": [{ "string": "E", "offset": 0, "role": "R" }, { "string": "D", "offset": 2, "role": "8" }], "muted": ["A"] }
+  ]
+}
