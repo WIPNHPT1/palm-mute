@@ -4,7 +4,6 @@ import { ControlCard } from "@/components/ControlCard";
 import { FeelToggle } from "@/components/FeelToggle";
 import { GenerateButton } from "@/components/GenerateButton";
 import { KeyPicker } from "@/components/KeyPicker";
-import { MobileNavRow } from "@/components/Nav";
 import { OriginalityBadge } from "@/components/OriginalityBadge";
 import { PageHeader } from "@/components/PageHeader";
 import { PowerChordsPanel } from "@/components/PowerChordsPanel";
@@ -19,7 +18,6 @@ export default function GeneratorPage() {
 
   return (
     <div className="flex flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
-      <MobileNavRow />
       <PageHeader kicker="SONGWRITING ENGINE" title="SONG GENERATOR" aside={<OriginalityBadge status={state.originalityStatus} />} />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:items-stretch tablet:gap-[12px]">

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BoltIcon } from "@/components/icons/BoltIcon";
 import { PlayIcon } from "@/components/icons/PlayIcon";
-import { MobileNavRow } from "@/components/Nav";
 import { SongTitleCard } from "@/components/SongTitleCard";
 
 export const metadata: Metadata = { title: "About — Palm/Mute" };
@@ -25,7 +24,6 @@ const STEPS = [
 export default function AboutPage() {
   return (
     <div className="flex flex-col gap-[16px] px-[20px] pb-[30px] pt-[22px] tablet:gap-[20px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[32px] desktop:gap-[22px] desktop:flex-1 desktop:px-[56px] desktop:pb-[26px] desktop:pt-[40px]">
-      <MobileNavRow />
 
       <div className="max-w-[760px]">
         <div className="mb-[7px] font-mono text-[10.5px] tracking-[0.13em] text-accent tablet:mb-[8px] tablet:text-[11px] tablet:tracking-[0.14em]">ABOUT PALM/MUTE</div>

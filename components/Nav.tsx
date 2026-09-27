@@ -113,17 +113,3 @@ export function Nav() {
     </header>
   );
 }
-
-/** Mobile-only inline link row under the header, as drawn in every mobile mockup. */
-export function MobileNavRow() {
-  const pathname = usePathname() ?? "/";
-  return (
-    <nav aria-label="Pages" className="flex gap-[14px] font-mono text-[10px] uppercase tracking-[0.05em] text-text-faint tablet:hidden">
-      {LINKS.map((l) => (
-        <Link key={l.href} href={l.href} className={isActive(pathname, l.href) ? "text-accent" : ""}>
-          {l.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}

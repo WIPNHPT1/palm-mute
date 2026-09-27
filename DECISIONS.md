@@ -12,7 +12,7 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Chorus highlight | Always the Chorus card | Recommended default |
 | Desktop breakpoint | **1280px** (tokens say 1440) so common laptop widths get the 5-column layout | Repo owner, 2026-09-27 |
 | Solo regeneration | **Note-level variations** (was rhythm-only for v1) | Repo owner, 2026-09-27 |
-| Navigation | **Hamburger menu at every size** — overrides the mockups' inline desktop/tablet links; the mobile inline link row under the header stays | Repo owner, 2026-09-27 |
+| Navigation | **Hamburger menu at every size** — overrides the mockups' inline desktop/tablet links. The mockups' mobile link row under the header was also removed, since the menu covers navigation everywhere | Repo owner, 2026-09-27 |
 
 ## Notes on the owner calls
 
