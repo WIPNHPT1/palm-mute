@@ -1,0 +1,30 @@
+{
+  "v": 3,
+  "title": "Palm/Mute — Responsive Page Set",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 960, "title": "Generator — Desktop" },
+    "GeneratorTablet.dc.html": { "x": 1520, "y": 0, "w": 834, "h": 1780, "expand": "fill", "title": "Generator — Tablet" },
+    "GeneratorMobile.dc.html": { "x": 2434, "y": 0, "w": 390, "h": 2040, "expand": "fill", "title": "Generator — Mobile" },
+
+    "ChordsDesktop.dc.html": { "x": 0, "y": 2200, "w": 1440, "h": 960, "title": "Chords — Desktop" },
+    "ChordsTablet.dc.html": { "x": 1520, "y": 2200, "w": 834, "h": 1620, "expand": "fill", "title": "Chords — Tablet" },
+    "ChordsMobile.dc.html": { "x": 2434, "y": 2200, "w": 390, "h": 2160, "expand": "fill", "title": "Chords — Mobile" },
+
+    "AboutDesktop.dc.html": { "x": 0, "y": 4260, "w": 1440, "h": 960, "title": "About — Desktop" },
+    "AboutTablet.dc.html": { "x": 1520, "y": 4260, "w": 834, "h": 1560, "expand": "fill", "title": "About — Tablet" },
+    "AboutMobile.dc.html": { "x": 2434, "y": 4260, "w": 390, "h": 2100, "expand": "fill", "title": "About — Mobile" }
+  },
+  "order": [
+    "Main.dc.html", "GeneratorTablet.dc.html", "GeneratorMobile.dc.html",
+    "ChordsDesktop.dc.html", "ChordsTablet.dc.html", "ChordsMobile.dc.html",
+    "AboutDesktop.dc.html", "AboutTablet.dc.html", "AboutMobile.dc.html"
+  ],
+  "notes": {
+    "row1-title": { "x": 0, "y": -80, "text": "Song Generator — Desktop / Tablet / Mobile", "kind": "title1", "maxW": 2824 },
+    "row2-title": { "x": 0, "y": 2120, "text": "Chords — Desktop / Tablet / Mobile", "kind": "title1", "maxW": 2824 },
+    "row3-title": { "x": 0, "y": 4180, "text": "About — Desktop / Tablet / Mobile", "kind": "title1", "maxW": 2824 }
+  },
+  "designSystems": []
+}

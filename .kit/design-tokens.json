@@ -1,0 +1,97 @@
+{
+  "$schema": "palm-mute design tokens v0.4 — extracted from the Tape Deck design system artifact",
+  "meta": {
+    "name": "Palm/Mute — Tape Deck",
+    "version": "0.4",
+    "source": "Design artifact: Palm/Mute — Responsive Page Set (Generator / Chords / About × Desktop / Tablet / Mobile)"
+  },
+  "color": {
+    "ink": "#171310",
+    "paper": "#F6F1E4",
+    "surface": "#FFFFFF",
+    "accent": {
+      "default": "#C23A26",
+      "note": "Editable brand accent. Alternate swatches offered in the mockups' color prop.",
+      "options": ["#C23A26", "#B8862E", "#3E6B4F", "#2D5F8A"]
+    },
+    "brass": "#B8862E",
+    "line": "#E4DAC3",
+    "text": {
+      "primary": "#171310",
+      "secondary": "#4E4738",
+      "muted": "#6B6152",
+      "faint": "#8C8172",
+      "faintest": "#A89C86",
+      "disabled": "#B5AA92",
+      "onDark": "#F6F1E4",
+      "onDarkMuted": "#D9CFB9",
+      "onDarkFaint": "#A89C86",
+      "onAccent": "#FFF9EF"
+    },
+    "success": "#3F8F4F",
+    "chordChip": {
+      "bg": "#171310",
+      "label": "#F6F1E4",
+      "tab": "#C9BFA9"
+    },
+    "darkPanel": {
+      "bg": "#171310",
+      "text": "#F6F1E4"
+    }
+  },
+  "typography": {
+    "families": {
+      "display": "'Archivo Black', sans-serif",
+      "ui": "'Space Grotesk', sans-serif",
+      "mono": "'Space Mono', monospace"
+    },
+    "googleFontsImport": "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;500;700&display=swap",
+    "scale": {
+      "displayDesktop": { "family": "display", "size": 34, "lineHeight": 1.0, "letterSpacing": "-0.01em" },
+      "displayTablet":  { "family": "display", "size": 28, "lineHeight": 1.15, "letterSpacing": "-0.01em" },
+      "displayMobile":  { "family": "display", "size": 21, "lineHeight": 1.2, "letterSpacing": "-0.01em" },
+      "cardTitle":      { "family": "display", "size": 17, "lineHeight": 1.3 },
+      "heading":        { "family": "ui", "weight": 700, "size": 18, "lineHeight": 1.3 },
+      "body":           { "family": "ui", "weight": 500, "size": 13, "lineHeight": 1.55 },
+      "bodySmall":      { "family": "ui", "weight": 500, "size": 12, "lineHeight": 1.55 },
+      "label":          { "family": "mono", "size": 10, "letterSpacing": "0.06em", "transform": "uppercase" },
+      "kicker":         { "family": "mono", "size": 11, "letterSpacing": "0.14em", "transform": "uppercase" },
+      "dataMono":       { "family": "mono", "size": 11, "lineHeight": 1.6 },
+      "tabBlock":       { "family": "mono", "size": 9, "lineHeight": 1.6 },
+      "chipTab":        { "family": "mono", "size": 7, "lineHeight": 1.4 }
+    }
+  },
+  "spacing": {
+    "base": 4,
+    "scale": [4, 8, 12, 16, 24, 32, 48]
+  },
+  "radius": {
+    "outer": 8,
+    "mid": 6,
+    "small": 4,
+    "pill": 20,
+    "circle": "50%"
+  },
+  "shadow": {
+    "card": "0 1px 2px rgba(23,19,16,0.04), 0 10px 20px -14px rgba(23,19,16,0.18)",
+    "cardHighlightTemplate": "0 1px 2px rgba(23,19,16,0.04), 0 14px 24px -14px {accent}44",
+    "buttonTemplate": "0 8px 20px -8px {accent}99"
+  },
+  "icon": {
+    "strokeWidth": 1.75,
+    "sizeSmall": 11,
+    "sizeDefault": 13,
+    "sizeMedium": 16,
+    "library": "Feather-style inline SVG, viewBox 0 0 24 24, stroke-linecap round, stroke-linejoin round — no icon font/asset dependency"
+  },
+  "breakpoints": {
+    "desktop": { "width": 1440, "containerPadding": "0 56px", "note": "Fixed-width canvas card, 960px reference height" },
+    "tablet":  { "width": 834,  "containerPadding": "0 32px", "note": "Single-page scroll, controls stack full-width" },
+    "mobile":  { "width": 390,  "containerPadding": "0 20px", "note": "Single-page scroll, hamburger nav, all cards single column" }
+  },
+  "navHeight": {
+    "desktop": 76,
+    "tablet": 76,
+    "mobile": 64
+  }
+}
