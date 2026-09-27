@@ -1,0 +1,18 @@
+{
+  "_note": "Scale-degree offsets (semitones from the key root, major/Ionian): I=0, ii=2, iii=4, IV=5, V=7, vi=9, vii=11. To render a progression in a given key: rootPitchClass + offset (mod 12) → look up chord-library.json by resulting note name.",
+  "degreeOffsets": { "I": 0, "ii": 2, "iii": 4, "IV": 5, "V": 7, "vi": 9, "vii": 11 },
+  "progressions": [
+    { "id": "I-V-vi-IV",  "degrees": ["I", "V", "vi", "IV"], "brightness": 5, "tag": "most-common", "note": "Pop-punk's single most-used loop — used as the Generator page's default." },
+    { "id": "vi-IV-I-V",  "degrees": ["vi", "IV", "I", "V"], "brightness": 3, "tag": "common", "note": "Same 4 chords as above, minor-feeling entry point." },
+    { "id": "I-IV-V",     "degrees": ["I", "IV", "V"],       "brightness": 5, "tag": "common", "note": "3-chord classic; brightest of the set, no vi." },
+    { "id": "I-V-IV-V",   "degrees": ["I", "V", "IV", "V"],  "brightness": 4, "tag": "common" },
+    { "id": "vi-V-IV",    "degrees": ["vi", "V", "IV"],      "brightness": 2, "tag": "darker" },
+    { "id": "IV-I-V-vi",  "degrees": ["IV", "I", "V", "vi"], "brightness": 3, "tag": "common" }
+  ],
+  "sortHeuristic": {
+    "mostCommon": "sort by a fixed usage-frequency ranking (curated order above, top to bottom) — not derived at runtime",
+    "brightest": "sort by `brightness` descending (more I/IV/V weight, less vi)",
+    "darkest": "sort by `brightness` ascending",
+    "caveat": "brightness values here are an authored placeholder heuristic (major-vs-relative-minor emphasis), not a music-theory-validated score — fine for v1, worth revisiting if the sort ever feels wrong to a real guitarist tester."
+  }
+}

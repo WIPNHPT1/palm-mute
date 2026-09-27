@@ -1,0 +1,33 @@
+{
+  "_note": "Strum glyphs: ▼ = downstroke, ▲ = upstroke, · = muted/skipped beat. Each pattern is 8 sixteenth/eighth-note cells per bar (matches the mockup's 8-glyph rows). tempoBpm is the CLICK the pattern plays against — see feels.json for how Fast Punk/Half-Time share one master tempo via feel template while Mid-Tempo is independent.",
+  "patterns": [
+    {
+      "id": "straight-8ths",
+      "name": "Straight 8ths",
+      "feel": "fast-punk",
+      "glyphs": ["▼","▼","▼","▼","▼","▼","▼","▼"],
+      "beatLabel": "1 + 2 + 3 + 4 +",
+      "description": "All downstrokes, palm-muted.",
+      "tagColor": "ink"
+    },
+    {
+      "id": "half-time-chug",
+      "name": "Half-time chug",
+      "feel": "half-time",
+      "glyphs": ["▼","·","·","▼","·","·","▼","·"],
+      "beatLabel": "1e&a 2e&a",
+      "description": "Heavy mute, wide spacing.",
+      "tagColor": "muted",
+      "note": "Same master tempo as Fast Punk (180 BPM) — this pattern is what makes it FEEL half-speed, not an actual tempo change."
+    },
+    {
+      "id": "syncopated-skank",
+      "name": "Syncopated skank",
+      "feel": "mid-tempo",
+      "glyphs": ["·","▲","·","▲","·","▲","·","▲"],
+      "beatLabel": "1 & 2 & 3 & 4 &",
+      "description": "Upstroke accents on the offbeat.",
+      "tagColor": "brass"
+    }
+  ]
+}

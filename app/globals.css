@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-paper;
+  }
+  body {
+    @apply bg-paper font-ui text-text-primary antialiased;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-accent;
+  }
+}

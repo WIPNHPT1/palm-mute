@@ -1,0 +1,67 @@
+{
+  "_note": "Generic, key-independent templates. Render actual tab by resolving each 'degree' against progressions.json's degreeOffsets + the selected key, then looking up the resulting chord in chord-library.json. This replaces the mockup's hardcoded 'Key of A' example tabs — the real app must generate all 5 sections for any of the 12 keys from these templates.",
+  "sections": [
+    {
+      "id": "intro",
+      "label": "Intro",
+      "bars": 4,
+      "muted": true,
+      "degreeSequence": ["I", "I", "IV", "IV"],
+      "strumFeel": "eighth-note palm-muted downstrokes, root note only (no full chord) per hit",
+      "caption": "4 bars · palm-muted",
+      "lockedByDefault": false
+    },
+    {
+      "id": "verse",
+      "label": "Verse",
+      "bars": 8,
+      "muted": false,
+      "degreeSequence": ["I", "I", "V", "V"],
+      "strumFeel": "same rhythm cell as intro, repeated to fill 8 bars, using the two-note power chord shape",
+      "caption": "8 bars",
+      "lockedByDefault": true,
+      "note": "Locked by default in the mockups — real build should let the user lock/unlock any section, Verse is just the pre-set example."
+    },
+    {
+      "id": "chorus",
+      "label": "Chorus",
+      "bars": 4,
+      "muted": false,
+      "degreeSequence": "USE_SELECTED_PROGRESSION",
+      "strumFeel": "open, ringing full chord hits (not palm-muted) — the section that showcases the selected progression from progressions.json",
+      "caption": "Open, ringing",
+      "lockedByDefault": false,
+      "highlightInUI": true
+    },
+    {
+      "id": "solo",
+      "label": "Solo",
+      "bars": 2,
+      "muted": false,
+      "type": "lead-lick",
+      "caption": "Pentatonic, 2 bars",
+      "lockedByDefault": false,
+      "leadLickFormula": {
+        "description": "Simplified 2-note-per-string lick on the top two strings (e, B), anchored to the key root's fret position on the low-E string (independent of which string the rhythm chords actually use).",
+        "rootFretOnLowE": "(rootPitchClass - 4 + 12) mod 12",
+        "pattern": {
+          "e": ["r", "r+2", "r", "r+2"],
+          "B": ["r", "r+2", "r", "r+2"]
+        },
+        "wormedExample": "Key of A → r=5 → e: 5,7,5,7 / B: 5,7,5,7 (matches the original mockup exactly)"
+      }
+    },
+    {
+      "id": "breakdown",
+      "label": "Breakdown",
+      "bars": 4,
+      "muted": false,
+      "degreeSequence": ["I", "I", "I", "I"],
+      "strumFeel": "half-time, heavy quarter-note hits on the tonic two-note power chord — deliberately the heaviest, simplest section",
+      "caption": "Half-time, heavy",
+      "lockedByDefault": false,
+      "forceFeel": "half-time",
+      "note": "Breakdown always renders in the Half-Time drum feel regardless of the page's selected Feel, per genre convention — confirm this is the intended behavior before building."
+    }
+  ]
+}

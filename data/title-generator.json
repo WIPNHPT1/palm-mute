@@ -1,0 +1,29 @@
+{
+  "_note": "Backs the About page's 'Stuck on a song title?' card. Independent of the song-structure generator — pure text mad-lib, no music logic involved.",
+  "template": "\"{subject} ({modifier} Mix)\"",
+  "subjects": [
+    "Your Ex's New Apartment",
+    "Parking Lot Existential Crisis",
+    "Text Message I Didn't Send",
+    "Seventeen and Overdrawn",
+    "The Last Slice of Pizza",
+    "Voicemail I'll Never Delete",
+    "Fluorescent Lights, Empty Gym",
+    "Left on Read, Again",
+    "Basement Show Encore",
+    "Gas Station at 2 AM",
+    "The Group Chat Without Me",
+    "Warranty Expired"
+  ],
+  "modifiers": [
+    "Breakdown",
+    "Acoustic",
+    "Radio",
+    "Extended",
+    "Demo",
+    "Live",
+    "Slow",
+    "Alternate"
+  ],
+  "generation": "pick 1 random subject + 1 random modifier, avoid repeating the immediately-previous result"
+}
