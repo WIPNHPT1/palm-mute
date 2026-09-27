@@ -31,17 +31,18 @@ test.describe("chords UX", () => {
     await expect(page.getByRole("region", { name: "I-IV-V in A" })).toBeVisible();
   });
 
-  test("Use in my song sends the key and the Chorus progression to the Generator", async ({ page }) => {
+  test("Use in my song sends the key, the Chorus progression and the melody to the Generator", async ({ page }) => {
     await key(page, "C").click();
     await page.getByRole("button", { name: "IV-I-V-vi: show options" }).click();
     await page.getByRole("button", { name: "USE IN MY SONG" }).click();
-    await expect(page.getByRole("status")).toContainText("Chorus set to IV-I-V-vi in C.");
+    await expect(page.getByRole("status").filter({ hasText: "Sent:" })).toContainText("Sent: key of C, IV-I-V-vi as the Chorus, and this Hook intro melody as the Intro.");
     await page.getByRole("link", { name: "Open the Generator" }).click();
     await expect(page).toHaveURL(/\/generator\/$/);
     await expect(key(page, "C")).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("button", { name: "Use IV-I-V-vi for the Chorus" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("Chorus, key of C: ");
     await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("F5, C5, G5, A5.");
+    await expect(page.locator('section[aria-label="Intro"]')).toContainText("4 bars · Hook melody");
   });
 
   test("the Feel control is shared with the Generator and drives playback", async ({ page }) => {

@@ -91,15 +91,6 @@ export function chordMidiNotes(chord: PowerChord): number[] {
   ];
 }
 
-/**
- * Solo lead-lick anchor: the key root's fret on the low-E string,
- * `(rootPitchClass - 4 + 12) mod 12` per song-section-templates.json → leadLickFormula.
- * Key of A → 5.
- */
-export function leadLickRootFret(key: NoteName): number {
-  return (pitchClassOf(key) - 4 + 12) % 12;
-}
-
 export type SortMode = "most-common" | "brightest" | "darkest";
 
 /** progressions.json → sortHeuristic. Stable: ties keep curated order. */

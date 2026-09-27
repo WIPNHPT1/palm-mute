@@ -26,7 +26,8 @@ function lockInfo(state: GeneratorState, id: SectionId): { lockedIn?: string; up
 }
 
 export default function GeneratorPage() {
-  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay } = useGenerator();
+  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, clearIntroLead } =
+    useGenerator();
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
@@ -59,6 +60,11 @@ export default function GeneratorPage() {
             onToggleLock={() => toggleLock(id)}
             onUpdate={() => updateLocked(id)}
             onTogglePlay={() => togglePlay(`section:${id}`)}
+            extraAction={
+              id === "intro" && state.sections.intro.lead && !state.sections.intro.locked
+                ? { label: "Back to power chords", onClick: clearIntroLead }
+                : undefined
+            }
             className={id === "breakdown" ? "tablet:col-span-2 desktop:col-span-1" : ""}
           />
         ))}

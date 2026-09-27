@@ -21,6 +21,7 @@ export function SectionCard({
   onToggleLock,
   onUpdate,
   onTogglePlay,
+  extraAction,
   className = "",
 }: {
   section: RenderedSection;
@@ -37,6 +38,8 @@ export function SectionCard({
   onToggleLock: () => void;
   onUpdate: () => void;
   onTogglePlay: () => void;
+  /** An extra button under the footer (e.g. the Intro's "Back to power chords"). */
+  extraAction?: { label: string; onClick: () => void };
   className?: string;
 }) {
   // Numeral coloring is cosmetic (component-spec §2): accent on the first card and the highlighted one.
@@ -96,6 +99,15 @@ export function SectionCard({
           className="-mb-[4px] min-h-[44px] rounded-mid border border-line bg-paper px-[10px] text-left font-mono text-[12px] font-bold text-text-primary hover:border-accent"
         >
           Update to {updateTo}
+        </button>
+      )}
+      {extraAction && (
+        <button
+          type="button"
+          onClick={extraAction.onClick}
+          className="-mb-[4px] min-h-[44px] rounded-mid border border-line bg-paper px-[10px] text-left font-mono text-[12px] font-bold text-text-primary hover:border-accent"
+        >
+          {extraAction.label}
         </button>
       )}
       </div>

@@ -1,8 +1,9 @@
 import { type Page } from "@playwright/test";
 
 /** What the page last asked the audio engine to play (lib/audio/engine.ts), or null when stopped. */
+type Cell = { notes: number[]; cells: number; velocity: number; palmMuted: boolean } | null;
 export type Playback = {
-  bars: { feel: string; cells: ({ notes: number[]; cells: number; velocity: number; palmMuted: boolean } | null)[] }[];
+  bars: { feel: string; cells: Cell[]; lead?: Cell[]; drums?: boolean }[];
   bpm: number;
   loop: boolean;
 } | null;
@@ -37,8 +38,12 @@ export function parseTab(groups: string[][]): ({ notes: number[] } | "x" | null)
     for (const end of [...rows[0]].flatMap((c, i) => (c === "|" ? [i] : []))) {
       const cells: ({ notes: number[] } | "x" | null)[] = [];
       for (let p = start; p < end; ) {
-        const runs = rows.map((r) => /^[0-9x]*/.exec(r.slice(p, end))![0]);
-        const notes = runs.flatMap((x, k) => (/^\d+$/.test(x) ? [OPEN[names[k]] + Number(x)] : []));
+        // Fret numbers, "x" for dead strums, and lead marks: 5b7 (sounds the 7), h5, p3, /7, \\5, 7~.
+        const runs = rows.map((r) => /^[0-9xbhp/\\~]*/.exec(r.slice(p, end))![0]);
+        const notes = runs.flatMap((x, k) => {
+          const nums = x.match(/\d+/g);
+          return nums ? [OPEN[names[k]] + Number(nums[nums.length - 1])] : [];
+        });
         cells.push(notes.length ? { notes: notes.sort((a, b) => a - b) } : runs.includes("x") ? "x" : null);
         p += Math.max(1, ...runs.map((x) => x.length)) + 1;
       }
@@ -49,7 +54,9 @@ export function parseTab(groups: string[][]): ({ notes: number[] } | "x" | null)
   return bars;
 }
 
-/** Playback bars reduced to the same shape as parseTab (one pass; the Verse repeats its bars). */
+/** Playback bars reduced to the same shape as parseTab: the lead line when there is one (the tab shows the lead, not its backing). */
 export function playedCells(pb: NonNullable<Playback>) {
-  return pb.bars.map((b) => b.cells.map((c) => (!c ? null : (c as { dead?: boolean }).dead ? "x" : { notes: [...c.notes].sort((x, y) => x - y) })));
+  return pb.bars.map((b) =>
+    (b.lead ?? b.cells).map((c) => (!c ? null : (c as { dead?: boolean }).dead ? "x" : { notes: [...c.notes].sort((x, y) => x - y) })),
+  );
 }
