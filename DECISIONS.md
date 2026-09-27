@@ -15,6 +15,9 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Navigation | **Hamburger menu at every size** — overrides the mockups' inline desktop/tablet links. The mockups' mobile link row under the header was also removed, since the menu covers navigation everywhere | Repo owner, 2026-09-27 |
 | Menu style | **"Shutter" full-screen menu**: one full-width band per page wiping in from the left, red flood on hover/keyboard focus, bottom strip with dark toggle + GitHub. The top bar is sticky so the close button is always reachable. Picked from six mock-ups | Repo owner, 2026-09-27 |
 | Wordmark | **Lightning bolt in place of the "/"**, flipping like a coin every ~3.5s ("Coin Flip"); still for reduced-motion users; screen readers hear "Palm/Mute" | Repo owner, 2026-09-27 |
+| Home page | **"Count In"** at `/`: the Soundcheck design picked from three mock-ups, carrying the old About content (no em dashes; originality wording softened to what the site actually does). Generator moved to `/generator/`; `/about/` permanently redirects to `/` (netlify.toml, plus a client-side fallback page); menu is Count In · Generator · Chords | Repo owner, 2026-09-27 |
+| Home headline | Font size fitted to the widest line so nothing clips; designed line breaks (6 lines under 834px, 4 above); lines start on their margins and scroll motion stays within each line's free space | Repo owner, 2026-09-27 |
+| Power-chord diagram | Shows **G5** as the chord library voices it (E string 3rd fret + A string 5th fret), both notes fretted and joined, ✕ on the four muted strings, text legend | Repo owner, 2026-09-27 |
 
 ## Notes on the owner calls
 

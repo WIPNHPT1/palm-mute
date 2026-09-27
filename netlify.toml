@@ -5,8 +5,22 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Next.js static export produces clean URLs (about/index.html etc.) —
+# Next.js static export produces clean URLs (chords/index.html etc.), and
 # this redirect keeps client-side navigation and direct-link refreshes working.
+# About moved into the Count In home page. force = true because the export still contains a small
+# /about/ fallback page, and Netlify only redirects over existing files when forced.
+[[redirects]]
+  from = "/about/*"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/about"
+  to = "/"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

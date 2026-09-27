@@ -12,7 +12,7 @@ const spaceGrotesk = Space_Grotesk({ weight: ["500", "600", "700"], subsets: ["l
 const spaceMono = Space_Mono({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-mono", adjustFontFallback: false });
 
 export const metadata: Metadata = {
-  title: "Palm/Mute — Pop-punk song generator",
+  title: "Palm/Mute · Pop-punk song generator",
   description: "Original pop-punk song structures and power-chord progressions in E standard, in any key.",
 };
 
@@ -26,7 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col">
         <GeneratorProvider>
           <Nav />
-          <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col">{children}</main>
+          {/* Full width: the home page runs edge to edge; Generator and Chords cap themselves at 1440px. */}
+          <main className="flex w-full flex-1 flex-col">{children}</main>
           <Footer />
         </GeneratorProvider>
       </body>

@@ -8,9 +8,9 @@ import { Wordmark } from "@/components/Wordmark";
 import { applyTheme, currentTheme } from "@/lib/theme";
 
 const LINKS = [
-  { href: "/", label: "Generator" },
+  { href: "/", label: "Count In" },
+  { href: "/generator/", label: "Generator" },
   { href: "/chords/", label: "Chords" },
-  { href: "/about/", label: "About" },
 ];
 
 function isActive(pathname: string, href: string) {
