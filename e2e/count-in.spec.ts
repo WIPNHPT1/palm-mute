@@ -50,6 +50,7 @@ test.describe("count in", () => {
 
   test("all 90 titles fit on one line, with no repeats until all have been shown", async ({ page }, info) => {
     lightOnly(info);
+    test.slow(); // 90 shuffles; CI's WebKit needs more than the default minute
     await page.emulateMedia({ reducedMotion: "reduce" }); // skip the flap animation so 90 shuffles are quick
     await gotoAndSettle(page, "/");
     const board = page.locator(".ci-flaps");
