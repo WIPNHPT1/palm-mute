@@ -1,0 +1,35 @@
+{
+  "_architecture_note": "This resolves the open question flagged during the original PRD discussion: Fast Punk and Half-Time are NOT two tempos — they are two drum-feel templates played against the SAME master click. Mid-Tempo is a genuinely separate, independently adjustable tempo. Keep 'tempo' and 'feel template' as two distinct state fields in the app; do not hardcode BPM per feel in the UI layer.",
+  "masterTempos": {
+    "punkMaster": { "bpm": 180, "label": "Punk master tempo", "usedBy": ["fast-punk", "half-time"] },
+    "midTempoDefault": { "bpm": 140, "min": 120, "max": 150, "adjustable": true, "usedBy": ["mid-tempo"] }
+  },
+  "feels": [
+    {
+      "id": "fast-punk",
+      "label": "FAST PUNK",
+      "tempoSource": "punkMaster",
+      "displayBpm": 180,
+      "drumFeel": "straight-8th-hats, backbeat snare on 2 and 4, kick on 1 and the 'and' of 3",
+      "rhythmPatternId": "straight-8ths"
+    },
+    {
+      "id": "half-time",
+      "label": "HALF-TIME",
+      "tempoSource": "punkMaster",
+      "displayBpm": 90,
+      "displayBpmNote": "Shown as 90 because the drum FEEL halves — the click/master tempo is still 180.",
+      "drumFeel": "snare moves to beat 3 only (half-time backbeat), kick on 1, hats stay busy — classic pop-punk breakdown feel",
+      "rhythmPatternId": "half-time-chug"
+    },
+    {
+      "id": "mid-tempo",
+      "label": "MID-TEMPO",
+      "tempoSource": "midTempoDefault",
+      "displayBpm": "user-adjustable, default 140",
+      "drumFeel": "skank/offbeat-driven, kick on 1 and 3, hats on the upbeats",
+      "rhythmPatternId": "syncopated-skank"
+    }
+  ],
+  "uiRequirement": "When Feel = Mid-Tempo is selected, render a tempo stepper/slider (120-150, default 140) in place of (or alongside) the static BPM label the mockup currently shows. Fast Punk / Half-Time show a fixed, non-editable BPM readout."
+}

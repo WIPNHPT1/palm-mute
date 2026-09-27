@@ -1,0 +1,19 @@
+{
+  "_generation_note": "Computed, not hand-authored. Power chord (root+fifth) fret positions in E standard tuning, using whichever of the low-E/A/D strings gives the lowest playable fret for that root. Algorithm documented in data-model.md — regenerate this file programmatically at build/runtime rather than editing by hand if the tuning or string choice ever changes.",
+  "tuningLowToHigh": ["E2", "A2", "D3", "G3", "B3", "E4"],
+  "chords": {
+    "C":  { "rootString": "A", "rootFret": 3,  "fifthString": "D", "fifthFret": 5,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "5", "A": "3", "E": "-" } },
+    "C#": { "rootString": "A", "rootFret": 4,  "fifthString": "D", "fifthFret": 6,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "6", "A": "4", "E": "-" }, "enharmonic": "Db" },
+    "D":  { "rootString": "D", "rootFret": 0,  "fifthString": "G", "fifthFret": 2,  "twoNoteTab": { "e": "-", "B": "-", "G": "2", "D": "0", "A": "-", "E": "-" } },
+    "D#": { "rootString": "D", "rootFret": 1,  "fifthString": "G", "fifthFret": 3,  "twoNoteTab": { "e": "-", "B": "-", "G": "3", "D": "1", "A": "-", "E": "-" }, "enharmonic": "Eb" },
+    "E":  { "rootString": "E", "rootFret": 0,  "fifthString": "A", "fifthFret": 2,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "-", "A": "2", "E": "0" } },
+    "F":  { "rootString": "E", "rootFret": 1,  "fifthString": "A", "fifthFret": 3,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "-", "A": "3", "E": "1" } },
+    "F#": { "rootString": "E", "rootFret": 2,  "fifthString": "A", "fifthFret": 4,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "-", "A": "4", "E": "2" }, "enharmonic": "Gb" },
+    "G":  { "rootString": "E", "rootFret": 3,  "fifthString": "A", "fifthFret": 5,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "-", "A": "5", "E": "3" } },
+    "G#": { "rootString": "E", "rootFret": 4,  "fifthString": "A", "fifthFret": 6,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "-", "A": "6", "E": "4" }, "enharmonic": "Ab" },
+    "A":  { "rootString": "A", "rootFret": 0,  "fifthString": "D", "fifthFret": 2,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "2", "A": "0", "E": "-" } },
+    "A#": { "rootString": "A", "rootFret": 1,  "fifthString": "D", "fifthFret": 3,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "3", "A": "1", "E": "-" }, "enharmonic": "Bb" },
+    "B":  { "rootString": "A", "rootFret": 2,  "fifthString": "D", "fifthFret": 4,  "twoNoteTab": { "e": "-", "B": "-", "G": "-", "D": "4", "A": "2", "E": "-" } }
+  },
+  "note_on_mockup_data": "The published mockup chips label one chord 'F#5' with a fret pair (A2/D4) that actually sounds B+F# (root B). That was placeholder content, not verified music theory — this file is the corrected source of truth; re-point the UI at this file rather than copying mockup fret numbers."
+}

@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Next.js static export produces clean URLs (about/index.html etc.) —
+# this redirect keeps client-side navigation and direct-link refreshes working.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404
