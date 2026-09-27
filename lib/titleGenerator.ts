@@ -1,22 +1,47 @@
-// "Stuck on a song title?" mad-lib (data/title-generator.json). Pure text, no music logic.
+// "Stuck on a song title?" titles (data/title-generator.json). Pure text, no music logic.
 import titleJson from "@/data/title-generator.json";
 
-export type TitlePick = { subject: number; modifier: number };
+export const TITLES: string[] = titleJson.titles;
+export const MAX_TITLE_LENGTH: number = titleJson.maxLength;
 
-export const INITIAL_TITLE: TitlePick = { subject: 0, modifier: 0 };
+export type TitleBag = {
+  /** The title currently showing. */
+  current(): string;
+  /** Deals the next title: every title appears once before any repeats. */
+  next(): string;
+};
 
-export function formatTitle({ subject, modifier }: TitlePick): string {
-  return titleJson.template
-    .replace("{subject}", titleJson.subjects[subject])
-    .replace("{modifier}", titleJson.modifiers[modifier]);
+function shuffle(items: number[], rng: () => number): number[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
-/** Random subject + modifier, never identical to the previous title. */
-export function nextTitle(prev: TitlePick, rng: () => number = Math.random): TitlePick {
-  const total = titleJson.subjects.length * titleJson.modifiers.length;
-  const prevIndex = prev.subject * titleJson.modifiers.length + prev.modifier;
-  // Pick uniformly from every combination except the previous one.
-  let index = Math.floor(rng() * (total - 1));
-  if (index >= prevIndex) index += 1;
-  return { subject: Math.floor(index / titleJson.modifiers.length), modifier: index % titleJson.modifiers.length };
+/**
+ * A shuffle bag over TITLES, like dealing from a deck. It starts on titles[first] (so a pre-rendered page
+ * and the browser agree on the first title), deals the rest in random order, then reshuffles, never
+ * starting a new round with the title just shown.
+ */
+export function createTitleBag(rng: () => number = Math.random, first = 0): TitleBag {
+  const all = TITLES.map((_, i) => i);
+  let current = first;
+  let deck = shuffle(all.filter((i) => i !== first), rng);
+  return {
+    current: () => TITLES[current],
+    next() {
+      if (deck.length === 0) {
+        deck = shuffle(all, rng);
+        // the deck deals from the end; keep the just-shown title off the top of the new round
+        if (deck[deck.length - 1] === current) [deck[0], deck[deck.length - 1]] = [deck[deck.length - 1], deck[0]];
+      }
+      current = deck.pop()!;
+      return TITLES[current];
+    },
+  };
 }
+
+/** One deck per visit: kept while you move between pages, fresh on a full reload. */
+export const titleBag = createTitleBag();

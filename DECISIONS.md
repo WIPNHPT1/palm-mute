@@ -18,6 +18,7 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Home page | **"Count In"** at `/`: the Soundcheck design picked from three mock-ups, carrying the old About content (no em dashes; originality wording softened to what the site actually does). Generator moved to `/generator/`; `/about/` permanently redirects to `/` (netlify.toml, plus a client-side fallback page); menu is Count In · Generator · Chords | Repo owner, 2026-09-27 |
 | Home headline | Font size fitted to the widest line so nothing clips; designed line breaks (6 lines under 834px, 4 above); lines start on their margins and scroll motion stays within each line's free space | Repo owner, 2026-09-27 |
 | Power-chord diagram | Shows **G5** as the chord library voices it (E string 3rd fret + A string 5th fret), both notes fretted and joined, ✕ on the four muted strings, text legend | Repo owner, 2026-09-27 |
+| Song titles | **90 hand-written titles** (approved list), no "(… Mix)" suffix, each ≤ 22 characters so the split-flap board always shows one line (letters fitted to the title, 13px minimum on a 320px phone, 34px max). **Shuffle bag**: no title repeats until all 90 have been shown; one deck per visit | Repo owner, 2026-09-27 |
 
 ## Notes on the owner calls
 

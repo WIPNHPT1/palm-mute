@@ -1,17 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { INITIAL_TITLE, formatTitle, nextTitle } from "@/lib/titleGenerator";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { titleBag } from "@/lib/titleGenerator";
 
 const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const MAX_FLAP_PX = 34;
 
-/** Song titles on a split-flap board: each letter flips through random characters before landing. */
+/**
+ * Song titles on a split-flap board. Titles come from the visit's shuffle bag (no repeats until all have
+ * been shown). The letter size is fitted to each title so it always sits on one line; each letter flips
+ * through random characters before landing.
+ */
 export function TitleBoard({ reduced }: { reduced: boolean }) {
-  const [pick, setPick] = useState(INITIAL_TITLE);
+  // titleBag.current() is titles[0] until the first shuffle, so the pre-rendered page matches
+  const [title, setTitle] = useState(() => titleBag.current());
   const [flipping, setFlipping] = useState(false);
   const board = useRef<HTMLDivElement>(null);
   const animate = useRef(false);
-  const title = formatTitle(pick);
+
+  // one line, always: measure at 100px and scale to the board's inner width
+  useLayoutEffect(() => {
+    const el = board.current!;
+    const fit = () => {
+      el.style.setProperty("--flap", "100px");
+      const size = Math.min(MAX_FLAP_PX, (el.clientWidth / el.scrollWidth) * 100);
+      el.style.setProperty("--flap", `${size.toFixed(2)}px`);
+    };
+    fit();
+    document.fonts.ready.then(fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement!);
+    return () => ro.disconnect();
+  }, [title]);
 
   useEffect(() => {
     if (!animate.current || reduced) return;
@@ -20,7 +40,6 @@ export function TitleBoard({ reduced }: { reduced: boolean }) {
     const cells = [...board.current!.querySelectorAll<HTMLElement>(".ci-fc")];
     const settle = cells.map((_, i) => 4 + i * 0.6 + Math.random() * 6);
     let tick = 0;
-    setFlipping(true);
     const id = window.setInterval(() => {
       tick++;
       let busy = false;
@@ -33,14 +52,14 @@ export function TitleBoard({ reduced }: { reduced: boolean }) {
       if (!busy) { clearInterval(id); setFlipping(false); }
     }, 55);
     return () => { clearInterval(id); cells.forEach((c) => { c.textContent = c.dataset.c!; }); };
-  }, [pick, reduced]);
+  }, [title, reduced]);
 
   const shuffle = () => {
     if (flipping) return;
     // mark busy right away: the scramble starts on the next tick, and a second click in between must wait
     if (!reduced) setFlipping(true);
     animate.current = true;
-    setPick((p) => nextTitle(p));
+    setTitle(titleBag.next());
   };
 
   return (
@@ -49,7 +68,7 @@ export function TitleBoard({ reduced }: { reduced: boolean }) {
         <div className="ci-board" data-reveal>
           <div className="ci-board-top"><span id="ci-titles">STUCK ON A SONG TITLE?</span><span>NOW PLAYING <b>· TRACK 04</b></span></div>
           <div ref={board} className="ci-flaps" role="status" aria-label={title} aria-busy={flipping} data-flap>
-            {title.toUpperCase().split(" ").map((word, w) => (
+            {`"${title}"`.toUpperCase().split(" ").map((word, w) => (
               <span key={`${w}-${word}`} className="ci-fw" aria-hidden="true">
                 {[...word].map((ch, i) => <span key={i} className="ci-fc" data-c={ch}>{ch}</span>)}
               </span>
