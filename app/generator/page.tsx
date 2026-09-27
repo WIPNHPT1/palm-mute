@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PowerChordsPanel } from "@/components/PowerChordsPanel";
 import { RhythmLane } from "@/components/RhythmLane";
 import { SectionCard } from "@/components/SectionCard";
+import { tabChars } from "@/components/TabBlock";
 import { type GeneratorState, useGenerator } from "@/context/GeneratorContext";
 import { SECTION_IDS, type SectionId, getTemplate } from "@/lib/generator";
 import { keyDisplayName } from "@/lib/musicTheory";
@@ -29,6 +30,10 @@ export default function GeneratorPage() {
   const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, clearIntroLead } =
     useGenerator();
 
+  // One tab scale for the chord cards: the widest chord tab showing. Lead tabs (the Solo, an Intro
+  // melody) use it too when they fit; a lead line dense with technique marks shrinks only itself.
+  const sharedTabChars = Math.max(...SECTION_IDS.filter((id) => !rendered[id].lead).map((id) => tabChars(rendered[id].tab)));
+
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
       <PageHeader kicker="SONGWRITING ENGINE" title="SONG GENERATOR" aside={<OriginalityBadge />} />
@@ -46,7 +51,7 @@ export default function GeneratorPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-[12px] tablet:grid-cols-2 desktop:grid-cols-5">
+      <div className="grid grid-cols-1 gap-x-[12px] gap-y-[12px] tablet:grid-cols-2 desktop:grid-cols-5">
         {SECTION_IDS.map((id, i) => (
           <SectionCard
             key={id}
@@ -60,6 +65,8 @@ export default function GeneratorPage() {
             onToggleLock={() => toggleLock(id)}
             onUpdate={() => updateLocked(id)}
             onTogglePlay={() => togglePlay(`section:${id}`)}
+            tabChars={sharedTabChars}
+            wideOnTablet={id === "breakdown"}
             extraAction={
               id === "intro" && state.sections.intro.lead && !state.sections.intro.locked
                 ? { label: "Back to power chords", onClick: clearIntroLead }

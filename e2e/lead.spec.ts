@@ -113,6 +113,7 @@ test.describe("intro melody and lead solo", () => {
     await expect(page).toHaveURL(/\/generator\/$/);
     const solo = page.locator('section[aria-label="Solo"]');
     await expect(solo).toContainText("8 bars · Shred solo");
+    await solo.getByRole("button", { name: "Show all 8 bars" }).click();
     const shown = await solo.locator("svg[data-tab]").evaluate((svg) => {
       const rows = [...svg.querySelectorAll('text[data-row="string"]')].map((t) => t.textContent ?? "");
       const groups: string[][] = [];

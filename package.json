@@ -10,7 +10,8 @@
     "lint": "next lint",
     "verify": "tsx scripts/verify-data-layer.ts && tsx scripts/verify-voicings.ts && tsx scripts/verify-melody.ts",
     "test:e2e": "playwright test",
-    "generate:chords": "tsx scripts/generate-chord-library.ts"
+    "generate:chords": "tsx scripts/generate-chord-library.ts",
+    "build:brand": "tsx scripts/build-brand-assets.ts"
   },
   "dependencies": {
     "next": "^15.0.0",
