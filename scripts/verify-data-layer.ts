@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { chordMidiNotes, leadLickRootFret, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { renderSection, nextSeed, leadLick, pentatonicBox } from "@/lib/generator";
 import { PITCH_CLASSES, pitchClassOf, OPEN_STRING_MIDI } from "@/lib/musicTheory";
-import { nextTitle, formatTitle, INITIAL_TITLE } from "@/lib/titleGenerator";
+import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
 // Solo lead lick must be computed: Key of A → 5,7,5,7 on e and B.
 assert.deepEqual(leadLick("A", 0).notes.map((n) => n.fret), [5, 7, 5, 7]);
@@ -70,9 +70,21 @@ assert.equal(renderSection("breakdown", { key: "A", feel: "fast-punk", progressi
 assert.deepEqual(sortProgressions(progressions, "brightest").map((p) => p.brightness), [5, 5, 4, 3, 3, 2]);
 assert.deepEqual(sortProgressions(progressions, "darkest").map((p) => p.brightness), [2, 3, 3, 4, 5, 5]);
 
-// Titles never repeat back-to-back.
-let t = INITIAL_TITLE;
-for (let i = 0; i < 500; i++) { const n = nextTitle(t); assert.ok(formatTitle(n) !== formatTitle(t)); t = n; }
-assert.equal(formatTitle(INITIAL_TITLE), "\"Your Ex's New Apartment (Breakdown Mix)\"");
+// Song titles: 90 unique, short enough for one line, no "(… Mix)" suffix, no em/en dashes.
+assert.equal(TITLES.length, 90);
+assert.equal(new Set(TITLES.map((t) => t.toLowerCase())).size, 90, "duplicate titles");
+for (const t of TITLES) {
+  assert.ok(t.length <= MAX_TITLE_LENGTH, `"${t}" is over ${MAX_TITLE_LENGTH} characters`);
+  assert.ok(!/\(.*mix\)/i.test(t) && !/[\u2014\u2013]/.test(t), `"${t}" has a Mix suffix or a dash`);
+}
+// Shuffle bag: starts on titles[0]; every round of 90 shows each title once; no back-to-back repeats, even across rounds.
+{
+  const bag = createTitleBag();
+  const shown = [bag.current()];
+  for (let i = 0; i < 90 * 6 - 1; i++) shown.push(bag.next());
+  assert.equal(shown[0], TITLES[0]);
+  for (let r = 0; r < 6; r++) assert.equal(new Set(shown.slice(r * 90, r * 90 + 90)).size, 90, `round ${r + 1} repeats a title`);
+  for (let i = 1; i < shown.length; i++) assert.notEqual(shown[i], shown[i - 1], `back-to-back repeat at ${i}`);
+}
 
 console.log("\nAll data-layer checks passed.");
