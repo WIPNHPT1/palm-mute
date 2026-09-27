@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Space_Grotesk, Space_Mono } from "next/font/google";
+import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
 import { GeneratorProvider } from "@/context/GeneratorContext";
 import { THEME_SCRIPT } from "@/lib/theme";
@@ -22,10 +23,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="min-h-screen">
+      <body className="flex min-h-screen flex-col">
         <GeneratorProvider>
           <Nav />
-          <main className="mx-auto w-full max-w-[1440px]">{children}</main>
+          <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col">{children}</main>
+          <Footer />
         </GeneratorProvider>
       </body>
     </html>
