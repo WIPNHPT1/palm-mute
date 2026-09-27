@@ -16,8 +16,10 @@ export const section = (page: Page, label: string) => page.locator(`section[aria
 export const key = (page: Page, name: string) => page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name, exact: true });
 export const feel = (page: Page, name: RegExp) => page.getByRole("radiogroup", { name: "Feel" }).getByRole("radio", { name });
 
-/** The six string rows of each line of a section's rendered tab (SVG), as text. */
+/** The six string rows of each line of a section's rendered tab (SVG), as text (long tabs expanded first). */
 export async function tabRows(page: Page, label: string): Promise<string[][]> {
+  const more = page.locator(`section[aria-label="${label}"]`).getByRole("button", { name: /^Show all \d+ bars$/ });
+  if (await more.count()) await more.click();
   return page.locator(`section[aria-label="${label}"] svg[data-tab]`).evaluate((svg) => {
     const rows = [...svg.querySelectorAll('text[data-row="string"]')].map((t) => t.textContent ?? "");
     const groups: string[][] = [];

@@ -8,17 +8,53 @@ const ADVANCE = FONT * 0.6;
 const LINE = FONT * 1.4;
 const GROUP_GAP = FONT * 0.8;
 
+type RowKind = "chords" | "articulation" | "accents";
+
+/** Which header row this is: chord names, P.M./let ring/N.C., or accent marks. */
+export function headerKind(text: string): RowKind {
+  if (/P\.M\.|let ring|N\.C\./.test(text)) return "articulation";
+  if (/^[\s>]*$/.test(text)) return "accents";
+  return "chords";
+}
+
+/** Width of a tab in characters (its longest row): cards share the widest so their text matches. */
+export function tabChars(groups: TabLineGroup[]): number {
+  return Math.max(0, ...groups.flatMap((g) => [...g.header, ...g.strings].map((r) => r.length)));
+}
+
 /**
  * Bar-by-bar tab (lib/fretboard.ts renderTab), 2 bars per line. The tab art is hidden from screen
  * readers, which read `spoken` (chord and note names) instead of rows of dashes.
+ *
+ * In a row of cards, pass the same `chars` (the widest tab in the row) and `alignRows`: every tab then
+ * draws at one scale and keeps a slot for each header row, so chord names and strings line up across
+ * the cards.
  */
-export function TabBlock({ groups, spoken }: { groups: TabLineGroup[]; spoken: string }) {
+export function TabBlock({
+  groups,
+  spoken,
+  chars,
+  alignRows = false,
+  className = "",
+  svgClassName = "",
+}: {
+  groups: TabLineGroup[];
+  spoken: string;
+  chars?: number;
+  alignRows?: boolean;
+  className?: string;
+  /** Extra classes for the drawing (e.g. a max width, so a double-width card keeps the row's scale). */
+  svgClassName?: string;
+}) {
   const rows: { text: string; kind: "chords" | "header" | "string"; y: number }[] = [];
   let y = FONT;
   groups.forEach((g, gi) => {
     if (gi > 0) y += GROUP_GAP;
-    g.header.forEach((text, hi) => {
-      rows.push({ text, kind: hi === 0 && /[A-G]#?5/.test(text) ? "chords" : "header", y });
+    const header = alignRows
+      ? (["chords", "articulation", "accents"] as RowKind[]).map((kind) => g.header.find((h) => headerKind(h) === kind) ?? "")
+      : g.header;
+    header.forEach((text) => {
+      if (text) rows.push({ text, kind: headerKind(text) === "chords" ? "chords" : "header", y });
       y += LINE;
     });
     g.strings.forEach((text) => {
@@ -26,20 +62,19 @@ export function TabBlock({ groups, spoken }: { groups: TabLineGroup[]; spoken: s
       y += LINE;
     });
   });
-  const chars = Math.max(...rows.map((r) => r.text.length));
-  const width = Math.ceil(chars * ADVANCE);
+  const width = Math.ceil(Math.max(chars ?? 0, tabChars(groups)) * ADVANCE);
   const height = Math.ceil(y - LINE + FONT * 0.45);
 
   return (
     // Phones: the tab takes some of the card's padding, so it can be drawn a little larger.
-    <div className="-mx-[8px] rounded-[5px] bg-paper p-[6px] tablet:mx-0 tablet:p-[9px]">
+    <div className={`-mx-[8px] rounded-[5px] bg-paper p-[6px] tablet:mx-0 tablet:p-[9px] desktop:p-[6px] ${className}`}>
       <svg
         aria-hidden="true"
         data-tab
         viewBox={`0 0 ${width} ${height}`}
         width={width}
         height={height}
-        className="block h-auto max-w-full font-mono"
+        className={`block h-auto max-w-full font-mono ${svgClassName}`}
       >
         {rows.map((r, i) => (
           <text
