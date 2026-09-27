@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { ControlCard } from "@/components/ControlCard";
 import { KeyPicker } from "@/components/KeyPicker";
-import { MobileNavRow } from "@/components/Nav";
 import { PageHeader } from "@/components/PageHeader";
 import { ProgressionRow } from "@/components/ProgressionRow";
 import { SegmentedControl } from "@/components/SegmentedControl";
@@ -24,7 +23,6 @@ export default function ChordsPage() {
 
   return (
     <div className="flex flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
-      <MobileNavRow />
       <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" />
 
       <div className="flex flex-col gap-[14px] tablet:gap-[12px] desktop:flex-row desktop:flex-wrap desktop:items-stretch">
