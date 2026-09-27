@@ -31,7 +31,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={active}
             onClick={() => onChange(o.value)}
             className={`flex-1 rounded-[5px] px-[4px] py-[6px] text-center font-mono tablet:px-[14px] ${stretchOnTablet ? "desktop:flex-none" : "tablet:flex-none"} ${
-              active ? "bg-ink text-paper" : "text-text-muted hover:text-text-primary"
+              active ? "bg-ink text-text-on-dark" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <div className={`text-[10px] tablet:text-[11.5px] ${active ? "font-bold" : ""}`}>{o.label}</div>

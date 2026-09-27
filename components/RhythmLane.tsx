@@ -1,6 +1,11 @@
 import { type FeelId, getFeel, rhythmPatterns } from "@/lib/generator";
 
-const TAG_CLASSES = { ink: "bg-ink", muted: "bg-text-muted", brass: "bg-brass" } as const;
+// Dark mode: the muted tag drops to a deeper brown and the brass tag takes dark text, for contrast.
+const TAG_CLASSES = {
+  ink: "bg-ink text-text-on-dark",
+  muted: "bg-text-muted text-text-on-dark dark:bg-ink-mid",
+  brass: "bg-brass text-text-on-dark dark:text-ink",
+} as const;
 
 /** All three strum patterns from rhythm-patterns.json; the one for the active feel is highlighted. */
 export function RhythmLane({ activeFeel, subtitle }: { activeFeel: FeelId; subtitle: string }) {
@@ -23,7 +28,7 @@ export function RhythmLane({ activeFeel, subtitle }: { activeFeel: FeelId; subti
             >
               <div className="flex items-center justify-between gap-[6px]">
                 <div className="font-mono text-[11px] font-bold">{p.name}</div>
-                <div className={`shrink-0 rounded-small px-[6px] py-[2px] font-mono text-[8px] text-paper ${TAG_CLASSES[p.tagColor]}`}>
+                <div className={`shrink-0 rounded-small px-[6px] py-[2px] font-mono text-[8px] ${TAG_CLASSES[p.tagColor]}`}>
                   {getFeel(p.feel).label}
                 </div>
               </div>

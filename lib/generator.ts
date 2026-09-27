@@ -7,8 +7,10 @@ import {
   type NoteName,
   type ResolvedChord,
   type TabString,
+  OPEN_STRING_MIDI,
   TAB_STRINGS,
   leadLickRootFret,
+  pitchClassOf,
   progressions,
   resolveDegrees,
   resolveProgression,
@@ -135,33 +137,75 @@ function chordColumn(rc: ResolvedChord, rootOnly: boolean): TabColumn {
     : { [rootString]: String(rootFret), [fifthString]: String(fifthFret) };
 }
 
-// Solo variations: note order (still root / root+2 only) and spacing (timing). Index 0 = template.
-const LICK_ORDERS: number[][] = [
-  [0, 2, 0, 2],
-  [2, 0, 2, 0],
-  [0, 0, 2, 2],
-  [0, 2, 2, 0],
-  [2, 2, 0, 0],
-  [0, 2, 0, 0],
-];
-const LICK_GAPS: number[][] = [
-  [2, 2, 2, 2],
-  [2, 1, 2, 2],
-  [2, 2, 1, 1],
-  [1, 3, 1, 3],
-];
+// Solo lead licks. Seed 0 = the template (e and B both r, r+2, r, r+2 — "5,7,5,7" in A).
+// Any other seed writes a new phrase from the key's major pentatonic, played in the box around the
+// template's anchor fret (fret r-1 … r+3 on the G, B and e strings), always resolving on the root.
 
-/** Solo lead lick per leadLickFormula: e and B both play r, r+2, r, r+2 (seed 0). */
-export function leadLick(key: NoteName, seed: number): { frets: number[]; gaps: number[] } {
+const MAJOR_PENTATONIC = [0, 2, 4, 7, 9];
+const LEAD_STRINGS: TabString[] = ["G", "B", "e"];
+
+export type LickNote = { string: TabString; fret: number; midi: number };
+
+/** Every major-pentatonic note in the anchor box, lowest pitch first (duplicate pitches dropped). */
+export function pentatonicBox(key: NoteName): LickNote[] {
+  const r = leadLickRootFret(key);
+  const keyPc = pitchClassOf(key);
+  const notes: LickNote[] = [];
+  for (const string of LEAD_STRINGS) {
+    for (let fret = Math.max(0, r - 1); fret <= r + 3; fret++) {
+      const midi = OPEN_STRING_MIDI[string] + fret;
+      if (MAJOR_PENTATONIC.includes((((midi - keyPc) % 12) + 12) % 12)) notes.push({ string, fret, midi });
+    }
+  }
+  notes.sort((a, b) => a.midi - b.midi);
+  return notes.filter((n, i) => i === 0 || n.midi !== notes[i - 1].midi);
+}
+
+export type Lick = {
+  notes: { string: TabString; fret: number }[];
+  gaps: number[];
+  /** Template lick doubles every note on e and B (as in the original mockup). */
+  doubleStop: boolean;
+};
+
+// Melodic motion per step, in box positions: mostly stepwise, some skips, the odd repeated note.
+const LICK_STEPS = [-2, -1, -1, -1, 0, 1, 1, 1, 2];
+
+export function leadLick(key: NoteName, seed: number): Lick {
   const r = leadLickRootFret(key);
   if (seed === 0) {
     const template = getTemplate("solo").leadLickFormula!.pattern.e;
-    return { frets: template.map((t) => (t === "r" ? r : r + 2)), gaps: LICK_GAPS[0] };
+    return {
+      notes: template.map((t) => ({ string: "e" as TabString, fret: t === "r" ? r : r + 2 })),
+      gaps: [2, 2, 2, 2],
+      doubleStop: true,
+    };
   }
   const rng = mulberry32(seed * 104729 + 3);
-  const order = LICK_ORDERS[Math.floor(rng() * LICK_ORDERS.length)];
-  const gaps = LICK_GAPS[Math.floor(rng() * LICK_GAPS.length)];
-  return { frets: order.map((o) => r + o), gaps };
+  const box = pentatonicBox(key);
+  const keyPc = pitchClassOf(key);
+  const length = 6 + Math.floor(rng() * 2);
+  let i = Math.floor(rng() * box.length);
+  const path = [i];
+  let prevStep = 1;
+  for (let n = 1; n < length - 1; n++) {
+    let step = LICK_STEPS[Math.floor(rng() * LICK_STEPS.length)];
+    if (step === 0 && prevStep === 0) step = i < box.length / 2 ? 1 : -1; // no note three times running
+    if (i + step < 0 || i + step >= box.length) step = -step; // bounce off the edges of the box
+    i += step;
+    prevStep = step;
+    path.push(i);
+  }
+  // Resolve to the root nearest the last note.
+  const roots = box.map((note, idx) => ({ idx, pc: (((note.midi - keyPc) % 12) + 12) % 12 })).filter((n) => n.pc === 0);
+  const last = path[path.length - 1];
+  path.push(roots.reduce((best, n) => (Math.abs(n.idx - last) < Math.abs(best.idx - last) ? n : best)).idx);
+
+  return {
+    notes: path.map((idx) => ({ string: box[idx].string, fret: box[idx].fret })),
+    gaps: path.map((_, n) => (n === 0 ? 2 : 1 + Math.floor(rng() * 2))),
+    doubleStop: false,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -191,8 +235,8 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   const feel = t.forceFeel ?? inputs.feel;
 
   if (t.type === "lead-lick") {
-    const { frets, gaps } = leadLick(inputs.key, inputs.seed);
-    const cols = frets.map((f) => ({ e: String(f), B: String(f) }));
+    const { notes, gaps, doubleStop } = leadLick(inputs.key, inputs.seed);
+    const cols = notes.map((n) => (doubleStop ? { e: String(n.fret), B: String(n.fret) } : { [n.string]: String(n.fret) }));
     return { id, label: t.label, tabLines: formatTab(cols, gaps), strum: null, caption: t.caption, feel, chords: [] };
   }
 
