@@ -36,6 +36,10 @@ const palettes = {
     "chip-bg": "#171310",
     "chip-label": "#F6F1E4",
     "chip-tab": "#C9BFA9",
+    // Count In home page: split-flap title board and the pressed-button edge under accent buttons
+    board: "#0F0C0A",
+    "board-cell": "#211B15",
+    "accent-deep": "#8A2415",
   },
   dark: {
     ink: "#0B0908",
@@ -62,6 +66,9 @@ const palettes = {
     "chip-bg": "#0B0908",
     "chip-label": "#F6F1E4",
     "chip-tab": "#C9BFA9",
+    board: "#0F0C0A",
+    "board-cell": "#211B15",
+    "accent-deep": "#A8321F",
   },
 };
 
@@ -119,6 +126,9 @@ module.exports = {
           "on-dark-faint": color("text-on-dark-faint"),
           "on-accent": color("text-on-accent"),
         },
+        board: color("board"),
+        "board-cell": color("board-cell"),
+        "accent-deep": color("accent-deep"),
         chip: {
           bg: color("chip-bg"),
           label: color("chip-label"),
