@@ -42,6 +42,7 @@ Otherwise, prefer making a reasonable call, documenting it (in the PR descriptio
 - `npm run build` — static export build (must pass before any PR)
 - `npm run lint` — lint (must pass before any PR)
 - `npm run verify` — data-layer and music-theory invariants (must pass before any PR)
+- `npm run build:brand` — regenerates the favicons, app icons and share image (Playwright's Chromium)
 - `npm run test:e2e` — Playwright browser tests (Chromium + WebKit, 320–1920px, light + dark); builds and serves `out/` itself. Must pass before any PR. Run one project with e.g. `npx playwright test --project=chromium-390-light`
 
 ## Custom slash command
