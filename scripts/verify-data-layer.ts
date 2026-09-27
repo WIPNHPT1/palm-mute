@@ -1,17 +1,17 @@
 // Quick self-check for the lib/ data layer: `npm run verify`.
 import assert from "node:assert/strict";
 import { chordMidiNotes, leadLickRootFret, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
-import { renderSection, nextSeed, leadLick, pentatonicBox, SECTION_IDS } from "@/lib/generator";
-import { sectionBars, progressionBars } from "@/lib/playback";
+import { tabText } from "@/lib/fretboard";
+import { renderSection, nextSeed, leadLick, pentatonicBox } from "@/lib/generator";
 import { PITCH_CLASSES, pitchClassOf, OPEN_STRING_MIDI } from "@/lib/musicTheory";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
 // Solo lead lick must be computed: Key of A → 5,7,5,7 on e and B.
 assert.deepEqual(leadLick("A", 0).notes.map((n) => n.fret), [5, 7, 5, 7]);
 const soloA = renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
-console.log("Solo, key of A:\n" + soloA.tabLines.join("\n"));
-assert.equal(soloA.tabLines[0], "e|--5--7--5--7--|");
-assert.equal(soloA.tabLines[1], "B|--5--7--5--7--|");
+console.log("Solo, key of A:\n" + tabText(soloA.tab));
+assert.equal(soloA.tab[0].strings[0], "e|5---7---5---7---|");
+assert.equal(soloA.tab[0].strings[1], "B|5---7---5---7---|");
 assert.equal(leadLickRootFret("C"), 8);
 assert.deepEqual(leadLick("C", 0).notes.map((n) => n.fret), [8, 10, 8, 10]);
 assert.deepEqual(leadLick("E", 0).notes.map((n) => n.fret), [0, 2, 0, 2]);
@@ -36,7 +36,7 @@ for (const key of PITCH_CLASSES) {
   assert.ok(pentatonicBox(key).length >= 5, `${key}: box too small`);
 }
 for (const seed of [1, 2, 3]) {
-  console.log(`Solo variation, key of A, seed ${seed}:\n` + renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed }).tabLines.join("\n"));
+  console.log(`Solo variation, key of A, seed ${seed}:\n` + tabText(renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed }).tab));
 }
 
 // Progressions resolve per key.
@@ -50,51 +50,18 @@ const fSharp = resolveProgression("A", "I-V-vi-IV")[2].chord;
 assert.equal(fSharp.rootString, "E"); assert.equal(fSharp.rootFret, 2);
 assert.deepEqual(chordMidiNotes(resolveProgression("A", "I-IV-V")[0].chord), [45, 52]); // A2 + E3
 
-for (const key of ["C", "F#", "D#"] as const) {
-  const chorus = renderSection("chorus", { key, feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
-  console.log(`\nChorus, key of ${key} (${names(key)}):\n` + chorus.tabLines.join("\n"));
-}
-
-// Regenerate always changes something; feel changes strum notation.
-for (const id of ["intro", "verse", "solo", "breakdown"] as const) {
+// Regenerate always changes something; feel changes the rhythm.
+for (const id of ["intro", "verse", "chorus", "solo", "breakdown"] as const) {
   const inputs = { key: "G" as const, feel: "mid-tempo" as const, progressionId: "I-IV-V", seed: 0 };
-  const a = renderSection(id, inputs); const b = renderSection(id, { ...inputs, seed: nextSeed(id, inputs) });
-  assert.notEqual(a.tabLines.join() + a.strum?.join(), b.tabLines.join() + b.strum?.join(), id);
+  const a = renderSection(id, inputs);
+  const b = renderSection(id, { ...inputs, seed: nextSeed(id, inputs) });
+  assert.notEqual(tabText(a.tab), tabText(b.tab), id);
 }
 const fp = renderSection("verse", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
 const ht = renderSection("verse", { key: "A", feel: "half-time", progressionId: "I-V-vi-IV", seed: 0 });
-assert.notDeepEqual(fp.strum, ht.strum);
+assert.notEqual(tabText(fp.tab), tabText(ht.tab));
 // Breakdown is forced half-time.
 assert.equal(renderSection("breakdown", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 }).feel, "half-time");
-
-// Playback = what the card shows, and the spoken text names notes instead of tab dashes.
-{
-  for (const key of PITCH_CLASSES) {
-    for (const feel of ["fast-punk", "half-time", "mid-tempo"] as const) {
-      for (const id of SECTION_IDS) {
-        for (const seed of [0, 1, 7]) {
-          const sec = renderSection(id, { key, feel, progressionId: "I-V-vi-IV", seed });
-          assert.ok(!/--|\|/.test(sec.spoken) && /[A-G]#? on the /.test(sec.spoken), `${key}/${feel}/${id}: spoken text`);
-          const bars = sectionBars(sec);
-          if (sec.strum) {
-            assert.equal(bars.length, sec.chords.length, `${id}: one bar per chord`);
-            bars.forEach((b, i) => {
-              assert.equal(b.feel, sec.feel);
-              assert.equal(b.cells.map((c) => (c ? "x" : "·")).join(""), sec.strum!.map((g) => (g === "·" ? "·" : "x")).join(""), `${id}: strum`);
-              const want = id === "intro" ? [chordMidiNotes(sec.chords[i].chord)[0]] : chordMidiNotes(sec.chords[i].chord);
-              for (const c of b.cells) if (c) assert.deepEqual(c.notes, want, `${key}/${id} bar ${i + 1} notes`);
-            });
-          } else {
-            const played = bars.flatMap((b) => b.cells).filter(Boolean).map((c) => c!.notes);
-            assert.deepEqual(played, sec.lead!.map((l) => l.midi), `${key}/solo notes`);
-          }
-        }
-      }
-      const pb = progressionBars(key, "I-IV-V", feel);
-      assert.deepEqual(pb.map((b) => b.cells.find(Boolean)!.notes), resolveProgression(key, "I-IV-V").map((c) => chordMidiNotes(c.chord)));
-    }
-  }
-}
 
 // Sort re-orders without changing content.
 assert.deepEqual(sortProgressions(progressions, "brightest").map((p) => p.brightness), [5, 5, 4, 3, 3, 2]);

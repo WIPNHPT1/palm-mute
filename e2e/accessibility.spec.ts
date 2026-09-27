@@ -109,10 +109,10 @@ for (const { path, setup } of PAGES) {
     });
 
     test("tabs and chips speak note and chord names, not dashes", async ({ page }) => {
-      const tabs = page.locator("main pre");
+      const tabs = page.locator("main svg[data-tab]");
       for (let i = 0; i < (await tabs.count()); i++) {
         await expect(tabs.nth(i)).toHaveAttribute("aria-hidden", "true");
-        const spoken = (await tabs.nth(i).locator("xpath=following-sibling::*[contains(@class,'sr-only')]").textContent())!;
+        const spoken = (await tabs.nth(i).locator("xpath=following-sibling::p[contains(@class,'sr-only')]").textContent())!;
         expect(spoken).toMatch(/[A-G]#? on the (low E|A|D|G|B|high e) string, (open|\d+(st|nd|rd|th) fret)/);
         expect(spoken).not.toMatch(/--|\|/);
       }

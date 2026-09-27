@@ -40,6 +40,8 @@ let voices: {
   kick: import("tone").MembraneSynth;
   snare: import("tone").NoiseSynth;
   hat: import("tone").MetalSynth;
+  /** Dead strums: a short filtered noise "chk". */
+  dead: import("tone").NoiseSynth;
 } | null = null;
 let sequence: import("tone").Sequence | null = null;
 /** Bumped by every play() and stop(), so a play() still waiting on Tone.js can tell it was cancelled. */
@@ -73,7 +75,13 @@ async function ensureTone(): Promise<ToneModule> {
       octaves: 1.5,
       volume: -30,
     }).connect(master);
-    voices = { guitar, guitarFilter, kick, snare, hat };
+    const deadFilter = new T.Filter(1800, "bandpass").connect(master);
+    const dead = new T.NoiseSynth({
+      noise: { type: "pink" },
+      envelope: { attack: 0.001, decay: 0.03, sustain: 0 },
+      volume: -14,
+    }).connect(deadFilter);
+    voices = { guitar, guitarFilter, kick, snare, hat, dead };
   }
   return tone;
 }
@@ -98,13 +106,16 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
         const bar = req.bars[Math.floor(step / CELLS_PER_BAR)];
         const cell = step % CELLS_PER_BAR;
         const hit = bar.cells[cell];
-        if (hit) {
+        if (hit?.dead) {
+          v.dead.triggerAttackRelease("32n", time, hit.velocity);
+        } else if (hit) {
           // Palm mute: dark and short. Open hits ring for their full length.
           v.guitarFilter.frequency.setValueAtTime(hit.palmMuted ? 900 : 2400, time);
           const eighth = T.Time("8n").toSeconds();
           const length = hit.palmMuted ? T.Time("32n").toSeconds() : eighth * hit.cells;
           v.guitar.triggerAttackRelease(hit.notes.map(midiToFreq), length, time, hit.velocity);
         }
+        if (bar.drumsStopAt !== undefined && cell >= bar.drumsStopAt) return; // full-band stop
         const drums = DRUMS[bar.feel];
         if (drums.kick.includes(cell)) v.kick.triggerAttackRelease("C1", "8n", time);
         if (drums.snare.includes(cell)) v.snare.triggerAttackRelease("16n", time);

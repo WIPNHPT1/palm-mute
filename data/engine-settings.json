@@ -1,0 +1,31 @@
+{
+  "_note": "Power-chord voicing engine settings (docs/power-chord-engine-brief.md §5). Tune the weights here, never in code. Lower cost = better. Owner decisions: fret limit 12 for chords (DECISIONS.md).",
+  "fretLimit": 12,
+  "maxSpan": 3,
+  "maxMove": 5,
+  "rhythmRootStrings": ["E", "A", "D"],
+  "zone": {
+    "_note": "A section's zone runs from `below` frets under its target position to `above` frets over it (a 5-6 fret hand zone).",
+    "below": 1,
+    "above": 4
+  },
+  "chorusLift": 5,
+  "alternatives": {
+    "_note": "Regenerate picks among paths whose cost is within `margin` of the best (seed 0 is always the best path).",
+    "margin": 2.5,
+    "max": 6
+  },
+  "weights": {
+    "positionMove": 1.0,
+    "stringSetChange": 0.5,
+    "commonTone": -0.75,
+    "zone": 2.0,
+    "register": 0.4,
+    "openBonus": -1.0,
+    "dRoot": 2.5,
+    "threeNoteInFastMuted": 1.0,
+    "inverted": 0.5,
+    "notPreferredShape": 0.5,
+    "carryIn": 0.3
+  }
+}

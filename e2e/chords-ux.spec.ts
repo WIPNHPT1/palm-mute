@@ -40,7 +40,8 @@ test.describe("chords UX", () => {
     await expect(page).toHaveURL(/\/generator\/$/);
     await expect(key(page, "C")).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("button", { name: "Use IV-I-V-vi for the Chorus" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("F5: F on the low E string, 1st fret");
+    await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("Chorus, key of C: ");
+    await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("F5, C5, G5, A5.");
   });
 
   test("the Feel control is shared with the Generator and drives playback", async ({ page }) => {

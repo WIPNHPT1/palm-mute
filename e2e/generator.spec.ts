@@ -2,10 +2,9 @@ import { type Page } from "@playwright/test";
 import { expect, lightOnly, onlyAtWidths, openMenu, test } from "./fixtures";
 
 const section = (page: Page, label: string) => page.locator(`section[aria-label="${label}"]`);
-const tab = (page: Page, label: string) => section(page, label).locator("pre");
-const strum = (page: Page, label: string) => section(page, label).locator("[data-strum]");
-/** A section's tab plus its strum line, as one string for before/after comparisons. */
-const sectionText = async (page: Page, label: string) => `${await tab(page, label).textContent()}${await strum(page, label).textContent()}`;
+const tab = (page: Page, label: string) => section(page, label).locator("svg[data-tab]");
+/** A section's whole tab (rhythm and notes), as one string for before/after comparisons. */
+const sectionText = async (page: Page, label: string) => `${await tab(page, label).textContent()}`;
 const panel = (page: Page) => page.getByRole("heading", { name: "POWER CHORDS" }).locator("xpath=../..");
 /** Chord names on the first (Chorus) row of the Power Chords panel (the default progression has 4 chords). */
 async function panelChords(page: Page): Promise<string[]> {
@@ -65,17 +64,17 @@ test.describe("generator", () => {
     await expect(section(page, "Intro").getByRole("button", { name: "Regenerate Intro" })).toBeEnabled();
   });
 
-  test("the feel changes the strum", async ({ page }) => {
-    const fast = await strum(page, "Intro").textContent();
+  test("the feel changes the rhythm", async ({ page }) => {
+    const fast = await sectionText(page, "Intro");
     await feel(page, /HALF-TIME/).click();
-    const half = await strum(page, "Intro").textContent();
+    const half = await sectionText(page, "Intro");
     expect(half).not.toBe(fast);
     await feel(page, /MID-TEMPO/).click();
-    expect(await strum(page, "Intro").textContent()).not.toBe(half);
+    expect(await sectionText(page, "Intro")).not.toBe(half);
     // Breakdown is always half-time.
-    const breakdown = await strum(page, "Breakdown").textContent();
+    const breakdown = await sectionText(page, "Breakdown");
     await feel(page, /FAST PUNK/).click();
-    expect(await strum(page, "Breakdown").textContent()).toBe(breakdown);
+    expect(await sectionText(page, "Breakdown")).toBe(breakdown);
   });
 
   test("the Mid-Tempo stepper runs 120 to 150", async ({ page }) => {

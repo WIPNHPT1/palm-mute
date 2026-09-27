@@ -9,7 +9,8 @@ import { ProgressionPanel } from "@/components/ProgressionPanel";
 import { ProgressionRow } from "@/components/ProgressionRow";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { useGenerator } from "@/context/GeneratorContext";
-import { type SortMode, progressions, resolveProgression, sortProgressions } from "@/lib/musicTheory";
+import { libraryVoicings } from "@/lib/generator";
+import { type SortMode, progressions, sortProgressions } from "@/lib/musicTheory";
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "most-common", label: "MOST COMMON" },
@@ -67,7 +68,7 @@ export default function ChordsPage() {
             key={p.id}
             variant="card"
             progression={p}
-            chords={resolveProgression(state.key, p.id)}
+            chords={libraryVoicings(state.key, p.id)}
             variantIndex={progressions.indexOf(p)}
             // The curated "most common" progression stays pinned as the recommended pick in every sort.
             highlighted={p.tag === "most-common"}
