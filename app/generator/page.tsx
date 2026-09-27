@@ -86,7 +86,7 @@ export default function GeneratorPage() {
           onSelect={setProgression}
           onTogglePlay={(id) => togglePlay(`progression:${id}`)}
         />
-        <RhythmLane activeFeel={state.feel} subtitle={`Strums for ${state.progressionId} in ${keyDisplayName(state.key)}`} />
+        <RhythmLane activeFeel={state.feel} progressionId={state.progressionId} keyName={state.key} />
       </div>
     </div>
   );

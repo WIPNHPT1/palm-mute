@@ -1,4 +1,5 @@
 import { type FeelId, getFeel, rhythmPatterns } from "@/lib/generator";
+import { type NoteName, keyDisplayName } from "@/lib/musicTheory";
 
 // Dark mode: the muted tag drops to a deeper brown. The brass tag takes dark text in both themes, for contrast.
 const TAG_CLASSES = {
@@ -7,13 +8,21 @@ const TAG_CLASSES = {
   brass: "bg-brass text-ink",
 } as const;
 
-/** All three strum patterns from rhythm-patterns.json; the one for the active feel is highlighted. */
-export function RhythmLane({ activeFeel, subtitle }: { activeFeel: FeelId; subtitle: string }) {
+/**
+ * All three strum patterns from rhythm-patterns.json; the one for the active feel is highlighted.
+ * The header mirrors the Power Chords panel beside it (same two lines, same spacing), so both
+ * panels' first cards start level.
+ */
+export function RhythmLane({ activeFeel, progressionId, keyName }: { activeFeel: FeelId; progressionId: string; keyName: NoteName }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-[10px] rounded-outer border border-line bg-surface p-[16px] tablet:px-[20px]">
+    <div className="flex min-w-0 flex-1 flex-col gap-[12px] rounded-outer border border-line bg-surface p-[16px] tablet:px-[20px]">
       <div>
         <h2 className="mb-[4px] font-display text-[12.5px]">RHYTHM LANE</h2>
-        <div className="font-mono text-[12px] text-text-muted">{subtitle}</div>
+        <div className="font-mono text-[12px] text-text-muted">
+          Strums for {progressionId} · Key of {keyDisplayName(keyName)}
+          <span className="hidden tablet:inline"> · E standard</span>
+        </div>
+        <div className="mt-[2px] font-mono text-[12px] text-text-faint">Pick a feel above to switch strums.</div>
       </div>
       <div className="grid flex-grow grid-cols-1 gap-[8px] tablet:grid-cols-3 desktop:grid-cols-1">
         {rhythmPatterns.map((p) => {

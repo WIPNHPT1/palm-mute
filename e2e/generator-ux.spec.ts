@@ -83,7 +83,7 @@ test.describe("generator UX", () => {
     expect(await chorus.locator("svg[data-tab]").textContent()).not.toBe(before);
     await expect(chorus.locator("p.sr-only")).toContainText("Chorus, key of A: ");
     await expect(chorus.locator("p.sr-only")).toContainText("F#5, D5, A5, E5.");
-    await expect(page.getByText("Strums for vi-IV-I-V in A")).toBeVisible();
+    await expect(page.getByText("Strums for vi-IV-I-V · Key of A")).toBeVisible();
     // A locked Chorus keeps its progression and offers the update instead.
     await chorus.getByRole("button", { name: "Lock Chorus" }).click();
     await page.getByRole("button", { name: "Use I-IV-V for the Chorus" }).click();
