@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HamburgerIcon } from "@/components/icons/HamburgerIcon";
 import { applyTheme, currentTheme } from "@/lib/theme";
 
@@ -25,7 +25,7 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
       aria-checked={dark}
       aria-label="Dark mode"
       onClick={onToggle}
-      className="flex items-center gap-[6px] font-mono text-[10.5px] text-text-muted hover:text-text-on-dark-faint"
+      className="flex items-center gap-[6px] self-start font-mono text-[10.5px] text-text-muted hover:text-text-on-dark-faint"
     >
       <span className={`relative block h-[16px] w-[30px] rounded-[8px] transition-colors ${dark ? "bg-accent" : "bg-ink-soft"}`}>
         <span
@@ -37,9 +37,15 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
   );
 }
 
+/**
+ * Top bar: logo + hamburger at every size (owner decision, see DECISIONS.md — the mockups' inline
+ * desktop/tablet links were replaced). The menu drops down under the bar with the page links and
+ * the dark-mode toggle, aligned to the page content's left edge.
+ */
 export function Nav() {
   const pathname = usePathname() ?? "/";
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   // Starts false to match the server render; synced from the class THEME_SCRIPT set before paint.
   const [dark, setDark] = useState(false);
 
@@ -53,49 +59,55 @@ export function Nav() {
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  const links = (className: string) =>
-    LINKS.map((l) => (
-      <Link
-        key={l.href}
-        href={l.href}
-        aria-current={isActive(pathname, l.href) ? "page" : undefined}
-        className={`${className} ${isActive(pathname, l.href) ? "text-accent" : "hover:text-text-on-dark"}`}
-      >
-        {l.label}
-      </Link>
-    ));
+  // Esc closes the menu and returns focus to the hamburger.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   return (
     <header className="bg-ink text-text-on-dark">
       <div className="mx-auto flex h-[64px] max-w-[1440px] items-center justify-between px-[20px] tablet:h-[76px] tablet:px-[32px] desktop:px-[56px]">
-        <div className="flex items-center gap-[28px] desktop:gap-[40px]">
-          <Link href="/" className="font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
-            PALM<span className="text-accent">/</span>MUTE
-          </Link>
-          <nav aria-label="Main" className="hidden gap-[20px] font-mono text-[11px] uppercase tracking-[0.05em] text-text-faint tablet:flex desktop:gap-[26px] desktop:text-[11.5px]">
-            {links("")}
-          </nav>
-        </div>
-        <div className="hidden tablet:block">
-          <DarkToggle dark={dark} onToggle={toggleDark} />
-        </div>
+        <Link href="/" className="font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
+          PALM<span className="text-accent">/</span>MUTE
+        </Link>
         <button
+          ref={menuButton}
           type="button"
-          className="text-text-on-dark tablet:hidden"
+          className="text-text-on-dark hover:text-accent"
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
+          aria-controls="site-menu"
           onClick={() => setMenuOpen((o) => !o)}
         >
           <HamburgerIcon />
         </button>
       </div>
       {menuOpen && (
-        <div id="mobile-menu" className="flex flex-col gap-[14px] border-t border-ink-soft px-[20px] py-[16px] tablet:hidden">
-          <nav aria-label="Mobile" className="flex flex-col gap-[12px] font-mono text-[12px] uppercase tracking-[0.05em] text-text-faint">
-            {links("py-[2px]")}
-          </nav>
-          <DarkToggle dark={dark} onToggle={toggleDark} />
+        <div id="site-menu" className="border-t border-ink-soft">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-[14px] px-[20px] py-[16px] tablet:px-[32px] desktop:px-[56px]">
+            <nav aria-label="Main" className="flex flex-col items-start gap-[12px] font-mono text-[12px] uppercase tracking-[0.05em] text-text-faint">
+              {LINKS.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  aria-current={isActive(pathname, l.href) ? "page" : undefined}
+                  // Also close when picking the page you're already on (pathname doesn't change then).
+                  onClick={() => setMenuOpen(false)}
+                  className={`py-[2px] ${isActive(pathname, l.href) ? "text-accent" : "hover:text-text-on-dark"}`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+            <DarkToggle dark={dark} onToggle={toggleDark} />
+          </div>
         </div>
       )}
     </header>
