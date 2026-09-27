@@ -30,8 +30,7 @@
       "degreeSequence": "USE_SELECTED_PROGRESSION",
       "strumFeel": "open, ringing full chord hits (not palm-muted) — the section that showcases the selected progression from progressions.json",
       "caption": "Open, ringing",
-      "lockedByDefault": false,
-      "highlightInUI": true
+      "lockedByDefault": false
     },
     {
       "id": "solo",

@@ -20,7 +20,8 @@ export function SectionCard({
   locked,
   lockedIn,
   updateTo,
-  highlighted,
+  active,
+  progressionId,
   playing,
   onRegenerate,
   onToggleLock,
@@ -38,8 +39,10 @@ export function SectionCard({
   lockedIn?: string;
   /** Locked sections whose key (or Chorus progression) is out of date: what "Update to …" would give. */
   updateTo?: string;
-  /** Chorus is always the highlighted card (open decision → recommended default). */
-  highlighted: boolean;
+  /** Sounding right now (its own play button, or Play song has reached it): the red border. */
+  active: boolean;
+  /** The Chorus: the Power Chords progression it plays. */
+  progressionId?: string;
   playing: boolean;
   onRegenerate: () => void;
   onToggleLock: () => void;
@@ -53,8 +56,8 @@ export function SectionCard({
   wideOnTablet?: boolean;
   className?: string;
 }) {
-  // Numeral coloring is cosmetic (component-spec §2): accent on the first card and the highlighted one.
-  const accentNumeral = index === 0 || highlighted;
+  // Red means "sounding now", as in the rest of the page (selected progression, active feel).
+  // Locked cards get an ink border instead; everything else stays neutral.
   // Long tabs (an 8-bar solo or melody) show their first 4 bars, like the other cards, until expanded.
   const [expanded, setExpanded] = useState(false);
   const long = section.tab.length > 2;
@@ -65,13 +68,19 @@ export function SectionCard({
     // Every card's tab, caption and play button therefore start on the same lines.
     <section
       aria-label={section.label}
-      className={`row-span-4 grid min-w-0 grid-rows-subgrid gap-y-[9px] rounded-outer bg-surface p-[14px] tablet:p-[12px] ${
-        highlighted ? "border-[1.5px] border-accent shadow-card-highlight" : "border border-line shadow-card"
+      data-active={active}
+      data-locked={locked}
+      className={`row-span-4 grid min-w-0 grid-rows-subgrid gap-y-[9px] rounded-outer bg-surface p-[14px] transition-[border-color,box-shadow] duration-200 tablet:p-[12px] ${
+        active
+          ? "border-[1.5px] border-accent shadow-card-highlight"
+          : locked
+            ? "border-[1.5px] border-ink shadow-card dark:border-text-faint"
+            : "border-[1.5px] border-line shadow-card"
       } ${className}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-[7px]">
-          <div className={`font-mono text-[15px] font-bold ${accentNumeral ? "text-accent" : "text-text-faint"}`}>{String(index + 1).padStart(2, "0")}</div>
+          <div className={`font-mono text-[15px] font-bold ${active ? "text-accent" : "text-text-faint"}`}>{String(index + 1).padStart(2, "0")}</div>
           <h2 className="font-mono text-[12px] uppercase tracking-[0.06em] text-text-muted">{section.label}</h2>
         </div>
         <div className="-mr-[12px] flex items-center">
@@ -110,6 +119,7 @@ export function SectionCard({
       </div>
       <div data-details className="flex items-start justify-between gap-[6px]">
         <div className="min-w-0 font-mono text-[12px] leading-[1.35] text-text-faint">
+          {progressionId && <div className="font-bold text-text-muted">Chords: {progressionId}</div>}
           <div>{section.caption}</div>
           <div data-frets>
             {section.frets[1] === 0 ? "Open strings" : `Frets ${section.frets[0] === 0 ? "open" : section.frets[0]}–${section.frets[1]}`}

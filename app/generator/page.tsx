@@ -10,8 +10,8 @@ import { PowerChordsPanel } from "@/components/PowerChordsPanel";
 import { RhythmLane } from "@/components/RhythmLane";
 import { SectionCard } from "@/components/SectionCard";
 import { tabChars } from "@/components/TabBlock";
-import { type GeneratorState, useGenerator } from "@/context/GeneratorContext";
-import { SECTION_IDS, type SectionId, getTemplate } from "@/lib/generator";
+import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
+import { SECTION_IDS, type SectionId } from "@/lib/generator";
 import { keyDisplayName } from "@/lib/musicTheory";
 
 /** "Locked in A" (plus the progression for the Chorus) and, if the page has moved on, what "Update to …" gives. */
@@ -27,7 +27,7 @@ function lockInfo(state: GeneratorState, id: SectionId): { lockedIn?: string; up
 }
 
 export default function GeneratorPage() {
-  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, clearIntroLead } =
+  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, clearIntroLead, activeSection } =
     useGenerator();
 
   // One tab scale for the chord cards: the widest chord tab showing. Lead tabs (the Solo, an Intro
@@ -59,7 +59,8 @@ export default function GeneratorPage() {
             index={i}
             locked={state.sections[id].locked}
             {...lockInfo(state, id)}
-            highlighted={!!getTemplate(id).highlightInUI}
+            active={activeSection === id}
+            progressionId={id === "chorus" ? inputsFor(state, "chorus").progressionId : undefined}
             playing={state.playing === `section:${id}`}
             onRegenerate={() => regenerateSection(id)}
             onToggleLock={() => toggleLock(id)}

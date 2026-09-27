@@ -3,7 +3,7 @@
 // App state (interaction-spec.md §1–2). Mounted in the root layout so key/feel/locks survive
 // Generator ↔ Chords navigation (interaction-spec §4).
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 import * as audio from "@/lib/audio/engine";
 import {
   type FeelId,
@@ -179,6 +179,8 @@ type GeneratorContextValue = {
   /** Starts the target, or stops it if it's the one playing. */
   togglePlay: (target: PlayTarget) => void;
   stopPlayback: () => void;
+  /** The section sounding right now, if any (a section play, or wherever Play song has reached). */
+  activeSection: SectionId | null;
 };
 
 const GeneratorContext = createContext<GeneratorContextValue | null>(null);
@@ -237,23 +239,39 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   const bpmRef = useRef(bpm);
   bpmRef.current = bpm;
 
+  // The section card that's sounding right now (red border). A section's own play button lights its
+  // card straight away; Play song moves the light card by card with the music.
+  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
+  const renderedRef = useRef(rendered);
+  renderedRef.current = rendered;
+
   const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[], loop = target !== "song") => {
     const token = ++playToken.current;
+    let barSections: SectionId[] = [];
+    if (target === "song") barSections = SECTION_IDS.flatMap((id) => sectionBars(renderedRef.current[id]).map(() => id));
+    setActiveSection(target.startsWith("section:") ? (target.slice(8) as SectionId) : target === "song" ? "intro" : null);
     const ok = await audio.play({
       bars,
       bpm: bpmRef.current,
       loop,
+      onBar: target === "song" ? (i) => token === playToken.current && setActiveSection(barSections[i]) : undefined,
       onEnd: () => {
-        if (token === playToken.current) dispatch({ type: "setPlaying", target: null });
+        if (token !== playToken.current) return;
+        dispatch({ type: "setPlaying", target: null });
+        setActiveSection(null);
       },
     });
     if (token !== playToken.current) return;
-    if (!ok) dispatch({ type: "setPlaying", target: null });
+    if (!ok) {
+      dispatch({ type: "setPlaying", target: null });
+      setActiveSection(null);
+    }
   }, []);
 
   const stopPlayback = useCallback(() => {
     playToken.current++;
     audio.stop();
+    setActiveSection(null);
     dispatch({ type: "setPlaying", target: null });
   }, []);
 
@@ -315,8 +333,9 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       playCustom,
       togglePlay,
       stopPlayback,
+      activeSection,
     }),
-    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom],
+    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom, activeSection],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;

@@ -58,7 +58,6 @@ type SectionTemplate = {
   type?: "lead";
   caption: string;
   lockedByDefault: boolean;
-  highlightInUI?: boolean;
   forceFeel?: FeelId;
 };
 
