@@ -91,6 +91,7 @@ export function checkVoicing(v: Voicing, fretLimit = SETTINGS.fretLimit): string
   if (span(v.notes) > SETTINGS.maxSpan) problems.push(`span ${span(v.notes)} > ${SETTINGS.maxSpan}`);
   const rhythmRoots = SETTINGS.rhythmRootStrings as TabString[];
   if (!v.tags.includes("octaveRiff") && !rhythmRoots.includes(v.rootString)) problems.push(`root on the ${v.rootString} string`);
+  if ((SETTINGS.rareShapes as string[]).includes(v.shapeId)) problems.push(`uses the rare ${v.shapeId} shape`);
   return problems;
 }
 

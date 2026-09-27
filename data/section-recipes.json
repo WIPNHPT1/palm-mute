@@ -74,7 +74,7 @@
       "variants": [
         {
           "name": "Let-ring eighths with pushes",
-          "shapes": ["E3", "A3", "D3", "E2", "A2"],
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
           "rhythms": {
             "fast-punk": { "bars": ["DDDDDDDD"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
             "half-time": { "bars": ["D--D--D-"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
@@ -83,7 +83,7 @@
         },
         {
           "name": "Big hits",
-          "shapes": ["E3", "A3", "D3", "E2", "A2"],
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
           "rhythms": {
             "fast-punk": { "bars": ["D-D-DDDD"], "articulation": ["ring"], "accents": [0, 2], "pushes": [0, 2] },
             "half-time": { "bars": ["D---D-DD"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2] },

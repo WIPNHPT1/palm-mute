@@ -271,7 +271,20 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
       carryFrom: prev ? registerTarget(keyPc, recipes[prev].register) : undefined,
     },
   );
-  const path = paths[Math.floor(inputs.seed / recipe.variants.length) % paths.length];
+  // The Chorus never sits below the Verse (brief §11.4): in high keys, where the lift has little room
+  // under fret 12, keep only takes at or above this seed's Verse register (else the highest take).
+  let pool = paths;
+  if (id === "chorus") {
+    const avg = (vs: Voicing[]) => {
+      const distinct = [...new Map(vs.map((v) => [v.rootPc, v])).values()];
+      return distinct.reduce((a, v) => a + v.position, 0) / distinct.length;
+    };
+    const verse = renderSection("verse", { ...inputs, lead: null });
+    const floor = avg(verse.voicings.map((v) => v.voicing));
+    const high = paths.filter((p) => avg(p.voicings) >= floor - 1e-9);
+    pool = high.length ? high : [paths.reduce((a, b) => (avg(b.voicings) > avg(a.voicings) ? b : a))];
+  }
+  const path = pool[Math.floor(inputs.seed / recipe.variants.length) % pool.length];
 
   const bars: SectionBar[] = chords.map((chord, b) => {
     const articulation = rhythm.articulation[b % rhythm.articulation.length];
