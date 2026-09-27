@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HamburgerIcon } from "@/components/icons/HamburgerIcon";
+import { applyTheme, currentTheme } from "@/lib/theme";
 
 const LINKS = [
   { href: "/", label: "Generator" },
@@ -16,18 +17,20 @@ function isActive(pathname: string, href: string) {
   return norm(pathname) === norm(href);
 }
 
-/** Dark mode is scoped out of v1 (open decision) — the toggle is shown but disabled. */
-function DarkToggle() {
+function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
-      disabled
-      aria-disabled="true"
-      title="Dark mode — coming soon"
-      className="flex cursor-not-allowed items-center gap-[6px] font-mono text-[10.5px] text-text-muted"
+      role="switch"
+      aria-checked={dark}
+      aria-label="Dark mode"
+      onClick={onToggle}
+      className="flex items-center gap-[6px] font-mono text-[10.5px] text-text-muted hover:text-text-on-dark-faint"
     >
-      <span className="relative block h-[16px] w-[30px] rounded-[8px] bg-ink-soft">
-        <span className="absolute left-[2px] top-[2px] block h-[12px] w-[12px] rounded-full bg-paper" />
+      <span className={`relative block h-[16px] w-[30px] rounded-[8px] transition-colors ${dark ? "bg-accent" : "bg-ink-soft"}`}>
+        <span
+          className={`absolute top-[2px] block h-[12px] w-[12px] rounded-full bg-text-on-dark transition-[left] ${dark ? "left-[16px]" : "left-[2px]"}`}
+        />
       </span>
       DARK
     </button>
@@ -37,6 +40,16 @@ function DarkToggle() {
 export function Nav() {
   const pathname = usePathname() ?? "/";
   const [menuOpen, setMenuOpen] = useState(false);
+  // Starts false to match the server render; synced from the class THEME_SCRIPT set before paint.
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => setDark(currentTheme() === "dark"), []);
+
+  const toggleDark = () => {
+    const next = !dark;
+    applyTheme(next ? "dark" : "light");
+    setDark(next);
+  };
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
@@ -64,7 +77,7 @@ export function Nav() {
           </nav>
         </div>
         <div className="hidden tablet:block">
-          <DarkToggle />
+          <DarkToggle dark={dark} onToggle={toggleDark} />
         </div>
         <button
           type="button"
@@ -82,7 +95,7 @@ export function Nav() {
           <nav aria-label="Mobile" className="flex flex-col gap-[12px] font-mono text-[12px] uppercase tracking-[0.05em] text-text-faint">
             {links("py-[2px]")}
           </nav>
-          <DarkToggle />
+          <DarkToggle dark={dark} onToggle={toggleDark} />
         </div>
       )}
     </header>

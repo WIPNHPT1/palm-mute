@@ -56,7 +56,7 @@ export function SectionCard({
             aria-pressed={locked}
             aria-label={locked ? `Unlock ${section.label}` : `Lock ${section.label}`}
             title={locked ? "Unlock" : "Lock"}
-            className={locked ? "text-ink" : "text-text-disabled hover:text-text-muted"}
+            className={locked ? "text-text-primary" : "text-text-disabled hover:text-text-muted"}
           >
             <LockIcon />
           </button>
