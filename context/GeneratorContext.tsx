@@ -18,6 +18,7 @@ import {
   playbackBpm,
   renderSection,
 } from "@/lib/generator";
+import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
 import { type PlaybackBar, progressionBars, sectionBars, songBars } from "@/lib/playback";
 import { type OriginalityStatus, checkOriginality } from "@/lib/originalityCheck";
@@ -30,7 +31,12 @@ type SectionState = {
    * they stay frozen across key/feel changes too (open decision: "frozen once locked").
    */
   frozen: SectionInputs | null;
+  /** A lead part (style and length): always for the Solo; for the Intro once the Chords page sends a melody. */
+  lead: { style: LeadStyle; bars: number } | null;
 };
+
+/** A melody or solo sent from the Chords page ("Use in my song"). */
+export type LeadHandoff = { part: LeadPart; style: LeadStyle; bars: number; seed: number };
 
 export type GeneratorState = {
   key: NoteName;
@@ -44,7 +50,7 @@ export type GeneratorState = {
 };
 
 /** Something with a play button. Progressions and sections loop; the song plays once. */
-export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "song";
+export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "song" | `custom:${string}`;
 
 type Action =
   | { type: "setKey"; key: NoteName }
@@ -55,7 +61,8 @@ type Action =
   | { type: "toggleLock"; id: SectionId }
   | { type: "setProgression"; progressionId: string }
   | { type: "updateLocked"; id: SectionId }
-  | { type: "useInSong"; key: NoteName; progressionId: string }
+  | { type: "useInSong"; key: NoteName; progressionId: string; lead?: LeadHandoff }
+  | { type: "clearIntroLead" }
   | { type: "setPlaying"; target: PlayTarget | null };
 
 const DEFAULTS = { key: "A" as NoteName, feel: "fast-punk" as FeelId, progressionId: "I-V-vi-IV" };
@@ -64,7 +71,8 @@ function initialState(): GeneratorState {
   const sections = {} as Record<SectionId, SectionState>;
   for (const id of SECTION_IDS) {
     const locked = getTemplate(id).lockedByDefault;
-    sections[id] = { locked, seed: 0, frozen: locked ? { ...DEFAULTS, seed: 0 } : null };
+    const lead = id === "solo" ? defaultLeadStyle("solo") : null;
+    sections[id] = { locked, seed: 0, frozen: locked ? { ...DEFAULTS, seed: 0, lead } : null, lead };
   }
   return {
     ...DEFAULTS,
@@ -78,7 +86,7 @@ function initialState(): GeneratorState {
 export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
   const s = state.sections[id];
   if (s.locked && s.frozen) return s.frozen;
-  return { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed };
+  return { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead };
 }
 
 function reducer(state: GeneratorState, action: Action): GeneratorState {
@@ -124,16 +132,29 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       return { ...state, sections: { ...state.sections, [action.id]: { ...s, frozen } } };
     }
     case "useInSong": {
-      // Chords page → Generator: the key, plus the progression as the Chorus. An explicit hand-off, so
-      // a locked Chorus takes it too (and stays locked).
-      const chorus = state.sections.chorus;
-      const frozen = chorus.locked && chorus.frozen ? { ...chorus.frozen, key: action.key, progressionId: action.progressionId } : chorus.frozen;
-      return {
-        ...state,
-        key: action.key,
-        progressionId: action.progressionId,
-        sections: { ...state.sections, chorus: { ...chorus, frozen } },
-      };
+      // Chords page → Generator: the key, the progression as the Chorus, and optionally a melody for the
+      // Intro or a solo for the Solo. An explicit hand-off, so locked sections take it too (and stay locked).
+      const sections = { ...state.sections };
+      const chorus = sections.chorus;
+      if (chorus.locked && chorus.frozen) sections.chorus = { ...chorus, frozen: { ...chorus.frozen, key: action.key, progressionId: action.progressionId } };
+      if (action.lead) {
+        const id = action.lead.part as SectionId;
+        const lead = { style: action.lead.style, bars: action.lead.bars };
+        const s = sections[id];
+        sections[id] = {
+          ...s,
+          lead,
+          seed: action.lead.seed,
+          frozen: s.locked && s.frozen ? { ...s.frozen, key: action.key, progressionId: action.progressionId, seed: action.lead.seed, lead } : s.frozen,
+        };
+      }
+      return { ...state, key: action.key, progressionId: action.progressionId, sections };
+    }
+    case "clearIntroLead": {
+      // "Back to chords": the Intro returns to power chords.
+      const s = state.sections.intro;
+      if (s.locked) return state;
+      return { ...state, sections: { ...state.sections, intro: { ...s, lead: null, seed: 0 } } };
     }
     case "setPlaying":
       return { ...state, playing: action.target };
@@ -151,7 +172,10 @@ type GeneratorContextValue = {
   toggleLock: (id: SectionId) => void;
   setProgression: (progressionId: string) => void;
   updateLocked: (id: SectionId) => void;
-  sendToSong: (key: NoteName, progressionId: string) => void;
+  sendToSong: (key: NoteName, progressionId: string, lead?: LeadHandoff) => void;
+  clearIntroLead: () => void;
+  /** Plays bars the caller built (the Chords page's melody and solo previews). */
+  playCustom: (id: string, bars: PlaybackBar[], loop: boolean) => void;
   /** Starts the target, or stops it if it's the one playing. */
   togglePlay: (target: PlayTarget) => void;
   stopPlayback: () => void;
@@ -195,8 +219,11 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   // --- Audio -----------------------------------------------------------------
   // Playback always renders from what's on screen, so it follows key, feel, progression, regenerate
   // and lock changes: whenever the bars for the playing target change, playback restarts with them.
+  // Custom targets (Chords page previews) keep the bars they were started with.
+  const customBars = useRef<PlaybackBar[]>([]);
   const barsFor = useCallback(
     (target: PlayTarget): PlaybackBar[] => {
+      if (target.startsWith("custom:")) return customBars.current;
       if (target === "song") return songBars(SECTION_IDS.map((id) => rendered[id]));
       if (target.startsWith("section:")) return sectionBars(rendered[target.slice(8) as SectionId]);
       return progressionBars(state.key, target.slice(12), state.feel);
@@ -210,12 +237,12 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   const bpmRef = useRef(bpm);
   bpmRef.current = bpm;
 
-  const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[]) => {
+  const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[], loop = target !== "song") => {
     const token = ++playToken.current;
     const ok = await audio.play({
       bars,
       bpm: bpmRef.current,
-      loop: target !== "song",
+      loop,
       onEnd: () => {
         if (token === playToken.current) dispatch({ type: "setPlaying", target: null });
       },
@@ -237,6 +264,17 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       void start(target, barsFor(target));
     },
     [state.playing, barsFor, start, stopPlayback],
+  );
+
+  const playCustom = useCallback(
+    (id: string, bars: PlaybackBar[], loop: boolean) => {
+      const target = `custom:${id}` as PlayTarget;
+      if (state.playing === target) return stopPlayback();
+      customBars.current = bars;
+      dispatch({ type: "setPlaying", target });
+      void start(target, bars, loop);
+    },
+    [state.playing, start, stopPlayback],
   );
 
   const playing = state.playing;
@@ -272,11 +310,13 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       toggleLock: (id) => dispatch({ type: "toggleLock", id }),
       setProgression: (progressionId) => dispatch({ type: "setProgression", progressionId }),
       updateLocked: (id) => dispatch({ type: "updateLocked", id }),
-      sendToSong: (key, progressionId) => dispatch({ type: "useInSong", key, progressionId }),
+      sendToSong: (key, progressionId, lead) => dispatch({ type: "useInSong", key, progressionId, lead }),
+      clearIntroLead: () => dispatch({ type: "clearIntroLead" }),
+      playCustom,
       togglePlay,
       stopPlayback,
     }),
-    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback],
+    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;

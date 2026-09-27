@@ -1,42 +1,16 @@
 // Quick self-check for the lib/ data layer: `npm run verify`.
 import assert from "node:assert/strict";
-import { chordMidiNotes, leadLickRootFret, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
+import { chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
-import { renderSection, nextSeed, leadLick, pentatonicBox } from "@/lib/generator";
-import { PITCH_CLASSES, pitchClassOf, OPEN_STRING_MIDI } from "@/lib/musicTheory";
+import { renderSection, nextSeed } from "@/lib/generator";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
-// Solo lead lick must be computed: Key of A → 5,7,5,7 on e and B.
-assert.deepEqual(leadLick("A", 0).notes.map((n) => n.fret), [5, 7, 5, 7]);
-const soloA = renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
-console.log("Solo, key of A:\n" + tabText(soloA.tab));
-assert.equal(soloA.tab[0].strings[0], "e|5---7---5---7---|");
-assert.equal(soloA.tab[0].strings[1], "B|5---7---5---7---|");
-assert.equal(leadLickRootFret("C"), 8);
-assert.deepEqual(leadLick("C", 0).notes.map((n) => n.fret), [8, 10, 8, 10]);
-assert.deepEqual(leadLick("E", 0).notes.map((n) => n.fret), [0, 2, 0, 2]);
-
-// Solo note-level variations: in key, in the anchor box, resolve on the root, and actually vary.
-for (const key of PITCH_CLASSES) {
-  const r = leadLickRootFret(key);
-  const phrases = new Set<string>();
-  for (let seed = 1; seed <= 200; seed++) {
-    const lick = leadLick(key, seed);
-    assert.ok(lick.notes.length >= 6 && lick.notes.length <= 7, `${key}/${seed} length`);
-    for (const n of lick.notes) {
-      const pc = (OPEN_STRING_MIDI[n.string] + n.fret - pitchClassOf(key) + 120) % 12;
-      assert.ok([0, 2, 4, 7, 9].includes(pc), `${key}/${seed}: ${n.string}${n.fret} not in major pentatonic`);
-      assert.ok(n.fret >= Math.max(0, r - 1) && n.fret <= r + 3, `${key}/${seed}: fret ${n.fret} outside box`);
-    }
-    const last = lick.notes[lick.notes.length - 1];
-    assert.equal((OPEN_STRING_MIDI[last.string] + last.fret) % 12, pitchClassOf(key), `${key}/${seed} must end on root`);
-    phrases.add(JSON.stringify(lick.notes));
-  }
-  assert.ok(phrases.size > 150, `${key}: only ${phrases.size} distinct phrases in 200 seeds`);
-  assert.ok(pentatonicBox(key).length >= 5, `${key}: box too small`);
-}
-for (const seed of [1, 2, 3]) {
-  console.log(`Solo variation, key of A, seed ${seed}:\n` + tabText(renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed }).tab));
+// The Solo is written by the lead engine now (scripts/verify-melody.ts checks it); the old
+// "5,7,5,7" template lick was retired with it (docs/melody-and-solo-brief.md §9).
+{
+  const solo = renderSection("solo", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
+  assert.ok(solo.lead && solo.lead.inputs.part === "solo" && solo.lead.inputs.bars === 8, "Solo uses the lead engine, 8 bars");
+  console.log("Solo, key of A:\n" + tabText(solo.tab));
 }
 
 // Progressions resolve per key.

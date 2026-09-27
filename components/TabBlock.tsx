@@ -31,7 +31,8 @@ export function TabBlock({ groups, spoken }: { groups: TabLineGroup[]; spoken: s
   const height = Math.ceil(y - LINE + FONT * 0.45);
 
   return (
-    <div className="rounded-[5px] bg-paper p-[9px]">
+    // Phones: the tab takes some of the card's padding, so it can be drawn a little larger.
+    <div className="-mx-[8px] rounded-[5px] bg-paper p-[6px] tablet:mx-0 tablet:p-[9px]">
       <svg
         aria-hidden="true"
         data-tab

@@ -26,7 +26,7 @@ const PANEL_ID = "progression-panel";
 
 export default function ChordsPage() {
   // Key and feel live in the shared context, so they carry over to/from the Generator.
-  const { state, setKey, setFeel, setMidTempoBpm, togglePlay, sendToSong } = useGenerator();
+  const { state, setKey, setFeel, setMidTempoBpm, togglePlay } = useGenerator();
   const [sort, setSort] = useState<SortMode>("most-common");
   const [openId, setOpenId] = useState<string | null>(null);
   const sorted = sortProgressions(progressions, sort);
@@ -59,7 +59,7 @@ export default function ChordsPage() {
       <p className="max-w-[900px] font-mono text-[12px] leading-[1.6] text-text-muted">
         The numerals count up the key&apos;s major scale: <b className="text-text-primary">I</b> is home, <b className="text-text-primary">IV</b> and{" "}
         <b className="text-text-primary">V</b> pull away from it, and <b className="text-text-primary">vi</b> is its sad-sounding minor. Brightest puts
-        I, IV and V first; Darkest leans on vi. Pick a card to hear it or use it in your song.
+        I, IV and V first; Darkest leans on vi. Pick a card to hear it, write an intro melody or a solo over it, and use it in your song.
       </p>
 
       <div className={`grid grid-cols-1 gap-[10px] tablet:gap-[12px] desktop:grid-cols-2 ${open ? "" : "desktop:flex-grow desktop:auto-rows-fr"}`}>
@@ -89,7 +89,6 @@ export default function ChordsPage() {
             keyName={state.key}
             playing={state.playing === `progression:${open.id}`}
             onTogglePlay={() => togglePlay(`progression:${open.id}`)}
-            onUseInSong={() => sendToSong(state.key, open.id)}
             onClose={close}
             className={`${ORDER[2 * openIndex + 1]} ${DESKTOP_ORDER[2 * (openIndex | 1) + 1] ?? "desktop:order-last"}`}
           />

@@ -1,0 +1,131 @@
+{
+  "_note": "Lead rhythm cells per bar (docs/melody-and-solo-brief.md §5.2): 8 eighth-note cells, n = a note starts, - = it's held, . = rest. Every bar starts with a note on beat 1. Endings put the last note on a strong beat (cell 0, 2, 4 or 6), held. Seed 0 takes the first option; regenerate picks others. Intro bars: 4 bars = call1, call2, call1 (the motif answers itself), end; 8 bars = call1, call2 three times, then call1, end.",
+  "intro": {
+    "hook": {
+      "call1": [
+        "nnn-nnn-",
+        "n-nnn-n-",
+        "nn-nn-n-"
+      ],
+      "call2": [
+        "n-nnn-n-",
+        "nnn-n---",
+        "n-n-nnn-"
+      ],
+      "end": [
+        "nnn-n-n-",
+        "n-n-n---",
+        "nn-nn---"
+      ]
+    },
+    "octaves": {
+      "call1": [
+        "n-n-n-n-",
+        "n-nnn-n-",
+        "n--n--n-"
+      ],
+      "call2": [
+        "n---n-n-",
+        "n-n-n---",
+        "n-nnn---"
+      ],
+      "end": [
+        "n-n-n---",
+        "n---n---"
+      ]
+    },
+    "harmony": {
+      "call1": [
+        "n-n-n-n-",
+        "n--n--n-",
+        "n-n-nnn-"
+      ],
+      "call2": [
+        "n-n-n---",
+        "n---n-n-"
+      ],
+      "end": [
+        "n-n-n---",
+        "n---n---"
+      ]
+    }
+  },
+  "solo": {
+    "_stages": "8 bars: low, low, answer, answer, busy, busy, peak, resolve (16 bars: each twice).",
+    "chill": {
+      "low": [
+        "n---n-n-",
+        "n-n-n---",
+        "n---nnn-"
+      ],
+      "answer": [
+        "n-nnn-n-",
+        "nnn-n---",
+        "n-n-n-n-"
+      ],
+      "busy": [
+        "nnn-nnn-",
+        "n-nnnnn-",
+        "nnnnn-n-"
+      ],
+      "peak": [
+        "n-------",
+        "n-----n-"
+      ],
+      "resolve": [
+        "n-n-n---",
+        "nn-nn---"
+      ]
+    },
+    "classic": {
+      "low": [
+        "n-n-nnn-",
+        "n-nnn---",
+        "nnn-n-n-"
+      ],
+      "answer": [
+        "nnn-nnn-",
+        "n-nnn-n-",
+        "nn-nnnn-"
+      ],
+      "busy": [
+        "nnnnnnn-",
+        "nnnnnnnn",
+        "n-nnnnnn"
+      ],
+      "peak": [
+        "n-----n-",
+        "n---n---"
+      ],
+      "resolve": [
+        "nnn-n---",
+        "n-nnn---"
+      ]
+    },
+    "shred": {
+      "low": [
+        "nnn-nnn-",
+        "n-nnnnn-",
+        "nnnnn-n-"
+      ],
+      "answer": [
+        "nnnnnnn-",
+        "nnnnnnnn",
+        "n-nnnnnn"
+      ],
+      "busy": [
+        "nnnnnnnn",
+        "nnnnnnnn",
+        "nnnnnnn-"
+      ],
+      "peak": [
+        "n---nnnn",
+        "n-----nn"
+      ],
+      "resolve": [
+        "nnnnn---",
+        "nnn-n---"
+      ]
+    }
+  }
+}

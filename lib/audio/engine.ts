@@ -2,7 +2,7 @@
 // resolved to the recommended default). One shared Transport drives both the guitar strums and
 // the drum sequencer, so tempo and feel template stay two independent concerns (feels.json).
 import type { FeelId } from "@/lib/generator";
-import { CELLS_PER_BAR, type PlaybackBar } from "@/lib/playback";
+import { CELLS_PER_BAR, type Hit, type PlaybackBar } from "@/lib/playback";
 
 type ToneModule = typeof import("tone");
 
@@ -42,6 +42,9 @@ let voices: {
   hat: import("tone").MetalSynth;
   /** Dead strums: a short filtered noise "chk". */
   dead: import("tone").NoiseSynth;
+  /** Lead guitar: two mono voices (melody + octave/harmony note), so each can bend on its own. */
+  lead: [import("tone").MonoSynth, import("tone").MonoSynth];
+  leadVibrato: import("tone").Vibrato;
 } | null = null;
 let sequence: import("tone").Sequence | null = null;
 /** Bumped by every play() and stop(), so a play() still waiting on Tone.js can tell it was cancelled. */
@@ -81,7 +84,19 @@ async function ensureTone(): Promise<ToneModule> {
       envelope: { attack: 0.001, decay: 0.03, sustain: 0 },
       volume: -14,
     }).connect(deadFilter);
-    voices = { guitar, guitarFilter, kick, snare, hat, dead };
+    // Lead: saw → vibrato → distortion → filter, louder than the rhythm part, on its own gain.
+    const leadGain = new T.Gain(1.4).connect(master);
+    const leadFilter = new T.Filter(3200, "lowpass").connect(leadGain);
+    const leadDrive = new T.Distortion(0.5).connect(leadFilter);
+    const leadVibrato = new T.Vibrato(5.5, 0).connect(leadDrive);
+    const mono = () =>
+      new T.MonoSynth({
+        oscillator: { type: "sawtooth" },
+        envelope: { attack: 0.005, decay: 0.15, sustain: 0.6, release: 0.12 },
+        filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.8, baseFrequency: 900, octaves: 2.5 },
+        volume: -14,
+      }).connect(leadVibrato);
+    voices = { guitar, guitarFilter, kick, snare, hat, dead, lead: [mono(), mono()], leadVibrato };
   }
   return tone;
 }
@@ -115,6 +130,9 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
           const length = hit.palmMuted ? T.Time("32n").toSeconds() : eighth * hit.cells;
           v.guitar.triggerAttackRelease(hit.notes.map(midiToFreq), length, time, hit.velocity);
         }
+        const note = bar.lead?.[cell];
+        if (note) playLead(T, note, time);
+        if (bar.drums === false) return; // lead only
         if (bar.drumsStopAt !== undefined && cell >= bar.drumsStopAt) return; // full-band stop
         const drums = DRUMS[bar.feel];
         if (drums.kick.includes(cell)) v.kick.triggerAttackRelease("C1", "8n", time);
@@ -138,6 +156,28 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
   }
 }
 
+/**
+ * One lead note: bends start at the source pitch and glide up over about an eighth; slides glide in
+ * from the previous note; hammer-ons and pull-offs re-trigger softly (no pick attack); vibrato wobbles
+ * long notes.
+ */
+function playLead(T: ToneModule, hit: Hit, time: number) {
+  const v = voices!;
+  const eighth = T.Time("8n").toSeconds();
+  const length = eighth * hit.cells;
+  const ex = hit.expression ?? {};
+  const freq = (m: number) => T.Frequency(m, "midi").toFrequency();
+  v.leadVibrato.depth.setValueAtTime(ex.vibrato ? 0.12 : 0, time + (ex.vibrato ? Math.min(length * 0.35, eighth) : 0));
+  hit.notes.forEach((midi, k) => {
+    const synth = v.lead[k];
+    if (!synth) return;
+    const velocity = ex.legato ? hit.velocity * 0.6 : hit.velocity;
+    const start = k === 0 && ex.bendFrom !== undefined ? ex.bendFrom : k === 0 && ex.slideFrom !== undefined ? ex.slideFrom : midi;
+    synth.triggerAttackRelease(freq(start), length * 0.95, time, velocity);
+    if (start !== midi) synth.frequency.linearRampToValueAtTime(freq(midi), time + (ex.bendFrom !== undefined ? eighth : eighth * 0.35));
+  });
+}
+
 /** Live tempo change without restarting (Mid-Tempo stepper). */
 export function setBpm(bpm: number) {
   if (tone) tone.getTransport().bpm.value = bpm;
@@ -151,6 +191,7 @@ function stopInternal(T: ToneModule) {
   sequence?.dispose();
   sequence = null;
   voices?.guitar.releaseAll();
+  voices?.lead.forEach((l) => l.triggerRelease());
 }
 
 export function stop() {

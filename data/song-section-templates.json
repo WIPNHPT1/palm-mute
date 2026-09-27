@@ -7,7 +7,7 @@
       "bars": 4,
       "muted": true,
       "degreeSequence": ["I", "I", "IV", "IV"],
-      "strumFeel": "eighth-note palm-muted downstrokes, root note only (no full chord) per hit",
+      "strumFeel": "power chords per data/section-recipes.json; the Chords page can replace it with an intro melody (lib/melody.ts)",
       "caption": "4 bars · palm-muted",
       "lockedByDefault": false
     },
@@ -36,20 +36,12 @@
     {
       "id": "solo",
       "label": "Solo",
-      "bars": 2,
+      "bars": 8,
       "muted": false,
-      "type": "lead-lick",
-      "caption": "Pentatonic, 2 bars",
+      "type": "lead",
+      "caption": "Lead solo",
       "lockedByDefault": false,
-      "leadLickFormula": {
-        "description": "Simplified 2-note-per-string lick on the top two strings (e, B), anchored to the key root's fret position on the low-E string (independent of which string the rhythm chords actually use).",
-        "rootFretOnLowE": "(rootPitchClass - 4 + 12) mod 12",
-        "pattern": {
-          "e": ["r", "r+2", "r", "r+2"],
-          "B": ["r", "r+2", "r", "r+2"]
-        },
-        "wormedExample": "Key of A → r=5 → e: 5,7,5,7 / B: 5,7,5,7 (matches the original mockup exactly)"
-      }
+      "note": "Written by the lead engine (lib/melody.ts, data/lead-rules.json): 8 bars, Classic by default; the Chords page can send a different solo (style, length, take)."
     },
     {
       "id": "breakdown",

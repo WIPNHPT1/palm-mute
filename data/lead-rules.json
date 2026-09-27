@@ -1,0 +1,70 @@
+{
+  "_note": "Lead engine rules (docs/melody-and-solo-brief.md §3, §5). Weights are costs: lower is better. Hard rules (scale, leaps, endings, fret limits, bends) are enforced in lib/melody.ts and proved by npm run verify. Owner decisions: intro fret limit 12, solo 15 (DECISIONS.md).",
+  "fretLimits": { "intro": 12, "solo": 15 },
+  "leadStrings": ["D", "G", "B", "e"],
+  "octaveStrings": ["E", "A", "D", "G"],
+  "scales": {
+    "majorPentatonic": [0, 2, 4, 7, 9],
+    "major": [0, 2, 4, 5, 7, 9, 11]
+  },
+  "_chordTones": "Intervals from the key root. I, IV and V take the major third; ii, iii and vi the minor third (brief §3).",
+  "chordTones": {
+    "I": [0, 4, 7],
+    "ii": [2, 5, 9],
+    "iii": [4, 7, 11],
+    "IV": [5, 9, 0],
+    "V": [7, 11, 2],
+    "vi": [9, 0, 4],
+    "vii": [11, 2, 5]
+  },
+  "strongCells": [0, 2, 4, 6],
+  "minStrongChordRatio": 0.75,
+  "leap": { "maxSemitones": 7, "recoverFrom": 5, "stepMaxSemitones": 3 },
+  "weights": {
+    "nonChordOnStrong": 3.0,
+    "nonChordOnStrongDoubled": 6.0,
+    "thirdOnStrong": -0.4,
+    "repeat": 0.9,
+    "returnToPrevious": 0.8,
+    "threeInARow": 1.5,
+    "step": 0.0,
+    "skip": 0.7,
+    "leap": 1.6,
+    "arc": 0.18,
+    "motifIntro": 0.9,
+    "motifSolo": 0.3,
+    "motifDirection": 2.5,
+    "fourthOnStrongOverI": 2.0,
+    "tremoloRepeat": -0.6,
+    "boxMove": 0.35,
+    "noise": 0.7
+  },
+  "_arcs": "Register target per bar, in semitones from the key root (the root near the middle of the neck). 16-bar solos stretch the 8-bar arc.",
+  "arcs": {
+    "intro": [0, 2, 0, -1, 0, 3, 1, 0],
+    "solo": [-7, -5, -2, 0, 3, 5, 9, 2],
+    "octaves": [-12, -10, -12, -13, -12, -9, -11, -12]
+  },
+  "styles": {
+    "intro": {
+      "hook": { "label": "Hook", "doubling": null },
+      "octaves": { "label": "Octaves", "doubling": "octave" },
+      "harmony": { "label": "Harmony", "doubling": "third" }
+    },
+    "solo": {
+      "chill": { "label": "Chill", "legato": false, "bends": ["peak"], "slides": true },
+      "classic": { "label": "Classic", "legato": true, "bends": ["peak", "answer"], "slides": true },
+      "shred": { "label": "Shred", "legato": true, "bends": ["peak", "answer", "busy"], "slides": true, "tremolo": true }
+    }
+  },
+  "lengths": { "intro": [4, 8], "solo": [8, 16] },
+  "defaults": { "intro": { "style": "hook", "bars": 4 }, "solo": { "style": "classic", "bars": 8 } },
+  "techniques": {
+    "_note": "Bends only from a scale note to a scale note, a whole step (or half step) up, on a held strong-beat note on the G, B or e string. Hammer-ons and pull-offs join two notes on one string 1-3 frets apart, the second on a weak beat. Slides join the last note of a phrase to the first of the next when the hand shifts along one string. Vibrato on solo notes held a quarter note or longer.",
+    "bendStrings": ["G", "B", "e"],
+    "bendSteps": [2, 1],
+    "legatoMaxFrets": 3,
+    "slideMaxFrets": 7,
+    "vibratoMinCells": 2
+  }
+}

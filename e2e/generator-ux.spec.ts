@@ -61,14 +61,15 @@ test.describe("generator UX", () => {
     expect(pb.bpm).toBe(140);
     const tabs: Record<string, ReturnType<typeof parseTab>> = {};
     for (const label of ["Intro", "Verse", "Chorus", "Solo", "Breakdown"]) tabs[label] = parseTab(await tabRows(page, label));
-    // Intro 4 + Verse 4 × 2 + Chorus 4 + Solo 1 (the template lick) + Breakdown 4.
+    // Intro 4 + Verse 4 × 2 + Chorus 4 + Solo 8 (the lead engine; its line is compared) + Breakdown 4.
     const expected = [...tabs.Intro, ...tabs.Verse, ...tabs.Verse, ...tabs.Chorus, ...tabs.Solo, ...tabs.Breakdown];
     expect(playedCells(pb)).toEqual(expected);
     expect(pb.bars.slice(0, 4).every((b) => b.feel === "mid-tempo")).toBe(true);
     // The Verse is locked (by default), so it keeps the feel it was locked in, exactly as its card shows.
     expect(pb.bars.slice(4, 12).every((b) => b.feel === "fast-punk")).toBe(true);
     expect(pb.bars.slice(12, 16).every((b) => b.feel === "mid-tempo")).toBe(true);
-    expect(pb.bars.slice(17).every((b) => b.feel === "half-time")).toBe(true); // Breakdown is always half-time
+    expect(pb.bars.slice(24).every((b) => b.feel === "half-time")).toBe(true); // Breakdown is always half-time
+    expect(pb.bars.slice(16, 24).every((b) => b.lead && b.cells.some(Boolean))).toBe(true); // the solo plays over its chords
     await page.getByRole("button", { name: "STOP SONG" }).click();
     await expect(page.getByRole("button", { name: "PLAY SONG" })).toHaveAttribute("aria-pressed", "false");
   });
