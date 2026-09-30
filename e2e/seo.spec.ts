@@ -1,6 +1,6 @@
 import { ROUTES, expect, lightOnly, onlyAtWidths, test } from "./fixtures";
 
-const SITE = "https://palmmute.netlify.app";
+const SITE = "https://palmmute.ai";
 /** Share and canonical URLs point at the live site; check the same path on the test server. */
 const local = (url: string) => url.replace(SITE, "").replace(/\?.*$/, "");
 

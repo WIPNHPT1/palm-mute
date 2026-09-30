@@ -6,7 +6,7 @@
 
 ## 1. Context: the project today
 
-- **What it is:** Palm/Mute is a pop-punk songwriting web app: pick a key and a feel, and it writes a song (Intro, Verse, Chorus, Solo, Breakdown) as power-chord tabs in E standard. It's live at https://palmmute.netlify.app.
+- **What it is:** Palm/Mute is a pop-punk songwriting web app: pick a key and a feel, and it writes a song (Intro, Verse, Chorus, Solo, Breakdown) as power-chord tabs in E standard. It's live at https://palmmute.ai.
 - **Stack:** Next.js 15 static export, React 18, Tailwind 3 (tokens in `tailwind.config.js`), Tone.js for synthesized audio, deployed on Netlify.
 - **Rules:** read `CLAUDE.md` first. Feature branch plus PR only, never merge your own PR, no force-push, lint and build must pass, and `data/*.json` is the single source of truth for musical content. `DECISIONS.md` records owner decisions; add to it.
 - **Pages:** `/` is the **Count In** home page, `/generator/` is the song generator, `/chords/` is the chord library.

@@ -82,7 +82,7 @@ function shareHtml(): string {
   <div class="tag">Power-chord songs, intro melodies and solos, in any key.</div>
 </div>
 <div class="tab">${tab.map((l, i) => (i === 0 ? `<span class="chord">${esc(l)}</span>` : i < 3 ? `<span class="muted">${esc(l)}</span>` : esc(l))).join("\n")}</div>
-<div class="foot"><span>E STANDARD · 12 KEYS · REAL TABS</span><span>palmmute.netlify.app</span></div>
+<div class="foot"><span>E STANDARD · 12 KEYS · REAL TABS</span><span>palmmute.ai</span></div>
 <div class="bar"></div>
 </body></html>`;
 }

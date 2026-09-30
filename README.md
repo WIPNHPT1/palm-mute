@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://palmmute.netlify.app"><img src="docs/readme/hero.png" alt="PALM/MUTE: a pop-punk songwriting engine. A real power-chord tab from the engine, with a playhead sweeping across it." width="100%"></a>
+  <a href="https://palmmute.ai"><img src="docs/readme/hero.png" alt="PALM/MUTE: a pop-punk songwriting engine. A real power-chord tab from the engine, with a playhead sweeping across it." width="100%"></a>
 </p>
 
 <p align="center">
-  <a href="https://palmmute.netlify.app"><img alt="Live site" src="https://img.shields.io/website?url=https%3A%2F%2Fpalmmute.netlify.app&label=palmmute.netlify.app&up_message=live&down_message=down&style=flat-square"></a>
+  <a href="https://palmmute.ai"><img alt="Live site" src="https://img.shields.io/website?url=https%3A%2F%2Fpalmmute.ai&label=palmmute.ai&up_message=live&down_message=down&style=flat-square"></a>
   <a href="https://github.com/WIPNHPT1/palm-mute/actions/workflows/build-check.yml"><img alt="Build check" src="https://img.shields.io/github/actions/workflow/status/WIPNHPT1/palm-mute/build-check.yml?branch=main&label=build%20%2B%20750%2B%20browser%20tests&style=flat-square"></a>
   <img alt="Combinations proven per build" src="https://img.shields.io/badge/combinations%20proven-222%2C000-C23A26?style=flat-square">
   <img alt="Wrong notes" src="https://img.shields.io/badge/wrong%20notes-0-3F8F4F?style=flat-square">
@@ -13,7 +13,7 @@
 
 <h3 align="center">The only pop-punk song generator we know of that proves every tab it writes.</h3>
 <p align="center">222,000 combinations checked on every build. Zero wrong notes allowed.<br>
-<a href="https://palmmute.netlify.app"><b>▶ Write a song now</b></a> · <a href="docs/HOW-IT-WORKS.md">How it works</a> · <a href="DECISIONS.md">Design decisions</a></p>
+<a href="https://palmmute.ai"><b>▶ Write a song now</b></a> · <a href="docs/HOW-IT-WORKS.md">How it works</a> · <a href="DECISIONS.md">Design decisions</a></p>
 
 ---
 

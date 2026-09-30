@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-// The live site (Netlify). Canonical URLs, the sitemap and share images resolve against it.
-export const SITE_URL = "https://palmmute.netlify.app";
+// The live site (palmmute.ai, hosted on Netlify). Canonical URLs, the sitemap and share images resolve against it.
+export const SITE_URL = "https://palmmute.ai";
 export const SITE_NAME = "Palm/Mute";
 
 /**
