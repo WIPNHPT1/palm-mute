@@ -1,5 +1,5 @@
 import { type Page } from "@playwright/test";
-import { expect, gotoAndSettle, lightOnly, test } from "./fixtures";
+import { expect, gotoAndSettle, lightOnly, onlyAtWidths, projectTheme, test } from "./fixtures";
 
 /** Right edge of each visible headline line vs the column it sits in (px; > 0 means it overflows). */
 async function headlineOverflow(page: Page): Promise<number[]> {
@@ -77,4 +77,29 @@ test.describe("count in", () => {
     }
     expect(new Set(seen).size).toBe(90);
   });
+});
+
+test("the LIVE dot is green (the success token) in light and dark; its label stays red", async ({ page }, info) => {
+  onlyAtWidths(info, [390, 1440]);
+  await page.goto("/");
+  const colors = await page.locator(".ci-live").evaluate((live) => {
+    const probe = (cls: string, prop: "backgroundColor" | "color") => {
+      const el = document.createElement("span");
+      el.className = cls;
+      live.append(el);
+      const c = getComputedStyle(el)[prop];
+      el.remove();
+      return c;
+    };
+    return {
+      dot: getComputedStyle(live.querySelector("i")!).backgroundColor,
+      label: getComputedStyle(live).color,
+      success: probe("bg-success", "backgroundColor"),
+      accent: probe("text-accent", "color"),
+    };
+  });
+  expect(colors.dot).toBe(colors.success);
+  expect(colors.label).toBe(colors.accent);
+  // light #3F8F4F, dark #52A862
+  expect(colors.dot).toBe(projectTheme(info) === "dark" ? "rgb(82, 168, 98)" : "rgb(63, 143, 79)");
 });

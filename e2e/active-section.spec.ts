@@ -31,7 +31,9 @@ test.describe("active section", () => {
     await expect(page.locator("section[data-locked='true']")).toHaveCount(0);
     await card(page, "Verse").getByRole("button", { name: "Lock Verse" }).click();
     await expect(card(page, "Verse")).toHaveAttribute("data-locked", "true");
-    expect(await borderColor(page, "Verse")).not.toBe(await borderColor(page, "Intro"));
+    // (after the border's 0.2s colour transition)
+    const plain = await borderColor(page, "Intro");
+    await expect.poll(() => borderColor(page, "Verse")).not.toBe(plain);
     // The Chorus says which progression it plays (the red row in Power Chords).
     await expect(card(page, "Chorus")).toContainText("Chords: I-V-vi-IV");
     await page.getByRole("button", { name: "Use vi-IV-I-V for the Chorus" }).click();

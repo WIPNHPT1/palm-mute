@@ -72,7 +72,8 @@
 .ci-stage-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .16em; color: var(--t-muted); margin-bottom: clamp(20px, 3vw, 36px); }
 .ci-live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); }
-.ci-live i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; animation: ci-blink 1s steps(2) infinite; }
+/* the dot is green (success token: tuned for light and dark), the label stays red */
+.ci-live i { width: 9px; height: 9px; border-radius: 50%; background: var(--success); animation: ci-blink 1s steps(2) infinite; }
 @keyframes ci-blink { 50% { opacity: .2; } }
 
 /* Headline: font size is fitted (useFitHeadline) to the widest line plus its indent, so no word runs past the
