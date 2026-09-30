@@ -203,7 +203,12 @@ async function main() {
   try {
     const shot = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     for (const theme of ["light", "dark"] as const) {
-      await screenshot(shot, "/generator/", "generator", theme);
+      // The song itself (the page opens on song 0, so the shot is the same every run): header, running order, cards.
+      await screenshot(shot, "/generator/", "generator", theme, async (p) => {
+        await p.locator("[data-song-header]").scrollIntoViewIfNeeded();
+        await p.evaluate(() => document.querySelector("[data-song-header]")!.scrollIntoView({ block: "start" }));
+        await p.evaluate(() => window.scrollBy(0, -110));
+      });
       await screenshot(shot, "/chords/", "chords", theme, async (p) => {
         await p.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name: "G", exact: true }).click();
         await p.locator('[data-progression="I-V-vi-IV"] > button').click();

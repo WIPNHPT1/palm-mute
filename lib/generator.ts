@@ -22,7 +22,6 @@ import {
   type ResolvedChord,
   noteNameFor,
   pitchClassOf,
-  progressions,
   resolveDegrees,
   resolveProgression,
 } from "@/lib/musicTheory";
@@ -666,12 +665,6 @@ export function nextSeed(id: SectionId, inputs: SectionInputs): number {
     if (signature(renderSection(id, { ...inputs, seed })) !== current) return seed;
   }
   return seed;
-}
-
-/** Chorus regeneration swaps to a different one of the 10 progressions. */
-export function nextProgressionId(current: string, rng: () => number = Math.random): string {
-  const others = progressions.filter((p) => p.id !== current);
-  return others[Math.floor(rng() * others.length)].id;
 }
 
 // ---------------------------------------------------------------------------

@@ -43,7 +43,7 @@ export function SectionCard({
   updateTo?: string;
   /** Sounding right now (its own play button, or Play song has reached it): the red border. */
   active: boolean;
-  /** The Chorus: the Power Chords progression it plays. */
+  /** The Chorus: the progression it plays (the Chords step's pick). */
   progressionId?: string;
   /** What the section plays in the song's plan (e.g. "The progression's own chords, sparser"). */
   plan?: string;

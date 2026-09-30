@@ -5,11 +5,9 @@ const section = (page: Page, label: string) => page.locator(`section[aria-label=
 const tab = (page: Page, label: string) => section(page, label).locator("svg[data-tab]");
 /** A section's whole tab (rhythm and notes), as one string for before/after comparisons. */
 const sectionText = async (page: Page, label: string) => `${await tab(page, label).textContent()}`;
-const panel = (page: Page) => page.getByRole("heading", { name: "POWER CHORDS" }).locator("xpath=../..");
-/** Chord names on the first (Chorus) row of the Power Chords panel (the default progression has 4 chords). */
+/** Chord names on the song's progression in the setup's Chords step (the default progression has 4 chords). */
 async function panelChords(page: Page): Promise<string[]> {
-  const labels = await panel(page).locator("[data-chip] > div:nth-child(2)").allTextContents();
-  return labels.slice(0, 4);
+  return page.locator('[data-control="Chords"] [data-progression="I-V-vi-IV"] [data-chip] > div:nth-child(2)').allTextContents();
 }
 const key = (page: Page, name: string) => page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name, exact: true });
 const feel = (page: Page, name: RegExp) => page.getByRole("radiogroup", { name: "Feel" }).getByRole("radio", { name });
@@ -57,7 +55,7 @@ test.describe("generator", () => {
     await expect(section(page, "Intro").getByRole("button", { name: "Intro is locked" })).toBeDisabled();
     const verse = await tab(page, "Verse").textContent();
     const solo = await tab(page, "Solo").textContent();
-    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "GENERATE", exact: true }).click();
+    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "BUILD AGAIN", exact: true }).click();
     expect(await sectionText(page, "Intro")).toBe(intro1);
     expect(await tab(page, "Verse").textContent()).toBe(verse);
     expect(await tab(page, "Solo").textContent()).not.toBe(solo);

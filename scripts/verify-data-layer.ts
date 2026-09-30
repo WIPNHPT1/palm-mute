@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
 import { FEEL_IDS, SECTION_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns, sectionTemplates } from "@/lib/generator";
-import { DEFAULT_FORM, FORM_IDS, formSlots, sectionDegrees } from "@/lib/songPlan";
+import { DEFAULT_FORM, FORM_IDS, formSlots, formSpec, sectionDegrees } from "@/lib/songPlan";
+import { LENGTH, barSeconds, formatLength, planSong } from "@/lib/songLength";
+import formsJson from "@/data/song-forms.json";
 import { progressionBars } from "@/lib/playback";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
@@ -124,6 +126,33 @@ for (const form of FORM_IDS) {
   assert.equal(new Set(slots.map((s) => s.name)).size, slots.length, `${form}: part names repeat`);
 }
 assert.equal(DEFAULT_FORM, "standard", "Standard is the default form (DECISIONS.md)");
+
+// Song length (docs/song-builder-prd.md B2–B3): for every tempo the feels can play and every Length step,
+// the plan lands within the tolerance of the target, unless even the shortest form at its minimum is
+// longer (a 16-bar solo in a 2:30 ballad). Every part plays within its range; Standard is the default length's form.
+{
+  const material: Record<string, number> = { intro: 4, verse: 8, prechorus: 4, chorus: 4, breakdown: 4, ending: 1 };
+  const tempos = [80, 120, 130, 140, 150, 180];
+  let plans = 0, worst = 0;
+  for (const bpm of tempos)
+    for (let t = LENGTH.min; t <= LENGTH.max; t += LENGTH.step)
+      for (const solo of [8, 16]) {
+        const bars = (id: string) => (id === "solo" ? solo : material[id]);
+        const plan = planSong(t, bpm, bars);
+        const target = t / barSeconds(bpm);
+        const miss = Math.abs(plan.bars - target);
+        const shortest = Math.min(...FORM_IDS.map((f) => formSpec(f).reduce((a, s) => a + s.min * bars(s.section), 0)));
+        assert.ok(miss <= formsJson.toleranceBars || (plan.bars === shortest && plan.bars > target), `${bpm} BPM, ${formatLength(t)}, ${solo}-bar solo: ${plan.bars} bars misses ${target.toFixed(1)} by ${miss.toFixed(1)}`);
+        if (plan.bars !== shortest) worst = Math.max(worst, miss);
+        const spec = formSpec(plan.form);
+        plan.slots.forEach((s, i) => assert.ok(s.times >= spec[i].min && s.times <= spec[i].max, `${plan.form} ${s.name}: ${s.times} outside ${spec[i].min}–${spec[i].max}`));
+        assert.equal(plan.bars, plan.slots.reduce((a, s) => a + s.times * bars(s.section), 0), "plan bars");
+        assert.deepEqual(planSong(t, bpm, bars), plan, "the plan is deterministic");
+        plans++;
+      }
+  assert.equal(planSong(LENGTH.default, 180, (id) => (id === "solo" ? 8 : material[id])).form, "standard", "the default length is a Standard song");
+  console.log(`Song length: ${plans} plans (${tempos.length} tempos × ${(LENGTH.max - LENGTH.min) / LENGTH.step + 1} lengths × 8/16-bar solos) within ${formsJson.toleranceBars} bars; worst miss ${worst.toFixed(1)} bars.`);
+}
 
 // Song Engine v2 Phase 4 grooves (DECISIONS.md): at least 6 per section role in every feel (the Breakdown is
 // always half-time; Intro riffs count for the Intro); every groove's drums and stops sit inside its bars.

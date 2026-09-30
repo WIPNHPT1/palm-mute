@@ -9,7 +9,7 @@ import type { Voicing } from "@/lib/voicings";
 /**
  * A progression: waveform glyph, roman-numeral name, chord chips and a play toggle.
  * Horizontal row from tablet up; a vertical mini-card on mobile.
- * `variant="panel"` is the Generator's Power Chords row (click to build the song on it),
+ * `variant="panel"` is a row in the Generator's Chords step (click to build the song on it),
  * `"card"` the Chords page card (click to open its panel).
  *
  * The whole row is one button (stretched under the content), and the play button sits on top of it.

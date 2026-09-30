@@ -124,7 +124,7 @@ test.describe("intro melody and lead solo", () => {
     // Lock it: Generate and a key change leave it alone.
     await solo.getByRole("button", { name: "Lock Solo" }).click();
     const locked = await solo.locator("svg[data-tab]").textContent();
-    await page.getByRole("button", { name: "GENERATE", exact: true }).click();
+    await page.getByRole("button", { name: "BUILD AGAIN", exact: true }).click();
     await key(page, "C").click();
     expect(await solo.locator("svg[data-tab]").textContent()).toBe(locked);
     await expect(solo).toContainText("Locked in G");

@@ -21,7 +21,7 @@ import {
 } from "@/lib/generator";
 import { PITCH_CLASSES, type NoteName, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
 import { sectionBars, songBarParts, songBars } from "@/lib/playback";
-import { FORM_IDS, formSlots, sectionDegrees, timesFor } from "@/lib/songPlan";
+import { FORM_IDS, formSlots, sectionDegrees } from "@/lib/songPlan";
 import { SETTINGS, type Voicing, checkVoicing } from "@/lib/voicings";
 import { type MuteSource, PLAYABILITY, downRunCap, labelPitchClasses, longestDownRun, mutePlan, pitchClassesOf } from "@/lib/playability";
 import { fastestChange, riffFastest } from "@/lib/generator";
@@ -311,7 +311,7 @@ for (const key of PITCH_CLASSES) {
         // R7 forms: every form renders; Play song plays each part's material (× its repeats), in order.
         if (seed === 0)
           for (const form of FORM_IDS) {
-            const parts = formSlots(form).map((slot) => ({ section: slot.variation === "push" ? v2 : rendered[slot.section], times: timesFor(slot.variation) }));
+            const parts = formSlots(form).map((slot) => ({ section: slot.variation === "push" ? v2 : rendered[slot.section], times: slot.times }));
             const bars = songBars(parts);
             const owner = songBarParts(parts);
             assert.equal(bars.length, owner.length, `${where} ${form}: bar owners`);

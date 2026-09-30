@@ -49,7 +49,7 @@
 
 <table>
 <tr>
-<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/generator-dark.jpg"><img src="docs/readme/generator-light.jpg" alt="The Generator: key and feel controls, the song's running order, seven section cards with real bar tabs, the Power Chords panel and the Rhythm Lane"></picture><p align="center"><b>Generator:</b> a whole song in one screen</p></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/generator-dark.jpg"><img src="docs/readme/generator-light.jpg" alt="The Generator: the four-step song setup (key, feel, chords, length), the song's running order, and seven section cards with real bar tabs"></picture><p align="center"><b>Generator:</b> a whole song in one screen</p></td>
 <td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/chords-dark.jpg"><img src="docs/readme/chords-light.jpg" alt="The Chords page with I-V-vi-IV in G open, showing a Classic lead solo tab with bends, hammer-ons and slides"></picture><p align="center"><b>Chords:</b> write a solo over any progression</p></td>
 </tr>
 <tr>

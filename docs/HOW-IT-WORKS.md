@@ -126,7 +126,7 @@ Recipe plus voicing path gives **bar-by-bar events**. The tab, the audio and the
 
 A 3-chord loop holds its last chord for the fourth bar. The Solo is the lead engine over the progression.
 
-**Forms.** The Generator shows the **Standard** form: Intro · Verse 1 · Pre-chorus · Chorus · Verse 2 · Pre-chorus · Chorus · Solo · Breakdown · Last chorus · Ending (57 bars, about 1:16 at 180 BPM). A **Short** form (no pre-chorus) is in the data for a later length control. Repeats reuse their section's material, with one declared variation each: **Verse 2 adds a push** (the next chord an eighth early at the first chord change after bar 1) and the **Last chorus plays twice**. Nothing else may differ, and verify checks it. Locking a section locks every place it plays.
+**Forms and length.** The song's length comes from the **Length** slider (2:30 to 5:30, in 15-second steps; default 3:15), and the form follows from it at the feel's tempo (`lib/songLength.ts`, rules in `data/song-forms.json`). There are three forms: **Short** (no pre-chorus), **Standard** (Intro · Verse 1 · Pre-chorus 1 · Chorus 1 · Verse 2 · Pre-chorus 2 · Chorus 2 · Solo · Breakdown · Last chorus · Ending) and **Extended** (Standard plus an Intro reprise, a third verse, pre-chorus and chorus). Every part plays its section's material some number of times in a row, within a range per part. The plan grows each form from its minimum one step at a time in a fixed order (choruses first, then the last chorus, verses, the solo, the intro…), keeps the step closest to the target, then nudges single short parts (intro, reprise, breakdown, last chorus, solo) up or down while that gets closer. Among forms that land within 4 bars, it keeps the one with the fewest repeats (Standard is preferred, Short and Extended cost a little extra); otherwise the closest. So 3:15 is a 145-bar Standard song at Fast Punk (180 BPM) but a 65-bar one at Ballad (80 BPM), and 5:30 at 180 BPM is a 249-bar Extended song. `npm run verify` checks every tempo the feels can play at every length step, with 8- and 16-bar solos: all land within 4 bars, except a 16-bar solo in a 2:30 ballad, where even the shortest song is longer. Repeats reuse their section's material, with one declared variation: **Verse 2 adds a push** (the next chord an eighth early at the first chord change after bar 1). Nothing else may differ, and verify checks it. Locking a section locks every place it plays.
 
 **Energy.** Each chord section gets a score from what its tab plays: sounding eighths, how much rings, 3-note shapes and how high on the neck (weights in `data/energy.json`). The Chorus must beat the Verse in every song. Mean over the sweep: Verse 0.26 → Pre-chorus 0.54 → Chorus 0.88. The smallest gap between Chorus and Verse anywhere is 0.40.
 
@@ -154,7 +154,7 @@ The voicing search knows each section's rhythm and tempo, so it judges a shape t
 
 `data/critic.json` · `lib/critic.ts` (Song Engine v2, Phase 3)
 
-Every section on its own is already the search's best path, but a song can still be dull, or awkward where parts meet. So **GENERATE writes 8 takes of the whole song and keeps the one the critic scores highest**:
+Every section on its own is already the search's best path, but a song can still be dull, or awkward where parts meet. So **BUILD SONG (and BUILD AGAIN) writes 8 takes of the whole song and keeps the one the critic scores highest**:
 
 | Part of the score | What it rewards or penalises |
 |---|---|
@@ -166,9 +166,9 @@ Every section on its own is already the search's best path, but a song can still
 
 - **Takes:** each take picks a seed per section from a seeded generator, so the same song seed always gives the same song. The page opens on song 0, whose first take is every section's own best. Across the sweep, 8 takes lift the kept score by 0.54 on average over the first take.
 - **Locks:** locked sections, and parts carrying a lead line, keep their own inputs in every take.
-- **GENERATE:** never repeats the song on screen.
+- **BUILD SONG / BUILD AGAIN:** keeps your progression and never repeats the song on screen.
 - **A section's ↻:** tries that section's next 8 different takes, each heard in the song as it stands, and keeps the best. Only that section changes, and it always changes.
-- **Speed:** about 27 ms per GENERATE with Chromium's CPU slowed 4× (a stand-in for a mid-range phone; the budget is ~100 ms). `e2e/critic.spec.ts` holds it there.
+- **Speed:** about 27 ms per build with Chromium's CPU slowed 4× (a stand-in for a mid-range phone; the budget is ~100 ms). `e2e/critic.spec.ts` holds it there.
 
 ## 4. Tabs
 
@@ -210,7 +210,7 @@ A solo the Generator writes gets a **song thread** (`songThread` in `lib/generat
 - **The song's own chords (R16).** The solo plays over the Chorus's bar plan (for a 3-chord progression, the Chorus's 4 bars) instead of the progression looped.
 - **Its peak on the strongest chord.** The strongest chord is the one the Chorus voices highest on the neck. The solo's high point moves to the second-half bar that plays it, with the arc's peak going along.
 
-A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing GENERATE or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (GENERATE, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
+A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing BUILD SONG, BUILD AGAIN or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (a build, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
 
 ## 6. The proofs
 
@@ -218,12 +218,12 @@ A solo sent from the Chords page ("Use in my song") plays exactly as previewed t
 
 | Suite | What it covers | Checks |
 |---|---|---|
-| Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
+| Data layer | Song length: 156 plans (6 tempos × 13 lengths × 8/16-bar solos) within 4 bars, every part in its range, deterministic; progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
 | Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, **every hit labelled honestly and with a mute plan, no change over 4 frets per 100 ms, chord downpicking within the cap, the hall of shame**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
-| Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; GENERATE never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
+| Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; a build never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text**; Phase 5: **the solo quotes the song's motif, plays the Chorus's chords and peaks on its strongest chord** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
-Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
+Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. `e2e/song-builder-responsive.spec.ts` is the song builder's responsive gate (docs/song-builder-prd.md B12): no sideways scroll, controls ≥ 44px, text ≥ 12px and nothing clipped, in every project, for the setup, the folded summary and the longest song. It also covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 
 ## 7. Tuning it
 
@@ -234,10 +234,10 @@ Nothing musical is hard-coded:
 | `data/engine-settings.json` | Move the chorus lift, tighten or loosen voice leading, make shapes more or less likely, change the fret limit |
 | `data/section-recipes.json` | Add rhythm variants (8 or 16 cells, with their own drums and stops), intro riffs (scale steps), change which shapes a section may use |
 | `data/section-harmony.json` | Change which chords a section plays over the progression |
-| `data/song-forms.json` | Change the running order, or a repeat's variation |
+| `data/song-forms.json` | Change the forms, how far each part can repeat, how the Length slider grows a song, or a repeat's variation |
 | `data/energy.json` | Reweight what makes a section feel bigger |
 | `data/playability.json` | Change the speed limit, the downpick caps, or what makes a section rate harder |
-| `data/critic.json` | Change how many takes GENERATE writes, or what the critic likes in a song |
+| `data/critic.json` | Change how many takes a build writes, or what the critic likes in a song |
 | `data/lead-rules.json` | Change the melodic taste (steps vs leaps, chord notes on strong beats, the solo's arc, bends) |
 | `data/lead-rhythms.json` | Add rhythm cells for melodies and solos |
 
