@@ -210,7 +210,7 @@ A solo the Generator writes gets a **song thread** (`songThread` in `lib/generat
 - **The song's own chords (R16).** The solo plays over the Chorus's bar plan (for a 3-chord progression, the Chorus's 4 bars) instead of the progression looped.
 - **Its peak on the strongest chord.** The strongest chord is the one the Chorus voices highest on the neck. The solo's high point moves to the second-half bar that plays it, with the arc's peak going along.
 
-A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing GENERATE or the Solo's ↻ makes it the Generator's own again. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
+A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing GENERATE or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (GENERATE, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
 
 ## 6. The proofs
 

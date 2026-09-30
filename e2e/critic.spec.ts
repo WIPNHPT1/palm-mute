@@ -28,9 +28,13 @@ test("a section's ↻ changes only that section", async ({ page }, info) => {
   lightOnly(info);
   await gotoAndSettle(page, "/generator/");
   const tab = (label: string) => section(page, label).locator("svg[data-tab]").textContent();
-  const labels = ["Intro", "Verse", "Pre-chorus", "Chorus", "Breakdown", "Ending"];
-  const before = Object.fromEntries(await Promise.all(labels.map(async (l) => [l, await tab(l)])));
-  await section(page, "Pre-chorus").getByRole("button", { name: "Regenerate Pre-chorus" }).click();
-  await expect(section(page, "Pre-chorus").locator("svg[data-tab]")).not.toHaveText(before["Pre-chorus"]!);
-  for (const l of labels.filter((l) => l !== "Pre-chorus")) expect(await tab(l), l).toBe(before[l]);
+  // The Solo too: it quotes the Intro (R15), but keeps the thread it was written with, so ↻ on the Intro or
+  // the Chorus doesn't rewrite it (DECISIONS.md: regenerating one section never changes another).
+  const labels = ["Intro", "Verse", "Pre-chorus", "Chorus", "Solo", "Breakdown", "Ending"];
+  for (const target of ["Pre-chorus", "Intro", "Chorus"]) {
+    const before = Object.fromEntries(await Promise.all(labels.map(async (l) => [l, await tab(l)])));
+    await section(page, target).getByRole("button", { name: `Regenerate ${target}` }).click();
+    await expect(section(page, target).locator("svg[data-tab]")).not.toHaveText(before[target]!);
+    for (const l of labels.filter((l) => l !== target)) expect(await tab(l), `↻ ${target} changed ${l}`).toBe(before[l]);
+  }
 });
