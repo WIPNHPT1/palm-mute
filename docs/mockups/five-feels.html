@@ -68,7 +68,13 @@
   .play svg { width: 13px; height: 13px; }
   @media (max-width: 833px) { .row { flex-wrap: wrap; } .row .pid { width: auto; flex: 1; } .chips { flex-basis: 100%; order: 3; } }
   .lanes { display: grid; gap: 8px; flex-grow: 1; grid-template-columns: 1fr; }
-  @media (min-width: 834px) and (max-width: 1279px) { .lanes { grid-template-columns: repeat(3, 1fr); } }
+  /* tablet: all five feels in one row (owner's pick); name and tag stack in the narrower cards */
+  @media (min-width: 834px) and (max-width: 1279px) {
+    .lanes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .lane { padding: 10px; }
+    .lane-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .glyphs { letter-spacing: 1px; }
+  }
   .lane { display: flex; flex-direction: column; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 10px 12px; min-height: 112px; }
   .lane.sel { border-color: var(--accent); }
   .lane-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
