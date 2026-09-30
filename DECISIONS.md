@@ -39,6 +39,7 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Chord shapes in rhythm parts | **Standard shapes only.** The D-root 3-note shape (octave on the B string, e.g. D6 G8 B9) is never used in rhythm parts (`rareShapes` in `data/engine-settings.json`, rejected by verify); the D-G 2-note shape is a last resort (dRoot cost 6). In high keys the Chorus lifts only as far as standard shapes allow, and never sits below the Verse | Repo owner, 2026-09-27 |
 | Count In strings sound | Swiping the home page's strings plays each crossed string's **open note** (E A D G B E) on the app's guitar synth, in crossing order (a strum), louder the faster you swipe. A **SOUND switch, off by default** and remembered, turns it on (browsers need a click, and scrolling past shouldn't make noise). The fast-scroll hum stays silent | Repo owner, 2026-09-30 |
 | "How to use" guides | **Option 1, Setlist posters** (picked from three mock-ups in `docs/mockups/how-to-use.html`): four tilted poster cards (ink, red, outlined, brass) with outlined step numbers under the Generator and Chords titles. "Hide the guide" is remembered per page and applied before first paint; a "How to use" button brings it back | Repo owner, 2026-09-30 |
+| Count In LIVE dot | **Green** (the `success` token: #3F8F4F light, #52A862 dark), still blinking; the "LIVE · 180 BPM" label stays red | Repo owner, 2026-09-30 |
 
 ### Defaults for the next phases (owner can change any of these)
 
