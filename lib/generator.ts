@@ -24,7 +24,9 @@ import {
 import { type Lead, type LeadPart, type LeadStyle, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
 import { type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
 
-export type FeelId = "fast-punk" | "half-time" | "mid-tempo";
+export type FeelId = "fast-punk" | "half-time" | "mid-tempo" | "pop-strum" | "ballad";
+/** Every feel, in Feel-control order (feels.json). */
+export const FEEL_IDS: FeelId[] = ["fast-punk", "half-time", "mid-tempo", "pop-strum", "ballad"];
 export type SectionId = "intro" | "verse" | "chorus" | "solo" | "breakdown";
 export type Glyph = "▼" | "▲" | "·";
 
@@ -33,10 +35,12 @@ export const SECTION_IDS: SectionId[] = ["intro", "verse", "chorus", "solo", "br
 export type Feel = {
   id: FeelId;
   label: string;
-  tempoSource: "punkMaster" | "midTempoDefault";
+  tempoSource: keyof typeof feelsJson.masterTempos;
   displayBpm: number | string;
   drumFeel: string;
   rhythmPatternId: string;
+  /** Progression rows strum open and let each hit ring until the next (Pop Strum, Ballad). */
+  letRing?: boolean;
 };
 
 export type RhythmPattern = {
@@ -46,7 +50,7 @@ export type RhythmPattern = {
   glyphs: Glyph[];
   beatLabel: string;
   description: string;
-  tagColor: "ink" | "muted" | "brass";
+  tagColor: "ink" | "muted" | "brass" | "red" | "outline";
 };
 
 type SectionTemplate = {
@@ -87,10 +91,12 @@ export function getTemplate(id: SectionId): SectionTemplate {
 
 /**
  * The playback clock for a feel. Fast Punk and Half-Time share the punk master tempo (the
- * half-time feel comes from the drum template, not a tempo change); Mid-Tempo is independent.
+ * half-time feel comes from the drum template, not a tempo change); Mid-Tempo is the adjustable
+ * one; Pop Strum and Ballad each have their own fixed tempo.
  */
 export function playbackBpm(feel: FeelId, midTempoBpm: number): number {
-  return getFeel(feel).tempoSource === "punkMaster" ? PUNK_MASTER_BPM : midTempoBpm;
+  const source = getFeel(feel).tempoSource;
+  return source === "midTempoDefault" ? midTempoBpm : feelsJson.masterTempos[source].bpm;
 }
 
 // ---------------------------------------------------------------------------

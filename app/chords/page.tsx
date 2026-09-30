@@ -54,7 +54,8 @@ export default function ChordsPage() {
       <PageGuide page="chords" label="How to use the Chords page" steps={GUIDE} signature="6 PROGRESSIONS · 12 KEYS · INTROS + SOLOS" />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:gap-[12px] desktop:items-stretch">
-        <ControlCard label="Key" className="tablet:basis-full desktop:basis-auto">
+        {/* Key always gets its own row from tablet up: with five feels, Key + Feel + Sort never fit in one. */}
+        <ControlCard label="Key" className="tablet:basis-full">
           <KeyPicker value={state.key} onChange={setKey} />
         </ControlCard>
         <ControlCard label="Feel">

@@ -35,7 +35,7 @@ function lockInfo(state: GeneratorState, id: SectionId): { lockedIn?: string; up
 }
 
 export default function GeneratorPage() {
-  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, clearIntroLead, activeSection } =
+  const { state, rendered, setKey, setFeel, setMidTempoBpm, generate, regenerateSection, toggleLock, updateLocked, setProgression, togglePlay, playStrum, clearIntroLead, activeSection } =
     useGenerator();
 
   // One tab scale for the chord cards: the widest chord tab showing. Lead tabs (the Solo, an Intro
@@ -48,7 +48,8 @@ export default function GeneratorPage() {
       <PageGuide page="generator" label="How to use the Generator" steps={GUIDE} signature="FIVE SECTIONS · REAL TABS · ABOUT A MINUTE" />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:items-stretch tablet:gap-[12px]">
-        <ControlCard label="Key" className="tablet:basis-full desktop:basis-auto">
+        {/* Key gets its own row until Key, the five-feel control and the buttons fit side by side (1440px). */}
+        <ControlCard label="Key" className="tablet:basis-full min-[1440px]:basis-auto">
           <KeyPicker value={state.key} onChange={setKey} />
         </ControlCard>
         <ControlCard label="Feel">
@@ -95,7 +96,14 @@ export default function GeneratorPage() {
           onSelect={setProgression}
           onTogglePlay={(id) => togglePlay(`progression:${id}`)}
         />
-        <RhythmLane activeFeel={state.feel} progressionId={state.progressionId} keyName={state.key} />
+        <RhythmLane
+          activeFeel={state.feel}
+          progressionId={state.progressionId}
+          keyName={state.key}
+          playing={state.playing === "strum"}
+          onSelect={setFeel}
+          onTogglePlay={playStrum}
+        />
       </div>
     </div>
   );

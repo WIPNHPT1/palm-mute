@@ -1,8 +1,10 @@
 {
-  "_architecture_note": "This resolves the open question flagged during the original PRD discussion: Fast Punk and Half-Time are NOT two tempos — they are two drum-feel templates played against the SAME master click. Mid-Tempo is a genuinely separate, independently adjustable tempo. Keep 'tempo' and 'feel template' as two distinct state fields in the app; do not hardcode BPM per feel in the UI layer.",
+  "_architecture_note": "This resolves the open question flagged during the original PRD discussion: Fast Punk and Half-Time are NOT two tempos — they are two drum-feel templates played against the SAME master click. Mid-Tempo is a genuinely separate, independently adjustable tempo. Pop Strum (150) and Ballad (80) each have their own fixed tempo (owner's call, DECISIONS.md). Keep 'tempo' and 'feel template' as two distinct state fields in the app; do not hardcode BPM per feel in the UI layer.",
   "masterTempos": {
     "punkMaster": { "bpm": 180, "label": "Punk master tempo", "usedBy": ["fast-punk", "half-time"] },
-    "midTempoDefault": { "bpm": 140, "min": 120, "max": 150, "adjustable": true, "usedBy": ["mid-tempo"] }
+    "midTempoDefault": { "bpm": 140, "min": 120, "max": 150, "adjustable": true, "usedBy": ["mid-tempo"] },
+    "popStrum": { "bpm": 150, "label": "Pop Strum tempo (fixed)", "usedBy": ["pop-strum"] },
+    "ballad": { "bpm": 80, "label": "Ballad tempo (fixed)", "usedBy": ["ballad"] }
   },
   "feels": [
     {
@@ -29,6 +31,24 @@
       "displayBpm": "user-adjustable, default 140",
       "drumFeel": "skank/offbeat-driven, kick on 1 and 3, hats on the upbeats",
       "rhythmPatternId": "syncopated-skank"
+    },
+    {
+      "id": "pop-strum",
+      "label": "POP STRUM",
+      "tempoSource": "popStrum",
+      "displayBpm": 150,
+      "drumFeel": "driving 8th hats, backbeat snare on 2 and 4, kick on 1, 3 and the 'and' of 3, crash at the top of each 4-bar phrase",
+      "rhythmPatternId": "anthem-strum",
+      "letRing": true
+    },
+    {
+      "id": "ballad",
+      "label": "BALLAD",
+      "tempoSource": "ballad",
+      "displayBpm": 80,
+      "drumFeel": "sparse: kick on 1 and the 'and' of 3, rim click on 3, quarter-note hats",
+      "rhythmPatternId": "slow-let-ring",
+      "letRing": true
     }
   ],
   "uiRequirement": "When Feel = Mid-Tempo is selected, render a tempo stepper/slider (120-150, default 140) in place of (or alongside) the static BPM label the mockup currently shows. Fast Punk / Half-Time show a fixed, non-editable BPM readout."

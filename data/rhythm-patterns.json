@@ -28,6 +28,24 @@
       "beatLabel": "1 & 2 & 3 & 4 &",
       "description": "Upstroke accents on the offbeat.",
       "tagColor": "brass"
+    },
+    {
+      "id": "anthem-strum",
+      "name": "Anthem strum",
+      "feel": "pop-strum",
+      "glyphs": ["▼","·","▼","▲","·","▲","▼","▲"],
+      "beatLabel": "1 & 2 & 3 & 4 &",
+      "description": "Down, down-up, up-down-up. Open and ringing.",
+      "tagColor": "red"
+    },
+    {
+      "id": "slow-let-ring",
+      "name": "Slow let-ring",
+      "feel": "ballad",
+      "glyphs": ["▼","·","·","·","▼","·","·","·"],
+      "beatLabel": "1 2 3 4",
+      "description": "Slow downstrokes on 1 and 3, left to ring.",
+      "tagColor": "outline"
     }
   ]
 }

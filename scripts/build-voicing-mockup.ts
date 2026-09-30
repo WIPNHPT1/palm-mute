@@ -5,11 +5,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tabText } from "@/lib/fretboard";
-import { type FeelId, type SectionId, playbackBpm, renderSection } from "@/lib/generator";
+import { FEEL_IDS, type FeelId, type SectionId, playbackBpm, renderSection } from "@/lib/generator";
 import { PITCH_CLASSES, keyDisplayName, progressions } from "@/lib/musicTheory";
 import { sectionBars } from "@/lib/playback";
 
-const FEELS: FeelId[] = ["fast-punk", "half-time", "mid-tempo"];
+const FEELS: FeelId[] = FEEL_IDS;
+const FEEL_LABELS: Record<FeelId, string> = { "fast-punk": "Fast Punk", "half-time": "Half-Time", "mid-tempo": "Mid-Tempo", "pop-strum": "Pop Strum", ballad: "Ballad" };
 const SECTIONS: Exclude<SectionId, "solo">[] = ["intro", "verse", "chorus", "breakdown"];
 
 /** Compact playback: per bar "feel|stop|cells", each cell "" or "notes.joined:len:vel:pm:dead". */
@@ -44,7 +45,7 @@ for (const key of PITCH_CLASSES)
 
 const meta = {
   keys: PITCH_CLASSES.map((k) => ({ id: k, label: keyDisplayName(k) })),
-  feels: FEELS.map((f) => ({ id: f, label: { "fast-punk": "Fast Punk", "half-time": "Half-Time", "mid-tempo": "Mid-Tempo" }[f], bpm: playbackBpm(f, 140) })),
+  feels: FEELS.map((f) => ({ id: f, label: FEEL_LABELS[f], bpm: playbackBpm(f, 140) })),
   progressions: progressions.map((p) => p.id),
 };
 
@@ -101,7 +102,7 @@ const html = `<!doctype html>
 <script>
 const META = ${JSON.stringify(meta)};
 const DATA = ${JSON.stringify(data)};
-const DRUMS = { "fast-punk": { kick:[0,5], snare:[2,6], hat:[0,1,2,3,4,5,6,7] }, "half-time": { kick:[0], snare:[4], hat:[0,1,2,3,4,5,6,7] }, "mid-tempo": { kick:[0,4], snare:[], hat:[1,3,5,7] } };
+const DRUMS = { "fast-punk": { kick:[0,5], snare:[2,6], hat:[0,1,2,3,4,5,6,7] }, "half-time": { kick:[0], snare:[4], hat:[0,1,2,3,4,5,6,7] }, "mid-tempo": { kick:[0,4], snare:[], hat:[1,3,5,7] }, "pop-strum": { kick:[0,4,5], snare:[2,6], hat:[0,1,2,3,4,5,6,7] }, "ballad": { kick:[0,5], snare:[4], hat:[0,2,4,6] } };
 const $ = (id) => document.getElementById(id);
 for (const k of META.keys) $("key").add(new Option(k.label, k.id, false, k.id === "G"));
 for (const f of META.feels) $("feel").add(new Option(f.label + " · " + f.bpm + " BPM", f.id));

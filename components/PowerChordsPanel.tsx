@@ -6,7 +6,8 @@ import { libraryVoicings } from "@/lib/generator";
 import { type NoteName, keyDisplayName, progressions } from "@/lib/musicTheory";
 
 /**
- * Generator's Power Chords panel: the Chorus progression first, then the next most common two.
+ * Generator's Power Chords panel: the Chorus progression first, then the next most common four
+ * (five rows, one per Rhythm Lane feel).
  * Clicking a row makes it the Chorus progression.
  */
 export function PowerChordsPanel({
@@ -23,7 +24,7 @@ export function PowerChordsPanel({
   onTogglePlay: (id: string) => void;
 }) {
   const selected = progressions.find((p) => p.id === selectedId)!;
-  const shown = [selected, ...progressions.filter((p) => p.id !== selectedId)].slice(0, 3);
+  const shown = [selected, ...progressions.filter((p) => p.id !== selectedId)].slice(0, 5);
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-[12px] rounded-outer border border-line bg-surface p-[16px] tablet:px-[20px]">
       <div>

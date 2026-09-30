@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import { chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
-import { renderSection, nextSeed } from "@/lib/generator";
+import { FEEL_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns } from "@/lib/generator";
+import { progressionBars } from "@/lib/playback";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
 // The Solo is written by the lead engine now (scripts/verify-melody.ts checks it); the old
@@ -34,6 +35,35 @@ for (const id of ["intro", "verse", "chorus", "solo", "breakdown"] as const) {
 const fp = renderSection("verse", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
 const ht = renderSection("verse", { key: "A", feel: "half-time", progressionId: "I-V-vi-IV", seed: 0 });
 assert.notEqual(tabText(fp.tab), tabText(ht.tab));
+// Five feels (owner's pick, DECISIONS.md): data, strums, tempos and a recipe rhythm everywhere.
+assert.deepEqual(feels.map((f) => f.id), FEEL_IDS, "feels.json lists every feel, in Feel-control order");
+assert.equal(rhythmPatterns.length, FEEL_IDS.length, "one Rhythm Lane strum per feel");
+for (const f of FEEL_IDS) {
+  const glyphs = patternForFeel(f).glyphs;
+  assert.equal(glyphs.length, 8, `${f}: strum is one bar of eighths`);
+  for (const [id, recipe] of Object.entries(recipes)) {
+    if (id === "breakdown") continue; // always half-time
+    for (const v of recipe.variants) {
+      const r = v.rhythms[f];
+      assert.ok(r, `${id} "${v.name}" has a ${f} rhythm`);
+      for (const bar of r.bars) assert.match(bar, /^[DUx.-]{8}$/, `${id} "${v.name}" ${f}: 8 cells`);
+    }
+  }
+}
+assert.deepEqual(FEEL_IDS.map((f) => playbackBpm(f, 140)), [180, 180, 140, 150, 80]);
+assert.equal(playbackBpm("mid-tempo", 125), 125);
+assert.equal(playbackBpm("pop-strum", 125), 150, "Pop Strum's tempo is fixed");
+{
+  // The feel's recipe rhythm really changes the Verse, for every feel.
+  const verses = FEEL_IDS.map((f) => tabText(renderSection("verse", { key: "A", feel: f, progressionId: "I-V-vi-IV", seed: 0 }).tab));
+  assert.equal(new Set(verses).size, FEEL_IDS.length, "every feel plays a different Verse");
+  // Progression rows: Ballad's downstrokes ring for a half note, open; Fast Punk stays palm-muted eighths.
+  const ballad = progressionBars("A", "I-V-vi-IV", "ballad")[0].cells;
+  assert.deepEqual(ballad.map((c) => c?.cells ?? 0), [4, 0, 0, 0, 4, 0, 0, 0]);
+  assert.ok(ballad.every((c) => !c || !c.palmMuted), "Ballad rings open");
+  const punk = progressionBars("A", "I-V-vi-IV", "fast-punk")[0].cells;
+  assert.ok(punk.every((c) => c && c.cells === 1 && c.palmMuted), "Fast Punk: palm-muted eighths");
+}
 // Breakdown is forced half-time.
 assert.equal(renderSection("breakdown", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 }).feel, "half-time");
 

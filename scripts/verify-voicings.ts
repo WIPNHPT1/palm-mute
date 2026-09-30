@@ -9,6 +9,7 @@ import { type TabLineGroup, OPEN_STRING_MIDI, TAB_STRINGS, midiOf, pitchClass, t
 import {
   type FeelId,
   type RenderedSection,
+  FEEL_IDS,
   type SectionId,
   type SectionInputs,
   SECTION_IDS,
@@ -22,7 +23,7 @@ import { PITCH_CLASSES, type Degree, type NoteName, getProgression, pitchClassOf
 import { sectionBars } from "@/lib/playback";
 import { SETTINGS, checkVoicing } from "@/lib/voicings";
 
-const FEELS: FeelId[] = ["fast-punk", "half-time", "mid-tempo"];
+const FEELS: FeelId[] = FEEL_IDS;
 const SEEDS = 50;
 const LIMIT = SETTINGS.fretLimit;
 let renders = 0;
@@ -212,6 +213,8 @@ const REFERENCES: { name: string; id: SectionId; key: NoteName; feel: FeelId; pr
   { name: "F# verse, mid-tempo", id: "verse", key: "F#", feel: "mid-tempo", progressionId: "I-V-vi-IV" },
   { name: "D# chorus, fast punk, vi-IV-I-V (high key)", id: "chorus", key: "D#", feel: "fast-punk", progressionId: "vi-IV-I-V" },
   { name: "B chorus, mid-tempo, I-V-IV-V", id: "chorus", key: "B", feel: "mid-tempo", progressionId: "I-V-IV-V" },
+  { name: "G chorus, pop strum (let ring, pushes)", id: "chorus", key: "G", feel: "pop-strum", progressionId: "I-V-vi-IV" },
+  { name: "D verse, ballad (palm-muted quarters)", id: "verse", key: "D", feel: "ballad", progressionId: "I-V-vi-IV" },
 ];
 
 const fixturePath = join(process.cwd(), "scripts/fixtures/reference-tabs.json");
@@ -226,5 +229,5 @@ if (process.argv.includes("--update-fixtures")) {
 }
 for (const a of actual.slice(0, 2)) console.log(`\n${a.name}:\n${a.tab.join("\n")}`);
 
-console.log(`\nVoicing engine: ${renders} distinct section renders checked, covering 12 keys × 6 progressions × 3 feels × 5 sections × ${SEEDS} seeds (only the Chorus depends on the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
+console.log(`\nVoicing engine: ${renders} distinct section renders checked, covering 12 keys × 6 progressions × ${FEELS.length} feels × 5 sections × ${SEEDS} seeds (only the Chorus depends on the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
 console.log("All voicing-engine checks passed.");
