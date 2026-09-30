@@ -43,7 +43,9 @@ export function Strings({ reduced }: { reduced: boolean }) {
   useEffect(() => {
     const el = box.current!, cv = canvas.current!, ctx = cv.getContext("2d")!;
     const N = TAB_STRINGS.length, amp = new Array(N).fill(0), px = new Array(N).fill(0.5), hot = new Array(N).fill(0);
-    let W = 0, H = 0, t = 0, lastY: number | null = null, lastT = 0, running = false, frame = 0, lastScroll = scrollY, vel = 0;
+    // running = on screen; scheduled = a frame is queued. The loop sleeps once every string is still and
+    // the page isn't scrolling (no work while idle), and a pluck, scroll or resize wakes it.
+    let W = 0, H = 0, t = 0, lastY: number | null = null, lastT = 0, running = false, scheduled = false, frame = 0, lastScroll = scrollY, vel = 0;
     let colors = { str: "", acc: "" };
     const readColors = () => {
       const cs = getComputedStyle(el);
@@ -72,8 +74,16 @@ export function Strings({ reduced }: { reduced: boolean }) {
         amp[i] *= 0.93; hot[i] *= 0.92;
       }
       ctx.globalAlpha = 1;
-      if (running) frame = requestAnimationFrame(draw);
+      scheduled = false;
+      const still = Math.abs(vel) < 0.05 && amp.every((a) => a < 0.05) && hot.every((h) => h < 0.05);
+      if (running && !still) wake();
     };
+    const wake = () => {
+      if (!running || scheduled) return;
+      scheduled = true;
+      frame = requestAnimationFrame(draw);
+    };
+    const onScroll = () => wake();
     const pluck = (x: number, y: number, now: number) => {
       if (lastY !== null && lastY !== y) {
         const crossed: number[] = [];
@@ -81,6 +91,7 @@ export function Strings({ reduced }: { reduced: boolean }) {
           const s = yOf(i);
           if ((lastY - s) * (y - s) <= 0) { amp[i] = 16 + Math.random() * 6; px[i] = Math.min(0.9, Math.max(0.1, x / W)); hot[i] = 1; crossed.push(i); }
         }
+        if (crossed.length) wake();
         if (crossed.length && soundRef.current) {
           // Faster swipes play louder; strings sound in the order the swipe crosses them (a strum).
           const speed = Math.abs(y - lastY) / Math.max(8, now - lastT); // px per ms
@@ -105,20 +116,26 @@ export function Strings({ reduced }: { reduced: boolean }) {
     el.addEventListener("pointermove", onMove, { passive: true });
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointerleave", onLeave);
-    const onResize = () => { size(); if (!running) draw(); };
+    const onResize = () => { size(); draw(); };
     addEventListener("resize", onResize);
+    addEventListener("scroll", onScroll, { passive: true });
     // re-read colours when the theme class on <html> changes
-    const mo = new MutationObserver(() => { readColors(); if (!running) draw(); });
+    const mo = new MutationObserver(() => { readColors(); draw(); });
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     readColors(); size();
     let io: IntersectionObserver | null = null;
     if (reduced) draw();
     else {
-      io = new IntersectionObserver(([en]) => { running = en.isIntersecting; if (running) frame = requestAnimationFrame(draw); });
+      io = new IntersectionObserver(([en]) => {
+        running = en.isIntersecting;
+        if (running) wake();
+        else { cancelAnimationFrame(frame); scheduled = false; }
+      });
       io.observe(el);
     }
     return () => {
       running = false; cancelAnimationFrame(frame); io?.disconnect(); mo.disconnect();
+      removeEventListener("scroll", onScroll);
       el.removeEventListener("pointermove", onMove); el.removeEventListener("pointerdown", onDown); el.removeEventListener("pointerleave", onLeave);
       removeEventListener("resize", onResize);
     };

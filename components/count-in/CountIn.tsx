@@ -8,7 +8,7 @@ import { Stage } from "@/components/count-in/Stage";
 import { StampBand } from "@/components/count-in/StampBand";
 import { TitleBoard } from "@/components/count-in/TitleBoard";
 import { VuMeter } from "@/components/count-in/VuMeter";
-import { useFinePointer, useReducedMotion, useReveal } from "@/components/count-in/scroll";
+import { useFinePointer, usePauseOffscreen, useReducedMotion, useReveal } from "@/components/count-in/scroll";
 
 /** Count In: the home page (Soundcheck design, see DECISIONS.md). Styles live in app/count-in.css. */
 export function CountIn() {
@@ -16,6 +16,7 @@ export function CountIn() {
   const reduced = useReducedMotion();
   const fine = useFinePointer() && !reduced;
   useReveal(root);
+  usePauseOffscreen(root, ".ci-stage, .ci-setlist, .ci-stamp-band, .ci-two, .ci-encore");
 
   return (
     <div ref={root} className={`ci ${fine ? "is-fine" : ""}`}>

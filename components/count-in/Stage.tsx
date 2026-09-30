@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Strings } from "@/components/count-in/Strings";
-import { clamp01, onScrollFrame } from "@/components/count-in/scroll";
+import { clamp01, onScrollFrame, supportsScrollTimeline } from "@/components/count-in/scroll";
 import { PUNK_MASTER_BPM } from "@/lib/generator";
 
 /**
@@ -15,6 +15,7 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
   const stage = useRef<HTMLElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const kin = useRef<HTMLHeadingElement>(null);
+  const spot = useRef<HTMLDivElement>(null);
 
   // fit the headline to its column
   useEffect(() => {
@@ -52,23 +53,35 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
     return () => ro.disconnect();
   }, []);
 
-  // --k: 0 at the top of the page, 1 once the stage has scrolled away; lines slide right by k × their free space
-  useEffect(
-    () => onScrollFrame(() => stage.current?.style.setProperty("--k", reduced ? "0" : clamp01(scrollY / stage.current.offsetHeight).toFixed(3))),
-    [reduced],
-  );
+  // --k: 0 at the top of the page, 1 once the stage has scrolled away; lines slide right by k × their free
+  // space. CSS scroll-driven animation where supported (off the main thread); JS on every scroll frame elsewhere.
+  useEffect(() => {
+    const el = stage.current!;
+    if (!reduced && supportsScrollTimeline()) {
+      const setHeight = () => el.style.setProperty("--stage-h", `${el.offsetHeight}px`);
+      setHeight();
+      el.classList.add("ci-sda");
+      addEventListener("resize", setHeight);
+      return () => {
+        el.classList.remove("ci-sda");
+        removeEventListener("resize", setHeight);
+      };
+    }
+    return onScrollFrame(() => el.style.setProperty("--k", reduced ? "0" : clamp01(scrollY / el.offsetHeight).toFixed(3)));
+  }, [reduced]);
 
-  // spotlight follows the pointer over the halftone (touch screens get a slow drift instead)
+  // spotlight follows the pointer over the halftone (touch screens get a slow drift instead). Moving the
+  // cover with transform keeps it on the GPU: no repaint per pointer move.
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!fine) return;
+    if (!fine || !spot.current) return;
     const r = stage.current!.getBoundingClientRect();
-    stage.current!.style.setProperty("--sx", `${((e.clientX - r.left) / r.width) * 100}%`);
-    stage.current!.style.setProperty("--sy", `${((e.clientY - r.top) / r.height) * 100}%`);
+    spot.current.style.transform = `translate(${e.clientX - r.left - r.width / 2}px, ${e.clientY - r.top - r.height / 2}px)`;
   };
 
   return (
     <section ref={stage} className="ci-stage" aria-labelledby="ci-title" onPointerMove={onPointerMove}>
       <div className="ci-halftone" aria-hidden="true" />
+      <div ref={spot} className="ci-spot" aria-hidden="true" />
       <div className="ci-beams" aria-hidden="true"><i /><i /></div>
       <div className="ci-wrap" data-reveal-group>
         <div className="ci-stage-top">

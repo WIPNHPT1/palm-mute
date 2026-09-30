@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { onScrollFrame, pinProgress } from "@/components/count-in/scroll";
+import { onScrollFrame, pinProgress, supportsScrollTimeline } from "@/components/count-in/scroll";
 
 const STEPS = [
   { title: "Study the formula", body: "We break down the chord degrees, rhythm templates and section lengths behind pop-punk's biggest songs. We study the pattern underneath, never the tabs themselves.", poster: "ci-p1" },
@@ -23,7 +23,11 @@ export function Setlist({ reduced }: { reduced: boolean }) {
     };
     size();
     addEventListener("resize", size);
-    const stop = onScrollFrame(() => section.current?.style.setProperty("--p", pinProgress(section.current).toFixed(4)));
+    // --p: CSS scroll-driven (view timeline, contain range = the pinned stretch) where supported; JS elsewhere.
+    const el = section.current!;
+    const css = !reduced && supportsScrollTimeline();
+    el.classList.toggle("ci-sda", css);
+    const stop = css ? () => el.classList.remove("ci-sda") : onScrollFrame(() => el.style.setProperty("--p", pinProgress(el).toFixed(4)));
     return () => { removeEventListener("resize", size); stop(); };
   }, [reduced]);
 
