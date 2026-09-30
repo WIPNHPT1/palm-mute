@@ -7,12 +7,21 @@
     { "id": "I-IV-V",     "degrees": ["I", "IV", "V"],       "brightness": 5, "tag": "common", "note": "3-chord classic; brightest of the set, no vi." },
     { "id": "I-V-IV-V",   "degrees": ["I", "V", "IV", "V"],  "brightness": 4, "tag": "common" },
     { "id": "vi-V-IV",    "degrees": ["vi", "V", "IV"],      "brightness": 2, "tag": "darker" },
-    { "id": "IV-I-V-vi",  "degrees": ["IV", "I", "V", "vi"], "brightness": 3, "tag": "common" }
+    { "id": "IV-I-V-vi",  "degrees": ["IV", "I", "V", "vi"], "brightness": 3, "tag": "common" },
+    { "id": "I-vi-IV-V",  "degrees": ["I", "vi", "IV", "V"], "brightness": 4, "tag": "common", "note": "The '50s / doo-wop loop, sped up." },
+    { "id": "I-IV-vi-V",  "degrees": ["I", "IV", "vi", "V"], "brightness": 4, "tag": "common" },
+    { "id": "V-vi-IV-I",  "degrees": ["V", "vi", "IV", "I"], "brightness": 3, "tag": "common", "note": "Starts away from home and resolves on I." },
+    { "id": "I-V-IV",     "degrees": ["I", "V", "IV"],       "brightness": 5, "tag": "common", "note": "3-chord punk staple." }
   ],
   "sortHeuristic": {
     "mostCommon": "sort by a fixed usage-frequency ranking (curated order above, top to bottom) — not derived at runtime",
     "brightest": "sort by `brightness` descending (more I/IV/V weight, less vi)",
     "darkest": "sort by `brightness` ascending",
+    "simplest": "fewest different chords first, then shortest loop",
+    "homeStart": "progressions that start on I first",
+    "minorStart": "progressions that start on vi first",
+    "ties": "every sort keeps the curated order for ties",
+    "added": "The last four (I-vi-IV-V, I-IV-vi-V, V-vi-IV-I, I-V-IV) were added on 2026-09-30 and rank after the original six (DECISIONS.md).",
     "caveat": "brightness values here are an authored placeholder heuristic (major-vs-relative-minor emphasis), not a music-theory-validated score — fine for v1, worth revisiting if the sort ever feels wrong to a real guitarist tester."
   }
 }

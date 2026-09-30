@@ -229,5 +229,5 @@ if (process.argv.includes("--update-fixtures")) {
 }
 for (const a of actual.slice(0, 2)) console.log(`\n${a.name}:\n${a.tab.join("\n")}`);
 
-console.log(`\nVoicing engine: ${renders} distinct section renders checked, covering 12 keys × 6 progressions × ${FEELS.length} feels × 5 sections × ${SEEDS} seeds (only the Chorus depends on the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
+console.log(`\nVoicing engine: ${renders} distinct section renders checked, covering 12 keys × ${progressions.length} progressions × ${FEELS.length} feels × 5 sections × ${SEEDS} seeds (only the Chorus depends on the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
 console.log("All voicing-engine checks passed.");

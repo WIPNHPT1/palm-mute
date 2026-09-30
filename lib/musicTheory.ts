@@ -91,14 +91,19 @@ export function chordMidiNotes(chord: PowerChord): number[] {
   ];
 }
 
-export type SortMode = "most-common" | "brightest" | "darkest";
+export type SortMode = "most-common" | "brightest" | "darkest" | "simplest" | "home-start" | "minor-start";
 
 /** progressions.json → sortHeuristic. Stable: ties keep curated order. */
 export function sortProgressions(list: Progression[], mode: SortMode): Progression[] {
   const indexed = list.map((p, i) => ({ p, i }));
+  const distinct = (p: Progression) => new Set(p.degrees).size;
+  const first = (p: Progression, d: Degree) => (p.degrees[0] === d ? 0 : 1);
   indexed.sort((a, b) => {
     if (mode === "brightest") return b.p.brightness - a.p.brightness || a.i - b.i;
     if (mode === "darkest") return a.p.brightness - b.p.brightness || a.i - b.i;
+    if (mode === "simplest") return distinct(a.p) - distinct(b.p) || a.p.degrees.length - b.p.degrees.length || a.i - b.i;
+    if (mode === "home-start") return first(a.p, "I") - first(b.p, "I") || a.i - b.i;
+    if (mode === "minor-start") return first(a.p, "vi") - first(b.p, "vi") || a.i - b.i;
     return a.i - b.i;
   });
   return indexed.map(({ p }) => p);

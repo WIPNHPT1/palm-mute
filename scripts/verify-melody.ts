@@ -261,7 +261,7 @@ if (process.argv.includes("--update-fixtures")) {
 }
 
 console.log(
-  `\nLead engine: ${count} leads checked (12 keys × 6 progressions × 2 parts × 3 styles × 2 lengths × ${SEEDS} seeds); ` +
+  `\nLead engine: ${count} leads checked (12 keys × ${progressions.length} progressions × 2 parts × 3 styles × 2 lengths × ${SEEDS} seeds); ` +
     `${((100 * strongChord) / strongTotal).toFixed(1)}% of strong beats on chord notes; ${bends} bends, ${legato} hammer-ons/pull-offs, ${slides} slides, ${vibratos} vibratos; ` +
     `brief §4 hook + ${REFERENCES.length} reference outputs.`,
 );

@@ -63,7 +63,7 @@ test("Power Chords shows five rows, the Chorus pick first", async ({ page }, inf
   await gotoAndSettle(page, "/generator/");
   const rows = powerChords(page).locator("[data-progression]");
   await expect(rows).toHaveCount(5);
-  // Six progressions, five rows: the least common one stays off the list unless it's the Chorus pick.
+  // Ten progressions, five rows: the rest stay off the list unless one is the Chorus pick.
   await expect(page.getByRole("button", { name: "Use IV-I-V-vi for the Chorus" })).toHaveCount(0);
   await page.getByRole("button", { name: "Use vi-V-IV for the Chorus" }).click();
   await expect(rows.first()).toHaveAttribute("data-progression", "vi-V-IV");

@@ -121,8 +121,8 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
 | Suite | What it covers | Checks |
 |---|---|---|
 | Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel | All keys × feels × sections |
-| Voicing engine | Brief §11: right pitches and degrees, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus not below verse, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 30,000 distinct renders covering 12 keys × 6 progressions × 5 feels × 5 sections × 50 seeds, plus 12 hand-checked reference tabs |
-| Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 43,200 leads (12 keys × 6 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
+| Voicing engine | Brief §11: right pitches and degrees, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus not below verse, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 42,000 distinct renders covering 12 keys × 10 progressions × 5 feels × 5 sections × 50 seeds, plus 12 hand-checked reference tabs |
+| Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 

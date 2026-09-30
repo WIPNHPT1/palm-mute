@@ -26,7 +26,7 @@ test.describe("chords UX", () => {
     // Keyboard opens it too, and only one is open at a time.
     await page.keyboard.press("Enter");
     await expect(page.getByRole("region", { name: "vi-IV-I-V in A" })).toBeVisible();
-    await page.getByRole("button", { name: "I-IV-V: show options" }).click();
+    await page.getByRole("button", { name: "I-IV-V: show options", exact: true }).click();
     await expect(page.getByRole("region", { name: /in [A-G]/ })).toHaveCount(1);
     await expect(page.getByRole("region", { name: "I-IV-V in A" })).toBeVisible();
   });
