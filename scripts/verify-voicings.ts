@@ -22,6 +22,7 @@ import {
 import { PITCH_CLASSES, type NoteName, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
 import { sectionBars, songBarParts, songBars } from "@/lib/playback";
 import { FORM_IDS, formSlots, sectionDegrees } from "@/lib/songPlan";
+import { grooveChoices, plannedDegrees } from "@/lib/generator";
 import { SETTINGS, type Voicing, checkVoicing } from "@/lib/voicings";
 import { type MuteSource, PLAYABILITY, downRunCap, labelPitchClasses, longestDownRun, mutePlan, pitchClassesOf } from "@/lib/playability";
 import { fastestChange, riffFastest } from "@/lib/generator";
@@ -168,7 +169,8 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
   (ratings[s.id] ??= [0, 0, 0, 0, 0, 0])[s.playability!.rating.score]++;
   // Degrees: every bar's chord comes from the song's harmonic plan over this progression, in this key (R6).
   const keyPc = pitchClassOf(inputs.key);
-  const degrees = sectionDegrees(s.id as Exclude<SectionId, "solo">, inputs.progressionId);
+  // (An Ending groove can bring its own chords: a tag or a fade-out over the progression.)
+  const degrees = plannedDegrees(s.id as Exclude<SectionId, "solo">, inputs.progressionId, s.groove);
   assert.equal(s.chords.length, degrees.length, `${where}: bar count vs plan`);
   s.chords.forEach((c, i) => assert.equal(pitchClassOf(c.root), (keyPc + degreeOffsets[degrees[i]]) % 12, `${where}: bar ${i + 1} chord`));
   // 3: hand moves inside a section stay within maxMove frets unless recorded as a shift.
@@ -338,6 +340,40 @@ for (const key of PITCH_CLASSES)
       const inputs = { key, feel, progressionId: "I-V-vi-IV", seed: 0 };
       assert.notEqual(tabText(renderSection(id, { ...inputs, seed: nextSeed(id, inputs) }).tab), tabText(renderSection(id, inputs).tab), `${key} ${id} ${feel}: regenerate is a no-op`);
     }
+
+// Song builder Options (docs/song-builder-prd.md §6): every groove, with every playing style and voicing
+// option, is as playable and honest as the seed's own takes (the same checks, sampled across keys,
+// progressions and every feel). Unplayable grooves are the ones the card greys out.
+let optionRenders = 0;
+const optionKeys: NoteName[] = ["E", "G", "C#", "A#"];
+const optionProgs = ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "V-vi-IV-I"];
+for (const key of optionKeys)
+  for (const progressionId of optionProgs)
+    for (const feel of FEELS)
+      for (const id of SECTION_IDS) {
+        if (id === "solo") continue;
+        const base: SectionInputs = { key, feel, progressionId, seed: 0 };
+        for (const g of grooveChoices(id, base)) {
+          for (const sound of [undefined, "pm", "ring"] as const)
+            for (const shape of [undefined, "two", "three"] as const) {
+              const inputs: SectionInputs = { ...base, options: { groove: g.name, sound, shape } };
+              const where: string = `${key} ${progressionId} ${feel} ${id} "${g.name}" ${sound ?? "own"} ${shape ?? "mix"}`;
+              const s = renderSection(id, inputs);
+              optionRenders++;
+              // An unavailable groove falls back to the take's own; an available one is played as asked.
+              if (g.available) assert.equal(s.groove, g.name, `${where}: plays ${s.groove}`);
+              checkLayout(s, where);
+              if (s.riff) checkRiffSection(s, inputs, where);
+              else checkChordSection(s, inputs, where);
+              if (!s.riff && sound) assert.ok(s.bars.every((b) => b.articulation === sound), `${where}: a bar isn't ${sound}`);
+              if (!s.riff && shape && g.sizes.includes(shape)) {
+                const sizes = new Set(s.voicings.map((v) => v.voicing.notes.length));
+                if (sizes.size) assert.ok([...sizes].every((n) => n === (shape === "two" ? 2 : 3)) || s.voicings.some((v) => v.voicing.tags.includes("octaveRiff")), `${where}: shape sizes ${[...sizes]}`);
+              }
+            }
+        }
+      }
+console.log(`Options: ${optionRenders} renders (every groove × playing style × voicing, ${optionKeys.length} keys × ${optionProgs.length} progressions × ${FEELS.length} feels) pass every check above.`);
 
 // Library voicings (chips + progression playback) are valid too.
 for (const key of PITCH_CLASSES)

@@ -63,7 +63,7 @@ export function usesProgression(id: SectionId): boolean {
 // Forms (R7)
 
 export type FormId = "short" | "standard" | "extended";
-export type VariationId = "push";
+export type VariationId = "push" | "keyUp";
 /** A place in the running order. `times`: how many times in a row it plays its section's material. */
 export type FormSlot = { section: SectionId; name: string; variation?: VariationId; times: number };
 /** A slot as the data declares it: how far it can grow (lib/songLength.ts), and which growth step grows it. */

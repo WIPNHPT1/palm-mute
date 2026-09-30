@@ -165,7 +165,7 @@ test.describe("generator UX", () => {
     expect(playedCells(pb).slice(0, 4)).toEqual(parseTab(await tabRows(page, "Chorus")));
     await expect(last).toHaveAttribute("data-active", "true");
     await expect(section(page, "Chorus")).toHaveAttribute("data-active", "true");
-    await expect(section(page, "Chorus").locator("[data-uses] li[data-active='true']")).toHaveText(`Last chorus ×${lastBars / 4}`);
+    await expect(section(page, "Chorus").locator("[data-uses] li[data-active='true']")).toHaveText(`Last chorus ×${lastBars / 4} · 2:51`);
     // Locking a part shows on every place it plays.
     await section(page, "Verse").getByRole("button", { name: "Lock Verse" }).click();
     await expect(strip.locator("button", { hasText: "Verse" }).locator("svg")).toHaveCount(2);

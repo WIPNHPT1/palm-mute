@@ -115,15 +115,15 @@ export function leadBars(lead: Lead, feel: FeelId, backing: boolean): PlaybackBa
 /** A section card: its bars exactly as tabbed, repeated as the card says (the Verse plays twice). */
 export function sectionBars(section: RenderedSection): PlaybackBar[] {
   // Lead sections: the line on the lead voice, over the progression's chords and drums.
-  if (section.lead) return leadBars(section.lead, section.feel, true);
-  const bars: PlaybackBar[] = section.bars.map((bar) => ({
+  if (section.lead) return withDrums(leadBars(section.lead, section.feel, true), section.drums);
+  const bars: PlaybackBar[] = section.bars.map((bar, b) => ({
     feel: section.feel,
     cells: bar.cells.map((ev) =>
       ev
         ? {
             notes: ev.notes.map(midiOf),
             cells: ev.cells,
-            velocity: ev.kind === "dead" ? 0.5 : ev.accent ? 1 : ev.up ? 0.6 : 0.8,
+            velocity: (ev.kind === "dead" ? 0.5 : ev.accent ? 1 : ev.up ? 0.6 : 0.8) * (section.fade ? 1 - (0.75 * b) / section.bars.length : 1),
             palmMuted: ev.palmMuted,
             ...(ev.kind === "dead" ? { dead: true } : {}),
           }
@@ -132,7 +132,19 @@ export function sectionBars(section: RenderedSection): PlaybackBar[] {
     ...(bar.stopAt !== undefined ? { drumsStopAt: bar.stopAt + 1 } : {}),
     ...(bar.drums ? { drumPattern: bar.drums } : {}),
   }));
-  return Array.from({ length: section.repeat }, () => bars).flat();
+  return withDrums(Array.from({ length: section.repeat }, () => bars).flat(), section.drums);
+}
+
+/** The card's Drums option: half-time under the section (the groove's own pattern dropped), or no drums. */
+function withDrums(bars: PlaybackBar[], drums: RenderedSection["drums"]): PlaybackBar[] {
+  if (drums === "none") return bars.map((bar) => ({ ...bar, drums: false }));
+  if (drums === "half")
+    return bars.map((bar) => {
+      const half: PlaybackBar = { ...bar, feel: "half-time" };
+      delete half.drumPattern;
+      return half;
+    });
+  return bars;
 }
 
 /** One part of the song's running order as it plays: the section (with its variation) and how many times in a row. */
