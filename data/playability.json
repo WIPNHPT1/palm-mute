@@ -1,0 +1,24 @@
+{
+  "_note": "Song Engine v2 Phase 2, the playability model (docs/song-engine-v2-prd.md §6.1). Read by lib/playability.ts; tune here, never in code. `npm run verify` enforces the hard limits on every render and prints the distributions.",
+  "changes": {
+    "_note": "R2, tempo-aware chord changes. A change's difficulty, in fret-equivalents: frets the hand moves, plus a string-set change (root on another string), a shape change (2 ↔ 3 notes) and leaving open position. Its speed is that difficulty per 100 ms of the time available: from the last pick of the old chord to the first of the new one (a push counts as the eighth it lands on). Mid-Tempo is judged at its fastest setting. Over `comfortPer100ms` the path search pays `costWeight` per unit; nothing may exceed `limitPer100ms`.",
+    "weights": { "fret": 1, "stringSet": 1, "shapeChange": 0.5, "leaveOpen": 0.5 },
+    "comfortPer100ms": 2,
+    "limitPer100ms": 4,
+    "costWeight": 1
+  },
+  "mutes": {
+    "_note": "R1. Every string a strum could hit but the chord doesn't play must be silenced, and something has to do it. Strings between two sounding notes: the fretting finger next to the gap leans onto it (needs a fretted neighbour). Strings above the chord: the underside of the fretting fingers (needs any fretted note). Strings below the root: the root finger's tip takes the nearest (needs a fretted root); the thumb over the neck takes the low E; on palm-muted bars an accurate pick can skip the rest. Anything left over makes the shape unplayable on that bar.",
+    "sources": ["lean", "underside", "tip", "thumb", "pick"]
+  },
+  "picking": {
+    "_note": "R3, picking-hand load. A run is consecutive eighth-note strums all picked down; `fastRate` (strums per second) is where downpicking gets tiring. Runs at or above it are capped per difficulty (null = no cap); over the cap, chord strums alternate (upstrokes on the offbeats). Octave riffs skip a string and are always downpicked, so they count toward the rating instead. The Generator plays `default` until the Difficulty control arrives (Phase 6).",
+    "fastRate": 5,
+    "caps": { "beginner": 8, "intermediate": 16, "advanced": null },
+    "default": "intermediate"
+  },
+  "rating": {
+    "_note": "R4, a 1–5 difficulty per section (and the song's hardest section): 1 + the sum of these points, rounded and clamped. `speed` per unit of the fastest change over comfort; `mute` per thumb or lean mute; `run` per 8 downstrokes over 16 in the longest fast downpicked run; `stretch` per fret of span over 2; `high` when the hand goes above fret 9; `threeNote` for 3-note shapes in a fast palm-muted part.",
+    "points": { "speed": 0.5, "mute": 0.5, "run": 0.5, "stretch": 0.5, "high": 0.5, "threeNote": 0.5, "base": 1 }
+  }
+}

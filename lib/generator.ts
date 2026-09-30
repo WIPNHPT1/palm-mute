@@ -2,6 +2,7 @@
 import feelsJson from "@/data/feels.json";
 import rhythmJson from "@/data/rhythm-patterns.json";
 import recipesJson from "@/data/section-recipes.json";
+import playabilityJson from "@/data/playability.json";
 import templatesJson from "@/data/song-section-templates.json";
 import {
   type Fretted,
@@ -9,6 +10,7 @@ import {
   type TabLineGroup,
   CELLS_PER_BAR,
   describeNotes,
+  midiOf,
   renderTab,
   tabText,
 } from "@/lib/fretboard";
@@ -21,6 +23,7 @@ import {
   resolveProgression,
 } from "@/lib/musicTheory";
 import { type Lead, type LeadPart, type LeadStyle, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
+import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, rateSection, rhythmGaps } from "@/lib/playability";
 import { type ChordSectionId, type SectionId, type VariationId, sectionDegrees, sectionEnergy } from "@/lib/songPlan";
 import { type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
 
@@ -198,6 +201,8 @@ export type RenderedSection = {
   variation?: { id: VariationId; bar: number };
   /** Chord sections: energy from what the tab plays (lib/songPlan.ts, data/energy.json). */
   energy: number;
+  /** Chord sections: how hard it is to play at the feel's tempo (lib/playability.ts, data/playability.json). */
+  playability?: { rating: Rating; bpm: number };
 };
 
 /** Chord sections' bar-by-bar chords: the song's harmonic plan over the chosen progression (data/section-harmony.json). */
@@ -271,6 +276,11 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const keyPc = pitchClassOf(inputs.key);
   const prev = PREVIOUS[id];
   const muted = rhythm.articulation.filter((a) => a === "pm").length > rhythm.articulation.length / 2;
+  // Playability (R1, R2): the search knows the rhythm, so it prices each change by the time the hand has
+  // at this feel's tempo (Mid-Tempo at its fastest) and gives every shape a mute plan on its bars.
+  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  const patterns = chords.map((_, b) => rhythm.bars[b % rhythm.bars.length]);
+  const articulations = chords.map((_, b) => rhythm.articulation[b % rhythm.articulation.length]);
   const paths = voicePaths(
     chords.map((c) => pitchClassOf(c.root)),
     {
@@ -280,6 +290,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
       fastMuted: muted && feel === "fast-punk",
       prefer: recipe.prefer,
       carryFrom: prev ? registerTarget(keyPc, recipes[prev].register) : undefined,
+      timing: { gaps: rhythmGaps(patterns, rhythm.pushes ?? []), bpm, articulation: articulations },
     },
   );
   // The Chorus never sits below the Verse (brief §11.4) and lifts above it where it can: keep takes above
@@ -302,7 +313,12 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const pushes = [...(rhythm.pushes ?? [])];
   let varied: RenderedSection["variation"];
   if (variation === "push") {
-    const b = chords.findIndex((c, i) => i >= 1 && i + 1 < chords.length && chords[i + 1].root !== c.root && !pushes.includes(i));
+    // The first chord change after bar 1 that has no push yet and stays under the speed limit once pushed.
+    const fits = (i: number) => {
+      const gap = rhythmGaps(patterns, [...pushes, i])[i + 1];
+      return changeSpeed(moveDifficulty(path.voicings[i], path.voicings[i + 1]), gap, bpm) <= PLAYABILITY_LIMIT;
+    };
+    const b = chords.findIndex((c, i) => i >= 1 && i + 1 < chords.length && chords[i + 1].root !== c.root && !pushes.includes(i) && fits(i));
     if (b >= 0) {
       pushes.push(b);
       varied = { id: "push", bar: b };
@@ -322,6 +338,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     return { chord, cells, articulation, stopAt, ...(label !== chord.name ? { label } : {}) };
   });
   setRingLengths(bars);
+  alternateLongRuns(bars, bpm);
 
   const voicings: { chord: ResolvedChord; voicing: Voicing }[] = [];
   chords.forEach((chord, i) => {
@@ -353,7 +370,49 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     spoken,
     ...(varied ? { variation: varied } : {}),
     energy: sectionEnergy(bars, voicings.map((v) => v.voicing)),
+    playability: { rating: rateBars(bars, voicings.map((v) => v.voicing), bpm, muted && feel === "fast-punk"), bpm },
   };
+}
+
+const PLAYABILITY_LIMIT = playabilityJson.changes.limitPer100ms;
+
+/** The voicing a hit's notes belong to. */
+function voicingFor(voicings: Voicing[], notes: Fretted[]): Voicing {
+  return voicings.find((v) => v.notes.length === notes.length && v.notes.every((n, i) => n.string === notes[i].string && n.fret === notes[i].fret))!;
+}
+
+/** The fastest chord change in bars (fret-equivalents per 100 ms at bpm). */
+export function fastestChange(bars: SectionBar[], voicings: Voicing[], bpm: number): number {
+  return Math.max(0, ...changesIn(bars, (n) => voicingFor(voicings, n)).map((c) => changeSpeed(moveDifficulty(c.from, c.to), c.gap, bpm)));
+}
+
+function rateBars(bars: SectionBar[], voicings: Voicing[], bpm: number, fastMuted: boolean): Rating {
+  return rateSection(bars, voicings, bpm, fastMuted, fastestChange(bars, voicings, bpm));
+}
+
+/**
+ * R3, picking-hand load: a fast run of downstrokes longer than the difficulty's cap alternates instead
+ * (chord strums on the offbeats become upstrokes). Octave riffs skip a string, so they stay downpicked.
+ * Only the audio's pick direction changes; the tab shows the same notes.
+ */
+function alternateLongRuns(bars: SectionBar[], bpm: number) {
+  const cap = downRunCap();
+  if (cap === null || 1000 / eighthMs(bpm) < playabilityJson.picking.fastRate) return;
+  const flat = bars.flatMap((bar) => bar.cells.map((ev, c) => ({ ev, c })));
+  let start = 0;
+  for (let i = 0; i <= flat.length; i++) {
+    if (i < flat.length && flat[i].ev && !flat[i].ev!.up) continue;
+    if (i - start > cap)
+      for (let k = start; k < i; k++) {
+        const { ev, c } = flat[k];
+        if (c % 2 === 1 && ev!.notes.length && !isOctave(ev!.notes)) ev!.up = true;
+      }
+    start = i + 1;
+  }
+}
+
+function isOctave(notes: Fretted[]): boolean {
+  return notes.length === 2 && Math.abs(midiOf(notes[0]) - midiOf(notes[1])) === 12;
 }
 
 /** An octave shape is the root doubled, not a power chord (no fifth), so it's named as one. */

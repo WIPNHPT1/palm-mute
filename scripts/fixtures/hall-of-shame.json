@@ -1,0 +1,15 @@
+{
+  "_note": "Every tab the owner has flagged in a review of real output (docs/song-engine-v2-prd.md §8.4). `npm run verify` checks every chord render against each entry, and none may ever match again. `notes` = the exact hit (string+fret, any order); `articulation` limits the match to palm-muted or ringing bars; `label` = the chord name shown over the bar (a regular expression). Add an entry for every new flag.",
+  "entries": [
+    { "flagged": "2026-09-30", "what": "C5 voiced as E3+A3: the fifth under the root reads as a wrong G5 (Breakdown)", "notes": ["E3", "A3"], "label": "^C5$" },
+    { "flagged": "2026-09-30", "what": "Open D5 (D0+G2) let ring: nothing mutes the open low E and A strings", "notes": ["D0", "G2"], "articulation": "ring" },
+    { "flagged": "2026-09-30", "what": "An octave shape labelled as a power chord (E0+D2 shown as E5: there's no fifth)", "notes": ["E0", "D2"], "label": "5$" },
+    { "flagged": "2026-09-30", "what": "An octave shape labelled as a power chord (A-string root octave shown as a 5 chord)", "notes": ["A0", "G2"], "label": "5$" }
+  ],
+  "rules": {
+    "_note": "The general rules behind the entries, checked on every render too: no inverted power chord in a rhythm part; every hit has a mute plan; every label matches its pitch classes.",
+    "noInverted": true,
+    "mutePlan": true,
+    "labelHonesty": true
+  }
+}

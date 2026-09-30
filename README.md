@@ -130,6 +130,8 @@ Voicing engine: 210000 section renders checked, covering 12 keys × 10 progressi
 16 reference tabs.
 Song plan: 2 forms render for every key × progression × feel; Verse 2 adds its push in 30000 of 30000
 songs. Energy arc (mean): … verse 0.26, prechorus 0.54, chorus 0.88 …
+Playability: 2853300 hits, every one labelled honestly and with a mute plan (…); 4 hall-of-shame tabs
+never reappear. Fastest change (frets/100 ms, limit 4): fast-punk 3.90, … Longest downpicked run: fast-punk 15, …
 All voicing-engine checks passed.
 Lead engine: 72000 leads checked (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds);
 95.5% of strong beats on chord notes; … brief §4 hook + 9 reference outputs.

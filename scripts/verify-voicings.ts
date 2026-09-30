@@ -22,13 +22,25 @@ import {
 import { PITCH_CLASSES, type NoteName, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
 import { sectionBars, songBarParts, songBars } from "@/lib/playback";
 import { FORM_IDS, formSlots, sectionDegrees, timesFor } from "@/lib/songPlan";
-import { SETTINGS, checkVoicing } from "@/lib/voicings";
+import { SETTINGS, type Voicing, checkVoicing } from "@/lib/voicings";
+import { type MuteSource, PLAYABILITY, downRunCap, labelPitchClasses, longestDownRun, mutePlan, pitchClassesOf } from "@/lib/playability";
+import { fastestChange } from "@/lib/generator";
 
 const FEELS: FeelId[] = FEEL_IDS;
 const SEEDS = 50;
 const LIMIT = SETTINGS.fretLimit;
 let renders = 0;
 let shiftCount = 0;
+
+// Playability (Phase 2) tallies, printed at the end.
+const muteCounts: Record<MuteSource, number> = { lean: 0, underside: 0, tip: 0, thumb: 0, pick: 0 };
+const fastestByFeel: Partial<Record<FeelId, number>> = {};
+const runByFeel: Partial<Record<FeelId, number>> = {};
+const ratings: Record<string, number[]> = {};
+let hitsChecked = 0;
+const SHAME = JSON.parse(readFileSync(join(process.cwd(), "scripts/fixtures/hall-of-shame.json"), "utf8")) as {
+  entries: { what: string; notes: string[]; articulation?: "pm" | "ring"; label?: string }[];
+};
 
 // ---------------------------------------------------------------------------
 // Tab parsing: rebuild every cell's notes from the rendered text alone, so "audio = tab" compares the
@@ -107,6 +119,46 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
       assert.ok(!(v.rootString === "D" && v.open), `${where}: bar ${i + 1} rings an open D-string root`);
     assert.equal(tabBars([bar])[0].label, v.tags.includes("octaveRiff") ? `${bar.chord!.root} oct` : bar.chord!.name, `${where}: bar ${i + 1} label`);
   });
+  // Phase 2 playability (lib/playability.ts, data/playability.json), on every hit of every bar.
+  const voicingOf = (notes: { string: string; fret: number }[]) =>
+    s.voicings.map((v) => v.voicing).find((v) => v.notes.length === notes.length && v.notes.every((n, k) => n.string === notes[k].string && n.fret === notes[k].fret)) as Voicing;
+  s.bars.forEach((bar, i) => {
+    const label = tabBars([bar])[0].label!;
+    const next = s.bars[i + 1];
+    bar.cells.forEach((ev, c) => {
+      if (!ev || ev.kind !== "hit") return;
+      hitsChecked++;
+      // R5: the notes are exactly what the label promises (a push at the bar's end plays the next bar's chord).
+      const pcs = pitchClassesOf(ev.notes);
+      const own = labelPitchClasses(label, pitchClassOf(bar.chord!.root));
+      const pushed = c === 7 && next ? labelPitchClasses(tabBars([next])[0].label!, pitchClassOf(next.chord!.root)) : null;
+      assert.ok(
+        JSON.stringify(pcs) === JSON.stringify(own) || (pushed && JSON.stringify(pcs) === JSON.stringify(pushed)),
+        `${where}: bar ${i + 1} cell ${c + 1} plays pitch classes ${pcs} under "${label}"`,
+      );
+      // R1: something silences every string the strum could hit.
+      const plan = mutePlan(ev.notes, bar.articulation!);
+      assert.ok(plan.ok, `${where}: bar ${i + 1} ${label} has no mute plan (${!plan.ok && plan.reason})`);
+      if (plan.ok) for (const m of plan.mutes) muteCounts[m.by]++;
+      // Hall of shame: no flagged tab ever comes back.
+      const hit = ev.notes.map((n) => `${n.string}${n.fret}`).sort().join("+");
+      for (const e of SHAME.entries)
+        if ([...e.notes].sort().join("+") === hit && (!e.articulation || e.articulation === bar.articulation) && (!e.label || new RegExp(e.label).test(label)))
+          assert.fail(`${where}: bar ${i + 1} is in the hall of shame: ${e.what}`);
+    });
+  });
+  // R2: no chord change faster than the limit at this feel's tempo.
+  const bpm = s.playability!.bpm;
+  const fastest = fastestChange(s.bars, s.voicings.map((v) => v.voicing), bpm);
+  assert.ok(fastest <= PLAYABILITY.changes.limitPer100ms + 1e-9, `${where}: a chord change needs ${fastest.toFixed(2)} frets per 100 ms (limit ${PLAYABILITY.changes.limitPer100ms})`);
+  fastestByFeel[s.feel] = Math.max(fastestByFeel[s.feel] ?? 0, fastest);
+  // R3: chord strums downpick no longer than the default difficulty's cap (octave riffs are always downpicked
+  // and count toward the rating instead).
+  const cap = downRunCap();
+  const chordsOnly = s.bars.map((bar) => ({ ...bar, cells: bar.cells.map((ev) => (ev && ev.notes.length === 2 && voicingOf(ev.notes)?.tags.includes("octaveRiff") ? { ...ev, up: true } : ev)) }));
+  if (cap !== null) assert.ok(longestDownRun(chordsOnly, bpm) <= cap, `${where}: ${longestDownRun(chordsOnly, bpm)} chord downstrokes in a row (cap ${cap})`);
+  runByFeel[s.feel] = Math.max(runByFeel[s.feel] ?? 0, longestDownRun(s.bars, bpm));
+  (ratings[s.id] ??= [0, 0, 0, 0, 0, 0])[s.playability!.rating.score]++;
   // Degrees: every bar's chord comes from the song's harmonic plan over this progression, in this key (R6).
   const keyPc = pitchClassOf(inputs.key);
   const degrees = sectionDegrees(s.id as Exclude<SectionId, "solo">, inputs.progressionId);
@@ -285,4 +337,7 @@ for (const a of actual.slice(0, 2)) console.log(`\n${a.name}:\n${a.tab.join("\n"
 const arc = SECTION_IDS.filter((id) => id !== "solo").map((id) => `${id} ${(energySum[id]! / energyCount).toFixed(2)}`).join(", ");
 console.log(`\nVoicing engine: ${renders} section renders checked, covering 12 keys × ${progressions.length} progressions × ${FEELS.length} feels × ${SECTION_IDS.length} sections × ${SEEDS} seeds (every section follows the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
 console.log(`Song plan: ${FORM_IDS.length} forms render for every key × progression × feel; Verse 2 adds its push in ${pushes} of ${energyCount} songs${pushes < energyCount ? " (the rest have no chord change to push into)" : ""}. Energy arc (mean): ${arc}; smallest chorus-over-verse lift ${lowestLift.toFixed(3)}.`);
+const dist = (id: string) => ratings[id].slice(1).map((n, k) => `${k + 1}:${n}`).join(" ");
+console.log(`Playability: ${hitsChecked} hits, every one labelled honestly and with a mute plan (${Object.entries(muteCounts).map(([k, v]) => `${k} ${v}`).join(", ")}); ${SHAME.entries.length} hall-of-shame tabs never reappear. Fastest change (frets/100 ms, limit ${PLAYABILITY.changes.limitPer100ms}): ${FEELS.map((f) => `${f} ${fastestByFeel[f]!.toFixed(2)}`).join(", ")}. Longest downpicked run (eighths): ${FEELS.map((f) => `${f} ${runByFeel[f]}`).join(", ")}.`);
+console.log(`Difficulty (1–5, renders per score): ${SECTION_IDS.filter((id) => ratings[id]).map((id) => `${id} ${dist(id)}`).join("; ")}.`);
 console.log("All voicing-engine checks passed.");
