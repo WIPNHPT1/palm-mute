@@ -7,6 +7,7 @@ Palm/Mute writes pop-punk songs the way a guitarist would, and then **proves** i
 - [3. Section recipes: how it's played](#3-section-recipes-how-its-played)
 - [3b. The song: plan, form and energy](#3b-the-song-plan-form-and-energy)
 - [3c. Playability: what the hands have to do](#3c-playability-what-the-hands-have-to-do)
+- [3d. The critic: best of eight](#3d-the-critic-best-of-eight)
 - [4. Tabs](#4-tabs)
 - [5. Intro melodies and solos](#5-intro-melodies-and-solos)
 - [6. The proofs](#6-the-proofs)
@@ -132,6 +133,26 @@ The voicing search knows each section's rhythm and tempo, so it judges a shape t
 - **Rating (R4).** Each chord section gets 1–5 from its fastest change, thumb and lean mutes, long downpicked runs, stretch, high positions and 3-note shapes in fast palm-muting. A song is as hard as its hardest section. There's no UI for it yet (Phase 6). Today everything rates 1–3.
 - **Hall of shame.** `scripts/fixtures/hall-of-shame.json` lists every tab the owner has flagged. Verify checks every render against it.
 
+## 3d. The critic: best of eight
+
+`data/critic.json` · `lib/critic.ts` (Song Engine v2, Phase 3)
+
+Every section on its own is already the search's best path, but a song can still be dull, or awkward where parts meet. So **GENERATE writes 8 takes of the whole song and keeps the one the critic scores highest**:
+
+| Part of the score | What it rewards or penalises |
+|---|---|
+| Playability | − the song's difficulty over 1, − its fastest change over comfort |
+| Arc | + how far the Chorus's energy tops the Verse's, + a Pre-chorus that builds between them |
+| Hook | + the Chorus sitting higher on the neck, filling out with 3-note shapes, and busier than the Verse |
+| Variety | + sections that don't all strum at the same density |
+| Flow | − hand jumps bigger than 5 frets where one section hands over to the next in the running order |
+
+- **Takes:** each take picks a seed per section from a seeded generator, so the same song seed always gives the same song. The page opens on song 0, whose first take is every section's own best. Across the sweep, 8 takes lift the kept score by 0.54 on average over the first take.
+- **Locks:** locked sections, and parts carrying a lead line, keep their own inputs in every take.
+- **GENERATE:** never repeats the song on screen.
+- **A section's ↻:** tries that section's next 8 different takes, each heard in the song as it stands, and keeps the best. Only that section changes, and it always changes.
+- **Speed:** about 27 ms per GENERATE with Chromium's CPU slowed 4× (a stand-in for a mid-range phone; the budget is ~100 ms). `e2e/critic.spec.ts` holds it there.
+
 ## 4. Tabs
 
 `lib/fretboard.ts` · `components/TabBlock.tsx`
@@ -167,6 +188,7 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
 |---|---|---|
 | Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
 | Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, **every hit labelled honestly and with a mute plan, no change over 4 frets per 100 ms, chord downpicking within the cap, the hall of shame**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
+| Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; GENERATE never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
@@ -183,6 +205,7 @@ Nothing musical is hard-coded:
 | `data/song-forms.json` | Change the running order, or a repeat's variation |
 | `data/energy.json` | Reweight what makes a section feel bigger |
 | `data/playability.json` | Change the speed limit, the downpick caps, or what makes a section rate harder |
+| `data/critic.json` | Change how many takes GENERATE writes, or what the critic likes in a song |
 | `data/lead-rules.json` | Change the melodic taste (steps vs leaps, chord notes on strong beats, the solo's arc, bends) |
 | `data/lead-rhythms.json` | Add rhythm cells for melodies and solos |
 

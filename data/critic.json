@@ -1,0 +1,18 @@
+{
+  "_note": "Song Engine v2 Phase 3: the song critic (docs/song-engine-v2-prd.md R17–R19). Read by lib/critic.ts; tune here, never in code. A whole song (every chord section in its form) gets one score; higher is better. GENERATE writes `candidates` takes from derived seeds and keeps the best; a section's ↻ tries `candidates` new takes of that section alone against the rest of the song. Each take picks a seed per section from 0 to `seedSpace` - 1 (enough to reach every rhythm variant and voicing alternative). Deterministic: the same song seed always gives the same song. `npm run verify` prints the score distribution.",
+  "candidates": 8,
+  "seedSpace": 24,
+  "weights": {
+    "_note": "playability: minus `rating` per difficulty point over 1 (the song's hardest section) and `speed` per fret-equivalent per 100 ms over comfort in its fastest change. arc: `chorusOverVerse` × the Chorus's energy lead over the Verse (capped at `arcCap`), plus `build` when the Pre-chorus sits between them. hook: `lift` × the Chorus's rise above the Verse on the neck (per 5 frets, capped at 1), `threeNote` × the Chorus's share of 3-note shapes, `contrast` × how much busier the Chorus is than the Verse (sounding eighths per bar ÷ 8, capped at 1). variety: `variety` × the share of distinct rhythm densities across the chord sections. flow: minus `boundary` per fret the hand jumps over the move limit where one section hands over to the next in the running order.",
+    "rating": 1,
+    "speed": 0.5,
+    "chorusOverVerse": 2,
+    "arcCap": 0.6,
+    "build": 0.5,
+    "lift": 1,
+    "threeNote": 0.5,
+    "contrast": 1,
+    "variety": 0.5,
+    "boundary": 0.3
+  }
+}
