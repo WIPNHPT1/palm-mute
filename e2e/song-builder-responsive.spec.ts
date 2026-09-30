@@ -19,7 +19,8 @@ async function problems(page: Page, root: string): Promise<string[]> {
         if (r.width < 43.5 || r.height < 43.5) out.push(`small control ${Math.round(r.width)}×${Math.round(r.height)}: ${name(el)}`);
       }
       for (const el of root.querySelectorAll<HTMLElement>("*")) {
-        if (el.closest("svg, [aria-hidden='true']")) continue;
+        // Tab art and screen-reader-only text are hidden on purpose.
+        if (el.closest("svg, [aria-hidden='true'], .sr-only")) continue;
         const text = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
         const style = getComputedStyle(el);
         if (text && el.getBoundingClientRect().width && parseFloat(style.fontSize) < 12) out.push(`text ${style.fontSize}: ${name(el)}`);
@@ -72,5 +73,18 @@ test.describe("song builder: every screen", () => {
       return [...ol.querySelectorAll("li")].every((li) => { const r = li.getBoundingClientRect(); return r.left >= box.left - 0.5 && r.right <= box.right + 0.5; });
     });
     expect(inside).toBe(true);
+  });
+
+  test("full-width section cards and every options tab fit", async ({ page }) => {
+    await gotoAndSettle(page, "/generator/");
+    expect(await problems(page, "[data-sections]")).toEqual([]);
+    for (const button of await page.locator("[data-options-button]").all()) await button.click();
+    await expect(page.locator("[data-options-panel]")).toHaveCount(7);
+    // Every tab of every panel, one at a time across the cards.
+    for (const tab of ["STRUCTURE", "DRUMS", "STYLE", "RHYTHM"]) {
+      for (const t of await page.locator("[data-options-panel] [role=tab]").filter({ hasText: tab }).all()) await t.click();
+      expect(await horizontalOverflow(page), tab).toBeLessThanOrEqual(0);
+      expect(await problems(page, "[data-sections]"), tab).toEqual([]);
+    }
   });
 });

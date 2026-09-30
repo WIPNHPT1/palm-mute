@@ -43,6 +43,10 @@
     "push": {
       "label": "adds a push",
       "_note": "The next chord arrives an eighth early at the first chord change after bar 1 (where the section has no push already)."
+    },
+    "keyUp": {
+      "label": "up a tone",
+      "_note": "The section plays a whole tone higher (the Chorus card's Last chorus option)."
     }
   },
   "forms": {
