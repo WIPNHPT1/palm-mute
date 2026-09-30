@@ -1,20 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useTabletUp } from "@/lib/hooks/useTabletUp";
 import { type FeelId, MID_TEMPO, feels, patternForFeel } from "@/lib/generator";
-
-/** True from the tablet breakpoint up (tailwind.config.js). Static pages render the phone layout first. */
-function useTabletUp(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const mq = matchMedia("(min-width: 834px)");
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    },
-    () => matchMedia("(min-width: 834px)").matches,
-    () => false,
-  );
-}
 
 /**
  * The five feels. Tablet and desktop: one row of segments, with Mid-Tempo's tempo row underneath.

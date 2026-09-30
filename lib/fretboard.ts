@@ -66,7 +66,12 @@ export type TabLineGroup = {
   header: string[];
   /** String rows, high e first, e.g. "e|----|----|". */
   strings: string[];
+  /** Where each bar of the line sits, in character columns (for rhythm stems and bar numbers drawn over the tab). */
+  layout?: TabBarLayout[];
 };
+
+/** A bar within a tab line: the column each cell starts at, and the column of its closing bar line. */
+export type TabBarLayout = { cells: number[]; end: number };
 
 const PREFIX = 2; // "e|"
 
@@ -81,12 +86,17 @@ export function renderTab(bars: TabBar[], barsPerLine = 2): TabLineGroup[] {
   const anyArt = bars.some((b) => b.articulation || b.stopAt !== undefined);
   const groups: TabLineGroup[] = [];
 
-  // Layout D (DECISIONS.md): eighth-note bars go barsPerLine to a line; a 16th-note bar gets a line to itself,
-  // so its text stays as big as an eighth-note line's.
+  // Layout D (DECISIONS.md): a line holds `barsPerLine` eighth-note bars; a 16th-note bar is as wide as two, so
+  // it takes two of them (on a 2-bar line it gets the line to itself), and its text stays as big.
+  const weight = (bar: TabBar) => Math.max(1, bar.cells.length / CELLS_PER_BAR);
   const lines: TabBar[][] = [];
   for (let i = 0; i < bars.length; ) {
     const line = [bars[i++]];
-    while (line[0].cells.length <= CELLS_PER_BAR && line.length < barsPerLine && i < bars.length && bars[i].cells.length <= CELLS_PER_BAR) line.push(bars[i++]);
+    let used = weight(line[0]);
+    while (i < bars.length && used + weight(bars[i]) <= barsPerLine) {
+      used += weight(bars[i]);
+      line.push(bars[i++]);
+    }
     lines.push(line);
   }
   for (const line of lines) {
@@ -98,9 +108,12 @@ export function renderTab(bars: TabBar[], barsPerLine = 2): TabLineGroup[] {
     const nc: number[] = [];
 
     let col = PREFIX; // current column in every row
+    const layout: TabBarLayout[] = [];
     for (const bar of line) {
       const barStart = col;
+      const cols: number[] = [];
       bar.cells.forEach((cell, i) => {
+        cols.push(col);
         const width = Math.max(1, ...Object.values(cell.frets).map((f) => f!.length)) + 1;
         TAB_STRINGS.forEach((s, k) => (strings[k] += (cell.frets[s] ?? "").padEnd(width, "-")));
         accents += (cell.accent ? ">" : "").padEnd(width, " ");
@@ -110,6 +123,7 @@ export function renderTab(bars: TabBar[], barsPerLine = 2): TabLineGroup[] {
         labels += " ".repeat(width);
         col += width;
       });
+      layout.push({ cells: cols, end: col });
       TAB_STRINGS.forEach((_, k) => (strings[k] += "|"));
       accents += " ";
       art.push("|");
@@ -141,7 +155,7 @@ export function renderTab(bars: TabBar[], barsPerLine = 2): TabLineGroup[] {
     if (anyLabel) header.push(labels.padEnd(strings[0].length, " "));
     if (anyArt) header.push(artRow);
     if (anyAccent) header.push(accents.padEnd(strings[0].length, " "));
-    groups.push({ header, strings });
+    groups.push({ header, strings, layout });
   }
   return groups;
 }

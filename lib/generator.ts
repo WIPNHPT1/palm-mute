@@ -20,12 +20,13 @@ import {
   type Degree,
   type NoteName,
   type ResolvedChord,
+  getProgression,
   noteNameFor,
   pitchClassOf,
   resolveDegrees,
   resolveProgression,
 } from "@/lib/musicTheory";
-import { type Lead, type LeadPart, type LeadStyle, type Quote, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
+import { type Lead, type LeadPart, type LeadStyle, type Quote, defaultLeadStyle, generateLead, leadTabBars, styleLabel } from "@/lib/melody";
 import type { DrumPattern } from "@/lib/playback";
 import { type RiffSpec, riffFits, writeRiff } from "@/lib/riffs";
 import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, picksOf, rateSection, rhythmGaps } from "@/lib/playability";
@@ -148,6 +149,29 @@ export type SectionInputs = {
   lead?: { style: LeadStyle; bars: number; sent?: boolean } | null;
   /** The Solo's song thread (R15, R16): the song's motif to quote, its chords and its strongest chord. */
   thread?: SongThread;
+  /** The section card's Options (docs/song-builder-prd.md §6): unset fields keep the take's own. */
+  options?: SectionOptions;
+};
+
+/**
+ * A section card's Options. Every field is optional: unset means the take decides (the seed, the critic, the
+ * length plan). Only the section it belongs to changes.
+ */
+export type SectionOptions = {
+  /** Rhythm: a groove by name (a variant in data/section-recipes.json). */
+  groove?: string;
+  /** Playing style: palm-muted or open (ringing) throughout, instead of the groove's own mix. */
+  sound?: "pm" | "ring";
+  /** Voicing: 2-note or 3-note shapes only, instead of the recipe's mix. */
+  shape?: "two" | "three";
+  /** Structure: how many times each place in the song plays this section's material (the length plan decides otherwise). */
+  times?: number;
+  /** Drums: half-time under this section, or none at all, instead of the groove's own. */
+  drums?: "half" | "none";
+  /** Structure, Verse: Verse 2 plays exactly as Verse 1 (no push). */
+  noPush?: boolean;
+  /** Structure, Chorus: the Last chorus goes up a whole tone. */
+  keyUp?: boolean;
 };
 
 /** What a Generator-written solo knows about its song (Song Engine v2 Phase 5). */
@@ -198,6 +222,13 @@ type Variant = {
   riff?: RiffSpec;
   /** "openRoots": only when every chord's root is an open string (pedal riffs). */
   requires?: "openRoots";
+  /**
+   * The Ending's own chords instead of the plan's: "tag" = the progression's last two chords, then home;
+   * "progression" = the progression itself (a fade-out plays the chorus chords).
+   */
+  harmony?: "tag" | "progression";
+  /** Fade out: each bar quieter than the last (playback). */
+  fade?: boolean;
 };
 type SectionRecipe = {
   register: "low" | "lift";
@@ -241,6 +272,12 @@ export type RenderedSection = {
   riff?: boolean;
   /** Chord sections: how hard it is to play at the feel's tempo (lib/playability.ts, data/playability.json). */
   playability?: { rating: Rating; bpm: number };
+  /** The groove it plays (a variant name); lead sections have none. */
+  groove?: string;
+  /** Drums under it when not the groove's own (the card's Drums option). */
+  drums?: "half" | "none";
+  /** Each bar quieter than the last (the Ending's fade-out). */
+  fade?: boolean;
 };
 
 /** Chord sections' bar-by-bar chords: the song's harmonic plan over the chosen progression (data/section-harmony.json). */
@@ -325,10 +362,20 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const variants = recipe.variants.filter(
     (v) => !v.riff || (riffFits(v.riff, keyPc, degrees) && writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpmFor) !== null),
   );
-  const variant = variants[inputs.seed % variants.length];
-  const chords = sectionChords(id, inputs);
-  if (variant.riff) return renderRiffSection(id, inputs, feel, variant, degrees, chords);
-  const rhythm = variant.rhythms[feel] ?? variant.rhythms.all ?? variant.rhythms[Object.keys(variant.rhythms)[0] as FeelId]!;
+  const options = inputs.options ?? {};
+  // The card's Rhythm option picks a groove by name; otherwise the seed does.
+  const variant = (options.groove && variants.find((v) => v.name === options.groove)) || variants[inputs.seed % variants.length];
+  const planned = variant.harmony ? endingHarmony(variant.harmony, inputs.progressionId) : degrees;
+  const chords = variant.harmony ? resolveDegrees(inputs.key, planned) : sectionChords(id, inputs);
+  if (variant.riff) {
+    const riff = options.sound ? { ...variant, riff: { ...variant.riff, articulation: options.sound } } : variant;
+    // A riff that can't take the chosen muting at this tempo keeps its own.
+    const fits = writeRiff(riff.riff!, keyPc, degrees, registerTarget(keyPc, "low"), bpmFor) !== null;
+    return withOptions(renderRiffSection(id, inputs, feel, fits ? riff : variant, degrees, chords), options);
+  }
+  const own = variant.rhythms[feel] ?? variant.rhythms.all ?? variant.rhythms[Object.keys(variant.rhythms)[0] as FeelId]!;
+  // Playing style: palm-muted or open throughout.
+  const rhythm: RhythmSpec = options.sound ? { ...own, articulation: own.articulation.map(() => options.sound!) } : own;
   const prev = PREVIOUS[id];
   const muted = rhythm.articulation.filter((a) => a === "pm").length > rhythm.articulation.length / 2;
   // Playability (R1, R2): the search knows the rhythm, so it prices each change by the time the hand has
@@ -339,7 +386,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const roots = chords.map((c) => pitchClassOf(c.root));
   const style: SectionStyle = {
     target: registerTarget(keyPc, recipe.register),
-    shapes: variant.shapes,
+    shapes: shapesFor(variant.shapes, options.shape),
     openStrings: recipe.openStrings,
     fastMuted: muted && feel === "fast-punk",
     prefer: recipe.prefer,
@@ -360,7 +407,8 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
       const distinct = [...new Map(vs.map((v) => [v.rootPc, v])).values()];
       return distinct.reduce((a, v) => a + v.position, 0) / distinct.length;
     };
-    const verse = renderSection("verse", { ...inputs, lead: null });
+    // The Verse as the seed writes it (the Chorus's own Options aren't the Verse's).
+    const verse = renderSection("verse", { ...inputs, lead: null, options: undefined });
     const floor = avg(verse.voicings.map((v) => v.voicing));
     let above = paths.filter((p) => avg(p.voicings) > floor + 1e-9);
     // A ringing Verse can sit higher (no open D5 on a ringing bar); then look past the usual alternatives
@@ -432,7 +480,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     voicings.map((v) => `${spokenLabel(v.chord, v.voicing)}: ${describeNotes(v.voicing.notes)}`).join(". ") +
     ".";
 
-  return {
+  return withOptions({
     id,
     label: t.label,
     feel,
@@ -448,7 +496,36 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     ...(varied ? { variation: varied } : {}),
     energy: sectionEnergy(bars, voicings.map((v) => v.voicing)),
     playability: { rating: rateBars(bars, voicings.map((v) => v.voicing), bpm, muted && feel === "fast-punk"), bpm },
-  };
+    groove: variant.name,
+    ...(variant.fade ? { fade: true } : {}),
+  }, options);
+}
+
+/** The card's Drums option on a rendered section. */
+function withOptions(s: RenderedSection, options: SectionOptions): RenderedSection {
+  return options.drums ? { ...s, drums: options.drums } : s;
+}
+
+/** Shapes for the card's Voicing option: 2- or 3-note shapes only, if the groove has any (else its own). */
+function shapesFor(shapes: string[], size?: "two" | "three"): string[] {
+  if (!size) return shapes;
+  const want = size === "two" ? ["E2", "A2", "D2"] : ["E3", "A3", "D3"];
+  const kept = shapes.filter((id) => want.includes(id));
+  return kept.length ? kept : shapes;
+}
+
+/** The chords a section plays bar by bar for a groove: the plan's, or the Ending groove's own (a tag or a fade). */
+export function plannedDegrees(id: ChordSectionId, progressionId: string, groove?: string): Degree[] {
+  const harmony = groove ? recipes[id].variants.find((v) => v.name === groove)?.harmony : undefined;
+  return harmony ? endingHarmony(harmony, progressionId) : sectionDegrees(id, progressionId);
+}
+
+/** The Ending's own chords (a tag or a fade-out), over the chosen progression. */
+function endingHarmony(kind: "tag" | "progression", progressionId: string): Degree[] {
+  const prog = getProgression(progressionId).degrees as Degree[];
+  if (kind === "progression") return prog;
+  const last = prog.slice(-2);
+  return last[1] === "I" ? [last[0], "I", "I"] : [...last, "I"];
 }
 
 const PLAYABILITY_LIMIT = playabilityJson.changes.limitPer100ms;
@@ -580,6 +657,7 @@ function renderRiffSection(id: SectionId, inputs: SectionInputs, feel: FeelId, v
     riff: true,
     energy: sectionEnergy(bars, shapes.length ? shapes : allNotes.map((n) => ({ notes: [n], position: n.fret }))),
     playability: { rating: rateRiff(bars, events, bpm), bpm },
+    groove: variant.name,
   };
 }
 
@@ -650,6 +728,7 @@ function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): 
     spoken: lead.spoken,
     lead,
     energy: 0,
+    ...(inputs.options?.drums ? { drums: inputs.options.drums } : {}),
   };
 }
 
@@ -665,6 +744,61 @@ export function nextSeed(id: SectionId, inputs: SectionInputs): number {
     if (signature(renderSection(id, { ...inputs, seed })) !== current) return seed;
   }
   return seed;
+}
+
+// ---------------------------------------------------------------------------
+// Song builder: what a section card's Options offer, and the card's tab (docs/song-builder-prd.md §6)
+
+/** A groove on the Rhythm tab: its name, its first bar's pattern in this feel, and why it can't be used, if so. */
+export type GrooveChoice = {
+  name: string;
+  pattern: string;
+  accents: number[];
+  available: boolean;
+  reason?: string;
+  /** The shape sizes it can play (the Voicing option offers only these); none for riffs. */
+  sizes: ("two" | "three")[];
+};
+
+/** Every groove a chord section has, in data order, marked with whether it can play in this key and tempo. */
+export function grooveChoices(id: SectionId, inputs: SectionInputs): GrooveChoice[] {
+  if (id === "solo") return [];
+  const recipe = recipes[id];
+  const feel = getTemplate(id).forceFeel ?? inputs.feel;
+  const keyPc = pitchClassOf(inputs.key);
+  const degrees = sectionDegrees(id, inputs.progressionId);
+  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  return recipe.variants.map((v) => {
+    const rhythm = v.rhythms[feel] ?? v.rhythms.all ?? Object.values(v.rhythms)[0];
+    const sizes = (["two", "three"] as const).filter((size) => v.shapes.some((id) => (size === "two" ? ["E2", "A2", "D2"] : ["E3", "A3", "D3"]).includes(id)));
+    if (v.riff) {
+      const pattern = Array.from({ length: v.riff.grid }, (_, c) => (c % (v.riff!.grid / 8) === 0 ? "D" : ".")).join("");
+      if (!riffFits(v.riff, keyPc, degrees))
+        return { name: v.name, pattern, accents: [0], available: false, reason: v.requires === "openRoots" ? "Needs chords rooted on open strings" : "Doesn't fit these chords", sizes: [] };
+      if (writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpm) === null)
+        return { name: v.name, pattern, accents: [0], available: false, reason: `Too fast to play at ${bpm} BPM in ${inputs.key}`, sizes: [] };
+      return { name: v.name, pattern, accents: [0], available: true, sizes: [] };
+    }
+    return { name: v.name, pattern: rhythm!.bars[0], accents: rhythm!.accents ?? [], available: true, sizes };
+  });
+}
+
+/** The card's tab, `barsPerLine` bars to a line (lead lines keep their technique marks). */
+export function tabFor(section: RenderedSection, barsPerLine: number): TabLineGroup[] {
+  if (section.lead) return renderTab(leadTabBars(section.lead.chords, section.lead.notes), barsPerLine);
+  return renderTab(tabBars(section.bars), barsPerLine);
+}
+
+/** Each bar's attacks, cell by cell: how many cells the note or strum lasts, or null (for the tab's rhythm stems). */
+export function rhythmOf(section: RenderedSection): (number | null)[][] {
+  if (section.lead) {
+    return section.lead.chords.map((_, b) => {
+      const cells: (number | null)[] = Array(8).fill(null);
+      for (const n of section.lead!.notes) if (n.bar === b) cells[n.cell] = n.cells;
+      return cells;
+    });
+  }
+  return section.bars.map((bar) => bar.cells.map((ev) => (ev ? (ev.palmMuted || ev.kind === "dead" ? 1 : ev.cells) : null)));
 }
 
 // ---------------------------------------------------------------------------

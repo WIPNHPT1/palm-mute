@@ -10,6 +10,7 @@ import {
   type RenderedSection,
   type SectionId,
   type SectionInputs,
+  type SectionOptions,
   MID_TEMPO,
   SECTION_IDS,
   getTemplate,
@@ -19,7 +20,7 @@ import {
   songThread,
 } from "@/lib/generator";
 import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
-import type { NoteName } from "@/lib/musicTheory";
+import { type NoteName, noteNameFor, pitchClassOf } from "@/lib/musicTheory";
 import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
 import type { FormSlot } from "@/lib/songPlan";
 import { type SongPlan, LENGTH, planSong } from "@/lib/songLength";
@@ -43,6 +44,8 @@ type SectionState = {
    * so regenerating another section never changes the Solo.
    */
   thread?: SongThread;
+  /** The card's Options (rhythm, playing style, voicing, structure, drums). Empty = the take decides. */
+  options: SectionOptions;
 };
 
 /** A melody or solo sent from the Chords page ("Use in my song"). */
@@ -80,6 +83,8 @@ type Action =
   | { type: "setMidTempoBpm"; bpm: number }
   | { type: "generate"; seeds: Partial<Record<SectionId, number>>; songSeed: number; originality: OriginalityStatus; title: string }
   | { type: "setLength"; seconds: number }
+  | { type: "setOptions"; id: SectionId; options: SectionOptions }
+  | { type: "setLead"; id: SectionId; lead: { style: LeadStyle; bars: number } | null }
   | { type: "regenerate"; id: SectionId; seed: number; progressionId?: string }
   | { type: "toggleLock"; id: SectionId }
   | { type: "setProgression"; progressionId: string }
@@ -97,7 +102,7 @@ function initialState(): GeneratorState {
   for (const id of SECTION_IDS) {
     const locked = getTemplate(id).lockedByDefault;
     const lead = id === "solo" ? defaultLeadStyle("solo") : null;
-    sections[id] = { locked, seed: seeds[id], frozen: locked ? { ...DEFAULTS, seed: seeds[id], lead } : null, lead };
+    sections[id] = { locked, seed: seeds[id], frozen: locked ? { ...DEFAULTS, seed: seeds[id], lead } : null, lead, options: {} };
   }
   return rethread({
     ...DEFAULTS,
@@ -114,7 +119,7 @@ function initialState(): GeneratorState {
 export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
   const s = state.sections[id];
   if (s.locked && s.frozen) return s.frozen;
-  const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead };
+  const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead, options: s.options };
   // A Generator-written Solo knows the song (R15, R16): it quotes the Intro and plays over the Chorus's chords.
   if (id === "solo" && !s.lead?.sent && s.thread) return { ...inputs, thread: s.thread };
   return inputs;
@@ -151,6 +156,18 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed, lead: ownLead(sections[id].lead) };
       }
       return rethread({ ...state, sections, songSeed: action.songSeed, originalityStatus: action.originality, title: action.title });
+    }
+    case "setOptions": {
+      const s = state.sections[action.id];
+      if (s.locked) return state;
+      return { ...state, sections: { ...state.sections, [action.id]: { ...s, options: action.options } } };
+    }
+    case "setLead": {
+      // A lead's style or length from the card (the Solo, or the Intro as a melody); null = the Intro back to chords.
+      const s = state.sections[action.id];
+      if (s.locked) return state;
+      const next = { ...state, sections: { ...state.sections, [action.id]: { ...s, lead: action.lead, ...(action.lead ? {} : { seed: 0 }) } } };
+      return action.id === "solo" ? rethread(next) : next;
     }
     case "setLength":
       return { ...state, lengthSec: Math.min(LENGTH.max, Math.max(LENGTH.min, action.seconds)) };
@@ -226,6 +243,10 @@ type GeneratorContextValue = {
   /** The playback tempo for the page's feel. */
   bpm: number;
   setLength: (seconds: number) => void;
+  /** A section card's Options (only that section changes). */
+  setOptions: (id: SectionId, options: SectionOptions) => void;
+  /** A lead's style and length from its card, or null to put the Intro back to power chords. */
+  setLead: (id: SectionId, lead: { style: LeadStyle; bars: number } | null) => void;
   setKey: (key: NoteName) => void;
   setFeel: (feel: FeelId) => void;
   setMidTempoBpm: (bpm: number) => void;
@@ -265,19 +286,36 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   // The length plan (lib/songLength.ts): the form and each part's repeats for the Length slider at this tempo.
   const bpm = playbackBpm(state.feel, state.midTempoBpm);
   const plan = useMemo(
-    () => planSong(state.lengthSec, bpm, (id) => rendered[id].bars.length * rendered[id].repeat),
-    [state.lengthSec, bpm, rendered],
+    () => {
+      // A section card's Structure option fixes how many times each of its places plays.
+      const fixed: Partial<Record<SectionId, number>> = {};
+      for (const id of SECTION_IDS) {
+        const times = inputsFor(state, id).options?.times;
+        if (times) fixed[id] = times;
+      }
+      return planSong(state.lengthSec, bpm, (id) => rendered[id].bars.length * rendered[id].repeat, fixed);
+    },
+    [state, bpm, rendered],
   );
 
   // A repeat plays its section's material; a declared variation (Verse 2's push) re-renders it from the
   // same inputs, so locking a section locks every place it plays.
   const song = useMemo(
     () =>
-      plan.slots.map((slot) => ({
-        slot,
-        section: slot.variation === "push" ? renderSection(slot.section, inputsFor(state, slot.section), "push") : rendered[slot.section],
-        times: slot.times,
-      })),
+      plan.slots.map((planned) => {
+        const inputs = inputsFor(state, planned.section);
+        // Verse 2's push can be switched off; the Last chorus can go up a whole tone (the cards' Structure options).
+        const push = planned.variation === "push" && !inputs.options?.noPush;
+        const keyUp = planned.section === "chorus" && planned.name === "Last chorus" && inputs.options?.keyUp;
+        const slot: FormSlot = { ...planned, variation: push ? "push" : keyUp ? "keyUp" : undefined };
+        if (!slot.variation) delete slot.variation;
+        const section = push
+          ? renderSection(slot.section, inputs, "push")
+          : keyUp
+            ? renderSection(slot.section, { ...inputs, key: noteNameFor((pitchClassOf(inputs.key) + 2) % 12) })
+            : rendered[slot.section];
+        return { slot, section, times: slot.times };
+      }),
     [state, rendered, plan],
   );
 
@@ -295,10 +333,11 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       if (s.locked && s.frozen) fixed[id] = s.frozen;
       // The Solo takes the next seed: the new progression or Intro changes its song thread, so it's always a new
       // take, and it isn't rendered here (the critic doesn't judge lead lines).
-      else if (id === "solo") fixed[id] = { key: state.key, feel: state.feel, progressionId, seed: s.seed + 1, lead: s.lead };
+      else if (id === "solo") fixed[id] = { key: state.key, feel: state.feel, progressionId, seed: s.seed + 1, lead: s.lead, options: s.options };
       else if (s.lead) fixed[id] = { ...inputsFor(state, id), progressionId, seed: nextSeed(id, inputsFor(state, id)) };
     }
-    const best = bestSong({ key: state.key, feel: state.feel, progressionId }, songSeed, fixed, current);
+    const options = Object.fromEntries(SECTION_IDS.map((id) => [id, state.sections[id].options]));
+    const best = bestSong({ key: state.key, feel: state.feel, progressionId }, songSeed, fixed, current, undefined, options);
     const seeds: Partial<Record<SectionId, number>> = {};
     for (const id of SECTION_IDS) if (!state.sections[id].locked) seeds[id] = best.seeds[id];
     // The originality check is about chord patterns, so lead lines (the Solo, an Intro melody) aren't previewed.
@@ -465,6 +504,8 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       plan,
       bpm,
       setLength: (seconds) => dispatch({ type: "setLength", seconds }),
+      setOptions: (id, options) => dispatch({ type: "setOptions", id, options }),
+      setLead: (id, lead) => dispatch({ type: "setLead", id, lead }),
       setKey: (key) => dispatch({ type: "setKey", key }),
       setFeel: (feel) => dispatch({ type: "setFeel", feel }),
       setMidTempoBpm: (bpm) => dispatch({ type: "setMidTempoBpm", bpm }),

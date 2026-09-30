@@ -1,18 +1,19 @@
 import { ROUTES, expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, test } from "./fixtures";
 
 test.describe("layout", () => {
-  test("section grid: 4 columns at 1280px, 2 at 1279px", async ({ page }, info) => {
+  test("section cards: one per row, full width, at every size", async ({ page }, info) => {
     onlyAtWidths(info, [1440]);
     lightOnly(info);
     await page.goto("/generator/");
-    const columns = () =>
-      page.locator('section[aria-label="Intro"]').evaluate((el) => getComputedStyle(el.parentElement!).gridTemplateColumns.split(" ").length);
-    await page.setViewportSize({ width: 1280, height: 900 });
-    expect(await columns()).toBe(4); // seven parts: 4 + 3 (option A, DECISIONS.md)
-    await page.setViewportSize({ width: 1279, height: 900 });
-    expect(await columns()).toBe(2);
-    await page.setViewportSize({ width: 833, height: 900 });
-    expect(await columns()).toBe(1);
+    for (const width of [1920, 1280, 1279, 834, 833, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const boxes = await page.locator("[data-sections] > section").evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, width: r.width, top: r.top })));
+      expect(boxes).toHaveLength(7);
+      // Same left edge and width for all seven, stacked (docs/song-builder-prd.md B5).
+      expect(new Set(boxes.map((b) => Math.round(b.left))).size, `${width}px`).toBe(1);
+      expect(new Set(boxes.map((b) => Math.round(b.width))).size, `${width}px`).toBe(1);
+      for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThan(boxes[i - 1].top);
+    }
   });
 
   for (const route of ROUTES) {

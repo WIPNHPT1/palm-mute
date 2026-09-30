@@ -113,14 +113,22 @@ test.describe("intro melody and lead solo", () => {
     await expect(page).toHaveURL(/\/generator\/$/);
     const solo = page.locator('section[aria-label="Solo"]');
     await expect(solo).toContainText("8 bars · Shred solo");
-    await solo.getByRole("button", { name: "Show all 8 bars" }).click();
+    // Phones show the first two lines (4 bars); from tablet up 8 bars fit two lines of 4.
+    const more = solo.getByRole("button", { name: "Show all 8 bars" });
+    if (await more.count()) await more.click();
     const shown = await solo.locator("svg[data-tab]").evaluate((svg) => {
       const rows = [...svg.querySelectorAll('text[data-row="string"]')].map((t) => t.textContent ?? "");
       const groups: string[][] = [];
       for (let i = 0; i < rows.length; i += 6) groups.push(rows.slice(i, i + 6));
       return groups;
     });
-    expect(shown).toEqual(sent);
+    // Bar by bar, technique marks and all (the Generator's card puts 4 bars on a line from tablet up, the Chords panel 2).
+    const byBar = (groups: string[][]) =>
+      groups.flatMap((g) => {
+        const cols = g.map((row) => row.slice(2).split("|").slice(0, -1));
+        return cols[0].map((_, b) => cols.map((c) => c[b]));
+      });
+    expect(byBar(shown)).toEqual(byBar(sent));
     // Lock it: Generate and a key change leave it alone.
     await solo.getByRole("button", { name: "Lock Solo" }).click();
     const locked = await solo.locator("svg[data-tab]").textContent();
