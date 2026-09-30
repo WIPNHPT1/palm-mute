@@ -197,16 +197,31 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
    - **Chill**, **Classic** and **Shred** (tremolo runs).
 6. **Generate and test.** Taste checks are soft costs in the search: the motif returning, at least 75% of strong beats on chord notes, the solo peaking in its second half. If a take misses one, it's regenerated from a derived seed. It stays deterministic: the same seed always gives the same lead.
 
+### Solos that know the song (Song Engine v2, Phase 5)
+
+A solo the Generator writes gets a **song thread** (`songThread` in `lib/generator.ts`):
+
+- **The song's motif (R15).** Where it comes from:
+  1. the Intro melody's first bar, if the Intro is a melody;
+  2. otherwise the Intro riff's first bar (a busy bar is quoted by its outline: the notes on the beats, at most 5);
+  3. otherwise the Chorus's chord roots as four quarter notes.
+
+  The solo's first answer bar (bar 3) restates it in its own register: the motif's rhythm, and its shape note to note. It's played plainly, with no bends or hammer-ons, so it's heard as the tune.
+- **The song's own chords (R16).** The solo plays over the Chorus's bar plan (for a 3-chord progression, the Chorus's 4 bars) instead of the progression looped.
+- **Its peak on the strongest chord.** The strongest chord is the one the Chorus voices highest on the neck. The solo's high point moves to the second-half bar that plays it, with the arc's peak going along.
+
+A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing GENERATE or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (GENERATE, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
+
 ## 6. The proofs
 
-`npm run verify` (`scripts/verify-*.ts`) runs in CI on every pull request:
+`npm run verify` (`scripts/verify-all.mjs` runs the four `scripts/verify-*.ts` suites side by side, about 72 s) runs in CI on every pull request:
 
 | Suite | What it covers | Checks |
 |---|---|---|
 | Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
 | Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, **every hit labelled honestly and with a mute plan, no change over 4 frets per 100 ms, chord downpicking within the cap, the hall of shame**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
 | Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; GENERATE never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
-| Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
+| Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text**; Phase 5: **the solo quotes the song's motif, plays the Chorus's chords and peaks on its strongest chord** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 
