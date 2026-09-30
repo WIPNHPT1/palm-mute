@@ -22,6 +22,7 @@ import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
 import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
 import { type FormId, type FormSlot, DEFAULT_FORM, formSlots, timesFor } from "@/lib/songPlan";
+import { type Fixed, bestSectionTake, bestSong } from "@/lib/critic";
 import { type OriginalityStatus, checkOriginality } from "@/lib/originalityCheck";
 
 type SectionState = {
@@ -46,6 +47,8 @@ export type GeneratorState = {
   progressionId: string;
   /** The song's form (data/song-forms.json): its running order. No control for it yet (PRD R22, Phase 6). */
   form: FormId;
+  /** GENERATE's song seed: the critic's best of N takes for it (data/critic.json). The page opens on song 0. */
+  songSeed: number;
   sections: Record<SectionId, SectionState>;
   originalityStatus: OriginalityStatus;
   /** What's playing, if anything: `progression:<id>`, `section:<id>`, `strum` or `song` (see PlayTarget). */
@@ -62,7 +65,7 @@ type Action =
   | { type: "setKey"; key: NoteName }
   | { type: "setFeel"; feel: FeelId }
   | { type: "setMidTempoBpm"; bpm: number }
-  | { type: "generate"; seeds: Partial<Record<SectionId, number>>; progressionId: string; originality: OriginalityStatus }
+  | { type: "generate"; seeds: Partial<Record<SectionId, number>>; progressionId: string; songSeed: number; originality: OriginalityStatus }
   | { type: "regenerate"; id: SectionId; seed: number; progressionId?: string }
   | { type: "toggleLock"; id: SectionId }
   | { type: "setProgression"; progressionId: string }
@@ -75,14 +78,17 @@ const DEFAULTS = { key: "A" as NoteName, feel: "fast-punk" as FeelId, progressio
 
 function initialState(): GeneratorState {
   const sections = {} as Record<SectionId, SectionState>;
+  // Song 0 is the critic's best take of the default song (take 0 = every section's own best).
+  const { seeds } = bestSong(DEFAULTS, 0);
   for (const id of SECTION_IDS) {
     const locked = getTemplate(id).lockedByDefault;
     const lead = id === "solo" ? defaultLeadStyle("solo") : null;
-    sections[id] = { locked, seed: 0, frozen: locked ? { ...DEFAULTS, seed: 0, lead } : null, lead };
+    sections[id] = { locked, seed: seeds[id], frozen: locked ? { ...DEFAULTS, seed: seeds[id], lead } : null, lead };
   }
   return {
     ...DEFAULTS,
     form: DEFAULT_FORM,
+    songSeed: 0,
     midTempoBpm: MID_TEMPO.default,
     sections,
     originalityStatus: "pass",
@@ -110,8 +116,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         if (sections[id].locked) continue;
         sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed };
       }
-      const progressionId = state.sections.chorus.locked ? state.progressionId : action.progressionId;
-      return { ...state, sections, progressionId, originalityStatus: action.originality };
+      return { ...state, sections, progressionId: action.progressionId, songSeed: action.songSeed, originalityStatus: action.originality };
     }
     case "regenerate": {
       const s = state.sections[action.id];
@@ -221,16 +226,27 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     [state, rendered],
   );
 
+  // GENERATE (R18): a new progression (unless the Chorus is locked), then the critic's best of N takes of the
+  // song for the next song seed. Locked sections, and parts carrying a lead line, keep their own inputs.
   const generate = useCallback(() => {
-    const seeds: Partial<Record<SectionId, number>> = {};
+    const started = performance.now();
+    const progressionId = state.sections.chorus.locked ? state.progressionId : nextProgressionId(state.progressionId);
+    const songSeed = state.songSeed + 1;
+    const fixed: Fixed = {};
+    const current: Partial<Record<SectionId, number>> = {};
     for (const id of SECTION_IDS) {
-      if (id !== "chorus" && !state.sections[id].locked) seeds[id] = nextSeed(id, inputsFor(state, id));
+      const s = state.sections[id];
+      current[id] = s.seed;
+      if (s.locked && s.frozen) fixed[id] = s.frozen;
+      else if (id === "solo" || s.lead) fixed[id] = { ...inputsFor(state, id), progressionId, seed: nextSeed(id, inputsFor(state, id)) };
     }
-    const progressionId = nextProgressionId(state.progressionId);
-    const preview = SECTION_IDS.map((id) =>
-      renderSection(id, { ...inputsFor(state, id), seed: seeds[id] ?? state.sections[id].seed }),
-    );
-    dispatch({ type: "generate", seeds, progressionId, originality: checkOriginality(preview) });
+    const best = bestSong({ key: state.key, feel: state.feel, progressionId }, songSeed, fixed, current);
+    const seeds: Partial<Record<SectionId, number>> = {};
+    for (const id of SECTION_IDS) if (!state.sections[id].locked) seeds[id] = best.seeds[id];
+    const preview = SECTION_IDS.map((id) => renderSection(id, fixed[id] ?? { ...inputsFor(state, id), progressionId, seed: best.seeds[id] }));
+    // How long the critic took (e2e/critic.spec.ts holds it under the PRD's ~100 ms on a throttled CPU).
+    (window as Window & { __palmMuteGenerateMs?: number }).__palmMuteGenerateMs = performance.now() - started;
+    dispatch({ type: "generate", seeds, progressionId, songSeed, originality: checkOriginality(preview) });
   }, [state]);
 
   const regenerateSection = useCallback(
@@ -238,7 +254,9 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       if (state.sections[id].locked) return;
       // Every section follows the progression now (Song Engine v2), so the Chorus's ↻ rewrites its
       // rhythm and voicing like the others instead of swapping the progression under the whole song.
-      dispatch({ type: "regenerate", id, seed: nextSeed(id, inputsFor(state, id)) });
+      // R19: the critic's best of the section's next N takes, heard in the song as it stands.
+      const all = Object.fromEntries(SECTION_IDS.map((x) => [x, inputsFor(state, x)])) as Record<SectionId, SectionInputs>;
+      dispatch({ type: "regenerate", id, seed: bestSectionTake(id, all) });
     },
     [state],
   );
