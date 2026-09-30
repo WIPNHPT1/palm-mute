@@ -2,8 +2,6 @@
    emitted by tailwind.config.js (--color-*), so light/dark switch with the rest of the site.
    Every class is prefixed ci- to keep this page's styles out of the other pages' way. */
 
-@property --sx { syntax: '<percentage>'; inherits: true; initial-value: 72%; }
-@property --sy { syntax: '<percentage>'; inherits: true; initial-value: 34%; }
 
 .ci {
   --ink: rgb(var(--color-ink)); --ink-soft: rgb(var(--color-ink-soft)); --paper: rgb(var(--color-paper)); --surface: rgb(var(--color-surface));
@@ -26,11 +24,29 @@
 .ci-wrap { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
 
 /* film grain */
-.ci-grain { position: fixed; inset: -50%; z-index: 90; pointer-events: none; opacity: var(--grain); mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+/* No blend mode (a full-screen blend makes the GPU redraw everything under it each frame): the noise is
+   pre-coloured instead. Black specks with alpha ½(1 − noise) match what multiply gave (the old noise's
+   own alpha averaged ½); white specks with alpha ½·noise match screen in dark. 1.24× the screen, not 2×. */
+.ci-grain { position: fixed; inset: -12%; z-index: 90; pointer-events: none; opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -.167 -.167 -.167 0 .5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23n%29'/%3E%3C/svg%3E");
   animation: ci-grain 1.2s steps(6) infinite; }
-.dark .ci-grain { mix-blend-mode: screen; }
+.dark .ci-grain { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .167 .167 .167 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23n%29'/%3E%3C/svg%3E"); }
 @keyframes ci-grain { 20% { transform: translate(-4%, 3%); } 40% { transform: translate(3%, -5%); } 60% { transform: translate(-2%, 6%); } 80% { transform: translate(5%, -2%); } }
+
+/* scroll-driven effects, off the main thread where the browser supports animation-timeline (.ci-sda);
+   Stage.tsx / Setlist.tsx fall back to setting --k / --p from JS on every scroll frame */
+@property --k { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+@keyframes ci-k { from { --k: 0; } to { --k: 1; } }
+@keyframes ci-p { from { --p: 0; } to { --p: 1; } }
+.ci-stage.ci-sda { animation: ci-k linear both; animation-timeline: scroll(root block); animation-range: 0px var(--stage-h, 100vh); }
+.ci-setlist.ci-sda { animation: ci-p linear both; animation-timeline: view(); animation-range: contain 0% contain 100%; }
+
+/* sections well below the fold skip layout and painting until they're near the screen */
+.ci-two, .ci-board-sec, .ci-encore { content-visibility: auto; contain-intrinsic-size: auto 720px; }
+
+/* looping animations pause while their section is off screen (usePauseOffscreen) */
+.ci [data-offscreen] *, .ci [data-offscreen] *::before, .ci [data-offscreen] *::after { animation-play-state: paused !important; }
 
 /* reveal on scroll (useScrollFx adds .in) */
 .ci [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease-out), transform 1.1s var(--ease-out); transition-delay: calc(var(--d, 0) * 80ms); }
@@ -57,15 +73,24 @@
 
 /* ---------- STAGE (hero) ---------- */
 .ci-stage { position: relative; min-height: calc(100svh - var(--bar-h)); display: flex; flex-direction: column; justify-content: center; overflow: hidden; padding: clamp(40px, 6vw, 80px) 0 0; }
-.ci-halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.8px); background-size: 9px 9px;
-  -webkit-mask: radial-gradient(circle 34vmax at var(--sx) var(--sy), #000 0, rgb(0 0 0 / .5) 40%, transparent 72%);
-  mask: radial-gradient(circle 34vmax at var(--sx) var(--sy), #000 0, rgb(0 0 0 / .5) 40%, transparent 72%); }
-.ci:not(.is-fine) .ci-halftone { animation: ci-drift 14s ease-in-out infinite alternate; }
-@keyframes ci-drift { 0% { --sx: 20%; --sy: 30%; } 50% { --sx: 80%; --sy: 55%; } 100% { --sx: 45%; --sy: 20%; } }
-.ci-beams { position: absolute; inset: -20% -10% auto; height: 120%; pointer-events: none; mix-blend-mode: multiply; opacity: .5; }
-.dark .ci-beams { mix-blend-mode: screen; opacity: .35; }
-.ci-beams i { position: absolute; top: 0; width: 34vw; height: 100%; transform-origin: top center; filter: blur(6px);
-  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / .35), transparent 70%); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); }
+/* The halftone is a still field of dots. The spotlight is a paper-coloured cover with a soft hole in it
+   (the inverse of the old mask: clear at the centre, half at 40%, solid by 72%), twice the stage's size
+   and moved with transform only, so following the pointer or drifting never repaints the stage. */
+.ci-halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.8px); background-size: 9px 9px; }
+.ci-spot { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; pointer-events: none; will-change: transform;
+  background: radial-gradient(circle 34vmax at 50% 50%, transparent 0, rgb(var(--color-paper) / .5) 40%, var(--paper) 72%);
+  /* translate % is of this box (2× the stage): (spot − 50%) / 2. Starts at 72% / 34%. */
+  transform: translate(11%, -8%); }
+.ci:not(.is-fine) .ci-spot { animation: ci-drift 14s ease-in-out infinite alternate; }
+@keyframes ci-drift { 0% { transform: translate(-15%, -10%); } 50% { transform: translate(15%, 2.5%); } 100% { transform: translate(-2.5%, -15%); } }
+/* Light beams: the soft cone shape is a pre-blurred mask, drawn once, so the sweep only rotates a finished
+   layer (no live blur filter, no blend mode: plain opacity gives near-identical colour over paper). */
+.ci-beams { position: absolute; inset: -20% -10% auto; height: 120%; pointer-events: none; opacity: .5; }
+.dark .ci-beams { opacity: .35; }
+.ci-beams i { position: absolute; top: 0; width: 34vw; height: 100%; transform-origin: top center; will-change: transform;
+  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / .35), transparent 70%);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-20%25' y='-5%25' width='140%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='1.3'/%3E%3C/filter%3E%3Cpolygon points='46%2C0 54%2C0 100%2C100 0%2C100' fill='%2523fff' filter='url%28%2523b%29'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-20%25' y='-5%25' width='140%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='1.3'/%3E%3C/filter%3E%3Cpolygon points='46%2C0 54%2C0 100%2C100 0%2C100' fill='%2523fff' filter='url%28%2523b%29'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; }
 .ci-beams i:nth-child(1) { left: 8%; animation: ci-sweep 9s ease-in-out infinite alternate; }
 .ci-beams i:nth-child(2) { left: 56%; background: linear-gradient(to bottom, rgb(var(--brass-rgb) / .35), transparent 70%); animation: ci-sweep 11s ease-in-out -3s infinite alternate-reverse; }
 @keyframes ci-sweep { from { transform: rotate(-16deg); } to { transform: rotate(14deg); } }
