@@ -152,6 +152,8 @@ export type SectionEvent = {
 
 export type SectionBar = {
   chord: ResolvedChord | null;
+  /** Shown over the bar instead of the chord name, e.g. "E oct" for an octave (root doubled, no fifth). */
+  label?: string;
   cells: (SectionEvent | null)[];
   articulation?: "pm" | "ring";
   /** Full-band stop after this cell (the rest of the bar is silent, drums too). */
@@ -302,7 +304,8 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
       cells[CELLS_PER_BAR - 1] = { kind: "hit", notes: next.notes.map(({ string, fret }) => ({ string, fret })), accent: true, up: false, palmMuted: articulation === "pm", cells: 1 };
     }
     const stopAt = rhythm.stopBar === b ? pattern.search(/[DUx]/) : undefined;
-    return { chord, cells, articulation, stopAt };
+    const label = chordLabel(chord, path.voicings[b]);
+    return { chord, cells, articulation, stopAt, ...(label !== chord.name ? { label } : {}) };
   });
   setRingLengths(bars);
 
@@ -317,8 +320,8 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   const spoken =
     `${t.label}, key of ${inputs.key}: ${variant.name.toLowerCase()}, ${art}${dead ? ", with dead strums" : ""}` +
     `${rhythm.stopBar !== undefined ? ", ending on a stop" : ""}. ` +
-    `${bars.length} bars${repeat > 1 ? `, played ${repeat} times` : ""}: ${chords.map((c) => c.name).join(", ")}. ` +
-    voicings.map((v) => `${v.chord.name}: ${describeNotes(v.voicing.notes)}`).join(". ") +
+    `${bars.length} bars${repeat > 1 ? `, played ${repeat} times` : ""}: ${bars.map((b) => spokenLabel(b.chord!, path.voicings[bars.indexOf(b)])).join(", ")}. ` +
+    voicings.map((v) => `${spokenLabel(v.chord, v.voicing)}: ${describeNotes(v.voicing.notes)}`).join(". ") +
     ".";
 
   return {
@@ -337,10 +340,18 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   };
 }
 
+/** An octave shape is the root doubled, not a power chord (no fifth), so it's named as one. */
+export function chordLabel(chord: ResolvedChord, voicing: Voicing): string {
+  return voicing.tags.includes("octaveRiff") ? `${chord.root} oct` : chord.name;
+}
+function spokenLabel(chord: ResolvedChord, voicing: Voicing): string {
+  return voicing.tags.includes("octaveRiff") ? `${chord.root} octave` : chord.name;
+}
+
 /** Section bars → tab bars: fret numbers on hits, x on dead strums, chord names over each bar. */
 export function tabBars(bars: SectionBar[]): TabBar[] {
   return bars.map((bar) => ({
-    label: bar.chord?.name,
+    label: bar.label ?? bar.chord?.name,
     articulation: bar.articulation,
     stopAt: bar.stopAt,
     cells: bar.cells.map((ev) => ({
