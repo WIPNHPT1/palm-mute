@@ -29,11 +29,11 @@ E standard, low to high: **E2 A2 D3 G3 B3 E4**, or MIDI 40, 45, 50, 55, 59, 64. 
 | D-root 2-note | D:f · G:f+2 | Last resort only |
 | E-root 3-note | E:f · A:f+2 · D:f+2 | Big choruses |
 | A-root 3-note | A:f · D:f+2 · G:f+2 | Big choruses |
-| Inverted | E:f · A:f (fifth on the bottom) | Breakdown weight |
+| Inverted | E:f · A:f (fifth on the bottom) | Not used in rhythm parts (reads as a wrong chord) |
 | Open | e.g. E5 = E0 · A2 | Verses and chugs in E, A, D |
-| Octave riff | A:f · G:f+2 (or E:f · D:f+2) | Intros |
+| Octave riff | A:f · G:f+2 (or E:f · D:f+2) | Intros, labelled "G oct" (root doubled, no fifth) and downpicked |
 
-The D-root 3-note shape (octave on the B string, e.g. D6 G8 B9) is listed in `rareShapes` and never used in a rhythm part.
+The D-root 3-note shape (octave on the B string, e.g. D6 G8 B9) is listed in `rareShapes` and never used in a rhythm part. An open D-string root (D0 G2) is never used where chords ring, because nothing mutes the open low E and A strings; fretted D-root shapes stay as a last resort for high-key choruses.
 
 **Scoring** (lower is better), from `engine-settings.json`:
 

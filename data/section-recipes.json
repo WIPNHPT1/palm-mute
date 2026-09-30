@@ -16,7 +16,7 @@
           "name": "Octave riff",
           "shapes": ["OctA", "OctE"],
           "rhythms": {
-            "fast-punk": { "bars": ["DUDUDUDU", "DUDUD-DU"], "articulation": ["ring"], "accents": [0] },
+            "fast-punk": { "bars": ["DDDDDDDD", "DDDDD-DD"], "articulation": ["ring"], "accents": [0] },
             "half-time": { "bars": ["D-DUD-DU"], "articulation": ["ring"], "accents": [0, 4] },
             "mid-tempo": { "bars": ["D-.UD-.U"], "articulation": ["ring"], "accents": [0] },
             "pop-strum": { "bars": ["D-DU-UDU"], "articulation": ["ring"], "accents": [0] },
@@ -25,7 +25,7 @@
         },
         {
           "name": "Chugs into open hits",
-          "shapes": ["E2", "A2", "D2"],
+          "shapes": ["E2", "A2"],
           "rhythms": {
             "fast-punk": { "bars": ["DDDDDDDD", "DDDDDDDD", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
             "half-time": { "bars": ["D..D..D.", "D..D..D.", "D-----D-", "D-----DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
@@ -113,14 +113,14 @@
       "variants": [
         {
           "name": "Heavy hits and a stop",
-          "shapes": ["E2", "A2", "EInv", "AInv"],
+          "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
             "half-time": { "bars": ["D---D-xx", "D---D---", "D---D-xx", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3 }
           }
         },
         {
           "name": "Dead-strum fills",
-          "shapes": ["E2", "A2", "EInv", "AInv"],
+          "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
             "half-time": { "bars": ["D--xD--x", "D---D-xx", "D--xD--x", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3 }
           }

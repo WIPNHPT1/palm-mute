@@ -18,6 +18,7 @@ import {
   nextSeed,
   renderSection,
   sectionTarget,
+  tabBars,
 } from "@/lib/generator";
 import { PITCH_CLASSES, type Degree, type NoteName, getProgression, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
 import { sectionBars } from "@/lib/playback";
@@ -96,6 +97,16 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
   }
   for (const bar of s.bars)
     for (const ev of bar.cells) if (ev) for (const n of ev.notes) assert.ok(n.fret >= 0 && n.fret <= LIMIT, `${where}: fret ${n.fret}`);
+  // Guitarist playability: no inverted power chords (fifth under the root reads as a wrong chord);
+  // no open D-string root on a ringing bar (nothing mutes the open low E and A strings); octave
+  // shapes are named as octaves, not "5" chords.
+  s.bars.forEach((bar, i) => {
+    const v = s.voicings.find((x) => x.chord.root === bar.chord!.root)!.voicing;
+    assert.ok(!v.tags.includes("inverted"), `${where}: bar ${i + 1} uses an inverted power chord`);
+    if (bar.articulation === "ring")
+      assert.ok(!(v.rootString === "D" && v.open), `${where}: bar ${i + 1} rings an open D-string root`);
+    assert.equal(tabBars([bar])[0].label, v.tags.includes("octaveRiff") ? `${bar.chord!.root} oct` : bar.chord!.name, `${where}: bar ${i + 1} label`);
+  });
   // Degrees: every bar's chord is the right chord for the template / progression in this key.
   const keyPc = pitchClassOf(inputs.key);
   if (s.id === "chorus") {
