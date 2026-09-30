@@ -34,17 +34,44 @@
   .note b { color: var(--accent); }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
   .label { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--t-faint); margin-bottom: 9px; }
-  /* Feel control: five segments; one row from tablet up, 3 + 2 on phones */
-  .feel { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); max-width: 720px; }
-  .feel button { flex: 1 1 calc(33.333% - 2px); min-height: 44px; padding: 5px 4px; border: 0; border-radius: 5px; background: transparent; color: var(--t-muted); font-family: "Space Mono", monospace; cursor: pointer; position: relative; }
-  @media (min-width: 834px) { .feel button { flex: 1 1 0; padding: 5px 12px; } }
-  .feel button div:first-child { font-size: 12px; line-height: 1.2; }
-  .feel button div:last-child { font-size: 12px; line-height: 1.2; margin-top: 2px; color: var(--t-faint); }
-  .feel button[aria-checked="true"] { background: var(--ink); color: var(--on-dark); }
-  .feel button[aria-checked="true"] div:first-child { font-weight: 700; }
-  .feel button[aria-checked="true"] div:last-child { color: var(--chip-tab); }
-  .new { position: absolute; top: -7px; right: 4px; font-size: 10px; letter-spacing: .08em; background: var(--accent); color: var(--on-accent); border-radius: 3px; padding: 0 4px; line-height: 14px; }
-  [data-theme="dark"] .feel button[aria-checked="true"] { border: 1px solid var(--line-strong); }
+  /* Feel control: five segments in one row from tablet up; on phones a vertical list (owner's pick):
+     name + BPM, then the strum name and glyphs; Mid-Tempo's tempo opens inside its own row. */
+  .feel { display: flex; flex-direction: column; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); max-width: 720px; }
+  .fi { border-radius: 5px; }
+  .fi[data-sel] { background: var(--ink); color: var(--on-dark); }
+  [data-theme="dark"] .fi[data-sel] { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .feel button[role="radio"] { width: 100%; min-height: 48px; padding: 7px 12px; border: 0; background: transparent; color: var(--t-muted); font-family: "Space Mono", monospace; font-size: 12px; line-height: 1.3; cursor: pointer; position: relative;
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; text-align: left; }
+  .feel .fn { display: flex; align-items: center; gap: 8px; }
+  .feel .fb { color: var(--t-faint); }
+  .feel .fs { grid-column: 1 / -1; display: flex; gap: 10px; color: var(--t-faint); }
+  .feel .fs .g { color: var(--accent); letter-spacing: 2px; }
+  .fi[data-sel] button[role="radio"] { color: var(--on-dark); }
+  .fi[data-sel] .fn { font-weight: 700; }
+  .fi[data-sel] .fb, .fi[data-sel] .fs { color: var(--chip-tab); }
+  .fi[data-sel] .fs .g { color: var(--accent-on-ink); }
+  .new { font-size: 10px; font-weight: 400; letter-spacing: .08em; background: var(--accent); color: var(--on-accent); border-radius: 3px; padding: 0 4px; line-height: 14px; }
+  .tempo { display: flex; align-items: center; gap: 4px; padding: 0 12px 10px; font-family: "Space Mono", monospace; font-size: 12px; }
+  .tempo span { margin-right: 4px; letter-spacing: .08em; }
+  .tempo button { width: 44px; height: 44px; flex: none; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--t-primary); font-size: 16px; cursor: pointer; display: grid; place-items: center; }
+  .tempo button:disabled { opacity: .4; }
+  .tempo input { flex: 1 1 auto; min-width: 0; height: 44px; accent-color: var(--accent); }
+  /* In the row, the row itself says Mid-Tempo and shows the BPM, so no TEMPO label: − slider + fit on one line at 320px */
+  .tempo.in { color: var(--chip-tab); }
+  .tempo.in span { display: none; }
+  .tempo.in input { accent-color: var(--accent-on-ink); }
+  .tempo.in button { background: transparent; border-color: var(--line-strong); color: var(--on-dark); }
+  [data-theme="light"] .tempo.in button { border-color: #463B30; }
+  .tempo.out { display: none; padding: 10px 0 0; max-width: 720px; color: var(--t-muted); }
+  .tempo.out span { color: var(--t-faint); }
+  @media (min-width: 834px) {
+    .feel { flex-direction: row; }
+    .fi { flex: 1 1 0; }
+    .feel button[role="radio"] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 100%; padding: 5px 12px; text-align: center; }
+    .feel .fs, .tempo.in { display: none; }
+    .new { position: absolute; top: -7px; right: 4px; }
+    .tempo.out { display: flex; }
+  }
   .panels { display: flex; flex-direction: column; gap: 14px; }
   @media (min-width: 1280px) { .panels { flex-direction: row; } }
   .panel { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -98,8 +125,8 @@
   <div class="seg2" role="group" aria-label="Theme"><button data-theme-btn="light">LIGHT</button><button data-theme-btn="dark">DARK</button></div>
 </div>
 <main>
-  <p class="note">The Generator's Feel control, Power Chords and Rhythm Lane with <b>five feels</b> (Pop Strum and Ballad are new) and <b>five progression rows</b>. Pick a feel, then ▷ any Rhythm Lane card or progression to hear it over the chords (key of A; chip voicings are the engine's). Resize the window: the Feel control wraps 3 + 2 on phones.</p>
-  <div class="card"><div class="label">Feel</div><div class="feel" role="radiogroup" aria-label="Feel" id="feel"></div></div>
+  <p class="note">The Generator's Feel control, Power Chords and Rhythm Lane with <b>five feels</b> (Pop Strum and Ballad are new) and <b>five progression rows</b>. Pick a feel, then ▷ any Rhythm Lane card or progression to hear it over the chords (key of A; chip voicings are the engine's). Resize the window: on phones the Feel control becomes a list, and Mid-Tempo's tempo opens inside its row.</p>
+  <div class="card"><div class="label">Feel</div><div class="feel" role="radiogroup" aria-label="Feel" id="feel"></div><div id="tempo-out"></div></div>
   <div class="panels">
     <section class="panel"><div><h2>POWER CHORDS</h2><div class="sub">Best progressions · Key of A · E standard</div><div class="sub2">Tap a row to use it for the Chorus.</div></div><div class="rows" id="rows"></div></section>
     <section class="panel"><div><h2>RHYTHM LANE</h2><div class="sub">Strums for I-V-vi-IV · Key of A · E standard</div><div class="sub2">Pick a feel above to switch strums.</div></div><div class="lanes" id="lanes"></div></section>
@@ -110,11 +137,27 @@ const FEELS = [{"id":"fast-punk","label":"FAST PUNK","bpm":180,"adjustable":fals
 const ROWS = [{"id":"I-V-vi-IV","degrees":["I","V","vi","IV"],"chords":[{"name":"A5","midi":[45,52],"tab":"e|- \nB|- \nG|- \nD|2 \nA|0 \nE|- "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "},{"name":"F#5","midi":[42,49],"tab":"e|- \nB|- \nG|- \nD|- \nA|4 \nE|2 "},{"name":"D5","midi":[50,57],"tab":"e|- \nB|- \nG|- \nD|7 \nA|5 \nE|- "}]},{"id":"vi-IV-I-V","degrees":["vi","IV","I","V"],"chords":[{"name":"F#5","midi":[42,49],"tab":"e|- \nB|- \nG|- \nD|- \nA|4 \nE|2 "},{"name":"D5","midi":[50,57],"tab":"e|- \nB|- \nG|2 \nD|0 \nA|- \nE|- "},{"name":"A5","midi":[45,52],"tab":"e|- \nB|- \nG|- \nD|2 \nA|0 \nE|- "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "}]},{"id":"I-IV-V","degrees":["I","IV","V"],"chords":[{"name":"A5","midi":[45,52],"tab":"e|- \nB|- \nG|- \nD|2 \nA|0 \nE|- "},{"name":"D5","midi":[50,57],"tab":"e|- \nB|- \nG|2 \nD|0 \nA|- \nE|- "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "}]},{"id":"I-V-IV-V","degrees":["I","V","IV","V"],"chords":[{"name":"A5","midi":[45,52],"tab":"e|- \nB|- \nG|- \nD|2 \nA|0 \nE|- "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "},{"name":"D5","midi":[50,57],"tab":"e|- \nB|- \nG|2 \nD|0 \nA|- \nE|- "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "}]},{"id":"vi-V-IV","degrees":["vi","V","IV"],"chords":[{"name":"F#5","midi":[42,49],"tab":"e|- \nB|- \nG|- \nD|- \nA|4 \nE|2 "},{"name":"E5","midi":[40,47],"tab":"e|- \nB|- \nG|- \nD|- \nA|2 \nE|0 "},{"name":"D5","midi":[50,57],"tab":"e|- \nB|- \nG|2 \nD|0 \nA|- \nE|- "}]}];
 const PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
 const STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>';
-let feel = "fast-punk", playing = null;
+let feel = "fast-punk", playing = null, midBpm = 140;
+const bpmOf = (f) => (f.adjustable ? midBpm : f.bpm);
+// While dragging, update the readouts in place (a full re-render would drop the slider mid-drag)
+function setBpm(v) {
+  midBpm = Math.max(120, Math.min(150, v));
+  document.querySelectorAll('[data-bpm="mid-tempo"]').forEach((e) => (e.textContent = midBpm + " BPM"));
+  document.querySelectorAll(".tempo input").forEach((r) => { r.value = midBpm; r.setAttribute("aria-valuetext", midBpm + " BPM"); });
+  document.querySelectorAll("[data-step]").forEach((b) => (b.disabled = b.dataset.step === "-1" ? midBpm <= 120 : midBpm >= 150));
+}
 const $ = (id) => document.getElementById(id);
 
 function render() {
-  $("feel").innerHTML = FEELS.map((f) => '<button role="radio" aria-checked="' + (f.id === feel) + '" data-feel="' + f.id + '">' + (f.isNew ? '<span class="new">NEW</span>' : "") + "<div>" + f.label + "</div><div>" + f.bpm + " BPM</div></button>").join("");
+  const tempo = (where) => '<div class="tempo ' + where + '"><span>TEMPO</span><button data-step="-1" aria-label="Decrease tempo"' + (midBpm <= 120 ? " disabled" : "") + '>−</button>' +
+    '<input type="range" min="120" max="150" value="' + midBpm + '" aria-label="Mid-tempo BPM" aria-valuetext="' + midBpm + ' BPM"><button data-step="1" aria-label="Increase tempo"' + (midBpm >= 150 ? " disabled" : "") + ">+</button></div>";
+  $("feel").innerHTML = FEELS.map((f) => '<div class="fi"' + (f.id === feel ? " data-sel" : "") + '><button role="radio" aria-checked="' + (f.id === feel) + '" data-feel="' + f.id + '">' +
+    '<span class="fn">' + f.label + (f.isNew ? '<span class="new">NEW</span>' : "") + '</span><span class="fb" data-bpm="' + f.id + '">' + bpmOf(f) + ' BPM</span>' +
+    '<span class="fs"><span>' + f.name + '</span><span class="g" aria-hidden="true">' + f.glyphs.join("") + "</span></span></button>" +
+    (f.adjustable && f.id === feel ? tempo("in") : "") + "</div>").join("");
+  $("tempo-out").innerHTML = feel === "mid-tempo" ? tempo("out") : "";
+  document.querySelectorAll(".tempo input").forEach((r) => (r.oninput = () => setBpm(Number(r.value))));
+  document.querySelectorAll("[data-step]").forEach((b) => (b.onclick = () => { setBpm(midBpm + Number(b.dataset.step)); render(); }));
   $("rows").innerHTML = ROWS.map((r, i) => '<div class="row' + (i === 0 ? " sel" : "") + '"><div class="pid">' + r.id + (i === 0 ? "<small>CHORUS</small>" : "") + '</div><div class="chips">' +
     r.chords.map((c, k) => '<div class="chip"><div class="deg">' + r.degrees[k] + '</div><div class="nm">' + c.name + "</div><pre>" + c.tab + "</pre></div>").join("") +
     '</div><button class="play" aria-pressed="' + (playing === "row:" + i) + '" aria-label="Play ' + r.id + '" data-row="' + i + '">' + (playing === "row:" + i ? STOP : PLAY) + "</button></div>").join("");
@@ -140,10 +183,11 @@ function noise(t, dur, freq, type, gain) { const b = ctx.createBuffer(1, Math.ce
 function kick(t) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22); o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.25); }
 function start(what) {
   stopAudio(); audio().resume(); playing = what;
-  const f = FEELS.find((x) => x.id === feel), eighth = 60 / f.bpm / 2;
+  const f = FEELS.find((x) => x.id === feel);
   const prog = what.startsWith("row:") ? ROWS[Number(what.slice(4))] : ROWS[0];
   let n = 0, next = ctx.currentTime + 0.08;
   const tick = () => {
+    const eighth = 60 / bpmOf(f) / 2;
     while (next < ctx.currentTime + 0.2) {
       const bar = Math.floor(n / 8) % prog.chords.length, cell = n % 8, g = f.glyphs[cell], d = f.drums;
       if (g !== "·") strum(next, prog.chords[bar].midi, eighth * f.ring, g === "▲" ? 0.6 : 0.9, f.palmMuted);
