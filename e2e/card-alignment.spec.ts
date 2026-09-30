@@ -14,7 +14,7 @@ test.describe("section card alignment", () => {
         await key(page, k).click();
         for (const f of [/FAST PUNK/, /HALF-TIME/]) {
           await feel(page, f).click();
-          const cards = await page.locator("section[aria-label]").evaluateAll((sections) =>
+          const cards = await page.locator("section[data-active]").evaluateAll((sections) =>
             sections.map((s) => {
               const top = (sel: string) => Math.round(s.querySelector(sel)!.getBoundingClientRect().top);
               const svg = s.querySelector<SVGSVGElement>("svg[data-tab]")!;

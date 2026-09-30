@@ -5,6 +5,7 @@ import { FeelToggle } from "@/components/FeelToggle";
 import { GenerateButton, PlaySongButton } from "@/components/GenerateButton";
 import { KeyPicker } from "@/components/KeyPicker";
 import { OriginalityBadge } from "@/components/OriginalityBadge";
+import { type GuideStep, PageGuide } from "@/components/PageGuide";
 import { PageHeader } from "@/components/PageHeader";
 import { PowerChordsPanel } from "@/components/PowerChordsPanel";
 import { RhythmLane } from "@/components/RhythmLane";
@@ -13,6 +14,13 @@ import { tabChars } from "@/components/TabBlock";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
 import { SECTION_IDS, type SectionId } from "@/lib/generator";
 import { keyDisplayName } from "@/lib/musicTheory";
+
+const GUIDE: GuideStep[] = [
+  { title: "Key + feel", body: <>Pick a <b>key</b> for every chord, and a <b>feel</b> for the strum and tempo.</> },
+  { title: "Generate", body: <><b>GENERATE</b> writes all five sections as real power-chord tabs.</> },
+  { title: "Lock & remix", body: <><b>Lock</b> a section to keep it. <b>↻</b> rewrites just that one.</> },
+  { title: "Play along", body: <><b>▷</b> loops a section, <b>PLAY SONG</b> plays it all. Tap a Power Chords row to change the chorus.</> },
+];
 
 /** "Locked in A" (plus the progression for the Chorus) and, if the page has moved on, what "Update to …" gives. */
 function lockInfo(state: GeneratorState, id: SectionId): { lockedIn?: string; updateTo?: string } {
@@ -37,6 +45,7 @@ export default function GeneratorPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
       <PageHeader kicker="SONGWRITING ENGINE" title="SONG GENERATOR" aside={<OriginalityBadge />} />
+      <PageGuide page="generator" label="How to use the Generator" steps={GUIDE} signature="FIVE SECTIONS · REAL TABS · ABOUT A MINUTE" />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:items-stretch tablet:gap-[12px]">
         <ControlCard label="Key" className="tablet:basis-full desktop:basis-auto">

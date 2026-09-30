@@ -27,7 +27,7 @@ test.describe("chords UX", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("region", { name: "vi-IV-I-V in A" })).toBeVisible();
     await page.getByRole("button", { name: "I-IV-V: show options" }).click();
-    await expect(page.getByRole("region")).toHaveCount(1);
+    await expect(page.getByRole("region", { name: /in [A-G]/ })).toHaveCount(1);
     await expect(page.getByRole("region", { name: "I-IV-V in A" })).toBeVisible();
   });
 

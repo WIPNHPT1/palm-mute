@@ -148,6 +148,96 @@
   .shutter-band.is-link:is(:hover, :has(a:focus-visible)) .shutter-arrow { transform: translateX(10px); }
 }
 
+/* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----
+   Count In's "How it works" posters in miniature: ink, red, outlined and brass cards with big outlined
+   step numbers. Hidden per page by a class on <html> (lib/guide.ts), so a hidden guide never flashes. */
+@layer components {
+  .guide-posters {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0 4px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(12px, 1.6vw, 22px);
+  }
+  @media (max-width: 1279px) { .guide-posters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .guide-poster {
+    --fg: currentColor;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 18px 20px 20px;
+    min-height: 196px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    box-shadow: 0 2px 4px rgb(var(--color-ink) / 0.05), 0 30px 60px -30px rgb(var(--color-ink) / 0.35);
+  }
+  .dark .guide-poster { box-shadow: 0 2px 4px rgb(0 0 0 / 0.4), 0 30px 60px -30px rgb(0 0 0 / 0.8); }
+  /* halftone dots in the bottom-right corner */
+  .guide-poster::after {
+    content: "";
+    position: absolute;
+    right: -24px;
+    bottom: -24px;
+    width: 55%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-image: radial-gradient(circle, currentColor 1.3px, transparent 1.8px);
+    background-size: 9px 9px;
+    opacity: 0.2;
+    -webkit-mask: radial-gradient(circle at 100% 100%, #000, transparent 70%);
+    mask: radial-gradient(circle at 100% 100%, #000, transparent 70%);
+    pointer-events: none;
+  }
+  .guide-tag { @apply font-mono text-[12px] tracking-[0.14em]; opacity: 0.85; }
+  .guide-no {
+    @apply font-display;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-size: 72px;
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--fg);
+    opacity: 0.8;
+  }
+  .guide-title { @apply font-display uppercase; font-size: clamp(19px, 1.6vw, 24px); line-height: 1.02; margin: 0 0 8px; }
+  .guide-body { @apply font-ui text-[15px] leading-[1.5]; margin: 0; }
+  .guide-body b { font-weight: 700; }
+  .guide-ink { --fg: rgb(var(--color-text-on-dark)); @apply bg-ink text-text-on-dark; rotate: -1.2deg; }
+  .guide-ink .guide-body { @apply text-text-on-dark-muted; }
+  .dark .guide-ink { @apply border border-line-strong; }
+  .guide-red { --fg: rgb(var(--color-text-on-accent)); @apply bg-accent text-text-on-accent; rotate: 0.9deg; }
+  .guide-outline { --fg: rgb(var(--color-text-primary)); @apply border-[1.5px] border-text-primary bg-surface text-text-primary; rotate: -0.6deg; }
+  .guide-outline .guide-body { @apply text-text-secondary; }
+  /* brass takes ink text in both themes (contrast) */
+  .guide-brass { --fg: #171310; @apply bg-brass; color: #171310; rotate: 1deg; }
+
+  /* phones (after the base rules so it wins): one column, shorter posters (the big number sits beside the tag, not above the text) */
+  @media (max-width: 560px) {
+    .guide-posters { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .guide-poster { min-height: 0; gap: 10px; padding: 16px 18px 18px; }
+    .guide-no { font-size: 52px; top: 12px; }
+  }
+
+  .guide-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+  .guide-sig { @apply flex items-center gap-[14px] font-mono text-[12px] tracking-[0.12em] text-text-faint; }
+  .guide-sig::before { content: ""; width: 40px; height: 2px; @apply bg-accent; }
+  .guide-toggle {
+    @apply inline-flex min-h-[44px] items-center gap-[7px] font-mono text-[12px] tracking-[0.1em] text-text-muted;
+    padding: 0 4px;
+  }
+  .guide-toggle:hover { @apply text-text-primary; }
+  .guide-show { display: none; }
+  html.guide-hidden-generator [data-guide="generator"] :is(.guide-posters, .guide-foot),
+  html.guide-hidden-chords [data-guide="chords"] :is(.guide-posters, .guide-foot) { display: none; }
+  html.guide-hidden-generator [data-guide="generator"] .guide-show,
+  html.guide-hidden-chords [data-guide="chords"] .guide-show { display: inline-flex; margin-top: -8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wordmark-bolt svg { animation: none; }
   .shutter-icon,
