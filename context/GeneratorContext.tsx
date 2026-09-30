@@ -45,12 +45,15 @@ export type GeneratorState = {
   progressionId: string;
   sections: Record<SectionId, SectionState>;
   originalityStatus: OriginalityStatus;
-  /** What's playing, if anything: `progression:<id>`, `section:<id>` or `song` (see PlayTarget). */
+  /** What's playing, if anything: `progression:<id>`, `section:<id>`, `strum` or `song` (see PlayTarget). */
   playing: PlayTarget | null;
 };
 
-/** Something with a play button. Progressions and sections loop; the song plays once. */
-export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "song" | `custom:${string}`;
+/**
+ * Something with a play button. Progressions and sections loop; the song plays once. `strum` is a
+ * Rhythm Lane card: the current feel's strum over the Chorus progression.
+ */
+export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "strum" | "song" | `custom:${string}`;
 
 type Action =
   | { type: "setKey"; key: NoteName }
@@ -176,6 +179,8 @@ type GeneratorContextValue = {
   clearIntroLead: () => void;
   /** Plays bars the caller built (the Chords page's melody and solo previews). */
   playCustom: (id: string, bars: PlaybackBar[], loop: boolean) => void;
+  /** A Rhythm Lane card's play button: switches to that feel and plays its strum, or stops it. */
+  playStrum: (feel: FeelId) => void;
   /** Starts the target, or stops it if it's the one playing. */
   togglePlay: (target: PlayTarget) => void;
   stopPlayback: () => void;
@@ -228,9 +233,10 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       if (target.startsWith("custom:")) return customBars.current;
       if (target === "song") return songBars(SECTION_IDS.map((id) => rendered[id]));
       if (target.startsWith("section:")) return sectionBars(rendered[target.slice(8) as SectionId]);
+      if (target === "strum") return progressionBars(state.key, state.progressionId, state.feel);
       return progressionBars(state.key, target.slice(12), state.feel);
     },
-    [rendered, state.key, state.feel],
+    [rendered, state.key, state.feel, state.progressionId],
   );
 
   // A token guards against a slow async start() finishing after the user already hit stop.
@@ -284,6 +290,18 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     [state.playing, barsFor, start, stopPlayback],
   );
 
+  const playStrum = useCallback(
+    (feel: FeelId) => {
+      if (state.playing === "strum" && state.feel === feel) return stopPlayback();
+      dispatch({ type: "setFeel", feel });
+      dispatch({ type: "setPlaying", target: "strum" });
+      // Start at the new feel's tempo straight away (the render that follows would otherwise catch up).
+      bpmRef.current = playbackBpm(feel, state.midTempoBpm);
+      void start("strum", progressionBars(state.key, state.progressionId, feel));
+    },
+    [state.playing, state.feel, state.midTempoBpm, state.key, state.progressionId, start, stopPlayback],
+  );
+
   const playCustom = useCallback(
     (id: string, bars: PlaybackBar[], loop: boolean) => {
       const target = `custom:${id}` as PlayTarget;
@@ -331,11 +349,12 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       sendToSong: (key, progressionId, lead) => dispatch({ type: "useInSong", key, progressionId, lead }),
       clearIntroLead: () => dispatch({ type: "clearIntroLead" }),
       playCustom,
+      playStrum,
       togglePlay,
       stopPlayback,
       activeSection,
     }),
-    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom, activeSection],
+    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom, playStrum, activeSection],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;

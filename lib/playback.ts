@@ -3,7 +3,7 @@
 // the tab. Pure functions, no Tone.js — lib/audio/engine.ts turns this into sound.
 import { CELLS_PER_BAR, midiOf } from "@/lib/fretboard";
 import type { FeelId, RenderedSection } from "@/lib/generator";
-import { libraryVoicings, patternForFeel } from "@/lib/generator";
+import { getFeel, libraryVoicings, patternForFeel } from "@/lib/generator";
 import type { Lead } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
 
@@ -45,10 +45,19 @@ export type PlaybackBar = {
 /** A progression row: its chip voicings, one bar per chord, strummed with the feel's pattern. */
 export function progressionBars(key: NoteName, progressionId: string, feel: FeelId): PlaybackBar[] {
   const strum = patternForFeel(feel).glyphs;
+  const { letRing } = getFeel(feel);
+  // Let-ring feels: each hit sounds until the next one (or the end of the bar).
+  const ring = (i: number) => {
+    let len = 1;
+    while (letRing && i + len < strum.length && strum[i + len] === "·") len++;
+    return len;
+  };
   return libraryVoicings(key, progressionId).map(({ voicing }) => ({
     feel,
-    cells: strum.map((g) =>
-      g === "·" ? null : { notes: voicing.notes.map(midiOf), cells: 1, velocity: g === "▲" ? 0.6 : 0.9, palmMuted: feel !== "mid-tempo" },
+    cells: strum.map((g, i) =>
+      g === "·"
+        ? null
+        : { notes: voicing.notes.map(midiOf), cells: ring(i), velocity: g === "▲" ? 0.6 : 0.9, palmMuted: feel === "fast-punk" || feel === "half-time" },
     ),
   }));
 }

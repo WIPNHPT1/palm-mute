@@ -5,14 +5,14 @@
 <p align="center">
   <a href="https://palmmute.netlify.app"><img alt="Live site" src="https://img.shields.io/website?url=https%3A%2F%2Fpalmmute.netlify.app&label=palmmute.netlify.app&up_message=live&down_message=down&style=flat-square"></a>
   <a href="https://github.com/WIPNHPT1/palm-mute/actions/workflows/build-check.yml"><img alt="Build check" src="https://img.shields.io/github/actions/workflow/status/WIPNHPT1/palm-mute/build-check.yml?branch=main&label=build%20%2B%20750%2B%20browser%20tests&style=flat-square"></a>
-  <img alt="Combinations proven per build" src="https://img.shields.io/badge/combinations%20proven-97%2C200-C23A26?style=flat-square">
+  <img alt="Combinations proven per build" src="https://img.shields.io/badge/combinations%20proven-133%2C200-C23A26?style=flat-square">
   <img alt="Wrong notes" src="https://img.shields.io/badge/wrong%20notes-0-3F8F4F?style=flat-square">
   <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-171310?style=flat-square&logo=nextdotjs">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white">
 </p>
 
 <h3 align="center">The only pop-punk song generator we know of that proves every tab it writes.</h3>
-<p align="center">97,200 combinations checked on every build. Zero wrong notes allowed.<br>
+<p align="center">133,200 combinations checked on every build. Zero wrong notes allowed.<br>
 <a href="https://palmmute.netlify.app"><b>▶ Write a song now</b></a> · <a href="docs/HOW-IT-WORKS.md">How it works</a> · <a href="DECISIONS.md">Design decisions</a></p>
 
 ---
@@ -24,14 +24,14 @@
 | **Tuning** | E standard |
 | **Keys** | All 12, with sharps and flats named properly (A#/Bb) |
 | **Progressions** | The 6 that pop-punk actually runs on (I-V-vi-IV, vi-IV-I-V, I-IV-V, I-V-IV-V, vi-V-IV, IV-I-V-vi) |
-| **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (120–150 BPM, adjustable) |
+| **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (120–150 BPM, adjustable), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
 | **Song sections** | Intro · Verse · Chorus · Solo · Breakdown, each lockable and regenerable on its own |
 | **Chord shapes** | 2-note, 3-note (octave), inverted, open-string and octave-riff power chords, frets 0–12 |
 | **Leads** | Intro melodies (Hook, Octaves, Harmony) and solos (Chill, Classic, Shred), frets 0–12 and 0–15 |
 | **Techniques** | Palm mutes, let-ring, accents, pushes, dead strums, stops · bends, hammer-ons, pull-offs, slides, vibrato |
 | **Tabs** | Real bars of 8 eighth notes, 2 bars per line, never scroll sideways, readable at 320px |
 | **Audio** | Synthesized in the browser (Tone.js): plays exactly the notes in the tab, with drums at the chosen feel |
-| **Proof** | 18,000 voicing renders covering 54,000 section combinations, plus 43,200 leads, on every build ([see below](#receipts)) |
+| **Proof** | 30,000 voicing renders covering 90,000 section combinations, plus 43,200 leads, on every build ([see below](#receipts)) |
 | **Accessibility** | 44px tap targets, 12px minimum text, 4.5:1 contrast in light and dark, screen readers hear note names instead of dashes |
 | **Backend** | None. It's a static site; nothing you make leaves your browser |
 
@@ -125,9 +125,9 @@ Tab, audio and screen-reader text all come from **one** set of events, so what y
 ```text
 $ npm run verify
 All data-layer checks passed.
-Voicing engine: 18000 distinct section renders checked, covering 12 keys × 6 progressions × 3 feels
+Voicing engine: 30000 distinct section renders checked, covering 12 keys × 6 progressions × 5 feels
 × 5 sections × 50 seeds (only the Chorus depends on the progression), 0 recorded position shifts,
-10 reference tabs.
+12 reference tabs.
 All voicing-engine checks passed.
 Lead engine: 43200 leads checked (12 keys × 6 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds);
 95.8% of strong beats on chord notes; … brief §4 hook + 9 reference outputs.

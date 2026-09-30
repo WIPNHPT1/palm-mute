@@ -77,11 +77,13 @@ Each section has a register, allowed shapes and rhythm variants per feel. They'r
 
 Each bar is palm-muted (`pm`) or rings (`ring`). A recipe can also mark accents, **pushes** (the next chord an eighth early) and a **stop** (full-band N.C.). For example:
 
-| Section | Fast Punk | Half-Time | Mid-Tempo |
-|---|---|---|---|
-| Verse | `DDDDDDDD` P.M., accents on 1 and the "and" of 2 | `D..D..D.` P.M. | `.U.U.U.U` P.M. skank |
-| Chorus | `DDDDDDDD` let ring, pushes into bars 2 and 4 | `D--D--D-` | `D-DUD-DU` |
-| Breakdown | (always half-time) `D---D-xx` · `D---D---` · `D---D-xx` · `D.......` N.C. | | |
+| Section | Fast Punk | Half-Time | Mid-Tempo | Pop Strum | Ballad |
+|---|---|---|---|---|---|
+| Verse | `DDDDDDDD` P.M., accents on 1 and the "and" of 2 | `D..D..D.` P.M. | `.U.U.U.U` P.M. skank | `D.DU.UDU` P.M. | `D.D.D.D.` P.M. quarters |
+| Chorus | `DDDDDDDD` let ring, pushes into bars 2 and 4 | `D--D--D-` | `D-DUD-DU` | `D-DU-UDU` | `D---D---` |
+| Breakdown | (always half-time) `D---D-xx` · `D---D---` · `D---D-xx` · `D.......` N.C. | | | | |
+
+Fast Punk and Half-Time share one 180 BPM click (the half-time feel is the drums, not the tempo). Mid-Tempo is adjustable (120–150). Pop Strum (150) and Ballad (80) have fixed tempos of their own.
 
 Recipe plus voicing path gives **bar-by-bar events**. The tab, the audio and the screen-reader sentence are all rendered from those same events.
 
@@ -118,8 +120,8 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
 
 | Suite | What it covers | Checks |
 |---|---|---|
-| Data layer | Progressions per key, sort, playback = card, spoken text, song titles | All keys × feels × sections |
-| Voicing engine | Brief §11: right pitches and degrees, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus not below verse, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 18,000 distinct renders covering 12 keys × 6 progressions × 3 feels × 5 sections × 50 seeds, plus 10 hand-checked reference tabs |
+| Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel | All keys × feels × sections |
+| Voicing engine | Brief §11: right pitches and degrees, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus not below verse, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 30,000 distinct renders covering 12 keys × 6 progressions × 5 feels × 5 sections × 50 seeds, plus 12 hand-checked reference tabs |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 43,200 leads (12 keys × 6 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.

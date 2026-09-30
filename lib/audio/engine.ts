@@ -28,13 +28,18 @@ declare global {
 }
 
 // Drum templates per feel, as 8th-note step indices within a 4/4 bar (feels.json → drumFeel).
-const DRUMS: Record<FeelId, { kick: number[]; snare: number[]; hat: number[] }> = {
+// `crash` only sounds in the first bar of each 4-bar phrase.
+const DRUMS: Record<FeelId, { kick: number[]; snare: number[]; hat: number[]; rim?: number[]; crash?: number[] }> = {
   // straight-8th hats, backbeat snare on 2 and 4, kick on 1 and the "and" of 3
   "fast-punk": { kick: [0, 5], snare: [2, 6], hat: [0, 1, 2, 3, 4, 5, 6, 7] },
   // snare moves to beat 3 only, kick on 1, hats stay busy
   "half-time": { kick: [0], snare: [4], hat: [0, 1, 2, 3, 4, 5, 6, 7] },
   // kick on 1 and 3, hats on the upbeats
   "mid-tempo": { kick: [0, 4], snare: [], hat: [1, 3, 5, 7] },
+  // driving 8th hats, backbeat on 2 and 4, kick on 1, 3 and the "and" of 3, crash on the phrase
+  "pop-strum": { kick: [0, 4, 5], snare: [2, 6], hat: [0, 1, 2, 3, 4, 5, 6, 7], crash: [0] },
+  // sparse: kick on 1 and the "and" of 3, rim click on 3, quarter-note hats
+  ballad: { kick: [0, 5], snare: [], hat: [0, 2, 4, 6], rim: [4] },
 };
 
 let tone: ToneModule | null = null;
@@ -44,6 +49,9 @@ let voices: {
   kick: import("tone").MembraneSynth;
   snare: import("tone").NoiseSynth;
   hat: import("tone").MetalSynth;
+  /** Ballad's rim click and Pop Strum's crash. */
+  rim: import("tone").NoiseSynth;
+  crash: import("tone").NoiseSynth;
   /** Dead strums: a short filtered noise "chk". */
   dead: import("tone").NoiseSynth;
   /** Lead guitar: two mono voices (melody + octave/harmony note), so each can bend on its own. */
@@ -82,6 +90,16 @@ async function ensureTone(): Promise<ToneModule> {
       octaves: 1.5,
       volume: -30,
     }).connect(master);
+    const rim = new T.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.035, sustain: 0 },
+      volume: -10,
+    }).connect(new T.Filter(2500, "bandpass").connect(master));
+    const crash = new T.NoiseSynth({
+      noise: { type: "white" },
+      envelope: { attack: 0.001, decay: 0.9, sustain: 0 },
+      volume: -24,
+    }).connect(new T.Filter(5000, "highpass").connect(master));
     const deadFilter = new T.Filter(1800, "bandpass").connect(master);
     const dead = new T.NoiseSynth({
       noise: { type: "pink" },
@@ -100,7 +118,7 @@ async function ensureTone(): Promise<ToneModule> {
         filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.8, baseFrequency: 900, octaves: 2.5 },
         volume: -14,
       }).connect(leadVibrato);
-    voices = { guitar, guitarFilter, kick, snare, hat, dead, lead: [mono(), mono()], leadVibrato };
+    voices = { guitar, guitarFilter, kick, snare, hat, rim, crash, dead, lead: [mono(), mono()], leadVibrato };
   }
   return tone;
 }
@@ -147,6 +165,8 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
         if (drums.kick.includes(cell)) v.kick.triggerAttackRelease("C1", "8n", time);
         if (drums.snare.includes(cell)) v.snare.triggerAttackRelease("16n", time);
         if (drums.hat.includes(cell)) v.hat.triggerAttackRelease("C6", "32n", time, 0.5);
+        if (drums.rim?.includes(cell)) v.rim.triggerAttackRelease("32n", time);
+        if (drums.crash?.includes(cell) && barIndex % 4 === 0) v.crash.triggerAttackRelease("2n", time);
       },
       steps,
       "8n",
