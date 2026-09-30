@@ -96,10 +96,17 @@
 .ci-cta { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
 
 /* six pluckable strings */
-.ci-strings { position: relative; height: clamp(120px, 14vw, 180px); margin-top: clamp(24px, 3vw, 40px); touch-action: pan-y; cursor: crosshair; }
+.ci-strings { position: relative; height: clamp(120px, 14vw, 180px); margin-top: clamp(24px, 3vw, 40px); margin-bottom: 48px; touch-action: pan-y; cursor: crosshair; }
 .ci-strings canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ci-strings-names { position: absolute; left: var(--pad); top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around; font-family: var(--mono); font-size: 10px; color: var(--t-faint); pointer-events: none; }
-.ci-strings-hint { position: absolute; right: var(--pad); bottom: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--t-faint); }
+/* just under the strings, bottom-right: the hint and the sound switch (44px tall tap target) */
+.ci-strings-foot { position: absolute; right: var(--pad); top: 100%; height: 48px; display: flex; align-items: center; gap: 14px; cursor: default; }
+.ci-strings-hint { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--t-faint); }
+.ci-strings-sound { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 12px; margin-right: -12px; border-radius: 6px; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--t-muted); cursor: pointer; }
+.ci-strings-sound svg { width: 16px; height: 16px; }
+.ci-strings-sound:hover { color: var(--t-primary); }
+.ci-strings-sound[data-on="true"] { color: var(--accent); }
+.ci-strings-sound:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- INTRO with marker highlights ---------- */
 .ci-intro { padding: clamp(70px, 10vw, 160px) 0; }
