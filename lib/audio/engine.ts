@@ -22,6 +22,8 @@ declare global {
   interface Window {
     /** The last request handed to the engine; read by the browser tests to check sound = tab. */
     __palmMuteLastPlayback?: { bars: PlaybackBar[]; bpm: number; loop: boolean } | null;
+    /** Strings plucked on the Count In page (MIDI note, velocity), newest last; read by the browser tests. */
+    __palmMutePlucks?: { midi: number; velocity: number }[];
   }
 }
 
@@ -183,6 +185,32 @@ function playLead(T: ToneModule, hit: Hit, time: number) {
     synth.triggerAttackRelease(freq(start), length * 0.95, time, velocity);
     if (start !== midi) synth.frequency.linearRampToValueAtTime(freq(midi), time + (ex.bendFrom !== undefined ? eighth : eighth * 0.35));
   });
+}
+
+/**
+ * Starts audio from a click or tap (browsers only allow sound after one). Resolves false if audio
+ * can't start. Needed before pluckString() makes a sound, since swiping with a mouse isn't a gesture.
+ */
+export async function enable(): Promise<boolean> {
+  try {
+    await ensureTone();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * One string plucked (the Count In strings), on the rhythm guitar voice, ringing open. `delay` in
+ * seconds staggers a fast swipe into a strum. Silent (but still recorded) until enable() has run.
+ */
+export function pluckString(midi: number, velocity: number, delay = 0) {
+  (window.__palmMutePlucks ??= []).push({ midi, velocity });
+  if (!tone || !voices || tone.getContext().state !== "running") return;
+  const T = tone;
+  const time = T.now() + 0.01 + delay;
+  voices.guitarFilter.frequency.setValueAtTime(2400, time);
+  voices.guitar.triggerAttackRelease(T.Frequency(midi, "midi").toFrequency(), 1.4, time, velocity);
 }
 
 /** Live tempo change without restarting (Mid-Tempo stepper). */
