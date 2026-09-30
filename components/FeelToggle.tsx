@@ -50,7 +50,7 @@ export function FeelToggle({
                 role="radio"
                 aria-checked={active}
                 onClick={() => onFeelChange(f.id)}
-                className={`grid min-h-[48px] w-full grid-cols-[1fr_auto] items-center gap-x-[10px] gap-y-[2px] rounded-[5px] px-[12px] py-[7px] text-left font-mono text-[12px] leading-[1.3] tablet:flex tablet:min-h-[44px] tablet:flex-col tablet:justify-center tablet:gap-[2px] tablet:px-[14px] tablet:py-[5px] tablet:text-center tablet:leading-[1.2] ${
+                className={`grid min-h-[48px] w-full grid-cols-[1fr_auto] items-center gap-x-[10px] gap-y-[2px] rounded-[5px] px-[12px] py-[7px] text-left font-mono text-[12px] leading-[1.3] tablet:flex tablet:min-h-[44px] tablet:flex-col tablet:justify-center tablet:gap-[2px] tablet:px-[14px] tablet:py-[5px] tablet:text-center tablet:leading-[1.2] tablet:whitespace-nowrap ${
                   active ? "" : "text-text-muted hover:text-text-primary"
                 }`}
               >

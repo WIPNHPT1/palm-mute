@@ -68,8 +68,18 @@ assert.equal(playbackBpm("pop-strum", 125), 150, "Pop Strum's tempo is fixed");
 assert.equal(renderSection("breakdown", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 }).feel, "half-time");
 
 // Sort re-orders without changing content.
-assert.deepEqual(sortProgressions(progressions, "brightest").map((p) => p.brightness), [5, 5, 4, 3, 3, 2]);
-assert.deepEqual(sortProgressions(progressions, "darkest").map((p) => p.brightness), [2, 3, 3, 4, 5, 5]);
+assert.equal(progressions.length, 10);
+assert.equal(new Set(progressions.map((p) => p.id)).size, 10, "progression ids are unique");
+for (const p of progressions) assert.equal(p.id, p.degrees.join("-"), `${p.id}: id matches its degrees`);
+assert.deepEqual(sortProgressions(progressions, "brightest").map((p) => p.brightness), [5, 5, 5, 4, 4, 4, 3, 3, 3, 2]);
+assert.deepEqual(sortProgressions(progressions, "darkest").map((p) => p.brightness), [2, 3, 3, 3, 4, 4, 4, 5, 5, 5]);
+const ids = (mode: Parameters<typeof sortProgressions>[1]) => sortProgressions(progressions, mode).map((p) => p.id);
+// Simplest: fewest different chords, then the shorter loop (I-V-IV-V has only three different chords).
+assert.deepEqual(ids("simplest").slice(0, 4), ["I-IV-V", "vi-V-IV", "I-V-IV", "I-V-IV-V"]);
+assert.deepEqual(ids("home-start").slice(0, 5), ["I-V-vi-IV", "I-IV-V", "I-V-IV-V", "I-vi-IV-V", "I-IV-vi-V"]);
+assert.deepEqual(ids("minor-start").slice(0, 2), ["vi-IV-I-V", "vi-V-IV"]);
+for (const mode of ["most-common", "brightest", "darkest", "simplest", "home-start", "minor-start"] as const)
+  assert.deepEqual([...ids(mode)].sort(), progressions.map((p) => p.id).sort(), `${mode} keeps every card`);
 
 // Song titles: 90 unique, short enough for one line, no "(… Mix)" suffix, no em/en dashes.
 assert.equal(TITLES.length, 90);

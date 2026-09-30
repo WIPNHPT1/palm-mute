@@ -48,7 +48,7 @@ test("chord sections never put notes on the B or high e strings", async ({ page 
   await page.goto("/generator/");
   for (const k of ["A", "A# / Bb", "B", "C", "C# / Db", "D", "D# / Eb", "E", "F", "F# / Gb", "G", "G# / Ab"]) {
     await key(page, k).click();
-    // The rows the Power Chords panel shows (npm run verify covers all six progressions in every key).
+    // The rows the Power Chords panel shows (npm run verify covers all ten progressions in every key).
     for (const progression of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V"]) {
       await page.getByRole("button", { name: `Use ${progression} for the Chorus` }).click();
       for (const label of ["Intro", "Verse", "Chorus", "Breakdown"]) {

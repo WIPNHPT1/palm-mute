@@ -2,25 +2,32 @@
 
 export type SegmentOption<T extends string> = { value: T; label: string; sub?: string };
 
-/** Shared by the Feel toggle (Generator) and the Sort toggle (Chords). */
+/** Shared by the Chords page's Sort control and the lead panel's Style and Length controls. */
 export function SegmentedControl<T extends string>({
   label,
   options,
   value,
   onChange,
   className = "",
-  stretchOnTablet = false,
+  stretch = false,
+  threePerRowOnPhones = false,
 }: {
   label: string;
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
   className?: string;
-  /** Keep segments equal-width at tablet too (Chords Sort); Feel shrinks to content from tablet up. */
-  stretchOnTablet?: boolean;
+  /** Equal-width segments that fill the control at every width (Chords Sort); otherwise they shrink to content from tablet up. */
+  stretch?: boolean;
+  /** Phones: wrap into rows of three (Chords Sort's six options, 3 + 3). */
+  threePerRowOnPhones?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`flex gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] ${className}`}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={`flex gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] ${threePerRowOnPhones ? "flex-wrap tablet:flex-nowrap" : ""} ${className}`}
+    >
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -30,11 +37,13 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`min-h-[44px] flex-1 rounded-[5px] px-[4px] py-[5px] text-center font-mono tablet:px-[14px] ${stretchOnTablet ? "desktop:flex-none" : "tablet:flex-none"} ${
+            className={`min-h-[44px] flex-1 rounded-[5px] px-[4px] py-[5px] text-center font-mono ${
+              stretch ? "tablet:px-[8px]" : "tablet:flex-none tablet:px-[14px]"
+            } ${threePerRowOnPhones ? "basis-[calc((100%-4px)/3)] tablet:basis-0" : ""} ${
               active ? "bg-ink text-text-on-dark" : "text-text-muted hover:text-text-primary"
             }`}
           >
-            <div className={`text-[12px] leading-[1.2] ${active ? "font-bold" : ""}`}>{o.label}</div>
+            <div className={`text-[12px] leading-[1.2] ${stretch ? "tablet:whitespace-nowrap" : ""} ${active ? "font-bold" : ""}`}>{o.label}</div>
             {o.sub && <div className={`mt-[2px] text-[12px] leading-[1.2] ${active ? "text-chip-tab" : "text-text-faint"}`}>{o.sub}</div>}
           </button>
         );
