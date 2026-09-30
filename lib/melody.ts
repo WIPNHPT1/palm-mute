@@ -4,12 +4,18 @@
 import rulesJson from "@/data/lead-rules.json";
 import rhythmsJson from "@/data/lead-rhythms.json";
 import { type TabBar, type TabLineGroup, type TabString, OPEN_STRING_MIDI, describeFretted, pitchClass, renderTab, tabText } from "@/lib/fretboard";
-import { type Degree, type NoteName, type ResolvedChord, getProgression, noteNameFor, pitchClassOf, resolveProgression } from "@/lib/musicTheory";
+import { type Degree, type NoteName, type ResolvedChord, getProgression, noteNameFor, pitchClassOf, resolveDegrees } from "@/lib/musicTheory";
 
 export type LeadPart = "intro" | "solo";
 export type IntroStyle = "hook" | "octaves" | "harmony";
 export type SoloStyle = "chill" | "classic" | "shred";
 export type LeadStyle = IntroStyle | SoloStyle;
+
+/**
+ * Song Engine v2 Phase 5 (R15): a motif the solo restates. One bar: its rhythm ("n" = a note starts, "-" = it
+ * holds, "." = rest; 8 eighths) and the semitone step between each note and the one before.
+ */
+export type Quote = { rhythm: string; intervals: number[]; from: string };
 
 export type LeadInputs = {
   key: NoteName;
@@ -18,6 +24,12 @@ export type LeadInputs = {
   style: LeadStyle;
   bars: number;
   seed: number;
+  /** R15 (solos): the song's motif, restated in the solo's first answer bar with its rhythm and contour. */
+  quote?: Quote;
+  /** R16 (solos): the chords to play over, bar by bar (cycled), instead of the progression looped. */
+  degrees?: Degree[];
+  /** R16 (solos): the song's strongest chord; the solo's peak lands on a bar that plays it, when one can. */
+  peakDegree?: Degree;
 };
 
 export type LeadTechnique =
@@ -128,11 +140,34 @@ function barRoles(inputs: LeadInputs, rng: () => number): BarRole[] {
     inputs.bars === 8
       ? ["low", "low", "answer", "answer", "busy", "busy", "peak", "resolve"]
       : ["low", "low", "answer", "answer", "low", "answer", "busy", "busy", "answer", "answer", "busy", "busy", "busy", "peak", "peak", "resolve"];
+  // R16: the peak moves to the song's strongest chord when a second-half bar plays it.
+  const peak = peakBar(inputs);
+  if (peak !== stages.indexOf("peak")) {
+    stages[stages.indexOf("peak")] = "busy";
+    stages[peak] = "peak";
+  }
   const seen: Record<string, number> = {};
-  return stages.map((stage) => {
+  return stages.map((stage, bar) => {
     const occurrence = (seen[stage] = (seen[stage] ?? -1) + 1);
+    // R15: the quote bar takes the motif's rhythm.
+    if (inputs.quote && bar === QUOTE_BAR) return { stage, rhythm: inputs.quote.rhythm };
     return { stage, rhythm: pick(r[stage], occurrence) };
   });
+}
+
+/** The solo bar that restates the song's motif (R15): the first answer bar. */
+export const QUOTE_BAR = 2;
+
+/**
+ * The bar a solo peaks in: normally its "peak" stage (bar 7 of 8); with a `peakDegree`, the second-half bar
+ * playing that chord that's nearest to it (never the last bar, which resolves).
+ */
+export function peakBar(inputs: LeadInputs): number {
+  const normal = inputs.bars === 8 ? 6 : 13;
+  if (!inputs.peakDegree || inputs.part !== "solo") return normal;
+  const { degrees } = leadChords(inputs.key, inputs.progressionId, inputs.bars, inputs.degrees);
+  const options = degrees.flatMap((d, b) => (d === inputs.peakDegree && b >= inputs.bars / 2 && b < inputs.bars - 1 && b !== QUOTE_BAR ? [b] : []));
+  return options.length ? options.reduce((a, b) => (Math.abs(b - normal) < Math.abs(a - normal) ? b : a)) : normal;
 }
 
 function slotsFor(roles: BarRole[]): Slot[] {
@@ -212,7 +247,14 @@ function boxNotes(p: number, inputs: LeadInputs, limit: number): Placed[] {
 
 function arcTarget(inputs: LeadInputs, bar: number): number {
   const arc = inputs.style === "octaves" ? rulesJson.arcs.octaves : rulesJson.arcs[inputs.part];
-  return 60 + pitchClassOf(inputs.key) + arc[Math.min(arc.length - 1, Math.floor((bar * arc.length) / inputs.bars))];
+  // A moved peak (R16) takes the arc's high point with it: swap the two bars' targets.
+  let at = bar;
+  if (inputs.part === "solo" && inputs.peakDegree) {
+    const peak = peakBar(inputs), normal = inputs.bars === 8 ? 6 : 13;
+    if (bar === peak) at = normal;
+    else if (bar === normal) at = peak;
+  }
+  return 60 + pitchClassOf(inputs.key) + arc[Math.min(arc.length - 1, Math.floor((at * arc.length) / inputs.bars))];
 }
 
 function choosePositions(inputs: LeadInputs, limit: number, rng: () => number): number[] {
@@ -296,10 +338,12 @@ function pitchPath(
     if (z !== null && x === z && d !== 0) c += W.returnToPrevious; // no shuttling back and forth
     const ref = motif[i];
     if (ref !== null && ref !== undefined) {
-      c += motifWeight * Math.abs(d - ref) * 0.5;
-      // The intro's echo keeps the motif's shape (up where it went up, down where it went down).
-      if (inputs.part === "intro" && Math.sign(d) !== Math.sign(ref)) {
-        if (strictMotif && slots[i].bar === 2) return null; // the first echo (bar 3) keeps the exact shape
+      const quoting = inputs.part === "solo" && inputs.quote !== undefined && slots[i].bar === QUOTE_BAR;
+      c += (quoting ? W.motifIntro : motifWeight) * Math.abs(d - ref) * 0.5;
+      // The intro's echo, and the solo's quote of the song's motif (R15), keep its shape: up where it went up,
+      // down where it went down.
+      if ((inputs.part === "intro" || quoting) && Math.sign(d) !== Math.sign(ref)) {
+        if (strictMotif && slots[i].bar === (quoting ? QUOTE_BAR : 2)) return null; // strict: the exact shape
         c += W.motifDirection;
       }
     }
@@ -350,6 +394,11 @@ function addTechniques(notes: LeadNote[], inputs: LeadInputs, roles: BarRole[], 
   notes.forEach((n, i) => {
     const prev = notes[i - 1];
     const stage = roles[n.bar].stage;
+    // The quote of the song's motif (R15) is stated plainly: no bends or legato, so it's heard as the tune.
+    if (inputs.quote && n.bar === QUOTE_BAR) {
+      if (n.cells >= t.vibratoMinCells && n.fret <= limit) n.vibrato = true;
+      return;
+    }
     // Bend: a held strong-beat note, reached by bending up from a scale note (whole step, else half).
     if (style.bends.includes(stage) && !bentBars.has(n.bar) && n.cells >= 2 && STRONG.includes(n.cell) && t.bendStrings.includes(n.string)) {
       for (const step of t.bendSteps) {
@@ -437,11 +486,26 @@ export function defaultLeadStyle(part: LeadPart): { style: LeadStyle; bars: numb
   return rulesJson.defaults[part] as { style: LeadStyle; bars: number };
 }
 
-/** Chords under the lead, one per bar: the progression, looped. */
-export function leadChords(key: NoteName, progressionId: string, bars: number): { chords: ResolvedChord[]; degrees: Degree[] } {
-  const prog = resolveProgression(key, progressionId);
-  const deg = getProgression(progressionId).degrees;
-  return { chords: Array.from({ length: bars }, (_, b) => prog[b % prog.length]), degrees: Array.from({ length: bars }, (_, b) => deg[b % deg.length]) };
+/** Chords under the lead, one per bar: the progression looped, or (R16) the song's own chords, cycled. */
+export function leadChords(key: NoteName, progressionId: string, bars: number, own?: Degree[]): { chords: ResolvedChord[]; degrees: Degree[] } {
+  const deg = own ?? getProgression(progressionId).degrees;
+  const degrees = Array.from({ length: bars }, (_, b) => deg[b % deg.length]);
+  return { chords: resolveDegrees(key, degrees), degrees };
+}
+
+/**
+ * R15: the solo restates the song's motif: its quote bar has the motif's rhythm and at least 60% of its
+ * contour (up, down or repeat, note to note).
+ */
+export function quoteReturns(lead: Pick<Lead, "notes" | "inputs">): boolean {
+  const q = lead.inputs.quote;
+  if (!q) return true;
+  const ns = lead.notes.filter((n) => n.bar === QUOTE_BAR);
+  const rhythm = [...q.rhythm].flatMap((c, i) => (c === "n" ? [i] : []));
+  if (ns.map((n) => n.cell).join(",") !== rhythm.join(",")) return false;
+  const dirs = ns.slice(1).map((n, i) => Math.sign(n.midi - ns[i].midi));
+  if (!dirs.length) return true;
+  return dirs.filter((d, i) => d === Math.sign(q.intervals[i] ?? 0)).length / dirs.length >= 0.6;
 }
 
 /**
@@ -477,7 +541,7 @@ export function peaksLate(lead: Pick<Lead, "notes" | "inputs">): boolean {
 
 function meetsGoals(lead: Lead): boolean {
   if (strongChordRatio(lead) < rulesJson.minStrongChordRatio) return false;
-  return lead.inputs.part === "intro" ? motifReturns(lead) : peaksLate(lead);
+  return lead.inputs.part === "intro" ? motifReturns(lead) : peaksLate(lead) && quoteReturns(lead);
 }
 
 /**
@@ -498,7 +562,7 @@ export function generateLead(inputs: LeadInputs): Lead {
 function generateOnce(inputs: LeadInputs, internalSeed: number, strictEcho: boolean): Lead {
   const limit = rulesJson.fretLimits[inputs.part];
   const rng = mulberry32(internalSeed * 2654435761 + inputs.bars * 97 + inputs.style.length);
-  const { chords, degrees } = leadChords(inputs.key, inputs.progressionId, inputs.bars);
+  const { chords, degrees } = leadChords(inputs.key, inputs.progressionId, inputs.bars, inputs.degrees);
   // Everything random below follows the internal seed; the lead still reports the seed it was asked for.
   const seeded = { ...inputs, seed: internalSeed };
   const roles = barRoles(seeded, rng);
@@ -512,6 +576,11 @@ function generateOnce(inputs: LeadInputs, internalSeed: number, strictEcho: bool
     const phraseSlots = slots.filter((s) => Math.floor(s.bar / 2) === ph);
     // Motif: the intervals the same bar role used the first time it appeared.
     const motif = phraseSlots.map((s) => {
+      // R15: the quote bar follows the song's motif, note to note.
+      if (inputs.part === "solo" && inputs.quote && s.bar === QUOTE_BAR) {
+        const k = phraseSlots.filter((x) => x.bar === QUOTE_BAR).indexOf(s);
+        return k > 0 ? (inputs.quote.intervals[k - 1] ?? null) : null;
+      }
       const stage = roles[s.bar].stage;
       const firstBar = roles.findIndex((r) => r.stage === stage && r.rhythm === roles[s.bar].rhythm);
       if (firstBar === s.bar || firstBar < 0) return null;
@@ -527,7 +596,7 @@ function generateOnce(inputs: LeadInputs, internalSeed: number, strictEcho: bool
     let cands: Placed[] = [];
     const tries = Array.from({ length: limit - SPAN + 1 }, (_, p) => p).sort((a, b) => Math.abs(a - positions[ph]) - Math.abs(b - positions[ph]) || a - b);
     // The intro's echo keeps the motif's exact shape if any hand position allows it.
-    const hasMotif = strictEcho && inputs.part === "intro" && motif.some((m) => m !== null);
+    const hasMotif = strictEcho && (inputs.part === "intro" || inputs.quote !== undefined) && motif.some((m) => m !== null);
     for (const strict of hasMotif ? [true, false] : [false]) {
       for (const p of tries) {
         cands = boxNotes(p, inputs, limit);
@@ -579,7 +648,7 @@ export function leadCopyText(lead: Lead): string {
 
 /** Rebuilds a lead from explicit notes (used for the brief's hand-written reference example). */
 export function leadFromNotes(inputs: LeadInputs, notes: LeadNote[]): Lead {
-  const { chords, degrees } = leadChords(inputs.key, inputs.progressionId, inputs.bars);
+  const { chords, degrees } = leadChords(inputs.key, inputs.progressionId, inputs.bars, inputs.degrees);
   const { tab, text } = renderLead(inputs, chords, degrees, notes);
   const lead = { inputs, chords, degrees, notes, positions: [], fretLimit: rulesJson.fretLimits[inputs.part], tab, text };
   return { ...lead, spoken: describeLead(lead) };

@@ -26,7 +26,7 @@ import {
   resolveDegrees,
   resolveProgression,
 } from "@/lib/musicTheory";
-import { type Lead, type LeadPart, type LeadStyle, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
+import { type Lead, type LeadPart, type LeadStyle, type Quote, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
 import type { DrumPattern } from "@/lib/playback";
 import { type RiffSpec, riffFits, writeRiff } from "@/lib/riffs";
 import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, picksOf, rateSection, rhythmGaps } from "@/lib/playability";
@@ -142,9 +142,17 @@ export type SectionInputs = {
   feel: FeelId;
   progressionId: string;
   seed: number;
-  /** A lead part in this section: the Solo always has one; the Intro when the Chords page sends a melody. */
-  lead?: { style: LeadStyle; bars: number } | null;
+  /**
+   * A lead part in this section: the Solo always has one; the Intro when the Chords page sends a melody.
+   * `sent`: it came from the Chords page ("Use in my song"), so it plays exactly as previewed there.
+   */
+  lead?: { style: LeadStyle; bars: number; sent?: boolean } | null;
+  /** The Solo's song thread (R15, R16): the song's motif to quote, its chords and its strongest chord. */
+  thread?: SongThread;
 };
+
+/** What a Generator-written solo knows about its song (Song Engine v2 Phase 5). */
+export type SongThread = { quote: Quote; degrees: Degree[]; peakDegree: Degree };
 
 /** One eighth-note cell that sounds: a strum (hit) or a dead strum (x). */
 export type SectionEvent = {
@@ -615,7 +623,9 @@ function candidatesFor(notes: Fretted[]): Voicing {
 function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): RenderedSection {
   const part: LeadPart = id === "solo" ? "solo" : "intro";
   const { style, bars: length } = inputs.lead ?? defaultLeadStyle(part);
-  const lead = generateLead({ key: inputs.key, progressionId: inputs.progressionId, part, style, bars: length, seed: inputs.seed });
+  // A solo the Generator writes knows the song (R15, R16); one sent from the Chords page plays as previewed.
+  const thread = part === "solo" && !inputs.lead?.sent ? inputs.thread : undefined;
+  const lead = generateLead({ key: inputs.key, progressionId: inputs.progressionId, part, style, bars: length, seed: inputs.seed, ...(thread ?? {}) });
   const bars: SectionBar[] = lead.chords.map((chord, b) => ({
     chord,
     cells: Array.from({ length: CELLS_PER_BAR }, (_, c) => {
@@ -662,4 +672,61 @@ export function nextSeed(id: SectionId, inputs: SectionInputs): number {
 export function nextProgressionId(current: string, rng: () => number = Math.random): string {
   const others = progressions.filter((p) => p.id !== current);
   return others[Math.floor(rng() * others.length)].id;
+}
+
+// ---------------------------------------------------------------------------
+// Song Engine v2 Phase 5: leads that know the song (R15, R16)
+
+/**
+ * The song's motif, as the Solo quotes it: the Intro melody's first bar if the Intro is a melody, else the
+ * Intro riff's first bar, else (a strummed Intro) the Chorus's chord roots as four quarter notes.
+ */
+export function songMotif(intro: RenderedSection, chorus: RenderedSection): Quote {
+  const toQuote = (all: { cell: number; cells: number; midi: number }[], from: string): Quote => {
+    // A busy bar (a riff's straight eighths) is quoted by its outline: the notes on the beats, at most 5,
+    // each held to the next, so the solo's answer bar stays a phrase and its tab stays readable.
+    let events = all;
+    if (events.length > 5) {
+      const onBeats = events.filter((e) => e.cell % 2 === 0).slice(0, 5);
+      events = onBeats.map((e, i) => ({ ...e, cells: (onBeats[i + 1]?.cell ?? 8) - e.cell }));
+    }
+    const rhythm = Array(8).fill(".");
+    for (const e of events) {
+      rhythm[e.cell] = "n";
+      for (let k = 1; k < e.cells && e.cell + k < 8 && !events.some((x) => x.cell === e.cell + k); k++) rhythm[e.cell + k] = "-";
+    }
+    return { rhythm: rhythm.join(""), intervals: events.slice(1).map((e, i) => e.midi - events[i].midi), from };
+  };
+  if (intro.lead) {
+    const bar = intro.lead.notes.filter((n) => n.bar === 0);
+    return toQuote(bar.map((n) => ({ cell: n.cell, cells: n.cells, midi: n.midi })), "the Intro melody");
+  }
+  if (intro.riff) {
+    // The riff's first bar on the eighth-note grid (a 16th-note riff keeps the notes that fall on eighths).
+    const bar = intro.bars[0];
+    const per = bar.cells.length / 8;
+    const events = bar.cells.flatMap((ev, c) =>
+      ev && c % per === 0 ? [{ cell: c / per, cells: Math.max(1, Math.round(ev.cells / per)), midi: Math.min(...ev.notes.map(midiOf)) }] : [],
+    );
+    return toQuote(events, "the Intro riff");
+  }
+  // The Chorus's roots, each within a tritone of the last, a quarter note each.
+  const roots: number[] = [];
+  for (const bar of chorus.bars.slice(0, 4)) {
+    const pc = pitchClassOf(bar.chord!.root);
+    const prev = roots[roots.length - 1];
+    roots.push(prev === undefined ? 60 + pc : prev + ((((pc - prev) % 12) + 18) % 12) - 6);
+  }
+  return toQuote(roots.map((midi, i) => ({ cell: i * 2, cells: 2, midi })), "the Chorus's chords");
+}
+
+/**
+ * The Solo's song thread: the motif to quote, the Chorus's own chords (R16), and the song's strongest chord,
+ * the one the Chorus voices highest on the neck, for the solo's peak to land on.
+ */
+export function songThread(intro: RenderedSection, chorus: RenderedSection, progressionId: string): SongThread {
+  const degrees = sectionDegrees("chorus", progressionId);
+  const highest = chorus.voicings.reduce((a, b) => (b.voicing.position > a.voicing.position ? b : a));
+  const peakDegree = degrees[chorus.chords.findIndex((c) => c.root === highest.chord.root)];
+  return { quote: songMotif(intro, chorus), degrees, peakDegree };
 }

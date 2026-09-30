@@ -17,6 +17,7 @@ import {
   nextSeed,
   playbackBpm,
   renderSection,
+  songThread,
 } from "@/lib/generator";
 import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
@@ -34,7 +35,7 @@ type SectionState = {
    */
   frozen: SectionInputs | null;
   /** A lead part (style and length): always for the Solo; for the Intro once the Chords page sends a melody. */
-  lead: { style: LeadStyle; bars: number } | null;
+  lead: { style: LeadStyle; bars: number; sent?: boolean } | null;
 };
 
 /** A melody or solo sent from the Chords page ("Use in my song"). */
@@ -99,8 +100,20 @@ function initialState(): GeneratorState {
 export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
   const s = state.sections[id];
   if (s.locked && s.frozen) return s.frozen;
-  return { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead };
+  const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead };
+  // A Generator-written Solo knows the song (R15, R16): it quotes the Intro and plays over the Chorus's chords.
+  if (id === "solo" && !s.lead?.sent) return { ...inputs, thread: threadFor(state) };
+  return inputs;
 }
+
+/** The Solo's song thread from the Intro and Chorus on screen. */
+function threadFor(state: GeneratorState) {
+  const chorus = inputsFor(state, "chorus");
+  return songThread(renderSection("intro", inputsFor(state, "intro")), renderSection("chorus", chorus), chorus.progressionId);
+}
+
+/** A section's lead after the Generator writes a new take of it: its own now, no longer the Chords page's. */
+const ownLead = (lead: SectionState["lead"]) => (lead?.sent ? { style: lead.style, bars: lead.bars } : lead);
 
 function reducer(state: GeneratorState, action: Action): GeneratorState {
   switch (action.type) {
@@ -114,7 +127,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       const sections = { ...state.sections };
       for (const id of SECTION_IDS) {
         if (sections[id].locked) continue;
-        sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed };
+        sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed, lead: ownLead(sections[id].lead) };
       }
       return { ...state, sections, progressionId: action.progressionId, songSeed: action.songSeed, originalityStatus: action.originality };
     }
@@ -124,7 +137,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       return {
         ...state,
         progressionId: action.progressionId ?? state.progressionId,
-        sections: { ...state.sections, [action.id]: { ...s, seed: action.seed } },
+        sections: { ...state.sections, [action.id]: { ...s, seed: action.seed, lead: ownLead(s.lead) } },
       };
     }
     case "toggleLock": {
@@ -140,7 +153,9 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       // keeping its own seed and feel, and stays locked.
       const s = state.sections[action.id];
       if (!s.locked || !s.frozen) return state;
-      const frozen = { ...s.frozen, key: state.key, progressionId: state.progressionId };
+      const frozen: SectionInputs = { ...s.frozen, key: state.key, progressionId: state.progressionId };
+      // A locked Solo that knows the song re-reads its thread in the new key and progression.
+      if (action.id === "solo" && frozen.thread) frozen.thread = threadFor({ ...state, sections: { ...state.sections, solo: { ...s, locked: false } } });
       return { ...state, sections: { ...state.sections, [action.id]: { ...s, frozen } } };
     }
     case "useInSong": {
@@ -151,7 +166,8 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       if (chorus.locked && chorus.frozen) sections.chorus = { ...chorus, frozen: { ...chorus.frozen, key: action.key, progressionId: action.progressionId } };
       if (action.lead) {
         const id = action.lead.part as SectionId;
-        const lead = { style: action.lead.style, bars: action.lead.bars };
+        // Sent from the Chords page: it plays exactly as previewed there (no song thread).
+        const lead = { style: action.lead.style, bars: action.lead.bars, sent: true };
         const s = sections[id];
         sections[id] = {
           ...s,
@@ -238,12 +254,18 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       const s = state.sections[id];
       current[id] = s.seed;
       if (s.locked && s.frozen) fixed[id] = s.frozen;
-      else if (id === "solo" || s.lead) fixed[id] = { ...inputsFor(state, id), progressionId, seed: nextSeed(id, inputsFor(state, id)) };
+      // The Solo takes the next seed: the new progression or Intro changes its song thread, so it's always a new
+      // take, and it isn't rendered here (the critic doesn't judge lead lines).
+      else if (id === "solo") fixed[id] = { key: state.key, feel: state.feel, progressionId, seed: s.seed + 1, lead: s.lead };
+      else if (s.lead) fixed[id] = { ...inputsFor(state, id), progressionId, seed: nextSeed(id, inputsFor(state, id)) };
     }
     const best = bestSong({ key: state.key, feel: state.feel, progressionId }, songSeed, fixed, current);
     const seeds: Partial<Record<SectionId, number>> = {};
     for (const id of SECTION_IDS) if (!state.sections[id].locked) seeds[id] = best.seeds[id];
-    const preview = SECTION_IDS.map((id) => renderSection(id, fixed[id] ?? { ...inputsFor(state, id), progressionId, seed: best.seeds[id] }));
+    // The originality check is about chord patterns, so lead lines (the Solo, an Intro melody) aren't previewed.
+    const preview = SECTION_IDS.filter((id) => id !== "solo" && !fixed[id]?.lead).map((id) =>
+      renderSection(id, fixed[id] ?? { ...inputsFor(state, id), progressionId, seed: best.seeds[id] }),
+    );
     // How long the critic took (e2e/critic.spec.ts holds it under the PRD's ~100 ms on a throttled CPU).
     (window as Window & { __palmMuteGenerateMs?: number }).__palmMuteGenerateMs = performance.now() - started;
     dispatch({ type: "generate", seeds, progressionId, songSeed, originality: checkOriginality(preview) });

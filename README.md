@@ -138,6 +138,8 @@ Song critic: 600 songs × 8 takes (…); kept scores 0.20 to 4.16; best of 8 bea
 All critic checks passed.
 Lead engine: 72000 leads checked (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds);
 95.5% of strong beats on chord notes; … brief §4 hook + 9 reference outputs.
+Song thread: 2520 solos written for their song (…); the song's motif returns in 2520 of 2520; every solo plays
+the Chorus's chords; the peak lands on the strongest chord in 2205 of 2205 songs where a second-half bar plays it.
 All lead-engine checks passed.
 ```
 

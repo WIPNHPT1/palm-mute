@@ -22,7 +22,10 @@ import {
   leadTabBars,
   motifReturns,
   nextLeadSeed,
+  peakBar,
+  quoteReturns,
 } from "@/lib/melody";
+import { renderSection, songThread } from "@/lib/generator";
 import { PITCH_CLASSES, noteNameFor, pitchClassOf, progressions } from "@/lib/musicTheory";
 import { leadBars } from "@/lib/playback";
 
@@ -189,6 +192,49 @@ for (const key of PITCH_CLASSES)
           }
 
 // ---------------------------------------------------------------------------
+// Song Engine v2 Phase 5 (R15, R16): a solo the Generator writes knows its song. For every key × progression ×
+// Intro (each strummed and riff take, and an Intro melody) × solo style × 3 seeds: every rule above still
+// holds, the solo quotes the song's motif (its rhythm, 60%+ of its contour), plays the Chorus's own chords,
+// and peaks on the song's strongest chord whenever a second-half bar plays it. Sampled at seed 0 per style
+// (the sweep above covers 50 seeds of every style; this keeps verify near its budget).
+
+let threaded = 0, quoted = 0, peakOnStrongest = 0, peakMovable = 0;
+const quoteFrom: Record<string, number> = {};
+for (const key of PITCH_CLASSES)
+  for (const prog of progressions) {
+    const base = { key, feel: "fast-punk" as const, progressionId: prog.id };
+    const chorus = renderSection("chorus", { ...base, seed: 0 });
+    const intros = [...Array.from({ length: 6 }, (_, seed) => renderSection("intro", { ...base, seed })), renderSection("intro", { ...base, seed: 0, lead: { style: "hook", bars: 4 } })];
+    for (const intro of intros)
+      for (const style of SOLO_STYLES)
+        for (let seed = 0; seed < 1; seed++) {
+          const thread = songThread(intro, chorus, prog.id);
+          const inputs: LeadInputs = { key, progressionId: prog.id, part: "solo", style, bars: 8, seed, ...thread };
+          const where = `${key} ${prog.id} solo ${style} seed ${seed} quoting ${thread.quote.from} (${intro.caption})`;
+          const lead = generateLead(inputs);
+          threaded++;
+          const problems = validateLead(lead);
+          assert.deepEqual(problems, [], `${where}: ${problems.join("; ")}`);
+          assert.ok(quoteReturns(lead), `${where}: the song's motif never returns`);
+          quoted++;
+          quoteFrom[thread.quote.from] = (quoteFrom[thread.quote.from] ?? 0) + 1;
+          lead.degrees.forEach((d, b) => assert.equal(d, thread.degrees[b % thread.degrees.length], `${where}: bar ${b + 1} isn't the Chorus's chord`));
+          const top = Math.max(...lead.notes.map((n) => n.midi));
+          const peakAt = lead.notes.find((n) => n.midi === top)!.bar;
+          assert.ok(peakAt >= 4, `${where}: peaks in bar ${peakAt + 1}`);
+          if (lead.degrees.some((d, b) => d === thread.peakDegree && b >= 4 && b < 7)) {
+            peakMovable++;
+            if (lead.degrees[peakBar(inputs)] === thread.peakDegree) peakOnStrongest++;
+            assert.equal(lead.degrees[peakBar(inputs)], thread.peakDegree, `${where}: the peak bar isn't on the strongest chord`);
+          }
+          if (style === "classic") {
+            assert.equal(tabText(generateLead(inputs).tab), tabText(lead.tab), `${where}: same seed, different solo`);
+            checkAudioAndText(lead);
+          }
+        }
+  }
+
+// ---------------------------------------------------------------------------
 // Brief §4: key of G, I-V-vi-IV, Hook, 4 bars. The hand-written example must pass every rule and
 // render exactly as the brief prints it.
 
@@ -264,5 +310,10 @@ console.log(
   `\nLead engine: ${count} leads checked (12 keys × ${progressions.length} progressions × 2 parts × 3 styles × 2 lengths × ${SEEDS} seeds); ` +
     `${((100 * strongChord) / strongTotal).toFixed(1)}% of strong beats on chord notes; ${bends} bends, ${legato} hammer-ons/pull-offs, ${slides} slides, ${vibratos} vibratos; ` +
     `brief §4 hook + ${REFERENCES.length} reference outputs.`,
+);
+console.log(
+  `Song thread: ${threaded} solos written for their song (12 keys × ${progressions.length} progressions × 7 Intros × 3 styles, seed 0); ` +
+    `the song's motif returns in ${quoted} of ${threaded} (from ${Object.entries(quoteFrom).map(([k, v]) => `${k} ${v}`).join(", ")}); ` +
+    `every solo plays the Chorus's chords; the peak lands on the strongest chord in ${peakOnStrongest} of ${peakMovable} songs where a second-half bar plays it.`,
 );
 console.log("All lead-engine checks passed.");
