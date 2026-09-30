@@ -1,0 +1,370 @@
+// Builds docs/mockups/song-form.html: three ways the Generator could show a whole song (Song Engine v2,
+// Phase 1, PRD §10 #9 and #10) in the Short and Standard forms, light and dark, with a simulated Play song.
+// Chorus and Solo tabs come from today's engine; Intro, Verse, Pre-chorus, Breakdown and Ending are
+// voiced by the real path search over the v2 harmonic plan (progression-aware), with mock rhythms.
+// `npx tsx scripts/build-song-form-mockup.ts`
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { CELLS_PER_BAR, renderTab, type TabLineGroup } from "@/lib/fretboard";
+import { chordLabel, renderSection, type SectionBar, type SectionEvent, tabBars } from "@/lib/generator";
+import { type Degree, type NoteName, getProgression, pitchClassOf, resolveDegrees } from "@/lib/musicTheory";
+import { type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
+
+const KEY: NoteName = "A";
+const PROGRESSION = "I-V-vi-IV";
+const BPM = 180;
+const prog = getProgression(PROGRESSION).degrees as Degree[];
+
+type MockSpec = {
+  degrees: Degree[];
+  register: "low" | "lift";
+  shapes: string[];
+  bars: string[]; // rhythm cells per bar (cycled), as in data/section-recipes.json
+  articulation: ("pm" | "ring")[];
+  accents?: number[];
+  pushes?: number[];
+  stopBar?: number;
+  carry?: "low" | "lift";
+};
+
+/** The v2 plan voiced by the real path search; rhythms are mock-ups of Phase 1 section harmony rules. */
+function mockBars(spec: MockSpec): SectionBar[] {
+  const chords = resolveDegrees(KEY, spec.degrees);
+  const keyPc = pitchClassOf(KEY);
+  const [path] = voicePaths(chords.map((c) => pitchClassOf(c.root)), {
+    target: registerTarget(keyPc, spec.register),
+    shapes: spec.shapes,
+    openStrings: true,
+    fastMuted: spec.articulation.every((a) => a === "pm"),
+    carryFrom: spec.carry ? registerTarget(keyPc, spec.carry) : undefined,
+  });
+  const hit = (v: Voicing, up: boolean, accent: boolean, pm: boolean): SectionEvent => ({
+    kind: "hit", notes: v.notes.map(({ string, fret }) => ({ string, fret })), accent, up, palmMuted: pm, cells: 1,
+  });
+  return chords.map((chord, b) => {
+    const articulation = spec.articulation[b % spec.articulation.length];
+    const pattern = spec.bars[b % spec.bars.length];
+    const v = path.voicings[b];
+    const cells: (SectionEvent | null)[] = [...pattern].map((ch, i) =>
+      ch === "D" || ch === "U" ? hit(v, ch === "U", (spec.accents ?? []).includes(i), articulation === "pm")
+      : ch === "x" ? { kind: "dead", notes: v.notes.map(({ string, fret }) => ({ string, fret })), accent: false, up: false, palmMuted: true, cells: 1 }
+      : null);
+    if (spec.pushes?.includes(b) && b + 1 < chords.length && chords[b + 1].root !== chord.root)
+      cells[CELLS_PER_BAR - 1] = hit(path.voicings[b + 1], false, true, articulation === "pm");
+    const label = chordLabel(chord, v);
+    return { chord, cells, articulation, stopAt: spec.stopBar === b ? pattern.search(/[DUx]/) : undefined, ...(label !== chord.name ? { label } : {}) };
+  });
+}
+
+type Unique = { id: string; label: string; bars: number; tab: TabLineGroup[]; caption: string; chords: string; plan: string };
+
+const names = (bars: SectionBar[]) => bars.map((b) => b.label ?? b.chord?.name ?? "N.C.").join(" · ");
+const fromBars = (id: string, label: string, bars: SectionBar[], caption: string, plan: string): Unique =>
+  ({ id, label, bars: bars.length, tab: renderTab(tabBars(bars)), caption, chords: names(bars), plan });
+
+const inputs = { key: KEY, feel: "fast-punk" as const, progressionId: PROGRESSION, seed: 0 };
+const chorus = renderSection("chorus", inputs);
+const solo = renderSection("solo", inputs);
+
+const intro = mockBars({ degrees: [prog[0], prog[1], prog[0], prog[1]], register: "low", shapes: ["OctA", "OctE"], bars: ["DDDDDDDD", "DDDDD-DD"], articulation: ["ring"], accents: [0] });
+const verse = mockBars({ degrees: prog, register: "low", shapes: ["E2", "A2", "D2"], bars: ["D.DDD.DD"], articulation: ["pm"], accents: [0], carry: "low" });
+const verse2 = mockBars({ degrees: prog, register: "low", shapes: ["E2", "A2", "D2"], bars: ["D.DDD.DD"], articulation: ["pm"], accents: [0], pushes: [1], carry: "low" });
+const pre = mockBars({ degrees: ["IV", "IV", "V", "V"], register: "low", shapes: ["E2", "A2", "E3", "A3"], bars: ["D.D.D.D.", "D.D.D.D.", "DDDDDDDD", "DDDDD..."], articulation: ["pm", "pm", "ring", "ring"], accents: [0, 4], stopBar: undefined, carry: "low" });
+const minor = prog.includes("vi") ? (["vi", "IV", "vi", "IV"] as Degree[]) : (["I", "I", "I", "I"] as Degree[]);
+const breakdown = mockBars({ degrees: minor, register: "low", shapes: ["E2", "A2", "E3", "A3"], bars: ["D---D-xx", "D---D---", "D---D-xx", "D......."], articulation: ["ring"], accents: [0, 4], stopBar: 3 });
+const ending = mockBars({ degrees: ["I"], register: "lift", shapes: ["E3", "A3"], bars: ["D-------"], articulation: ["ring"], accents: [0], carry: "lift" });
+
+const uniques: Unique[] = [
+  fromBars("intro", "Intro", intro, "4 bars · Octave riff", "The chorus's first two chords"),
+  fromBars("verse", "Verse", verse, "4 bars · Sparse chugs", "The progression's own chords, sparser"),
+  fromBars("pre", "Pre-chorus", pre, "4 bars · Build", "IV–V climb into the chorus"),
+  { id: "chorus", label: "Chorus", bars: 4, tab: chorus.tab, caption: chorus.caption.replace(/^\d+ bars/, "4 bars"), chords: chorus.chords.map((c) => c.name).join(" · "), plan: `The progression, ${PROGRESSION}` },
+  { id: "solo", label: "Solo", bars: 8, tab: solo.tab, caption: solo.caption, chords: solo.chords.map((c) => c.name).join(" · "), plan: "Lead over the progression" },
+  fromBars("breakdown", "Breakdown", breakdown, "4 bars · Half-time, stop", "The darkest two chords (vi–IV)"),
+  fromBars("ending", "Ending", ending, "1 bar · Final hit, let ring", "Tonic, let ring"),
+];
+const verse2Tab = renderTab(tabBars(verse2));
+
+type Slot = { id: string; name: string; variation?: string; bars: number };
+const bars = (id: string) => uniques.find((u) => u.id === id)!.bars;
+const slot = (id: string, name: string, variation?: string, mult = 1): Slot => ({ id, name, variation, bars: bars(id) * mult });
+const FORMS: Record<"short" | "standard", Slot[]> = {
+  short: [
+    slot("intro", "Intro"), slot("verse", "Verse 1", undefined, 2), slot("chorus", "Chorus 1"),
+    slot("verse", "Verse 2", "adds a push into bar 3", 2), slot("chorus", "Chorus 2"),
+    slot("solo", "Solo"), slot("breakdown", "Breakdown"), slot("chorus", "Last chorus", "played twice", 2), slot("ending", "Ending"),
+  ],
+  standard: [
+    slot("intro", "Intro"), slot("verse", "Verse 1", undefined, 2), slot("pre", "Pre-chorus 1"), slot("chorus", "Chorus 1"),
+    slot("verse", "Verse 2", "adds a push into bar 3", 2), slot("pre", "Pre-chorus 2"), slot("chorus", "Chorus 2"),
+    slot("solo", "Solo"), slot("breakdown", "Breakdown"), slot("chorus", "Last chorus", "played twice", 2), slot("ending", "Ending"),
+  ],
+};
+
+const DATA = { key: KEY, progression: PROGRESSION, bpm: BPM, uniques, verse2Tab, forms: FORMS };
+
+const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Song form layouts · Palm/Mute mock-up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="light"] {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --brass:#B8862E; --line:#E4DAC3; --line-strong:#DCD3BE;
+    --t-primary:#171310; --t-secondary:#4E4738; --t-muted:#6B6152; --t-faint:#72675A; --on-dark:#F6F1E4; --on-dark-faint:#A89C86; --on-accent:#FFF9EF;
+    --tab:#362B1F; color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C; --line:#352D25; --line-strong:#463B30;
+    --t-primary:#F1EADB; --t-secondary:#CFC5B0; --t-muted:#A89C86; --t-faint:#9A8E7B; --on-dark:#F6F1E4; --on-dark-faint:#A89C86; --on-accent:#140F0C;
+    --tab:#CFC5B0; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--t-primary); font-family: "Space Grotesk", sans-serif; }
+  button { font: inherit; color: inherit; }
+  .mono { font-family: "Space Mono", monospace; }
+  .chrome { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 16px; background: #171310; color: #F6F1E4; font-family: "Space Mono", monospace; font-size: 12px; }
+  .chrome b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 14px; margin-right: auto; }
+  .seg2 { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #463B30; border-radius: 7px; }
+  .seg2 button { min-height: 36px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: #D9CFB9; letter-spacing: .06em; cursor: pointer; }
+  .seg2 button[aria-pressed="true"] { background: #E5573F; color: #140F0C; font-weight: 700; }
+  main { max-width: 1440px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 834px) { main { padding: 28px 32px 48px; } }
+  @media (min-width: 1280px) { main { padding: 32px 56px 48px; } }
+  h1 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: clamp(22px, 4vw, 34px); margin: 0; letter-spacing: .01em; }
+  .note { font-family: "Space Mono", monospace; font-size: 12px; line-height: 1.6; color: var(--t-muted); max-width: 900px; margin: 0; }
+  .note b { color: var(--accent); }
+  .label { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--t-faint); }
+  .bar-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { min-height: 44px; padding: 0 16px; border-radius: 6px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-dark); font-family: "Space Mono", monospace; font-size: 12px; font-weight: 700; letter-spacing: .08em; cursor: pointer; }
+  [data-theme="dark"] .btn { border-color: var(--line-strong); }
+  .btn.play[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .meta { font-family: "Space Mono", monospace; font-size: 12px; color: var(--t-faint); }
+
+  /* Cards: as on the Generator (SectionCard) */
+  .card { background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 9px; min-width: 0; transition: border-color .2s; }
+  .card[data-locked="true"] { border-color: var(--ink); }
+  [data-theme="dark"] .card[data-locked="true"] { border-color: var(--t-faint); }
+  .card[data-active="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(194 58 38 / .12); }
+  .card .hd { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .card .num { font-family: "Space Mono", monospace; font-size: 15px; font-weight: 700; color: var(--t-faint); margin-right: 7px; }
+  .card[data-active="true"] .num { color: var(--accent); }
+  .card h2 { display: inline; font-family: "Space Mono", monospace; font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; color: var(--t-muted); margin: 0; }
+  .icons { display: flex; margin: -12px -12px -12px 0; }
+  .icon { width: 44px; height: 44px; border: 0; background: transparent; color: var(--t-muted); cursor: pointer; display: grid; place-items: center; font-size: 15px; }
+  .icon[aria-pressed="true"] { color: var(--t-primary); }
+  .details { font-family: "Space Mono", monospace; font-size: 12px; line-height: 1.35; color: var(--t-faint); }
+  .details b { color: var(--t-muted); }
+  .uses { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .use { font-family: "Space Mono", monospace; font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--t-muted); }
+  .use[data-active="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  svg.tab { width: 100%; height: auto; display: block; }
+  svg.tab text { font-family: "Space Mono", monospace; font-size: 12px; fill: var(--tab); white-space: pre; }
+  svg.tab text.h { fill: var(--t-faint); }
+
+  /* Option A: running-order strip + unique cards */
+  .strip { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: var(--ink); border-radius: 8px; }
+  .chip { flex: 1 1 auto; min-height: 44px; min-width: 64px; padding: 5px 8px; border-radius: 5px; border: 0; background: #2A241C; color: #D9CFB9; font-family: "Space Mono", monospace; font-size: 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: center; line-height: 1.25; }
+  .chip small { color: #A89C86; font-size: 12px; }
+  .chip[data-var]::after { content: "+ variation"; color: #C9973C; font-size: 12px; }
+  .chip[data-locked="true"] small::before { content: "🔒 "; }
+  .chip[data-active="true"] { background: #E5573F; color: #140F0C; }
+  .chip[data-active="true"] small, .chip[data-active="true"]::after { color: #140F0C; }
+  .chip[data-sel="true"] { outline: 2px solid #F6F1E4; outline-offset: -2px; }
+  @media (min-width: 834px) { .strip { flex-wrap: nowrap; } .chip { flex: var(--bars) 1 0; min-width: 72px; } }
+  .grid-a { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 834px) { .grid-a { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) { .grid-a { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); } }
+
+  /* Option B: every section in running order */
+  .list-b { display: grid; gap: 10px; grid-template-columns: 1fr; }
+  @media (min-width: 834px) { .list-b { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) { .list-b { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .repeat { background: transparent; border: 1.5px dashed var(--line-strong); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-family: "Space Mono", monospace; font-size: 12px; color: var(--t-muted); }
+  .repeat[data-active="true"] { border-color: var(--accent); border-style: solid; }
+  .repeat[data-locked="true"] { border-style: solid; border-color: var(--ink); }
+  .repeat .rh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .repeat .rh span { text-transform: uppercase; letter-spacing: .06em; }
+  .repeat .var { color: var(--brass); }
+  .repeat details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--t-faint); }
+
+  /* Option C: tape timeline + one detail deck */
+  .reel { display: flex; flex-direction: column; gap: 3px; }
+  @media (min-width: 834px) { .reel { flex-direction: row; height: 64px; } }
+  .blk { min-height: 44px; flex: var(--bars) 1 0; min-width: 72px; border: 0; border-radius: 4px; padding: 4px 8px; text-align: left; cursor: pointer; font-family: "Space Mono", monospace; font-size: 12px; line-height: 1.2; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; color: var(--t-primary); background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .blk small { color: var(--t-faint); font-size: 12px; white-space: nowrap; }
+  .blk[data-kind="chorus"] { background: var(--ink); color: var(--on-dark); box-shadow: none; }
+  .blk[data-kind="chorus"] small { color: var(--on-dark-faint); }
+  .blk[data-sel="true"] { box-shadow: inset 0 0 0 3px var(--brass); }
+  .blk[data-active="true"] { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+  .blk[data-active="true"] small { color: var(--on-accent); }
+  .ticks { display: none; font-family: "Space Mono", monospace; font-size: 12px; color: var(--t-faint); justify-content: space-between; }
+  @media (min-width: 834px) { .ticks { display: flex; } }
+  .deck { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 1280px) { .deck { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+  .deck .big svg.tab { max-width: 560px; }
+  .side { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--surface); font-family: "Space Mono", monospace; font-size: 12px; cursor: pointer; text-align: left; width: 100%; }
+  .row[data-sel="true"] { border-color: var(--brass); }
+  .row[data-active="true"] { border-color: var(--accent); }
+  .row span:last-child { color: var(--t-faint); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <b>Palm/Mute · song form</b>
+  <span class="seg2" role="group" aria-label="Layout option">
+    <button data-opt="a" aria-pressed="true">A · STRIP + CARDS</button><button data-opt="b" aria-pressed="false">B · RUNNING ORDER</button><button data-opt="c" aria-pressed="false">C · TAPE REEL</button>
+  </span>
+  <span class="seg2" role="group" aria-label="Form">
+    <button data-form="short" aria-pressed="true">SHORT</button><button data-form="standard" aria-pressed="false">STANDARD</button>
+  </span>
+  <span class="seg2" role="group" aria-label="Theme">
+    <button data-theme-btn="light" aria-pressed="true">LIGHT</button><button data-theme-btn="dark" aria-pressed="false">DARK</button>
+  </span>
+</div>
+<main>
+  <div>
+    <div class="label">Song Engine v2 · Phase 1 mock-up · pick one</div>
+    <h1>HOW SHOULD THE GENERATOR SHOW A WHOLE SONG?</h1>
+  </div>
+  <p class="note">Key of A, <b>${PROGRESSION}</b>, Fast Punk ${BPM} BPM, seed 0. Every section now follows the chosen progression: the Verse plays its chords sparser, the Intro opens with its first two, the Pre-chorus climbs IV–V, the Breakdown takes vi–IV. Chorus and Solo tabs are today's engine; the others are voiced by the real path search with <b>mock rhythms</b> (Phase 1 will tune them). <b>Locking</b> a section locks every place it plays (try the lock on the Verse). <b>PLAY SONG</b> is simulated (no audio): watch where the red goes. Switch between <b>Short</b> and <b>Standard</b> forms above.</p>
+  <div class="bar-controls">
+    <button class="btn play" id="play" aria-pressed="false">▷ PLAY SONG</button>
+    <span class="meta" id="summary"></span>
+  </div>
+  <section id="opt-a"></section>
+  <section id="opt-b" hidden></section>
+  <section id="opt-c" hidden></section>
+  <p class="note" id="about"></p>
+</main>
+<script>
+const DATA = ${JSON.stringify(DATA)};
+const state = { opt: "a", form: "short", locked: new Set(), active: -1, sel: 0, timer: null };
+const U = Object.fromEntries(DATA.uniques.map((u) => [u.id, u]));
+const secPerBar = 4 * 60 / DATA.bpm;
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+// Every chord tab draws at one scale (the widest chord tab), as on the Generator; wider lead tabs shrink only themselves.
+const SHARED = Math.max(...DATA.uniques.filter((u) => u.id !== "solo").flatMap((u) => u.tab.flatMap((g) => [...g.header, ...g.strings].map((r) => r.length))));
+function tabSvg(groups) {
+  const lines = []; groups.forEach((g, gi) => { if (gi) lines.push(null); g.header.forEach((h) => lines.push({ t: h, h: true })); g.strings.forEach((s) => lines.push({ t: s })); });
+  const chars = Math.max(SHARED, ...lines.filter(Boolean).map((l) => l.t.length));
+  let y = 0; const out = [];
+  for (const l of lines) { if (!l) { y += 9.6; continue; } y += 16.8; if (l.t.trim()) out.push('<text x="0" y="' + (y - 4) + '" textLength="' + (l.t.length * 7.2) + '" lengthAdjust="spacingAndGlyphs"' + (l.h ? ' class="h"' : "") + ">" + esc(l.t) + "</text>"); }
+  return '<svg class="tab" viewBox="0 0 ' + (chars * 7.2) + " " + (y + 2) + '" aria-hidden="true">' + out.join("") + "</svg>";
+}
+const slots = () => DATA.forms[state.form];
+const uniqueOrder = () => [...new Set(slots().map((s) => s.id))];
+const usesOf = (id) => slots().map((s, i) => ({ ...s, i })).filter((s) => s.id === id);
+const activeId = () => (state.active >= 0 ? slots()[state.active].id : null);
+const lockBtn = (id) => '<button class="icon" data-lock="' + id + '" aria-pressed="' + state.locked.has(id) + '" aria-label="Lock ' + U[id].label + '" title="Lock">' + (state.locked.has(id) ? "🔒" : "🔓") + "</button>";
+const regen = (id) => '<button class="icon" aria-label="Regenerate ' + U[id].label + '"' + (state.locked.has(id) ? " disabled" : "") + ">↻</button>";
+function tabFor(slot) { return slot && slot.name === "Verse 2" ? DATA.verse2Tab : U[slot ? slot.id : "intro"].tab; }
+
+function card(id, n, extra = "", groups) {
+  const u = U[id]; const act = activeId() === id;
+  return '<article class="card" data-active="' + act + '" data-locked="' + state.locked.has(id) + '">' +
+    '<div class="hd"><div><span class="num">' + String(n).padStart(2, "0") + "</span><h2>" + u.label + '</h2></div><div class="icons">' + regen(id) + lockBtn(id) + "</div></div>" +
+    tabSvg((groups || u.tab).slice(0, 2)) +
+    '<div class="details"><b>' + u.plan + "</b><div>" + u.caption + "</div>" + extra + "</div></article>";
+}
+
+function renderA() {
+  const order = uniqueOrder();
+  const strip = '<div class="strip" role="list" aria-label="Running order">' + slots().map((s, i) =>
+    '<button role="listitem" class="chip" style="--bars:' + s.bars + '" data-slot="' + i + '" data-active="' + (state.active === i) + '" data-locked="' + state.locked.has(s.id) + '"' + (s.variation ? " data-var" : "") + ">" + s.name + "<small>" + nb(s.bars) + "</small></button>").join("") + "</div>";
+  const cards = order.map((id, n) => {
+    const uses = usesOf(id);
+    const chips = uses.length > 1 ? '<div class="uses">' + uses.map((s) => '<span class="use" data-active="' + (state.active === s.i) + '">' + s.name + (s.variation ? " · " + s.variation : "") + "</span>").join("") + "</div>" : "";
+    return card(id, n + 1, (uses.length > 1 ? "<div>Plays " + uses.length + "× in the song</div>" : "") + chips);
+  }).join("");
+  document.getElementById("opt-a").innerHTML = '<div class="label" style="margin-bottom:8px">Running order · tap a part to jump there</div>' + strip +
+    '<div class="grid-a" style="--cols:' + Math.min(order.length, 4) + ';margin-top:14px">' + cards + "</div>";
+}
+
+function renderB() {
+  const seen = new Set();
+  const items = slots().map((s, i) => {
+    const first = !seen.has(s.id); seen.add(s.id);
+    const act = state.active === i;
+    if (first) return card(s.id, i + 1, "<div>" + s.bars + " bars in the song</div>").replace('data-active="' + (activeId() === s.id) + '"', 'data-active="' + act + '"').replace("<h2>" + U[s.id].label, "<h2>" + s.name);
+    return '<div class="repeat" data-active="' + act + '" data-locked="' + state.locked.has(s.id) + '"><div class="rh"><span><b>' + String(i + 1).padStart(2, "0") + "</b> " + s.name + "</span>" + (state.locked.has(s.id) ? "🔒" : "") + "</div>" +
+      "<div>Same as " + U[s.id].label + (s.variation ? ' <span class="var">· ' + s.variation + "</span>" : "") + " · " + s.bars + " bars</div>" +
+      (s.variation ? "<details><summary>Show the tab</summary>" + tabSvg(tabFor(s).slice(0, 2)) + "</details>" : "") + "</div>";
+  }).join("");
+  document.getElementById("opt-b").innerHTML = '<div class="list-b">' + items + "</div>";
+}
+
+function renderC() {
+  const total = slots().reduce((a, s) => a + s.bars, 0);
+  const reel = '<div class="reel" role="list" aria-label="Song timeline">' + slots().map((s, i) =>
+    '<button role="listitem" class="blk" style="--bars:' + s.bars + '" data-kind="' + s.id + '" data-slot="' + i + '" data-sel="' + (state.sel === i) + '" data-active="' + (state.active === i) + '">' +
+    "<span>" + s.name + (state.locked.has(s.id) ? " 🔒" : "") + "</span><small>" + nb(s.bars) + "</small></button>").join("") + "</div>";
+  const ticks = '<div class="ticks"><span>0:00</span><span>' + fmt(total * secPerBar / 2) + "</span><span>" + fmt(total * secPerBar) + "</span></div>";
+  const s = slots()[state.sel];
+  const u = U[s.id];
+  const big = '<article class="card big" data-active="' + (state.active === state.sel) + '" data-locked="' + state.locked.has(s.id) + '"><div class="hd"><div><span class="num">' + String(state.sel + 1).padStart(2, "0") + "</span><h2>" + s.name + '</h2></div><div class="icons">' + regen(s.id) + lockBtn(s.id) + "</div></div>" +
+    tabSvg(tabFor(s)) + '<div class="details"><b>' + u.plan + "</b><div>" + u.caption + (s.variation ? " · " + s.variation : "") + "</div><div>" + u.chords + "</div></div></article>";
+  const side = '<div class="side"><div class="label">Parts</div>' + uniqueOrder().map((id) => {
+    const uses = usesOf(id); const selHere = slots()[state.sel].id === id;
+    return '<button class="row" data-slot="' + uses[0].i + '" data-sel="' + selHere + '" data-active="' + (activeId() === id) + '"><span>' + U[id].label + (state.locked.has(id) ? " 🔒" : "") + "</span><span>" + (uses.length > 1 ? uses.length + "× · " : "") + nb(U[id].bars) + "</span></button>";
+  }).join("") + "</div>";
+  document.getElementById("opt-c").innerHTML = reel + ticks + '<div class="deck" style="margin-top:14px">' + big + side + "</div>";
+}
+
+const nb = (n) => n + (n === 1 ? " bar" : " bars");
+const fmt = (sec) => Math.floor(sec / 60) + ":" + String(Math.round(sec % 60)).padStart(2, "0");
+const ABOUT = {
+  a: "<b>A · Strip + cards.</b> Closest to today: one card per part (6 for Short, 7 for Standard), in the order each first plays. A dark running-order strip above shows the whole song, sized by length; repeats and variations are listed on each card. Play song lights the strip and the card. Desktop: 4 cards per row (was 5). Cost: small; the card grid and SectionCard stay.",
+  b: "<b>B · Running order.</b> The song reads top to bottom like a setlist: the first time a part plays it gets a full card, later plays are slim dashed rows (\\"Same as Verse\\"), and a variation opens its own tab. Most literal, longest page (11–12 items), four per row on desktop. Cost: medium; new repeat row.",
+  c: "<b>C · Tape reel.</b> A proportional timeline of the song (widths = bars, choruses in ink, times underneath) and one big tab for the selected part, with a parts list beside it. Least scrolling and the biggest tab, but you see one part at a time. Cost: largest; a new detail layout replaces the card row.",
+};
+
+function render() {
+  ({ a: renderA, b: renderB, c: renderC })[state.opt]();
+  for (const o of ["a", "b", "c"]) document.getElementById("opt-" + o).hidden = o !== state.opt;
+  document.getElementById("about").innerHTML = ABOUT[state.opt];
+  const total = slots().reduce((a, s) => a + s.bars, 0);
+  document.getElementById("summary").textContent = (state.form === "short" ? "Short" : "Standard") + " form · " + slots().length + " parts · " + total + " bars · " + fmt(total * secPerBar);
+}
+
+function stop() { clearTimeout(state.timer); state.timer = null; state.active = -1; document.getElementById("play").setAttribute("aria-pressed", "false"); document.getElementById("play").textContent = "▷ PLAY SONG"; render(); }
+function playFrom(i) {
+  if (i >= slots().length) return stop();
+  state.active = i; if (state.opt === "c") state.sel = i; render();
+  state.timer = setTimeout(() => playFrom(i + 1), slots()[i].bars * secPerBar * 1000);
+}
+document.getElementById("play").onclick = (e) => {
+  if (state.timer) return stop();
+  e.currentTarget.setAttribute("aria-pressed", "true"); e.currentTarget.textContent = "■ STOP"; playFrom(0);
+};
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.opt) { state.opt = t.dataset.opt; mark("data-opt", t); render(); }
+  else if (t.dataset.form) { stop(); state.form = t.dataset.form; state.sel = 0; mark("data-form", t); render(); }
+  else if (t.dataset.themeBtn) { document.documentElement.dataset.theme = t.dataset.themeBtn; mark("data-theme-btn", t); }
+  else if (t.dataset.lock) { const id = t.dataset.lock; state.locked.has(id) ? state.locked.delete(id) : state.locked.add(id); render(); }
+  else if (t.dataset.slot !== undefined) {
+    const i = +t.dataset.slot;
+    if (state.timer) { clearTimeout(state.timer); playFrom(i); }
+    else { state.sel = i; render(); }
+  }
+});
+function mark(attr, btn) { document.querySelectorAll("[" + attr + "]").forEach((b) => b.setAttribute("aria-pressed", String(b === btn))); }
+document.documentElement.dataset.theme = "light";
+render();
+</script>
+</body>
+</html>
+`;
+
+const out = join(process.cwd(), "docs", "mockups");
+mkdirSync(out, { recursive: true });
+writeFileSync(join(out, "song-form.html"), html);
+console.log(`Wrote docs/mockups/song-form.html (${uniques.map((u) => `${u.label}: ${u.chords}`).join("; ")})`);
