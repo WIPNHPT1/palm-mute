@@ -59,6 +59,10 @@ test.describe("chords UX", () => {
     await expect(feel(page, /MID-TEMPO/)).toHaveAttribute("aria-checked", "true");
   });
 
+  test("the badge says what's stored, like the Generator's", async ({ page }) => {
+    await expect(page.getByText("CHORD PATTERNS ONLY · NO TABS STORED")).toBeVisible();
+  });
+
   test("the highlighted card is labelled Most common", async ({ page }) => {
     const card = page.locator('[data-progression="I-V-vi-IV"]');
     await expect(card).toContainText("Most common", { ignoreCase: true });
