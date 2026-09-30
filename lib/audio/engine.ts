@@ -1,7 +1,7 @@
 // Tone.js playback engine (tech-stack.md). Fully synthesized — no sample pack (open decision
 // resolved to the recommended default). One shared Transport drives both the guitar strums and
 // the drum sequencer, so tempo and feel template stay two independent concerns (feels.json).
-import type { FeelId } from "@/lib/generator";
+import { DRUM_VELOCITY, drumHits } from "@/lib/drums";
 import { type Hit, type PlaybackBar } from "@/lib/playback";
 
 type ToneModule = typeof import("tone");
@@ -27,20 +27,7 @@ declare global {
   }
 }
 
-// Drum templates per feel, as 8th-note step indices within a 4/4 bar (feels.json → drumFeel).
-// `crash` only sounds in the first bar of each 4-bar phrase.
-const DRUMS: Record<FeelId, { kick: number[]; snare: number[]; hat: number[]; rim?: number[]; crash?: number[] }> = {
-  // straight-8th hats, backbeat snare on 2 and 4, kick on 1 and the "and" of 3
-  "fast-punk": { kick: [0, 5], snare: [2, 6], hat: [0, 1, 2, 3, 4, 5, 6, 7] },
-  // snare moves to beat 3 only, kick on 1, hats stay busy
-  "half-time": { kick: [0], snare: [4], hat: [0, 1, 2, 3, 4, 5, 6, 7] },
-  // kick on 1 and 3, hats on the upbeats
-  "mid-tempo": { kick: [0, 4], snare: [], hat: [1, 3, 5, 7] },
-  // driving 8th hats, backbeat on 2 and 4, kick on 1, 3 and the "and" of 3, crash on the phrase
-  "pop-strum": { kick: [0, 4, 5], snare: [2, 6], hat: [0, 1, 2, 3, 4, 5, 6, 7], crash: [0] },
-  // sparse: kick on 1 and the "and" of 3, rim click on 3, quarter-note hats
-  ballad: { kick: [0, 5], snare: [], hat: [0, 2, 4, 6], rim: [4] },
-};
+
 
 let tone: ToneModule | null = null;
 let voices: {
@@ -139,6 +126,12 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
     const STEPS = 16;
     const steps = Array.from({ length: req.bars.length * STEPS }, (_, i) => i);
     const midiToFreq = (m: number) => T.Frequency(m, "midi").toFrequency();
+    // Each bar's drum hits, worked out once per bar.
+    const drumCache = new Map<number, ReturnType<typeof drumHits>>();
+    const drumsFor = (i: number) => {
+      if (!drumCache.has(i)) drumCache.set(i, drumHits(req.bars[i], i));
+      return drumCache.get(i)!;
+    };
 
     sequence = new T.Sequence(
       (time, step) => {
@@ -163,19 +156,15 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
         }
         const note = sixteenth % 2 === 0 ? bar.lead?.[sixteenth / 2] : null; // lead lines stay on eighths
         if (note) playLead(T, note, time);
-        if (bar.drums === false) return; // lead only
-        if (bar.drumsStopAt !== undefined && sixteenth >= bar.drumsStopAt * per) return; // full-band stop
-        // A groove's own drums (in its grid), else the feel's template (in eighths).
-        const own = bar.drumPattern;
-        const at = own ? cell : sixteenth % 2 === 0 ? sixteenth / 2 : -1;
-        if (at < 0) return;
-        const drums = own ?? DRUMS[bar.feel];
-        if (drums.kick?.includes(at)) v.kick.triggerAttackRelease("C1", "8n", time);
-        if (drums.snare?.includes(at)) v.snare.triggerAttackRelease("16n", time);
-        if (drums.hat?.includes(at)) v.hat.triggerAttackRelease("C6", "32n", time, 0.5);
-        if (!own && DRUMS[bar.feel].rim?.includes(at)) v.rim.triggerAttackRelease("32n", time);
-        if (own?.tom?.includes(at)) v.kick.triggerAttackRelease("G1", "16n", time, 0.7);
-        if (drums.crash?.includes(at) && (own || barIndex % 4 === 0)) v.crash.triggerAttackRelease("2n", time);
+        // The drums (lib/drums.ts: the groove's own, the feel's template, stops and "no drums"), as the MIDI export writes them.
+        for (const { drum } of drumsFor(barIndex).filter((h) => h.sixteenth === sixteenth)) {
+          if (drum === "kick") v.kick.triggerAttackRelease("C1", "8n", time, DRUM_VELOCITY.kick);
+          else if (drum === "snare") v.snare.triggerAttackRelease("16n", time, DRUM_VELOCITY.snare);
+          else if (drum === "hat") v.hat.triggerAttackRelease("C6", "32n", time, DRUM_VELOCITY.hat);
+          else if (drum === "rim") v.rim.triggerAttackRelease("32n", time, DRUM_VELOCITY.rim);
+          else if (drum === "tom") v.kick.triggerAttackRelease("G1", "16n", time, DRUM_VELOCITY.tom);
+          else v.crash.triggerAttackRelease("2n", time, DRUM_VELOCITY.crash);
+        }
       },
       steps,
       "16n",

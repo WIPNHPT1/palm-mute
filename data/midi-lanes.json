@@ -1,0 +1,17 @@
+{
+  "_note": "The MIDI export's tracks (docs/song-builder-prd.md §7, the owner's lane table). Every note in a track sits inside its lane's `lo`–`hi` (MIDI note numbers), except the guitars, which export at concert pitch (the owner's call: the notes the tab actually sounds, so guitar plug-ins play them where a guitar would). `program` is the General MIDI instrument (0-based), `channel` 0-based (9 = General MIDI drums). `sections`: where a part plays (all = everywhere). Read by lib/arrange.ts; npm run verify checks every note against its lane.",
+  "ppq": 480,
+  "lanes": [
+    { "id": "sub", "name": "Sub", "lane": "Foundation", "lo": 24, "hi": 38, "channel": 3, "program": 38, "sections": ["chorus", "breakdown"] },
+    { "id": "bass", "name": "Bass", "lane": "Low end", "lo": 36, "hi": 52, "channel": 2, "program": 34, "sections": "all" },
+    { "id": "pianoLeft", "name": "Piano left hand", "lane": "Low mids", "lo": 43, "hi": 55, "channel": 4, "program": 0, "sections": ["verse", "prechorus", "chorus", "solo", "breakdown", "ending"] },
+    { "id": "rhythmGuitar", "name": "Rhythm guitar", "lane": "Mid chords", "lo": 52, "hi": 67, "concert": true, "channel": 0, "program": 30, "sections": "all" },
+    { "id": "vocal", "name": "Lead vocal (guide)", "lane": "Centre", "lo": 57, "hi": 76, "channel": 7, "program": 53, "sections": ["verse", "chorus"] },
+    { "id": "pianoRight", "name": "Piano right hand", "lane": "Upper mids", "lo": 67, "hi": 84, "channel": 5, "program": 0, "sections": ["prechorus", "chorus"] },
+    { "id": "pads", "name": "Pads / strings", "lane": "Upper mids / top", "lo": 72, "hi": 88, "channel": 6, "program": 48, "sections": ["chorus"] },
+    { "id": "leadGuitar", "name": "Lead guitar", "lane": "Top (between vocal lines)", "lo": 64, "hi": 88, "concert": true, "channel": 1, "program": 29, "sections": "all" },
+    { "id": "synth", "name": "Synth leads, arps", "lane": "Top", "lo": 76, "hi": 96, "channel": 8, "program": 81, "sections": ["lastChorus"] },
+    { "id": "drums", "name": "Drums", "lane": "General MIDI drums", "channel": 9, "program": 0, "sections": "all" }
+  ],
+  "drumNotes": { "kick": 36, "snare": 38, "hat": 42, "rim": 37, "tom": 45, "crash": 49 }
+}

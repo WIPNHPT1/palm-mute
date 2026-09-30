@@ -1,8 +1,8 @@
-// `npm run verify`: the four verify suites run side by side (they're independent), so the whole run takes as
+// `npm run verify`: the verify suites run side by side (they're independent), so the whole run takes as
 // long as the slowest one. Each suite's output is printed in order once it finishes; any failure fails the run.
 import { spawn } from "node:child_process";
 
-const SUITES = ["verify-data-layer", "verify-voicings", "verify-critic", "verify-melody"];
+const SUITES = ["verify-data-layer", "verify-voicings", "verify-critic", "verify-melody", "verify-midi"];
 const started = Date.now();
 const runs = SUITES.map(
   (name) =>

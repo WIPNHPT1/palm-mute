@@ -20,10 +20,11 @@ import {
   songThread,
 } from "@/lib/generator";
 import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
-import { type NoteName, noteNameFor, pitchClassOf } from "@/lib/musicTheory";
+import type { NoteName } from "@/lib/musicTheory";
 import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
 import type { FormSlot } from "@/lib/songPlan";
-import { type SongPlan, LENGTH, planSong } from "@/lib/songLength";
+import { type SongPlan, LENGTH } from "@/lib/songLength";
+import { songParts, songPlan } from "@/lib/song";
 import { TITLES, titleBag } from "@/lib/titleGenerator";
 import { type Fixed, bestSectionTake, bestSong } from "@/lib/critic";
 import type { SongThread } from "@/lib/generator";
@@ -114,6 +115,11 @@ function initialState(): GeneratorState {
     originalityStatus: "pass",
     playing: null,
   });
+}
+
+/** Every section's inputs as the page renders them. */
+export function inputsForAll(state: GeneratorState): Record<SectionId, SectionInputs> {
+  return Object.fromEntries(SECTION_IDS.map((id) => [id, inputsFor(state, id)])) as Record<SectionId, SectionInputs>;
 }
 
 export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
@@ -285,39 +291,11 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
 
   // The length plan (lib/songLength.ts): the form and each part's repeats for the Length slider at this tempo.
   const bpm = playbackBpm(state.feel, state.midTempoBpm);
-  const plan = useMemo(
-    () => {
-      // A section card's Structure option fixes how many times each of its places plays.
-      const fixed: Partial<Record<SectionId, number>> = {};
-      for (const id of SECTION_IDS) {
-        const times = inputsFor(state, id).options?.times;
-        if (times) fixed[id] = times;
-      }
-      return planSong(state.lengthSec, bpm, (id) => rendered[id].bars.length * rendered[id].repeat, fixed);
-    },
-    [state, bpm, rendered],
-  );
+  const plan = useMemo(() => songPlan(inputsForAll(state), rendered, state.lengthSec, bpm), [state, rendered, bpm]);
 
-  // A repeat plays its section's material; a declared variation (Verse 2's push) re-renders it from the
-  // same inputs, so locking a section locks every place it plays.
-  const song = useMemo(
-    () =>
-      plan.slots.map((planned) => {
-        const inputs = inputsFor(state, planned.section);
-        // Verse 2's push can be switched off; the Last chorus can go up a whole tone (the cards' Structure options).
-        const push = planned.variation === "push" && !inputs.options?.noPush;
-        const keyUp = planned.section === "chorus" && planned.name === "Last chorus" && inputs.options?.keyUp;
-        const slot: FormSlot = { ...planned, variation: push ? "push" : keyUp ? "keyUp" : undefined };
-        if (!slot.variation) delete slot.variation;
-        const section = push
-          ? renderSection(slot.section, inputs, "push")
-          : keyUp
-            ? renderSection(slot.section, { ...inputs, key: noteNameFor((pitchClassOf(inputs.key) + 2) % 12) })
-            : rendered[slot.section];
-        return { slot, section, times: slot.times };
-      }),
-    [state, rendered, plan],
-  );
+  // A repeat plays its section's material; a declared variation (Verse 2's push, the Last chorus up a tone)
+  // re-renders it from the same inputs, so locking a section locks every place it plays (lib/song.ts).
+  const song = useMemo(() => songParts(inputsForAll(state), rendered, plan), [state, rendered, plan]);
 
   // BUILD SONG (R18): the critic's best of N takes of the song on the chosen progression, for the next song
   // seed, and a new title. Locked sections, and parts carrying a lead line, keep their own inputs.
