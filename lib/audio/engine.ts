@@ -2,7 +2,7 @@
 // resolved to the recommended default). One shared Transport drives both the guitar strums and
 // the drum sequencer, so tempo and feel template stay two independent concerns (feels.json).
 import type { FeelId } from "@/lib/generator";
-import { CELLS_PER_BAR, type Hit, type PlaybackBar } from "@/lib/playback";
+import { type Hit, type PlaybackBar } from "@/lib/playback";
 
 type ToneModule = typeof import("tone");
 
@@ -135,41 +135,50 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
 
     const transport = T.getTransport();
     transport.bpm.value = req.bpm;
-    const steps = Array.from({ length: req.bars.length * CELLS_PER_BAR }, (_, i) => i);
+    // Sixteenth-note steps: a 16-cell bar plays a cell every step, an 8-cell bar every other step.
+    const STEPS = 16;
+    const steps = Array.from({ length: req.bars.length * STEPS }, (_, i) => i);
     const midiToFreq = (m: number) => T.Frequency(m, "midi").toFrequency();
 
     sequence = new T.Sequence(
       (time, step) => {
-        const barIndex = Math.floor(step / CELLS_PER_BAR);
+        const barIndex = Math.floor(step / STEPS);
         const bar = req.bars[barIndex];
-        const cell = step % CELLS_PER_BAR;
-        if (cell === 0 && req.onBar) {
+        const sixteenth = step % STEPS;
+        const per = STEPS / bar.cells.length;
+        if (sixteenth === 0 && req.onBar) {
           const onBar = req.onBar;
           T.getDraw().schedule(() => mine === generation && onBar(barIndex), time);
         }
-        const hit = bar.cells[cell];
+        const cell = sixteenth % per === 0 ? sixteenth / per : -1;
+        const hit = cell >= 0 ? bar.cells[cell] : null;
         if (hit?.dead) {
           v.dead.triggerAttackRelease("32n", time, hit.velocity);
         } else if (hit) {
           // Palm mute: dark and short. Open hits ring for their full length.
           v.guitarFilter.frequency.setValueAtTime(hit.palmMuted ? 900 : 2400, time);
-          const eighth = T.Time("8n").toSeconds();
-          const length = hit.palmMuted ? T.Time("32n").toSeconds() : eighth * hit.cells;
+          const cellLength = T.Time(per === 1 ? "16n" : "8n").toSeconds();
+          const length = hit.palmMuted ? T.Time("32n").toSeconds() : cellLength * hit.cells;
           v.guitar.triggerAttackRelease(hit.notes.map(midiToFreq), length, time, hit.velocity);
         }
-        const note = bar.lead?.[cell];
+        const note = sixteenth % 2 === 0 ? bar.lead?.[sixteenth / 2] : null; // lead lines stay on eighths
         if (note) playLead(T, note, time);
         if (bar.drums === false) return; // lead only
-        if (bar.drumsStopAt !== undefined && cell >= bar.drumsStopAt) return; // full-band stop
-        const drums = DRUMS[bar.feel];
-        if (drums.kick.includes(cell)) v.kick.triggerAttackRelease("C1", "8n", time);
-        if (drums.snare.includes(cell)) v.snare.triggerAttackRelease("16n", time);
-        if (drums.hat.includes(cell)) v.hat.triggerAttackRelease("C6", "32n", time, 0.5);
-        if (drums.rim?.includes(cell)) v.rim.triggerAttackRelease("32n", time);
-        if (drums.crash?.includes(cell) && barIndex % 4 === 0) v.crash.triggerAttackRelease("2n", time);
+        if (bar.drumsStopAt !== undefined && sixteenth >= bar.drumsStopAt * per) return; // full-band stop
+        // A groove's own drums (in its grid), else the feel's template (in eighths).
+        const own = bar.drumPattern;
+        const at = own ? cell : sixteenth % 2 === 0 ? sixteenth / 2 : -1;
+        if (at < 0) return;
+        const drums = own ?? DRUMS[bar.feel];
+        if (drums.kick?.includes(at)) v.kick.triggerAttackRelease("C1", "8n", time);
+        if (drums.snare?.includes(at)) v.snare.triggerAttackRelease("16n", time);
+        if (drums.hat?.includes(at)) v.hat.triggerAttackRelease("C6", "32n", time, 0.5);
+        if (!own && DRUMS[bar.feel].rim?.includes(at)) v.rim.triggerAttackRelease("32n", time);
+        if (own?.tom?.includes(at)) v.kick.triggerAttackRelease("G1", "16n", time, 0.7);
+        if (drums.crash?.includes(at) && (own || barIndex % 4 === 0)) v.crash.triggerAttackRelease("2n", time);
       },
       steps,
-      "8n",
+      "16n",
     );
     sequence.loop = req.loop;
     sequence.start(0);

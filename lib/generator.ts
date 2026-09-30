@@ -2,6 +2,7 @@
 import feelsJson from "@/data/feels.json";
 import rhythmJson from "@/data/rhythm-patterns.json";
 import recipesJson from "@/data/section-recipes.json";
+import engineSettings from "@/data/engine-settings.json";
 import playabilityJson from "@/data/playability.json";
 import templatesJson from "@/data/song-section-templates.json";
 import {
@@ -11,21 +12,26 @@ import {
   CELLS_PER_BAR,
   describeNotes,
   midiOf,
+  pitchClass,
   renderTab,
   tabText,
 } from "@/lib/fretboard";
 import {
+  type Degree,
   type NoteName,
   type ResolvedChord,
+  noteNameFor,
   pitchClassOf,
   progressions,
   resolveDegrees,
   resolveProgression,
 } from "@/lib/musicTheory";
 import { type Lead, type LeadPart, type LeadStyle, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
-import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, rateSection, rhythmGaps } from "@/lib/playability";
+import type { DrumPattern } from "@/lib/playback";
+import { type RiffSpec, riffFits, writeRiff } from "@/lib/riffs";
+import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, picksOf, rateSection, rhythmGaps } from "@/lib/playability";
 import { type ChordSectionId, type SectionId, type VariationId, sectionDegrees, sectionEnergy } from "@/lib/songPlan";
-import { type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
+import { type SectionStyle, type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
 
 export type FeelId = "fast-punk" | "half-time" | "mid-tempo" | "pop-strum" | "ballad";
 /** Every feel, in Feel-control order (feels.json). */
@@ -159,17 +165,40 @@ export type SectionBar = {
   articulation?: "pm" | "ring";
   /** Full-band stop after this cell (the rest of the bar is silent, drums too). */
   stopAt?: number;
+  /** The groove's own drums for this bar, in its grid (R13); none = the feel's template. */
+  drums?: DrumPattern;
 };
 
 type RhythmSpec = {
+  /** 8 cells (eighths) or 16 (sixteenths) per bar, cycled. */
   bars: string[];
   articulation: ("pm" | "ring")[];
+  /** In eighths (0–7), on either grid. */
   accents?: number[];
   pushes?: number[];
   stopBar?: number;
+  /** Per bar (cycled): a full-band stop after this cell, or null. */
+  stopCells?: (number | null)[];
+  /** Per bar (cycled): the groove's own drums in the bar's grid, or null for the feel's template (R13). */
+  drums?: (DrumPattern | null)[];
 };
-type Variant = { name: string; shapes: string[]; rhythms: Partial<Record<FeelId, RhythmSpec>> };
-type SectionRecipe = { register: "low" | "lift"; openStrings: boolean; repeat: number; prefer?: ShapeTag[]; variants: Variant[] };
+type Variant = {
+  name: string;
+  shapes: string[];
+  /** Per feel, or `all` for every feel without its own. */
+  rhythms: Partial<Record<FeelId | "all", RhythmSpec>>;
+  /** Intro riffs (lib/riffs.ts): a line written from scale steps instead of strummed chords. */
+  riff?: RiffSpec;
+  /** "openRoots": only when every chord's root is an open string (pedal riffs). */
+  requires?: "openRoots";
+};
+type SectionRecipe = {
+  register: "low" | "lift";
+  openStrings: boolean;
+  repeat: number;
+  prefer?: ShapeTag[];
+  variants: Variant[];
+};
 
 export const recipes = recipesJson.sections as unknown as Record<ChordSectionId, SectionRecipe>;
 export const libraryRecipe = recipesJson.library as { register: "low" | "lift"; openStrings: boolean; shapes: string[] };
@@ -201,6 +230,8 @@ export type RenderedSection = {
   variation?: { id: VariationId; bar: number };
   /** Chord sections: energy from what the tab plays (lib/songPlan.ts, data/energy.json). */
   energy: number;
+  /** An Intro riff (R12): single notes or octaves from scale steps, not strummed chords (`voicings` is empty). */
+  riff?: boolean;
   /** Chord sections: how hard it is to play at the feel's tempo (lib/playability.ts, data/playability.json). */
   playability?: { rating: Rating; bpm: number };
 };
@@ -229,29 +260,38 @@ export function libraryVoicings(key: NoteName, progressionId: string): { chord: 
   return chords.map((chord, i) => ({ chord, voicing: path.voicings[i] }));
 }
 
+/** Accents are written in eighths (0–7), so they mean the same on an 8- or a 16-cell bar. */
+function accented(cell: number, cells: number, accents: number[]): boolean {
+  const eighth = (cell * 8) / cells;
+  return Number.isInteger(eighth) && accents.includes(eighth);
+}
+
 function eventsFor(pattern: string, voicing: Voicing, articulation: "pm" | "ring", accents: number[]): (SectionEvent | null)[] {
   return [...pattern].map((ch, i) => {
     if (ch === "D" || ch === "U")
-      return { kind: "hit", notes: voicing.notes.map(({ string, fret }) => ({ string, fret })), accent: accents.includes(i), up: ch === "U", palmMuted: articulation === "pm", cells: 1 };
+      return { kind: "hit", notes: voicing.notes.map(({ string, fret }) => ({ string, fret })), accent: accented(i, pattern.length, accents), up: ch === "U", palmMuted: articulation === "pm", cells: 1 };
     if (ch === "x") return { kind: "dead", notes: voicing.notes.map(({ string, fret }) => ({ string, fret })), accent: false, up: false, palmMuted: true, cells: 1 };
     return null; // "-" (ring on) and "." (rest) are both silent cells; ringing is set below
   });
 }
 
-/** Let-ring hits sound until the next event, the end of a stop, or the end of the section. */
+/**
+ * Let-ring hits sound until the next event, the end of a stop, or the end of the section. The length is
+ * counted in the hit's own bar's cells, even when the ring carries into a bar on the other grid.
+ */
 function setRingLengths(bars: SectionBar[]) {
   const flat: { bar: SectionBar; i: number }[] = bars.flatMap((bar) => bar.cells.map((_, i) => ({ bar, i })));
   flat.forEach(({ bar, i }, k) => {
     const ev = bar.cells[i];
     if (!ev || ev.kind !== "hit" || ev.palmMuted) return;
-    let len = 1;
-    while (k + len < flat.length && !flat[k + len].bar.cells[flat[k + len].i]) {
-      const next = flat[k + len];
+    let sixteenths = 16 / bar.cells.length;
+    for (let j = k + 1; j < flat.length && !flat[j].bar.cells[flat[j].i]; j++) {
+      const next = flat[j];
       if (next.bar.stopAt !== undefined && next.i > next.bar.stopAt) break;
       if (next.bar.articulation !== "ring") break;
-      len++;
+      sixteenths += 16 / next.bar.cells.length;
     }
-    ev.cells = len;
+    ev.cells = sixteenths / (16 / bar.cells.length);
   });
 }
 
@@ -270,10 +310,18 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   if (id === "solo" || (id === "intro" && inputs.lead)) return renderLeadSection(id, inputs, feel);
 
   const recipe = recipes[id];
-  const variant = recipe.variants[inputs.seed % recipe.variants.length];
-  const rhythm = variant.rhythms[feel] ?? variant.rhythms[Object.keys(variant.rhythms)[0] as FeelId]!;
-  const chords = sectionChords(id, inputs);
   const keyPc = pitchClassOf(inputs.key);
+  const degrees = sectionDegrees(id, inputs.progressionId);
+  // Variants a song can use: a pedal riff needs its chords' roots on open strings, and a riff has to be
+  // playable at this tempo in this key (lib/riffs.ts).
+  const bpmFor = playbackBpm(feel, MID_TEMPO.max);
+  const variants = recipe.variants.filter(
+    (v) => !v.riff || (riffFits(v.riff, keyPc, degrees) && writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpmFor) !== null),
+  );
+  const variant = variants[inputs.seed % variants.length];
+  const chords = sectionChords(id, inputs);
+  if (variant.riff) return renderRiffSection(id, inputs, feel, variant, degrees, chords);
+  const rhythm = variant.rhythms[feel] ?? variant.rhythms.all ?? variant.rhythms[Object.keys(variant.rhythms)[0] as FeelId]!;
   const prev = PREVIOUS[id];
   const muted = rhythm.articulation.filter((a) => a === "pm").length > rhythm.articulation.length / 2;
   // Playability (R1, R2): the search knows the rhythm, so it prices each change by the time the hand has
@@ -281,18 +329,21 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const bpm = playbackBpm(feel, MID_TEMPO.max);
   const patterns = chords.map((_, b) => rhythm.bars[b % rhythm.bars.length]);
   const articulations = chords.map((_, b) => rhythm.articulation[b % rhythm.articulation.length]);
-  const paths = voicePaths(
-    chords.map((c) => pitchClassOf(c.root)),
-    {
-      target: registerTarget(keyPc, recipe.register),
-      shapes: variant.shapes,
-      openStrings: recipe.openStrings,
-      fastMuted: muted && feel === "fast-punk",
-      prefer: recipe.prefer,
-      carryFrom: prev ? registerTarget(keyPc, recipes[prev].register) : undefined,
-      timing: { gaps: rhythmGaps(patterns, rhythm.pushes ?? []), bpm, articulation: articulations },
+  const roots = chords.map((c) => pitchClassOf(c.root));
+  const style: SectionStyle = {
+    target: registerTarget(keyPc, recipe.register),
+    shapes: variant.shapes,
+    openStrings: recipe.openStrings,
+    fastMuted: muted && feel === "fast-punk",
+    prefer: recipe.prefer,
+    carryFrom: prev ? registerTarget(keyPc, recipes[prev].register) : undefined,
+    timing: {
+      gaps: rhythmGaps(patterns, rhythm.pushes ?? []),
+      bpm,
+      articulation: articulations,
     },
-  );
+  };
+  const paths = voicePaths(roots, style);
   // The Chorus never sits below the Verse (brief §11.4) and lifts above it where it can: keep takes above
   // this seed's Verse register; in high keys, where the lift has little room under fret 12, takes level
   // with it (else the highest take). Since v2 the Verse plays the same chords, so "level" can happen.
@@ -304,11 +355,17 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     };
     const verse = renderSection("verse", { ...inputs, lead: null });
     const floor = avg(verse.voicings.map((v) => v.voicing));
-    const above = paths.filter((p) => avg(p.voicings) > floor + 1e-9);
+    let above = paths.filter((p) => avg(p.voicings) > floor + 1e-9);
+    // A ringing Verse can sit higher (no open D5 on a ringing bar); then look past the usual alternatives
+    // for the cheapest takes that still lift.
+    if (!above.length)
+      above = voicePaths(roots, style, { margin: 50, max: 400 })
+        .filter((p) => avg(p.voicings) > floor + 1e-9)
+        .slice(0, SETTINGS_ALTERNATIVES_MAX);
     const level = paths.filter((p) => avg(p.voicings) >= floor - 1e-9);
     pool = above.length ? above : level.length ? level : [paths.reduce((a, b) => (avg(b.voicings) > avg(a.voicings) ? b : a))];
   }
-  const path = pool[Math.floor(inputs.seed / recipe.variants.length) % pool.length];
+  const path = pool[Math.floor(inputs.seed / variants.length) % pool.length];
 
   const pushes = [...(rhythm.pushes ?? [])];
   let varied: RenderedSection["variation"];
@@ -318,7 +375,9 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
       const gap = rhythmGaps(patterns, [...pushes, i])[i + 1];
       return changeSpeed(moveDifficulty(path.voicings[i], path.voicings[i + 1]), gap, bpm) <= PLAYABILITY_LIMIT;
     };
-    const b = chords.findIndex((c, i) => i >= 1 && i + 1 < chords.length && chords[i + 1].root !== c.root && !pushes.includes(i) && fits(i));
+    // Never into a bar the band has stopped in (stop-time grooves).
+    const stops = (i: number) => rhythm.stopBar === i || (rhythm.stopCells?.[i % rhythm.stopCells.length] ?? null) !== null;
+    const b = chords.findIndex((c, i) => i >= 1 && i + 1 < chords.length && chords[i + 1].root !== c.root && !pushes.includes(i) && !stops(i) && fits(i));
     if (b >= 0) {
       pushes.push(b);
       varied = { id: "push", bar: b };
@@ -331,11 +390,22 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     // Push: the next bar's chord arrives on this bar's last eighth.
     if (pushes.includes(b) && b + 1 < chords.length && chords[b + 1].root !== chord.root) {
       const next = path.voicings[b + 1];
-      cells[CELLS_PER_BAR - 1] = { kind: "hit", notes: next.notes.map(({ string, fret }) => ({ string, fret })), accent: true, up: false, palmMuted: articulation === "pm", cells: 1 };
+      cells[cells.length - 1] = { kind: "hit", notes: next.notes.map(({ string, fret }) => ({ string, fret })), accent: true, up: false, palmMuted: articulation === "pm", cells: 1 };
     }
-    const stopAt = rhythm.stopBar === b ? pattern.search(/[DUx]/) : undefined;
+    const stopAt = rhythm.stopBar === b ? pattern.search(/[DUx]/) : (rhythm.stopCells?.[b % rhythm.stopCells.length] ?? undefined);
+    let drums = rhythm.drums?.[b % rhythm.drums.length] ?? undefined;
+    // A push is a band hit: with the groove's own drums, the kick pushes with the guitar (R13).
+    const pushed = cells[cells.length - 1];
+    if (drums && pushed?.accent && !drums.kick?.includes(cells.length - 1)) drums = { ...drums, kick: [...(drums.kick ?? []), cells.length - 1] };
     const label = chordLabel(chord, path.voicings[b]);
-    return { chord, cells, articulation, stopAt, ...(label !== chord.name ? { label } : {}) };
+    return {
+      chord,
+      cells,
+      articulation,
+      stopAt,
+      ...(drums ? { drums } : {}),
+      ...(label !== chord.name ? { label } : {}),
+    };
   });
   setRingLengths(bars);
   alternateLongRuns(bars, bpm);
@@ -375,6 +445,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
 }
 
 const PLAYABILITY_LIMIT = playabilityJson.changes.limitPer100ms;
+const SETTINGS_ALTERNATIVES_MAX = engineSettings.alternatives.max;
 
 /** The voicing a hit's notes belong to. */
 function voicingFor(voicings: Voicing[], notes: Fretted[]): Voicing {
@@ -398,16 +469,18 @@ function rateBars(bars: SectionBar[], voicings: Voicing[], bpm: number, fastMute
 function alternateLongRuns(bars: SectionBar[], bpm: number) {
   const cap = downRunCap();
   if (cap === null || 1000 / eighthMs(bpm) < playabilityJson.picking.fastRate) return;
-  const flat = bars.flatMap((bar) => bar.cells.map((ev, c) => ({ ev, c })));
+  // Runs as lib/playability.ts counts them: down picks no more than an eighth apart.
+  const picks = picksOf(bars);
   let start = 0;
-  for (let i = 0; i <= flat.length; i++) {
-    if (i < flat.length && flat[i].ev && !flat[i].ev!.up) continue;
+  for (let i = 0; i <= picks.length; i++) {
+    if (i < picks.length && !picks[i].ev.up && (i === start || picks[i].t - picks[i - 1].t <= 2)) continue;
     if (i - start > cap)
       for (let k = start; k < i; k++) {
-        const { ev, c } = flat[k];
-        if (c % 2 === 1 && ev!.notes.length && !isOctave(ev!.notes)) ev!.up = true;
+        // Alternate picking: the offbeats (anything off the quarter-and-eighth downbeats) go up.
+        const { t, ev } = picks[k];
+        if (t % 4 !== 0 && ev.notes.length && !isOctave(ev.notes)) ev.up = true;
       }
-    start = i + 1;
+    start = i < picks.length && picks[i].ev.up ? i + 1 : i;
   }
 }
 
@@ -434,6 +507,108 @@ export function tabBars(bars: SectionBar[]): TabBar[] {
       accent: ev?.accent,
     })),
   }));
+}
+
+/**
+ * An Intro riff (R12): a line from scale steps over the Intro's chords (lib/riffs.ts), picked the way it's
+ * written (alternate picking on the off-cells). Bars are named for their chord's root: the riff outlines
+ * the chord rather than strumming it.
+ */
+function renderRiffSection(id: SectionId, inputs: SectionInputs, feel: FeelId, variant: Variant, degrees: Degree[], chords: ResolvedChord[]): RenderedSection {
+  const spec = variant.riff!;
+  const keyPc = pitchClassOf(inputs.key);
+  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  const events = writeRiff(spec, keyPc, degrees, registerTarget(keyPc, "low"), bpm)!;
+  const bars: SectionBar[] = chords.map((chord, b) => ({
+    chord,
+    label: chord.root,
+    articulation: spec.articulation,
+    cells: Array.from({ length: spec.grid }, (_, c) => {
+      const e = events.find((x) => x.bar === b && x.cell === c);
+      return e
+        ? {
+            kind: "hit" as const,
+            notes: e.notes,
+            accent: c === 0,
+            up: c % 2 === 1,
+            palmMuted: spec.articulation === "pm",
+            cells: 1,
+          }
+        : null;
+    }),
+  }));
+  setRingLengths(bars);
+  const shapes = events
+    .filter((e) => e.notes.length > 1)
+    .map((e) => ({
+      notes: e.notes,
+      position: Math.min(...e.notes.map((n) => n.fret)),
+    }));
+  const allNotes = events.flatMap((e) => e.notes);
+  // Screen readers get each note with its string and fret, like the chord tabs, with repeats grouped ("×6").
+  const art = spec.articulation === "pm" ? "palm-muted" : "let ring";
+  const said = (b: number) => {
+    const runs: { text: string; n: number }[] = [];
+    for (const e of events.filter((x) => x.bar === b)) {
+      const text = e.notes.length > 1 ? `${noteNameFor(pitchClass(midiOf(e.notes[0])))} octave: ${describeNotes(e.notes)}` : describeNotes(e.notes);
+      if (runs.length && runs[runs.length - 1].text === text) runs[runs.length - 1].n++;
+      else runs.push({ text, n: 1 });
+    }
+    return runs.map((r) => (r.n > 1 ? `${r.text} ×${r.n}` : r.text)).join("; ");
+  };
+  const spoken = `${getTemplate(id).label}, key of ${inputs.key}: ${variant.name.toLowerCase()}, ${art}. ${bars.length} bars. ` + bars.map((bar, b) => `Over ${bar.chord!.name}: ${said(b)}.`).join(" ");
+  return {
+    id,
+    label: getTemplate(id).label,
+    feel,
+    bars,
+    repeat: recipes[id as ChordSectionId].repeat,
+    chords,
+    voicings: [],
+    tab: renderTab(tabBars(bars)),
+    caption: `${bars.length} bars · ${variant.name}`,
+    shifts: [],
+    frets: fretRange(allNotes),
+    spoken,
+    riff: true,
+    energy: sectionEnergy(bars, shapes.length ? shapes : allNotes.map((n) => ({ notes: [n], position: n.fret }))),
+    playability: { rating: rateRiff(bars, events, bpm), bpm },
+  };
+}
+
+/** A riff's hand moves: between consecutive fretted notes (open strings free the hand). */
+export function riffFastest(bars: SectionBar[], bpm: number): number {
+  const fretted = picksOf(bars).filter((p) => p.ev.notes.some((n) => n.fret > 0));
+  let fastest = 0;
+  for (let i = 1; i < fretted.length; i++) {
+    const pos = (k: number) => Math.min(...fretted[k].ev.notes.filter((n) => n.fret > 0).map((n) => n.fret));
+    const moved =
+      Math.abs(pos(i) - pos(i - 1)) + (fretted[i].ev.notes[0].string !== fretted[i - 1].ev.notes[0].string ? playabilityJson.changes.weights.stringSet : 0);
+    fastest = Math.max(fastest, changeSpeed(moved, (fretted[i].t - fretted[i - 1].t) / 2, bpm));
+  }
+  return fastest;
+}
+
+function rateRiff(bars: SectionBar[], events: { notes: Fretted[] }[], bpm: number): Rating {
+  // Each distinct octave shape once (the rating counts shapes that need a lean or thumb mute, not notes).
+  const distinct = new Map(events.filter((e) => e.notes.length > 1).map((e) => [e.notes.map((n) => `${n.string}${n.fret}`).join("+"), e.notes]));
+  const octaves = [...distinct.values()].map(candidatesFor);
+  return rateSection(bars, octaves, bpm, false, riffFastest(bars, bpm));
+}
+
+/** The octave shape a riff note uses, as a Voicing (for the rating's mute and stretch checks). */
+function candidatesFor(notes: Fretted[]): Voicing {
+  const root = notes[0];
+  const open = notes.some((n) => n.fret === 0);
+  return {
+    shapeId: root.string === "E" ? "OctE" : "OctA",
+    rootPc: pitchClass(midiOf(root)),
+    notes: notes.map((n, i) => ({ ...n, role: i === 0 ? "R" : "8" })),
+    rootString: root.string,
+    position: open ? 0 : Math.min(...notes.map((n) => n.fret)),
+    open,
+    tags: ["octaveRiff"],
+  };
 }
 
 /** The Solo, or an Intro melody sent from the Chords page: a lead line over the section's progression. */

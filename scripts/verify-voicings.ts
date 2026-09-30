@@ -24,7 +24,7 @@ import { sectionBars, songBarParts, songBars } from "@/lib/playback";
 import { FORM_IDS, formSlots, sectionDegrees, timesFor } from "@/lib/songPlan";
 import { SETTINGS, type Voicing, checkVoicing } from "@/lib/voicings";
 import { type MuteSource, PLAYABILITY, downRunCap, labelPitchClasses, longestDownRun, mutePlan, pitchClassesOf } from "@/lib/playability";
-import { fastestChange } from "@/lib/generator";
+import { fastestChange, riffFastest } from "@/lib/generator";
 
 const FEELS: FeelId[] = FEEL_IDS;
 const SEEDS = 50;
@@ -38,6 +38,7 @@ const fastestByFeel: Partial<Record<FeelId, number>> = {};
 const runByFeel: Partial<Record<FeelId, number>> = {};
 const ratings: Record<string, number[]> = {};
 let hitsChecked = 0;
+let riffRenders = 0;
 const SHAME = JSON.parse(readFileSync(join(process.cwd(), "scripts/fixtures/hall-of-shame.json"), "utf8")) as {
   entries: { what: string; notes: string[]; articulation?: "pm" | "ring"; label?: string }[];
 };
@@ -67,7 +68,7 @@ function parseTab(groups: TabLineGroup[]): ParsedCell[][] {
         cells.push(notes.length ? { notes: notes.sort((a, b) => a - b), dead: false } : dead ? { notes: [], dead: true } : null);
         p += width;
       }
-      assert.equal(cells.length, 8, "a bar must have 8 cells");
+      assert.ok(cells.length === 8 || cells.length === 16, `a bar must have 8 or 16 cells, not ${cells.length}`);
       bars.push(cells);
       start = end + 1;
     }
@@ -93,7 +94,13 @@ function checkLayout(s: RenderedSection, where: string) {
       }
     }
   }
-  for (const b of s.bars) assert.equal(b.cells.length, 8, `${where}: bar isn't 8 cells`);
+  for (const b of s.bars) assert.ok(b.cells.length === 8 || b.cells.length === 16, `${where}: bar has ${b.cells.length} cells`);
+  // Layout D: a 16th-note bar has a line to itself; eighth-note bars pair up.
+  for (const g of s.tab) {
+    const cellsPerBar = (g.strings[0].slice(2).split("|").filter(Boolean)[0] ?? "").length;
+    const bars = (g.strings[0].match(/\|/g) ?? []).length - 1;
+    if (bars === 2) assert.ok(cellsPerBar < 40, `${where}: a 16th-note bar shares a line`);
+  }
 }
 
 function avgPosition(s: RenderedSection): number {
@@ -131,7 +138,7 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
       // R5: the notes are exactly what the label promises (a push at the bar's end plays the next bar's chord).
       const pcs = pitchClassesOf(ev.notes);
       const own = labelPitchClasses(label, pitchClassOf(bar.chord!.root));
-      const pushed = c === 7 && next ? labelPitchClasses(tabBars([next])[0].label!, pitchClassOf(next.chord!.root)) : null;
+      const pushed = c === bar.cells.length - 1 && next ? labelPitchClasses(tabBars([next])[0].label!, pitchClassOf(next.chord!.root)) : null;
       assert.ok(
         JSON.stringify(pcs) === JSON.stringify(own) || (pushed && JSON.stringify(pcs) === JSON.stringify(pushed)),
         `${where}: bar ${i + 1} cell ${c + 1} plays pitch classes ${pcs} under "${label}"`,
@@ -174,9 +181,28 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
       shiftCount++;
     }
   }
-  // 7: audio = tab (parsed from the text), including dead strums; the Verse plays its bars twice.
+  // R13: a groove with its own drums puts a kick, snare or crash under every accented hit.
+  s.bars.forEach((bar, i) => {
+    if (!bar.drums) return;
+    bar.cells.forEach((ev, c) => {
+      if (!ev?.accent) return;
+      const d = bar.drums!;
+      assert.ok([d.kick, d.snare, d.crash].some((x) => x?.includes(c)), `${where}: bar ${i + 1} accent on cell ${c + 1} has no kick, snare or crash`);
+    });
+  });
+  checkAudioTab(s, where);
+}
+
+/** 7: audio = tab (parsed from the text), including dead strums; the Verse plays its bars twice. Full-band stops silence the drums too. */
+function checkAudioTab(s: RenderedSection, where: string) {
   const parsed = parseTab(s.tab);
   const audio = sectionBars(s);
+  // R13: a stop is full-band: nothing sounds after it, and the drums drop out from the next cell.
+  s.bars.forEach((bar, i) => {
+    if (bar.stopAt === undefined) return;
+    assert.equal(audio[i].drumsStopAt, bar.stopAt + 1, `${where}: bar ${i + 1} stop doesn't silence the drums`);
+    assert.ok(bar.cells.slice(bar.stopAt + 1).every((c) => !c), `${where}: bar ${i + 1} plays after its stop`);
+  });
   assert.equal(audio.length, parsed.length * s.repeat, `${where}: audio bar count`);
   audio.forEach((bar, b) => {
     const tabBar = parsed[b % parsed.length];
@@ -188,6 +214,40 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
       else assert.deepEqual([...hit.notes].sort((x, y) => x - y), cell!.notes, `${where}: bar ${b + 1} cell ${c + 1} notes`);
     });
   });
+}
+
+/** Intro riffs (R12): in the key's scale, on each bar's chord, playable at tempo, audio = tab. */
+function checkRiffSection(s: RenderedSection, inputs: SectionInputs, where: string) {
+  const keyPc = pitchClassOf(inputs.key);
+  const scale = [0, 2, 4, 5, 7, 9, 11].map((d) => (keyPc + d) % 12);
+  const degrees = sectionDegrees("intro", inputs.progressionId);
+  s.bars.forEach((bar, i) => {
+    assert.equal(pitchClassOf(bar.chord!.root), (keyPc + degreeOffsets[degrees[i]]) % 12, `${where}: bar ${i + 1} chord`);
+    assert.equal(tabBars([bar])[0].label, bar.chord!.root, `${where}: bar ${i + 1} is named for its chord's root`);
+    const pcs = bar.cells.flatMap((ev) => (ev ? ev.notes.map((n) => pitchClass(midiOf(n))) : []));
+    assert.ok(pcs.includes(pitchClassOf(bar.chord!.root)), `${where}: bar ${i + 1} never plays its chord's root`);
+    bar.cells.forEach((ev, c) => {
+      if (!ev) return;
+      hitsChecked++;
+      for (const n of ev.notes) {
+        assert.ok(n.fret >= 0 && n.fret <= LIMIT, `${where}: fret ${n.fret}`);
+        assert.ok(scale.includes(pitchClass(midiOf(n))), `${where}: bar ${i + 1} cell ${c + 1} ${n.string}${n.fret} isn't in the key`);
+      }
+      if (ev.notes.length > 1) {
+        const [lo, hi] = ev.notes.map(midiOf).sort((x, y) => x - y);
+        assert.equal(hi - lo, 12, `${where}: bar ${i + 1} cell ${c + 1} isn't an octave`);
+        const plan = mutePlan(ev.notes, bar.articulation!);
+        assert.ok(plan.ok, `${where}: bar ${i + 1} octave has no mute plan`);
+        if (plan.ok) for (const m of plan.mutes) muteCounts[m.by]++;
+      }
+    });
+  });
+  const fastest = riffFastest(s.bars, s.playability!.bpm);
+  assert.ok(fastest <= PLAYABILITY.changes.limitPer100ms + 1e-9, `${where}: a riff move needs ${fastest.toFixed(2)} frets per 100 ms`);
+  fastestByFeel[s.feel] = Math.max(fastestByFeel[s.feel] ?? 0, fastest);
+  (ratings[s.id] ??= [0, 0, 0, 0, 0, 0])[s.playability!.rating.score]++;
+  riffRenders++;
+  checkAudioTab(s, where);
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +271,8 @@ for (const key of PITCH_CLASSES) {
           renders++;
           rendered[id] = s;
           checkLayout(s, where);
-          if (id !== "solo") checkChordSection(s, inputs, where);
+          if (s.riff) checkRiffSection(s, inputs, where);
+          else if (id !== "solo") checkChordSection(s, inputs, where);
           // 6: deterministic. Re-rendered on every 5th seed (sampled to keep verify near its ~2 minute budget;
           // every other check here runs on all 50 seeds, and verify-critic re-renders whole songs too).
           if (seed % 5 === 0) assert.equal(tabText(renderSection(id, inputs).tab), tabText(s.tab), `${where}: same seed, different tab`);
@@ -239,7 +300,7 @@ for (const key of PITCH_CLASSES) {
           const b = v2.variation.bar;
           v2.bars.forEach((bar, i) =>
             bar.cells.forEach((cell, c) => {
-              if (i === b && c === 7) {
+              if (i === b && c === bar.cells.length - 1) {
                 assert.ok(cell?.kind === "hit" && cell.accent, `${w2}: no push in bar ${b + 1}`);
                 const next = rendered.verse.bars[b + 1].cells.find((e) => e?.kind === "hit")!;
                 assert.deepEqual(cell!.notes, next.notes, `${w2}: the push isn't the next bar's chord`);
@@ -340,5 +401,6 @@ console.log(`\nVoicing engine: ${renders} section renders checked, covering 12 k
 console.log(`Song plan: ${FORM_IDS.length} forms render for every key × progression × feel; Verse 2 adds its push in ${pushes} of ${energyCount} songs${pushes < energyCount ? " (the rest have no chord change to push into)" : ""}. Energy arc (mean): ${arc}; smallest chorus-over-verse lift ${lowestLift.toFixed(3)}.`);
 const dist = (id: string) => ratings[id].slice(1).map((n, k) => `${k + 1}:${n}`).join(" ");
 console.log(`Playability: ${hitsChecked} hits, every one labelled honestly and with a mute plan (${Object.entries(muteCounts).map(([k, v]) => `${k} ${v}`).join(", ")}); ${SHAME.entries.length} hall-of-shame tabs never reappear. Fastest change (frets/100 ms, limit ${PLAYABILITY.changes.limitPer100ms}): ${FEELS.map((f) => `${f} ${fastestByFeel[f]!.toFixed(2)}`).join(", ")}. Longest downpicked run (eighths): ${FEELS.map((f) => `${f} ${runByFeel[f]}`).join(", ")}.`);
+console.log(`Grooves and riffs: ${riffRenders} Intro riff renders checked (scale, chord root, octaves, mute plans, speed, audio = tab); every stop is full-band and every accented hit in a groove with its own drums has a kick, snare or crash under it.`);
 console.log(`Difficulty (1–5, renders per score): ${SECTION_IDS.filter((id) => ratings[id]).map((id) => `${id} ${dist(id)}`).join("; ")}.`);
 console.log("All voicing-engine checks passed.");

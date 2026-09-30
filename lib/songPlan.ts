@@ -99,9 +99,10 @@ const W = energyJson.weights;
  */
 export function sectionEnergy(bars: EnergyBar[], voicings: { notes: unknown[]; position: number }[]): number {
   if (!bars.length || !voicings.length) return 0;
+  // Per bar, as a share of its own grid (8 or 16 cells), then averaged.
   const sounding =
-    bars.reduce((a, bar) => a + bar.cells.reduce((n, ev) => n + (!ev ? 0 : ev.kind === "dead" ? 0.5 : Math.min(ev.cells, 8)), 0), 0) /
-    (bars.length * bars[0].cells.length);
+    bars.reduce((a, bar) => a + bar.cells.reduce((n, ev) => n + (!ev ? 0 : ev.kind === "dead" ? 0.5 : Math.min(ev.cells, bar.cells.length)), 0) / bar.cells.length, 0) /
+    bars.length;
   const ring = bars.filter((b) => b.articulation === "ring").length / bars.length;
   const notes = voicings.filter((v) => v.notes.length >= 3).length / voicings.length;
   const register = voicings.reduce((a, v) => a + v.position, 0) / voicings.length / 12;

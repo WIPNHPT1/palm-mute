@@ -92,6 +92,23 @@ Fast Punk and Half-Time share one 180 BPM click (the half-time feel is the drums
 
 Recipe plus voicing path gives **bar-by-bar events**. The tab, the audio and the screen-reader sentence are all rendered from those same events.
 
+### Grooves, sixteenths and riffs (Song Engine v2, Phase 4)
+
+- **Six or more grooves per section in every feel.** Each groove is in `data/section-recipes.json`: an `all` rhythm, plus per-feel overrides where a feel needs its own. New ones:
+  - **Verse:** gallop, stop-time, backbeat chugs.
+  - **Pre-chorus:** build with a fill, stop and hit, gallop build, offbeat climb.
+  - **Chorus:** accent hits, open gallop, half-note anthem, driving eighths.
+  - **Breakdown:** gallop, stop-time hits, quarter-note chugs, chug and choke.
+- **The 16th-note grid.** A bar is 8 cells, or 16 when it needs sixteenths (gallops, fills). Accents stay in eighths (0–7). **Layout D:** an eighth-note bar shares its line; a 16th-note bar gets a line to itself, so its text stays as big. Every tab from before Phase 4 is unchanged.
+- **Guitar and drums together (R13).** A groove can carry its own drums, bar by bar, in its own grid. Kicks land under the accents (verify checks that every accented hit has a kick, snare or crash), and a push pulls the kick with it. `stopCells` are full-band stops: nothing sounds after one, drums included. Grooves without drums use the feel's kit.
+- **Intro riffs that move (R12, `lib/riffs.ts`).** Four riffs are written from scale steps over each bar's chord (0 = root, 2 = third, 4 = fifth, 7 = octave), so they work in every key:
+  - an **octave climb**;
+  - a **low-string palm-muted gallop riff**;
+  - an **open-string pedal riff** (only when the chords' roots are open strings);
+  - a **hook line in octaves**.
+
+  A Viterbi search places each note closest to the hand, moving the way the tune moves, and never over the speed limit. A riff that can't be played at the tempo in a key isn't offered there. Riffs keep their notes in every feel; the tempo changes. Verify checks every riff note is in the key, every bar has its chord's root, octaves are true octaves with a mute plan, moves stay under the limit, and audio = tab.
+
 ## 3b. The song: plan, form and energy
 
 `data/section-harmony.json` · `data/song-forms.json` · `data/energy.json` · `lib/songPlan.ts` (Song Engine v2, Phase 1)
@@ -200,7 +217,7 @@ Nothing musical is hard-coded:
 | File | Change it to… |
 |---|---|
 | `data/engine-settings.json` | Move the chorus lift, tighten or loosen voice leading, make shapes more or less likely, change the fret limit |
-| `data/section-recipes.json` | Add rhythm variants, change which shapes a section may use |
+| `data/section-recipes.json` | Add rhythm variants (8 or 16 cells, with their own drums and stops), intro riffs (scale steps), change which shapes a section may use |
 | `data/section-harmony.json` | Change which chords a section plays over the progression |
 | `data/song-forms.json` | Change the running order, or a repeat's variation |
 | `data/energy.json` | Reweight what makes a section feel bigger |

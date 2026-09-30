@@ -1,4 +1,5 @@
-// What the audio engine plays, as plain data: bars of 8 eighth-note cells. Built from exactly what
+// What the audio engine plays, as plain data: bars of 8 eighth-note cells, or 16 sixteenth-note cells where
+// a groove needs them (gallops, fills). Built from exactly what
 // the page shows (a progression row, a section card, or the whole song), so the sound always matches
 // the tab. Pure functions, no Tone.js — lib/audio/engine.ts turns this into sound.
 import { CELLS_PER_BAR, midiOf } from "@/lib/fretboard";
@@ -12,7 +13,7 @@ export { CELLS_PER_BAR };
 export type Hit = {
   /** MIDI notes sounded together (`open[string] + fret` of the tabbed notes). */
   notes: number[];
-  /** Length in eighth-note cells (palm-muted hits are cut short by the engine regardless). */
+  /** Length in its bar's cells (eighths, or sixteenths in a 16-cell bar); palm-muted hits are cut short regardless. */
   cells: number;
   velocity: number;
   palmMuted: boolean;
@@ -30,10 +31,16 @@ export type Hit = {
   };
 };
 
+/** A groove's own drums, cell by cell in its bar's grid (R13: chosen with the guitar rhythm). */
+export type DrumPattern = { kick?: number[]; snare?: number[]; hat?: number[]; crash?: number[]; tom?: number[] };
+
 export type PlaybackBar = {
   /** Drum template for this bar (the Breakdown is always half-time). */
   feel: FeelId;
+  /** 8 or 16 cells. */
   cells: (Hit | null)[];
+  /** The groove's own drums, when it has them (else the feel's template). */
+  drumPattern?: DrumPattern;
   /** Full-band stop: drums drop out from this cell on. */
   drumsStopAt?: number;
   /** false = no drums at all (Play lead only). */
@@ -123,6 +130,7 @@ export function sectionBars(section: RenderedSection): PlaybackBar[] {
         : null,
     ),
     ...(bar.stopAt !== undefined ? { drumsStopAt: bar.stopAt + 1 } : {}),
+    ...(bar.drums ? { drumPattern: bar.drums } : {}),
   }));
   return Array.from({ length: section.repeat }, () => bars).flat();
 }
