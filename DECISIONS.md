@@ -8,6 +8,8 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Originality-check badge | Always PASS for v1 (`lib/originalityCheck.ts` stub) | Recommended default |
 | Locked sections across key changes | Frozen once locked — key/feel changes don't touch a locked section | Recommended default |
 | Dark mode | **Build a real dark theme** (overrides the "disable for v1" default) | Repo owner, 2026-09-27 |
+| Default theme | **Light for everyone** until the reader picks dark with the menu's DARK switch (remembered). No longer follows the device's appearance setting | Repo owner, 2026-09-30 |
+| Verse lock on load | **Every section starts unlocked**, the Verse included (it was locked only because the mockups showed it as a demo of the lock; overrides `.kit/acceptance-criteria.md` on this point) | Repo owner, 2026-09-30 |
 | Audio approach | Synthesized (Tone.js synths, no sample pack) | Recommended default |
 | Section card highlight | **Red border = sounding now** (replaces "always the Chorus card"): a section's play button lights its card, and Play song moves the light card by card with the music; nothing is red when nothing plays. Locked cards get an ink border; the Chorus says which progression it plays ("Chords: I-V-vi-IV"); section numbers are neutral. Red now means "in use / happening" everywhere on the page | Repo owner, 2026-09-27 |
 | Desktop breakpoint | **1280px** (tokens say 1440) so common laptop widths get the 5-column layout | Repo owner, 2026-09-27 |
@@ -61,7 +63,7 @@ Set by the `/next-phases` routine on 2026-09-27; listed in each PR so the owner 
 
 - **Dark mode:** the dark palette lives next to the light one in `tailwind.config.js` and is emitted
   as CSS variables (`:root` / `.dark`). The toggle stores an explicit choice in `localStorage`;
-  with no stored choice it follows the OS `prefers-color-scheme`. The mockups have no dark
+  with no stored choice the site is light (since 2026-09-30; before that it followed the OS). The mockups have no dark
   designs, so the dark palette is an in-house interpretation of the tape-deck look — worth a
   design pass.
 - **Solo variations:** seed 0 is still the template lick (`5,7,5,7` in A). Regenerating writes a

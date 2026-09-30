@@ -38,7 +38,13 @@ test.describe("generator", () => {
   });
 
   test("regenerate changes an unlocked section; lock freezes it", async ({ page }) => {
-    // Verse is locked by default and can't be regenerated.
+    // Every section starts unlocked (DECISIONS.md).
+    for (const label of ["Intro", "Verse", "Chorus", "Solo", "Breakdown"]) {
+      await expect(section(page, label).getByRole("button", { name: `Lock ${label}` })).toHaveAttribute("aria-pressed", "false");
+      await expect(section(page, label).getByRole("button", { name: `Regenerate ${label}` })).toBeEnabled();
+    }
+    // A locked section can't be regenerated.
+    await section(page, "Verse").getByRole("button", { name: "Lock Verse" }).click();
     await expect(section(page, "Verse").getByRole("button", { name: "Verse is locked" })).toBeDisabled();
     await expect(section(page, "Verse").getByRole("button", { name: "Unlock Verse" })).toHaveAttribute("aria-pressed", "true");
 

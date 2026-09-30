@@ -35,7 +35,8 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#171310" },
     { media: "(prefers-color-scheme: dark)", color: "#0B0908" },
   ],
-  colorScheme: "light dark",
+  // Light by default; a reader who picks dark gets `color-scheme: dark` from the .dark stylesheet rules.
+  colorScheme: "light",
 };
 
 const STRUCTURED_DATA = {

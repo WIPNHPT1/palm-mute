@@ -19,8 +19,8 @@
       "degreeSequence": ["I", "I", "V", "V"],
       "strumFeel": "same rhythm cell as intro, repeated to fill 8 bars, using the two-note power chord shape",
       "caption": "8 bars",
-      "lockedByDefault": true,
-      "note": "Locked by default in the mockups — real build should let the user lock/unlock any section, Verse is just the pre-set example."
+      "lockedByDefault": false,
+      "note": "The mockups showed the Verse locked as a demo of the lock; every section now starts unlocked (owner call, 2026-09-30, see DECISIONS.md)."
     },
     {
       "id": "chorus",

@@ -10,6 +10,8 @@ test.describe("generator UX", () => {
 
   test("a locked section shows its key and can be updated to the new one", async ({ page }) => {
     const verse = section(page, "Verse");
+    await expect(verse).not.toContainText("Locked in"); // every section starts unlocked
+    await verse.getByRole("button", { name: "Lock Verse" }).click();
     await expect(verse).toContainText("Locked in A");
     await expect(verse.getByRole("button", { name: /^Update to/ })).toHaveCount(0);
     const before = await verse.locator("svg[data-tab]").textContent();
@@ -37,8 +39,8 @@ test.describe("generator UX", () => {
       // The Verse's tab is played twice (×2); everything else once per loop.
       expect(played.length % tab.length).toBe(0);
       played.forEach((bar, i) => expect(bar, `${label} bar ${i + 1}`).toEqual(tab[i % tab.length]));
-      // Locked Verse keeps the feel it was locked in; the rest follow the page (Breakdown is always half-time).
-      expect(pb.bars.every((b) => b.feel === (label === "Verse" ? "fast-punk" : "half-time"))).toBe(true);
+      // Every section follows the page's feel (and the Breakdown is always half-time).
+      expect(pb.bars.every((b) => b.feel === "half-time")).toBe(true);
     }
     // Regenerating while playing restarts with the new take.
     const intro = section(page, "Intro");
@@ -64,10 +66,8 @@ test.describe("generator UX", () => {
     // Intro 4 + Verse 4 × 2 + Chorus 4 + Solo 8 (the lead engine; its line is compared) + Breakdown 4.
     const expected = [...tabs.Intro, ...tabs.Verse, ...tabs.Verse, ...tabs.Chorus, ...tabs.Solo, ...tabs.Breakdown];
     expect(playedCells(pb)).toEqual(expected);
-    expect(pb.bars.slice(0, 4).every((b) => b.feel === "mid-tempo")).toBe(true);
-    // The Verse is locked (by default), so it keeps the feel it was locked in, exactly as its card shows.
-    expect(pb.bars.slice(4, 12).every((b) => b.feel === "fast-punk")).toBe(true);
-    expect(pb.bars.slice(12, 16).every((b) => b.feel === "mid-tempo")).toBe(true);
+    // Intro, Verse and Chorus play at the page's feel.
+    expect(pb.bars.slice(0, 16).every((b) => b.feel === "mid-tempo")).toBe(true);
     expect(pb.bars.slice(24).every((b) => b.feel === "half-time")).toBe(true); // Breakdown is always half-time
     expect(pb.bars.slice(16, 24).every((b) => b.lead && b.cells.some(Boolean))).toBe(true); // the solo plays over its chords
     await page.getByRole("button", { name: "STOP SONG" }).click();

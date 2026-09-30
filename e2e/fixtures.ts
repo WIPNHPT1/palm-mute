@@ -4,7 +4,21 @@ import { type Page, type TestInfo, expect, test as base } from "@playwright/test
  * Shared test setup. Every test fails if the page logs a console error or throws, so "no console
  * errors" is checked everywhere, not just in one spec.
  */
-export const test = base.extend<{ consoleErrors: string[] }>({
+export const test = base.extend<{ consoleErrors: string[]; darkChoice: void }>({
+  /**
+   * The site opens light for everyone; dark is the reader's choice (DECISIONS.md). "Dark" projects make
+   * that choice up front, as if the reader had flipped the DARK switch, unless a test already stored one.
+   */
+  darkChoice: [
+    async ({ page }, use, info) => {
+      if (info.project.use.colorScheme === "dark")
+        await page.addInitScript(() => {
+          if (!localStorage.getItem("palm-mute-theme")) localStorage.setItem("palm-mute-theme", "dark");
+        });
+      await use();
+    },
+    { auto: true },
+  ],
   consoleErrors: [
     async ({ page }, use) => {
       const errors: string[] = [];

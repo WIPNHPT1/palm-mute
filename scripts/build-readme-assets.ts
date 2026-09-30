@@ -127,8 +127,11 @@ function socialHtml(tabLines: string[], specs: string): string {
 }
 
 async function screenshot(page: Page, path: string, file: string, theme: "light" | "dark", setup?: (p: Page) => Promise<void>) {
+  // The site opens light; dark is a stored choice (the menu's DARK switch), so set it like a reader would.
   await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
   await page.goto(`http://localhost:${PORT}${path}`);
+  await page.evaluate((t) => localStorage.setItem("palm-mute-theme", t), theme);
+  await page.reload();
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => document.fonts.ready);
   if (setup) await setup(page);
