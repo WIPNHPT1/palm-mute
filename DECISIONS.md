@@ -61,6 +61,8 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | v2 Picking-hand load (R3) | **Capped by the Difficulty setting, not everywhere**: long all-downstroke eighth runs are the genre, so Advanced allows them and Beginner/Intermediate get alternate picking or rests | Repo owner, 2026-09-30 |
 | v2 Guitarist review gate | **5 generated songs per phase** (fixed seed list) plus the reference-song fixtures, instead of 10 | Repo owner, 2026-09-30 |
 | v2 Locking and repeats | Locking a section **locks all its repeats** (Verse 1 and Verse 2 are one section with a declared variation); a locked section keeps its chords when the song's plan changes (v1 "frozen once locked"). The strip shows a lock on every place a locked part plays | Default kept (owner picked option A without changing it), 2026-09-30 |
+| v2 Playability limits (Phase 2) | **Change speed:** priced over 2 and never over **4 fret-equivalents per 100 ms** (frets moved, +1 string set, +0.5 shape change, +0.5 leaving open), with Mid-Tempo judged at 150. **Mute plans:** every hit must have one (lean, underside, tip, thumb, or pick on palm-muted bars). **Downpicking:** the Generator plays the **Intermediate cap of 16** fast downstrokes (Difficulty default) until the control exists; over it, chord strums alternate. Octave riffs stay downpicked (the owner's 2026-09-30 call). All in `data/playability.json` | Phase 2 default, 2026-09-30 |
+| v2 Open D5 `x-x-0-2-3` (follow-up) | **Stays excluded.** The R1 mute model finds nothing to mute the open A string under a ringing open D root, so it can't pass the owner's condition ("only once R1 proves the low E and A are muted") | Phase 2, 2026-09-30 |
 
 ### Defaults for the next phases (owner can change any of these)
 

@@ -3,6 +3,7 @@
 import settingsJson from "@/data/engine-settings.json";
 import shapesJson from "@/data/voicing-shapes.json";
 import { type Fretted, type TabString, midiOf, pitchClass, span } from "@/lib/fretboard";
+import { changeSpeed, moveDifficulty, mutePlan, speedCost } from "@/lib/playability";
 
 export type Role = "R" | "5" | "8";
 export type ShapeTag = "twoNote" | "threeNote" | "inverted" | "octaveRiff";
@@ -109,6 +110,12 @@ export type SectionStyle = {
   prefer?: ShapeTag[];
   /** Position the previous section's hand was around (a soft pull on the first chord), if any. */
   carryFrom?: number;
+  /**
+   * The rhythm, when known (playability model, data/playability.json): eighths available for each bar-to-bar
+   * change (`gaps[i]` for bar i-1 → i), the tempo, and each bar's articulation. Changes are then priced by
+   * speed, none may pass the limit, and every shape needs a mute plan on the bars it's played.
+   */
+  timing?: { gaps: number[]; bpm: number; articulation: ("pm" | "ring")[] };
 };
 
 export function zoneOf(target: number): [number, number] {
@@ -166,14 +173,18 @@ export type VoicedPath = {
  */
 export function voicePaths(roots: number[], style: SectionStyle, opts = SETTINGS.alternatives): VoicedPath[] {
   const distinct = [...new Set(roots)];
-  const cands = distinct.map((pc) => candidates(pc, style.shapes));
+  const timing = style.timing;
+  // R1: a shape must have a mute plan on every bar it's played (a ringing open D root can't).
+  const cands = distinct.map((pc) =>
+    candidates(pc, style.shapes).filter((v) => !timing || roots.every((r, i) => r !== pc || mutePlan(v.notes, timing.articulation[i]).ok)),
+  );
   if (cands.some((c) => c.length === 0)) throw new Error(`No voicing for pitch class in ${distinct.join(",")}`);
   const unary = cands.map((cs) => cs.map((v) => total(unaryCost(v, style))));
   // Transitions between distinct-chord slots, from the bar sequence.
-  const steps: [number, number][] = [];
+  const steps: [number, number, number][] = [];
   for (let i = 1; i < roots.length; i++) {
     const a = distinct.indexOf(roots[i - 1]), b = distinct.indexOf(roots[i]);
-    if (a !== b) steps.push([a, b]);
+    if (a !== b) steps.push([a, b, timing ? timing.gaps[i] : 0]);
   }
 
   // Exhaustive branch-and-bound over slot assignments, ordered by first appearance. The number of
@@ -194,9 +205,11 @@ export function voicePaths(roots: number[], style: SectionStyle, opts = SETTINGS
     // cost added by assigning `slot`, counting only transitions whose both ends are assigned
     let c = unary[slot][choice[slot]];
     if (slot === 0 && style.carryFrom !== undefined) c += W.carryIn * Math.abs(cands[0][choice[0]].position - style.carryFrom);
-    for (const [a, b] of steps) {
+    for (const [a, b, gap] of steps) {
       if (Math.max(a, b) !== slot) continue;
       const va = cands[a][choice[a]], vb = cands[b][choice[b]];
+      // R2: priced by how fast the hand has to move at this tempo; over the limit is never allowed.
+      if (timing) c += speedCost(changeSpeed(moveDifficulty(va, vb), gap, timing.bpm));
       const m = total(moveCost(va, vb));
       // Big jumps inside a section only when nothing else works (recorded as a shift).
       c += m + (Math.abs(va.position - vb.position) > maxMove ? 100 : 0);
@@ -218,6 +231,9 @@ export function voicePaths(roots: number[], style: SectionStyle, opts = SETTINGS
     }
   }
   search(0, 0);
+  // No path keeps every change under the speed limit (never seen in the verify sweep): fall back to the
+  // untimed search, which verify then reports as a failure rather than the page breaking.
+  if (!found.length && timing) return voicePaths(roots, { ...style, timing: undefined }, opts);
 
   const kept = found
     .filter((f) => f.cost <= best + opts.margin + 1e-9)

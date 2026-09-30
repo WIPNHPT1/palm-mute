@@ -6,6 +6,7 @@ Palm/Mute writes pop-punk songs the way a guitarist would, and then **proves** i
 - [2. Power chords: where on the neck](#2-power-chords-where-on-the-neck)
 - [3. Section recipes: how it's played](#3-section-recipes-how-its-played)
 - [3b. The song: plan, form and energy](#3b-the-song-plan-form-and-energy)
+- [3c. Playability: what the hands have to do](#3c-playability-what-the-hands-have-to-do)
 - [4. Tabs](#4-tabs)
 - [5. Intro melodies and solos](#5-intro-melodies-and-solos)
 - [6. The proofs](#6-the-proofs)
@@ -113,6 +114,24 @@ A 3-chord loop holds its last chord for the fourth bar. The Solo is the lead eng
 
 **On the page** (option A from `docs/mockups/song-form.html`): a running-order strip sized by length (tap a part to play the song from there), and one card per part, in the order each first plays. A card lists every place it plays. Red is whatever is sounding now.
 
+## 3c. Playability: what the hands have to do
+
+`data/playability.json` · `lib/playability.ts` (Song Engine v2, Phase 2)
+
+The voicing search knows each section's rhythm and tempo, so it judges a shape the way a guitarist experiences it:
+
+- **Mute plans (R1).** Every string a strum could hit but the chord doesn't play needs something to silence it:
+  - A string **between** two notes: the fretting finger next to it leans on it. It needs a fretted neighbour.
+  - Strings **above** the chord: the underside of the fretting fingers.
+  - Strings **below** the root: the root finger's tip takes the nearest, and the thumb takes the low E. On palm-muted bars, an accurate pick can skip the rest.
+
+  A shape with no mute plan on a bar is never used there. That's why an open D5 can chug palm-muted but never ring: nothing mutes the open A. It's also why the `x-x-0-2-3` open D5 stays out for ringing chords.
+- **Tempo-aware changes (R2).** A change costs its fret-equivalents: frets moved, +1 for a new root string, +0.5 for a 2↔3-note switch, +0.5 for leaving open position. That's divided by the time the hand actually has: from the old chord's last fretted hit to the new chord's first. A push counts as the eighth it lands on, and dead strums free the hand. Over 2 per 100 ms the search pays for it; **over 4 is never allowed**. Mid-Tempo is judged at 150. Fastest in the sweep: 3.90 (Fast Punk).
+- **Picking hand (R3).** Fast downstroke runs (eighths at 5 strums a second or more) are capped by difficulty: Beginner 8, **Intermediate 16** (what the Generator plays until the Difficulty control arrives), Advanced no cap. Over the cap, chord strums alternate, with upstrokes on the offbeats. Only the pick direction changes, not the tab. Octave riffs skip a string, so they stay downpicked and count toward the rating.
+- **Label honesty (R5).** A bar's name matches its notes: "C5" is exactly the root and fifth, "C oct" the root alone. A push plays the next bar's chord.
+- **Rating (R4).** Each chord section gets 1–5 from its fastest change, thumb and lean mutes, long downpicked runs, stretch, high positions and 3-note shapes in fast palm-muting. A song is as hard as its hardest section. There's no UI for it yet (Phase 6). Today everything rates 1–3.
+- **Hall of shame.** `scripts/fixtures/hall-of-shame.json` lists every tab the owner has flagged. Verify checks every render against it.
+
 ## 4. Tabs
 
 `lib/fretboard.ts` · `components/TabBlock.tsx`
@@ -147,7 +166,7 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
 | Suite | What it covers | Checks |
 |---|---|---|
 | Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
-| Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
+| Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, **every hit labelled honestly and with a mute plan, no change over 4 frets per 100 ms, chord downpicking within the cap, the hall of shame**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
@@ -163,6 +182,7 @@ Nothing musical is hard-coded:
 | `data/section-harmony.json` | Change which chords a section plays over the progression |
 | `data/song-forms.json` | Change the running order, or a repeat's variation |
 | `data/energy.json` | Reweight what makes a section feel bigger |
+| `data/playability.json` | Change the speed limit, the downpick caps, or what makes a section rate harder |
 | `data/lead-rules.json` | Change the melodic taste (steps vs leaps, chord notes on strong beats, the solo's arc, bends) |
 | `data/lead-rhythms.json` | Add rhythm cells for melodies and solos |
 
