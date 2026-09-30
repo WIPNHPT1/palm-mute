@@ -27,7 +27,9 @@ test.describe("active section", () => {
     expect(await active(page)).toEqual([]);
     const red = await accent(page);
     for (const label of ["Intro", "Verse", "Chorus", "Solo", "Breakdown"]) expect(await borderColor(page, label), label).not.toBe(red);
-    // The Verse is locked by default: ink border, not the plain one.
+    // Nothing starts locked; a locked card gets an ink border, not the plain one.
+    await expect(page.locator("section[data-locked='true']")).toHaveCount(0);
+    await card(page, "Verse").getByRole("button", { name: "Lock Verse" }).click();
     await expect(card(page, "Verse")).toHaveAttribute("data-locked", "true");
     expect(await borderColor(page, "Verse")).not.toBe(await borderColor(page, "Intro"));
     // The Chorus says which progression it plays (the red row in Power Chords).

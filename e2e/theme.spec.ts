@@ -1,16 +1,25 @@
 import { expect, onlyAtWidths, openMenu, projectTheme, test } from "./fixtures";
 
 test.describe("dark mode", () => {
-  test("follows the OS colour scheme by default", async ({ page }, info) => {
-    await page.goto("/");
-    const html = page.locator("html");
-    if (projectTheme(info) === "dark") await expect(html).toHaveClass(/\bdark\b/);
-    else await expect(html).not.toHaveClass(/\bdark\b/);
+  test("the site opens light, whatever the device's appearance setting", async ({ browser }, info) => {
+    onlyAtWidths(info, [1440]);
+    // A fresh visitor with a dark-mode device and no stored choice.
+    for (const colorScheme of ["dark", "light"] as const) {
+      const context = await browser.newContext({ colorScheme, baseURL: info.project.use.baseURL });
+      const page = await context.newPage();
+      for (const path of ["/", "/generator/", "/chords/"]) {
+        await page.goto(path);
+        await expect(page.locator("html"), `${colorScheme} device, ${path}`).not.toHaveClass(/\bdark\b/);
+        expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(246, 241, 228)"); // paper
+      }
+      await context.close();
+    }
   });
 
   test("the toggle switches theme and the choice persists", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     await page.goto("/generator/");
+    // Light projects start light (the default); dark projects start from a stored dark choice.
     const startDark = projectTheme(info) === "dark";
     await openMenu(page);
     const toggle = page.getByRole("switch", { name: "Dark mode" });
