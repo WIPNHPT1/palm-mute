@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Palm/Mute Song Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: the live Generator's shell (Nav, PageHeader, ControlCards) with the song builder inside it:
+     setup cards that fold into a summary once built → FormStrip → one full-width SectionCard per part, options collapsed → export → sticky transport.
+     Colours, radii, shadows and type are the site's real tokens: tailwind.config.js (palettes.light / palettes.dark) and .kit/design-tokens.json.
+     Light for everyone, dark only when chosen (DECISIONS.md "Default theme"): the DARK switch in the bar, or a viewer's explicit dark setting. */
+  :root {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --brass:#B8862E;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --ink-soft:#2A241C; --ink-mid:#362B1F; --backdrop:#EDE6D4; --success:#3F8F4F;
+    --text-primary:#171310; --text-secondary:#4E4738; --text-muted:#6B6152; --text-faint:#72675A; --text-faintest:#766B5B; --text-disabled:#B5AA92;
+    --text-on-dark:#F6F1E4; --text-on-dark-muted:#D9CFB9; --text-on-dark-faint:#A89C86; --text-on-accent:#FFF9EF;
+    --chip-bg:#171310; --chip-label:#F6F1E4; --chip-tab:#C9BFA9; --board:#0F0C0A; --board-cell:#211B15; --accent-deep:#8A2415;
+    --shadow-card:0 1px 2px rgba(23,19,16,0.04), 0 10px 20px -14px rgba(23,19,16,0.18);
+    --shadow-card-highlight:0 1px 2px rgba(23,19,16,0.04), 0 14px 24px -14px #C23A2644;
+    --shadow-button:0 8px 20px -8px #C23A2699;
+    --now-bar:#C23A2614;
+    --r-outer:8px; --r-mid:6px; --r-small:4px; --r-pill:20px;
+    --font-display:"Archivo Black", "Arial Black", sans-serif; --font-ui:"Space Grotesk", system-ui, sans-serif; --font-mono:"Space Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"], :root.dark {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --ink-soft:#2A241C; --ink-mid:#6B5A45; --backdrop:#0F0C0A; --success:#52A862;
+    --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B; --text-faintest:#928573; --text-disabled:#5E5446;
+    --text-on-dark:#F6F1E4; --text-on-dark-muted:#D9CFB9; --text-on-dark-faint:#A89C86; --text-on-accent:#140F0C;
+    --chip-bg:#0B0908; --chip-label:#F6F1E4; --chip-tab:#C9BFA9; --board:#0F0C0A; --board-cell:#211B15; --accent-deep:#A8321F;
+    --shadow-card:0 1px 2px rgba(0,0,0,0.3), 0 10px 20px -14px rgba(0,0,0,0.6);
+    --shadow-card-highlight:0 1px 2px rgba(0,0,0,0.3), 0 14px 24px -14px #E85A4266;
+    --shadow-button:0 8px 20px -8px #E85A4280;
+    --now-bar:#E85A421F;
+    color-scheme: dark;
+  }
+  :root.light { color-scheme: light; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  svg { display: block; }
+  .ico { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ico.fill { fill: currentColor; stroke: none; }
+  .mono { font-family: var(--font-mono); }
+
+  /* ---- Nav (components/Nav.tsx) ---- */
+  .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--ink); color: var(--text-on-dark); }
+  .nav-in { max-width: 1440px; margin: 0 auto; height: 64px; padding: 0 20px; display: flex; align-items: center; gap: 16px; }
+  @media (min-width: 834px) { .nav-in { height: 76px; padding: 0 32px; } }
+  @media (min-width: 1280px) { .nav-in { padding: 0 56px; } }
+  .wordmark { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--font-display); font-size: 16px; letter-spacing: -0.01em; margin-right: auto; }
+  @media (min-width: 834px) { .wordmark { font-size: 17px; } }
+  .wordmark svg { width: 9px; height: 15px; margin: 0 1px; color: var(--accent-on-ink); }
+  .mocktag { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--text-on-dark-faint); }
+  @media (max-width: 599px) { .mocktag { display: none; } }
+  .darksw { display: flex; align-items: center; gap: 8px; min-height: 44px; border: 0; background: transparent; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--text-on-dark-faint); cursor: pointer; }
+  .darksw .track { position: relative; width: 30px; height: 16px; border-radius: 8px; background: var(--ink-soft); transition: background .2s; }
+  .darksw .knob { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-on-dark); transition: left .2s; }
+  .darksw[aria-checked="true"] .track { background: var(--accent); }
+  .darksw[aria-checked="true"] .knob { left: 16px; }
+  .burger { width: 44px; height: 44px; margin-right: -12px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-on-dark); cursor: pointer; }
+
+  /* ---- Page shell (app/generator/page.tsx) ---- */
+  main { max-width: 1440px; margin: 0 auto; padding-block: 22px calc(var(--transport-h, 72px) + 24px); padding-inline: 20px; display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 834px) { main { padding-block: 28px calc(var(--transport-h, 72px) + 24px); padding-inline: 32px; gap: 18px; } }
+  @media (min-width: 1280px) { main { padding-block: 32px calc(var(--transport-h, 72px) + 24px); padding-inline: 56px; gap: 20px; } }
+  .ph { display: flex; flex-direction: column; gap: 8px; }
+  @media (min-width: 834px) { .ph { flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; } }
+  .kicker { margin: 0 0 7px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .13em; color: var(--accent); }
+  h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 25px; line-height: 1.05; letter-spacing: -0.01em; }
+  @media (min-width: 834px) { h1 { font-size: 30px; line-height: 1; } }
+  @media (min-width: 1280px) { h1 { font-size: 34px; } }
+  .badge { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 7px 14px 7px 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+  /* ---- ControlCard ---- */
+  .cc { display: flex; flex-direction: column; gap: 9px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); padding: 14px 16px; min-width: 0; }
+  @media (min-width: 834px) { .cc { padding: 14px 18px; } }
+  .cc-label { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0; font-family: var(--font-mono); font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+  .cc-label .n { color: var(--accent); font-weight: 700; }
+  .cc-label .picked { text-transform: none; letter-spacing: 0; color: var(--text-primary); font-weight: 700; }
+  .cc-label .hint { margin-left: auto; text-transform: none; letter-spacing: 0; }
+  .setup { display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 834px) { .setup { gap: 12px; } }
+  .setup-row { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 834px) { .setup-row { gap: 12px; } }
+  @media (min-width: 1280px) { .setup-row.two { grid-template-columns: auto minmax(0, 1fr); } }
+
+  /* KeyPicker */
+  .keys { display: flex; flex-wrap: wrap; gap: 5px; }
+  .key { width: 44px; height: 44px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: var(--r-mid); background: var(--paper); font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); cursor: pointer; }
+  .key.acc { font-size: 12px; line-height: 1.1; }
+  .key:hover { border-color: var(--text-faintest); }
+  .key[aria-checked="true"] { border-color: var(--ink); background: var(--ink); color: var(--accent-on-ink); font-weight: 700; }
+
+  /* SegmentedControl */
+  .seg { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); }
+  .seg.wrap { flex-wrap: wrap; }
+  .seg button { flex: 1; min-height: 44px; min-width: 44px; padding: 5px 6px; border: 0; border-radius: 5px; background: transparent; font-family: var(--font-mono); font-size: 12px; line-height: 1.2; text-align: center; color: var(--text-muted); cursor: pointer; }
+  .seg button:hover { color: var(--text-primary); }
+  .seg button small { display: block; margin-top: 2px; font-size: 12px; color: var(--text-faint); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--text-on-dark); font-weight: 700; }
+  .seg button[aria-pressed="true"] small { color: var(--chip-tab); font-weight: 400; }
+  @media (max-width: 599px) { .seg.feels { flex-wrap: wrap; } .seg.feels button { flex-basis: 30%; } }
+
+  /* Progression cards (ProgressionRow, card variant) */
+  .progs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  @media (min-width: 1100px) { .progs { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  .prog { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 92px; padding: 10px 48px 10px 12px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); box-shadow: var(--shadow-card); text-align: left; cursor: pointer; }
+  .prog:hover { border-color: var(--text-faintest); }
+  .prog[aria-pressed="true"] { border: 1.5px solid var(--accent); box-shadow: var(--shadow-card-highlight); padding: 9.5px 47.5px 9.5px 11.5px; }
+  .prog .id { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text-muted); }
+  .prog .chips { display: flex; gap: 3px; flex-wrap: wrap; }
+  .prog .chips span { min-width: 3.2ch; padding: 4px 6px; border-radius: var(--r-small); background: var(--chip-bg); color: var(--chip-label); font-family: var(--font-mono); font-size: 12px; font-weight: 700; text-align: center; }
+  .prog .tag { font-family: var(--font-mono); font-size: 12px; color: var(--brass); }
+  .prog .p { position: absolute; top: 4px; right: 2px; width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-muted); border-radius: var(--r-mid); }
+  .prog .p:hover { color: var(--text-primary); }
+  .prog .p .ico { width: 14px; height: 14px; }
+
+  /* Length */
+  .len { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 834px) { .len { grid-template-columns: minmax(0, 1fr) minmax(280px, auto); align-items: start; } }
+  .readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .readout .big { font-family: var(--font-display); font-size: 34px; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .readout .mono { font-size: 12px; color: var(--text-muted); }
+  input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); }
+  .marks { position: relative; height: 34px; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .marks span { position: absolute; top: 0; white-space: nowrap; transform: translateX(-50%); }
+  .marks span.l { transform: none; } .marks span.r { transform: translateX(-100%); }
+  .marks .f { top: 17px; color: var(--brass); }
+  .shape { display: flex; flex-wrap: wrap; gap: 4px; }
+  .shape span { padding: 1px 6px; border: 1px solid var(--line); border-radius: var(--r-small); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .shape span.new { border-color: var(--brass); color: var(--brass); }
+  .buttons { display: flex; flex-direction: column; gap: 10px; }
+  @media (min-width: 834px) { .buttons { flex-direction: row; justify-content: flex-end; } }
+
+  /* GenerateButton / PlaySongButton */
+  .btn-gen { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 12px 24px; border: 0; border-radius: var(--r-outer); background: var(--accent); color: var(--text-on-accent); font-family: var(--font-display); font-size: 12.5px; box-shadow: var(--shadow-button); cursor: pointer; transition: transform .1s; }
+  .btn-sec { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 12px 20px; border: 1.5px solid var(--ink); border-radius: var(--r-outer); background: var(--surface); color: var(--text-primary); font-family: var(--font-display); font-size: 12.5px; cursor: pointer; transition: transform .1s; }
+  :root.dark .btn-sec, :root[data-theme="dark"] .btn-sec { border-color: var(--line-strong); }
+  .btn-sec .ico { color: var(--accent); width: 14px; height: 14px; }
+  .btn-gen:active, .btn-sec:active { transform: scale(.98); }
+  @media (prefers-reduced-motion: reduce) { .btn-gen, .btn-sec { transition: none; } }
+  .btn-small { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-mid); background: var(--paper); font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-primary); cursor: pointer; }
+  .btn-small:hover { border-color: var(--accent); }
+  .btn-small .ico { width: 14px; height: 14px; }
+
+  /* Setup folded to a summary */
+  .summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); }
+  .summary .s { display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 12px; border: 1px solid var(--line); border-radius: var(--r-mid); background: var(--paper); text-align: left; cursor: pointer; line-height: 1.25; }
+  .summary .s:hover { border-color: var(--text-faintest); }
+  .summary .s small { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--text-faint); }
+  .summary .s b { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+  .summary .edit { margin-left: auto; }
+
+  /* ---- Song header ---- */
+  .song-hd { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+  .board { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px; border-radius: var(--r-mid); background: var(--board); }
+  .board span { position: relative; min-width: 1.1em; padding: 5px 3px; border-radius: 3px; background: var(--board-cell); color: var(--text-on-dark); font-family: var(--font-display); font-size: clamp(15px, 2.4vw, 24px); line-height: 1.1; text-align: center; }
+  .board span::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--board); }
+  .board span.sp { min-width: .5em; background: transparent; }
+  .song-meta { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+  .song-meta b { color: var(--text-primary); }
+  .song-hd .actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* FormStrip */
+  .strip { display: flex; gap: 4px; padding: 6px; border-radius: var(--r-outer) var(--r-outer) 0 0; background: var(--ink); overflow-x: auto; }
+  .fchip { flex: var(--bars) 1 auto; min-width: 64px; min-height: 44px; display: flex; flex-direction: column; justify-content: center; padding: 5px 8px; border: 0; border-radius: 5px; background: var(--ink-soft); color: var(--text-on-dark-muted); font-family: var(--font-mono); font-size: 12px; line-height: 1.25; text-align: left; cursor: pointer; transition: background-color .15s; }
+  .fchip:hover { background: var(--ink-mid); }
+  .fchip b { white-space: nowrap; }
+  .fchip small { font-size: 12px; white-space: nowrap; color: var(--text-on-dark-faint); font-variant-numeric: tabular-nums; }
+  .fchip .v { font-size: 12px; white-space: nowrap; color: var(--brass); }
+  .fchip[data-active="true"] { background: var(--accent); color: var(--text-on-accent); }
+  .fchip[data-active="true"] small, .fchip[data-active="true"] .v { color: var(--text-on-accent); }
+  .fchip .lk { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-left: 4px; }
+  .scale { position: relative; height: 22px; padding: 0 6px; border-radius: 0 0 var(--r-outer) var(--r-outer); background: var(--ink); }
+  .scale .tk { position: absolute; bottom: 4px; transform: translateX(-50%); font-family: var(--font-mono); font-size: 12px; color: var(--text-on-dark-faint); font-variant-numeric: tabular-nums; }
+  .scale .tk.l { transform: none; } .scale .tk.r { transform: translateX(-100%); }
+  .head { position: absolute; top: -56px; bottom: 4px; left: 6px; width: 2px; background: var(--text-on-dark); pointer-events: none; }
+
+  /* ---- SectionCard, full width ---- */
+  .sections { display: flex; flex-direction: column; gap: 12px; }
+  .card { min-width: 0; border: 1.5px solid var(--line); border-radius: var(--r-outer); background: var(--surface); box-shadow: var(--shadow-card); scroll-margin-top: 90px; transition: border-color .2s, box-shadow .2s; }
+  .card[data-locked="true"] { border-color: var(--ink); }
+  :root.dark .card[data-locked="true"], :root[data-theme="dark"] .card[data-locked="true"] { border-color: var(--text-faint); }
+  .card[data-active="true"] { border-color: var(--accent); box-shadow: var(--shadow-card-highlight); }
+  .card[data-flash="true"] { border-color: var(--brass); }
+  @media (prefers-reduced-motion: reduce) { .card, .fchip { transition: none; } }
+  .card-hd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 14px 14px 0 14px; }
+  @media (min-width: 834px) { .card-hd { padding: 12px 12px 0 16px; } }
+  .ttl { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+  .ttl .num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--text-faint); }
+  .card[data-active="true"] .ttl .num { color: var(--accent); }
+  .ttl h3 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 400; line-height: 1.3; }
+  .ttl .bars { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .uses { display: flex; flex-wrap: wrap; gap: 4px; }
+  .uses span { padding: 1px 6px; border: 1px solid var(--line); border-radius: var(--r-small); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .uses span[data-active="true"] { border-color: var(--accent); background: var(--accent); color: var(--text-on-accent); }
+  .tools { display: flex; align-items: center; margin-left: auto; margin-right: -6px; }
+  .ib { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-mid); background: transparent; color: var(--text-muted); cursor: pointer; }
+  .ib:hover { color: var(--text-primary); }
+  .ib[aria-pressed="true"] { color: var(--text-primary); }
+  .ib.playing { color: var(--accent); }
+  .takes { display: flex; align-items: center; height: 44px; margin: 0 4px; border: 1px solid var(--line); border-radius: var(--r-mid); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .takes button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
+  .takes button:hover { color: var(--text-primary); }
+  .takes span { min-width: 58px; text-align: center; font-variant-numeric: tabular-nums; }
+  .takes .short { display: none; }
+  @media (max-width: 599px) { .tools { flex-wrap: wrap; margin-left: -12px; width: calc(100% + 18px); } .takes { margin: 0; } .takes .long { display: none; } .takes .short { display: inline; } .takes span { min-width: 32px; } }
+  .details { margin: 6px 0 0; padding: 0 14px; font-family: var(--font-mono); font-size: 12px; line-height: 1.35; color: var(--text-faint); }
+  @media (min-width: 834px) { .details { padding: 0 16px; } }
+  .details b { color: var(--text-muted); }
+  .details .lock-note { color: var(--text-primary); }
+
+  .tab-area { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 4px; }
+  @media (min-width: 834px) { .tab-area { padding: 12px 16px 4px; } }
+  /* ChordChip, with a chord box in place of its tiny tab */
+  .cchips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cchip { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 8px; border-radius: var(--r-small); background: var(--chip-bg); }
+  .cchip b { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--chip-label); }
+  .cchip svg { width: 38px; height: 48px; color: var(--chip-tab); }
+  .tab-lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }
+  @media (min-width: 834px) { .tab-lines { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .tbar { display: block; border-radius: var(--r-small); }
+  .tbar[data-now="true"] { background: var(--now-bar); }
+  .tbar .sl { stroke: var(--line-strong); stroke-width: 1; }
+  .tbar .bl { stroke: var(--text-secondary); stroke-width: 1.2; }
+  .tbar .rep { fill: var(--text-secondary); }
+  .tbar .fr { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; fill: var(--text-primary); text-anchor: middle; dominant-baseline: central; }
+  .tbar .frbg { fill: var(--surface); }
+  .tbar .cn { font-family: var(--font-mono); font-weight: 700; font-size: 11px; fill: var(--text-primary); }
+  .tbar .bn { font-family: var(--font-mono); font-size: 9px; fill: var(--text-faint); }
+  .tbar .pm { font-family: var(--font-mono); font-size: 9px; fill: var(--brass); }
+  .tbar .pml { stroke: var(--brass); stroke-width: 1; stroke-dasharray: 2 2; }
+  .tbar .st { stroke: var(--text-secondary); stroke-width: 1.1; }
+  .tbar .bm { stroke: var(--text-secondary); stroke-width: 3; }
+  .tbar .ac { font-family: var(--font-mono); font-size: 10px; fill: var(--accent); text-anchor: middle; }
+  .card-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 2px 8px 8px 14px; }
+  @media (min-width: 834px) { .card-foot { padding-left: 16px; } }
+  .more { min-height: 44px; padding: 0; border: 0; background: transparent; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .opts-btn { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-mid); background: var(--paper); font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--text-primary); cursor: pointer; }
+  .opts-btn:hover { border-color: var(--text-faintest); }
+  .opts-btn .sum { font-weight: 400; color: var(--text-faint); letter-spacing: 0; }
+  .opts-btn .ico { width: 14px; height: 14px; transition: transform .2s; }
+  .opts-btn[aria-expanded="true"] { border-color: var(--ink); background: var(--ink); color: var(--text-on-dark); }
+  .opts-btn[aria-expanded="true"] .sum { color: var(--text-on-dark-faint); }
+  .opts-btn[aria-expanded="true"] .ico { transform: rotate(180deg); }
+  @media (max-width: 599px) { .opts-btn .sum { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .opts-btn .ico { transition: none; } }
+
+  /* Options panel: the Chords page's expanded-card pattern (ProgressionPanel tabs) */
+  .panel { border-top: 1px solid var(--line); border-radius: 0 0 6.5px 6.5px; background: var(--paper); }
+  .ptabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 14px; border-bottom: 1px solid var(--line); }
+  @media (min-width: 834px) { .ptabs { padding: 0 16px; } }
+  .ptabs button { min-height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--text-muted); white-space: nowrap; cursor: pointer; }
+  .ptabs button:hover { color: var(--text-primary); }
+  .ptabs button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text-primary); font-weight: 700; }
+  .ptabs .dot { display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--brass); vertical-align: middle; }
+  .pbody { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+  @media (min-width: 834px) { .pbody { padding: 16px; } }
+  .help { margin: 0; max-width: 72ch; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+  .grooves { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .groove { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 72px; padding: 9px 46px 9px 11px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); text-align: left; cursor: pointer; }
+  .groove:hover { border-color: var(--text-faintest); }
+  .groove b { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+  .groove .glyph { display: flex; gap: 2px; }
+  .groove .glyph i { width: 9px; height: 14px; border-radius: 2px; background: var(--line); }
+  .groove .glyph i.h { background: var(--text-muted); }
+  .groove .glyph i.a { background: var(--accent); }
+  .groove .glyph i.g { width: 5px; background: transparent; }
+  .groove .why { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .groove .tag { font-family: var(--font-mono); font-size: 12px; color: var(--brass); }
+  .groove[aria-pressed="true"] { border: 1.5px solid var(--accent); box-shadow: var(--shadow-card-highlight); padding: 8.5px 45.5px 8.5px 10.5px; }
+  .groove[aria-disabled="true"] { cursor: not-allowed; }
+  .groove[aria-disabled="true"] b, .groove[aria-disabled="true"] .glyph { opacity: .45; }
+  .groove .p { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; display: grid; place-items: center; color: var(--text-muted); }
+  .groove .p .ico { width: 13px; height: 13px; }
+  .optrow { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 834px) { .optrow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .glabel { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+  .pfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 14px 14px; }
+  @media (min-width: 834px) { .pfoot { padding: 0 16px 16px; } }
+  .changed { margin-right: auto; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .changed b { color: var(--brass); }
+  .btn-ink { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-mid); background: var(--ink); color: var(--text-on-dark); font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+
+  /* ---- Export ---- */
+  .kicker2 { margin: 12px 0 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .13em; color: var(--accent); }
+  .export { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 834px) { .export { grid-template-columns: repeat(2, minmax(0, 1fr)); } .exp.share { grid-column: 1 / -1; } }
+  .exp { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); box-shadow: var(--shadow-card); }
+  @media (min-width: 834px) { .exp { padding: 16px 18px; } }
+  .exp h3 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 400; line-height: 1.3; }
+  .exp p { margin: 0; max-width: 62ch; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+  .exp .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; }
+  .pages { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; }
+  .page { flex: 0 0 92px; aspect-ratio: 210 / 297; display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 3px; background: #FFFFFF; box-shadow: var(--shadow-card); }
+  .page.cover { background: #171310; border-color: #171310; }
+  .page .pb { font-family: var(--font-display); font-size: 9px; color: #F6F1E4; }
+  .page .pb i { color: #E5573F; font-style: normal; }
+  .page .rule { height: 3px; border-radius: 1px; background: #E4DAC3; }
+  .page .rule.dk { width: 55%; background: #C23A26; }
+  .page .tabs { flex: 1; background: repeating-linear-gradient(#FFFFFF 0 3px, #DCD3BE 3px 4px); background-size: 100% 24px; }
+  .page small { margin-top: auto; font-family: var(--font-mono); font-size: 7px; color: #72675A; }
+  .page.cover small { color: #A89C86; }
+  .lanes-wrap { overflow-x: auto; }
+  .lanes { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .lanes th { padding: 0 8px 6px 0; text-align: left; font-weight: 400; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+  .lanes td { padding: 5px 8px 5px 0; border-top: 1px solid var(--line); white-space: nowrap; color: var(--text-secondary); }
+  .lanes td:first-child { white-space: normal; color: var(--text-primary); }
+  .lanes .roll { width: 40%; min-width: 120px; }
+  .rollbar { position: relative; height: 8px; border-radius: 4px; background: var(--paper); }
+  .rollbar span { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--text-faint); }
+  .rollbar span.gtr { background: var(--accent); }
+  .check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .linkbox { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .linkbox code { flex: 1 1 260px; min-width: 0; padding: 12px; overflow-x: auto; white-space: nowrap; border: 1px solid var(--line); border-radius: var(--r-mid); background: var(--paper); font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+
+  /* ---- Transport ---- */
+  .transport { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 8px 20px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--text-on-dark); box-shadow: 0 -10px 24px -12px rgba(23,19,16,.45); }
+  @media (min-width: 834px) { .transport { padding-inline: 32px; } }
+  @media (min-width: 1280px) { .transport { padding-inline: 56px; } }
+  .t-in { max-width: 1328px; margin: 0 auto; display: flex; align-items: center; gap: 8px; }
+  @media (min-width: 834px) { .t-in { gap: 12px; } }
+  .t-play { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--accent); color: var(--text-on-accent); box-shadow: var(--shadow-button); cursor: pointer; }
+  .reels { display: flex; gap: 4px; }
+  .reel { position: relative; width: 22px; height: 22px; border: 2px solid var(--text-on-dark-muted); border-radius: 50%; }
+  .reel::before, .reel::after { content: ""; position: absolute; inset: 8px 1px; border-radius: 1px; background: var(--text-on-dark-muted); }
+  .reel::after { transform: rotate(90deg); }
+  .playing .reel { animation: spin 1.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .playing .reel { animation: none; } }
+  .t-now { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; line-height: 1.3; }
+  .t-now b, .t-now span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (min-width: 1280px) { .t-now { flex: 0 0 170px; } }
+  .t-now b { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+  .t-now span { font-family: var(--font-mono); font-size: 12px; color: var(--text-on-dark-faint); font-variant-numeric: tabular-nums; }
+  /* Progress: a hairline along the bar's top edge below 1280px, inline beside the controls above it */
+  .t-prog { position: absolute; top: 0; left: 0; right: 0; height: 3px; overflow: hidden; background: var(--ink-soft); }
+  @media (min-width: 1280px) { .t-prog { position: relative; flex: 1 1 200px; min-width: 0; height: 6px; border-radius: 3px; } }
+  .t-prog i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); }
+  .t-ctl { display: flex; align-items: center; gap: 6px; flex: none; }
+  .t-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--ink-soft); border-radius: var(--r-mid); background: transparent; color: var(--text-on-dark-muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; cursor: pointer; }
+  .t-btn .ico { width: 14px; height: 14px; }
+  .t-btn[aria-pressed="true"] { border-color: var(--text-on-dark-faint); background: var(--ink-soft); color: var(--text-on-dark); }
+  .speed { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--ink-soft); border-radius: 7px; }
+  .speed button { min-width: 44px; min-height: 44px; padding: 0 6px; border: 0; border-radius: 5px; background: transparent; color: var(--text-on-dark-muted); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; }
+  .speed button[aria-pressed="true"] { background: var(--text-on-dark); color: var(--ink); font-weight: 700; }
+  .t-lab { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--text-on-dark-faint); }
+  .kbd { font-family: var(--font-mono); font-size: 12px; color: var(--text-on-dark-faint); }
+  .kbd kbd { padding: 0 4px; border: 1px solid var(--ink-soft); border-radius: 3px; font-family: inherit; }
+  .t-btn .word { display: none; }
+  @media (min-width: 834px) { .t-btn .num4 { display: none; } }
+  @media (min-width: 834px) { .t-btn .word { display: inline; } }
+  .speed-cycle { display: inline-flex; min-width: 56px; justify-content: center; font-variant-numeric: tabular-nums; }
+  @media (min-width: 834px) { .speed-cycle { display: none; } }
+  @media (max-width: 833px) { .reels, .t-lab, .speed { display: none; } .t-btn { padding: 0; min-width: 44px; justify-content: center; } }
+  /* Shortcut hint only where there's usually a keyboard */
+  @media (max-width: 1279px) { .kbd { display: none; } }
+  @media (hover: none) { .kbd { display: none; } }
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></symbol>
+  <symbol id="i-regen" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 12 20"><path d="M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z"/></symbol>
+</svg>
+
+<header class="nav">
+  <div class="nav-in">
+    <span class="wordmark" role="img" aria-label="Palm/Mute">PALM<svg class="ico fill" viewBox="0 0 12 20"><use href="#i-bolt"/></svg>MUTE</span>
+    <span class="mocktag">MOCK-UP · SONG BUILDER</span>
+    <button class="darksw" id="dark" role="switch" aria-checked="false"><span class="track"><span class="knob"></span></span>DARK</button>
+    <button class="burger" aria-label="Menu"><svg class="ico"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <div class="ph">
+    <div><p class="kicker">SONGWRITING ENGINE</p><h1>SONG GENERATOR</h1></div>
+    <div class="badge"><i></i>CHORD PATTERNS ONLY · NO TABS STORED</div>
+  </div>
+
+  <!-- Setup: four ControlCards -->
+  <section class="setup" id="setup" aria-label="Set up your song">
+    <div class="setup-row two">
+      <div class="cc">
+        <h2 class="cc-label"><span class="n">1</span>KEY<span class="picked" id="pickKey">G</span></h2>
+        <div class="keys" role="radiogroup" aria-label="Key" id="keys"></div>
+      </div>
+      <div class="cc">
+        <h2 class="cc-label"><span class="n">2</span>FEEL<span class="picked" id="pickFeel">Fast Punk</span></h2>
+        <div class="seg feels" role="group" aria-label="Feel" id="feels"></div>
+      </div>
+    </div>
+    <div class="cc">
+      <h2 class="cc-label"><span class="n">3</span>CHORDS<span class="picked" id="pickProg">I-V-vi-IV</span><span class="hint">Tap to pick · ▶ to hear it in G</span></h2>
+      <div class="progs" id="progs"></div>
+    </div>
+    <div class="cc">
+      <h2 class="cc-label"><span class="n">4</span>LENGTH<span class="hint">2:30 to 5:30</span></h2>
+      <div class="len">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div class="readout"><span class="big" id="lenBig">3:15</span><span class="mono" id="lenMeta">146 bars at 180 BPM</span></div>
+          <div>
+            <input id="len" type="range" min="150" max="330" step="15" value="195" aria-label="Song length" aria-valuetext="3 minutes 15 seconds">
+            <div class="marks" aria-hidden="true"><span class="l" style="left:0">2:30</span><span class="f l" style="left:0">Short</span><span class="f" style="left:25%">+ Bridge</span><span class="f" style="left:66.7%">Extended</span><span class="r" style="left:100%">5:30</span></div>
+          </div>
+          <div class="shape" id="shape"></div>
+        </div>
+        <div class="group">
+          <span class="glabel">Difficulty</span>
+          <div class="seg" role="group" aria-label="Difficulty"><button aria-pressed="false">BEGINNER</button><button aria-pressed="true">INTERMEDIATE</button><button aria-pressed="false">ADVANCED</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="btn-gen" id="build"><svg class="ico" style="width:14px;height:14px"><use href="#i-regen"/></svg>BUILD SONG</button>
+    </div>
+  </section>
+
+  <!-- Setup folded -->
+  <section class="summary" id="summary" hidden aria-label="Song setup">
+    <button class="s" data-step="0"><small>KEY</small><b>G</b></button>
+    <button class="s" data-step="1"><small>FEEL</small><b>Fast Punk · 180</b></button>
+    <button class="s" data-step="2"><small>CHORDS</small><b>I-V-vi-IV</b></button>
+    <button class="s" data-step="3"><small>LENGTH</small><b>3:15</b></button>
+    <button class="s" data-step="3"><small>LEVEL</small><b>Intermediate</b></button>
+    <button class="btn-small edit" id="editSetup"><svg class="ico"><use href="#i-edit"/></svg>EDIT SETUP</button>
+  </section>
+
+  <!-- The song -->
+  <section style="display:flex;flex-direction:column;gap:12px" id="song" aria-label="Your song">
+    <div class="song-hd">
+      <div class="board" id="title" role="img" aria-label="Never Say Goodnight"></div>
+      <div class="song-meta"><b>G · Fast Punk · 180 BPM</b> · I-V-vi-IV<br>3:14 · 146 bars · Standard + bridge</div>
+      <div class="actions">
+        <button class="btn-small" id="copyTop"><svg class="ico"><use href="#i-link"/></svg>COPY LINK</button>
+        <button class="btn-sec" id="playSong"><svg class="ico fill"><use href="#i-play"/></svg>PLAY SONG</button>
+      </div>
+    </div>
+    <div>
+      <div class="strip" id="strip" role="list" aria-label="Running order: tap a part to jump to its card"></div>
+      <div class="scale" aria-hidden="true" id="scale"><div class="head" id="head"></div></div>
+    </div>
+    <div class="sections" id="sections"></div>
+  </section>
+
+  <!-- Export -->
+  <section style="display:flex;flex-direction:column;gap:12px" aria-labelledby="export-title">
+    <p class="kicker2" id="export-title">TAKE IT AWAY</p>
+    <div class="export">
+      <div class="exp">
+        <h3>PDF songbook</h3>
+        <p>Cover, chord chart and form map, then every section's full tab with bar numbers, repeats, picking and mute notes: the tabs on this page, on paper.</p>
+        <div class="pages" aria-hidden="true">
+          <div class="page cover"><span class="pb">PALM<i>⚡</i>MUTE</span><div class="rule dk"></div><span class="pb" style="font-size:8px">NEVER SAY GOODNIGHT</span><small>G · 180 · 3:14</small></div>
+          <div class="page"><div class="rule dk"></div><div class="rule"></div><div class="rule" style="width:70%"></div><div class="tabs" style="opacity:.4"></div><small>Chart · 2</small></div>
+          <div class="page"><div class="rule dk"></div><div class="tabs"></div><small>Intro · Verse · 3</small></div>
+          <div class="page"><div class="rule dk"></div><div class="tabs"></div><small>Chorus · 4</small></div>
+          <div class="page"><div class="rule dk"></div><div class="tabs"></div><small>Solo · 5</small></div>
+        </div>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Paper" style="width:160px"><button aria-pressed="true">A4</button><button aria-pressed="false">LETTER</button></div>
+          <button class="btn-gen" style="margin-left:auto"><svg class="ico" style="width:14px;height:14px"><use href="#i-down"/></svg>DOWNLOAD PDF</button>
+        </div>
+      </div>
+      <div class="exp">
+        <h3>MIDI arrangement</h3>
+        <p>One .mid file with a track per part, section markers, tempo and key. Drop it into your DAW and every part is already in its own range.</p>
+        <div class="lanes-wrap"><table class="lanes" id="lanes"><thead><tr><th>Track</th><th>Notes</th><th class="roll">C1 to C7</th></tr></thead><tbody></tbody></table></div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="drums" checked> Include drums</label>
+          <button class="btn-gen" style="margin-left:auto"><svg class="ico" style="width:14px;height:14px"><use href="#i-down"/></svg>DOWNLOAD MIDI</button>
+        </div>
+      </div>
+      <div class="exp share">
+        <h3>Share the song</h3>
+        <p>The link holds the whole song: key, feel, chords, length, every section's take and options. Whoever opens it hears exactly this.</p>
+        <div class="linkbox"><code>palm-mute.app/generator/#g-fp-1-195-i-v3a-vr7gp-pc2-ch5-so3m-br2L-en1</code><button class="btn-sec" id="copy"><svg class="ico"><use href="#i-link"/></svg>COPY LINK</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="transport" id="transport" role="region" aria-label="Playback">
+  <div class="t-in">
+    <button class="t-play" id="play" aria-label="Play song"><svg class="ico fill" id="playIco"><use href="#i-play"/></svg></button>
+    <div class="reels" aria-hidden="true"><span class="reel"></span><span class="reel"></span></div>
+    <div class="t-now"><b id="tNow">Intro</b><span id="tTime">0:00 / 3:14 · bar 1</span></div>
+    <div class="t-prog" aria-hidden="true"><i id="tBar"></i></div>
+    <div class="t-ctl">
+      <button class="t-btn" id="loop" aria-pressed="false" aria-label="Loop this part"><svg class="ico"><use href="#i-loop"/></svg><span class="word">LOOP PART</span></button>
+      <button class="t-btn" id="count" aria-pressed="true" aria-label="Count-in"><span class="word">COUNT-IN</span><span aria-hidden="true" class="num4">1234</span></button>
+      <button class="t-btn speed-cycle" id="speedCycle" aria-label="Practice speed 100%, tap to change">100%</button>
+      <span class="t-lab">SPEED</span>
+      <div class="speed" role="group" aria-label="Practice speed" id="speed"><button aria-pressed="false">50%</button><button aria-pressed="false">75%</button><button aria-pressed="false">90%</button><button aria-pressed="true">100%</button></div>
+      <span class="kbd"><kbd>Space</kbd> play · <kbd>R</kbd> new take · <kbd>L</kbd> lock</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const icon = (id, cls = "ico") => `<svg class="${cls}"><use href="#${id}"/></svg>`;
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  const reduce = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // DARK switch (the site's menu toggle); light for everyone by default
+  $("#dark").addEventListener("click", (e) => {
+    const on = e.currentTarget.getAttribute("aria-checked") !== "true";
+    e.currentTarget.setAttribute("aria-checked", String(on));
+    document.documentElement.classList.toggle("dark", on);
+    document.documentElement.classList.toggle("light", !on);
+  });
+
+  // ---------- Setup ----------
+  // KeyPicker order starts at A (components/KeyPicker.tsx)
+  const KEYS = [["A"],["A#","Bb"],["B"],["C"],["C#","Db"],["D"],["D#","Eb"],["E"],["F"],["F#","Gb"],["G"],["G#","Ab"]];
+  $("#keys").innerHTML = KEYS.map(([k, f]) => `<button class="key${f ? " acc" : ""}" role="radio" aria-checked="${k === "G"}" aria-label="${f ? `${k} / ${f}` : k}">${f ? `<span>${k}</span><span>${f}</span>` : k}</button>`).join("");
+  const FEELS = [["FAST PUNK","180 BPM"],["HALF-TIME","180 BPM"],["MID-TEMPO","150 BPM"],["POP STRUM","150 BPM"],["BALLAD","80 BPM"]];
+  $("#feels").innerHTML = FEELS.map(([n, b], i) => `<button aria-pressed="${i === 0}">${n}<small>${b}</small></button>`).join("");
+  const PROGS = [["I-V-vi-IV","G D Em C","Most common"],["I-IV-V","G C D"],["vi-IV-I-V","Em C G D"],["I-vi-IV-V","G Em C D"],["IV-I-V-vi","C G D Em"],["I-IV-vi-V","G C Em D"],["I-V-IV","G D C"],["V-vi-IV-I","D Em C G"],["vi-V-IV-V","Em D C D"],["I-IV-I-V","G C G D"]];
+  $("#progs").innerHTML = PROGS.map(([id, ch, tag], i) =>
+    `<button class="prog" aria-pressed="${i === 0}" data-id="${id}"><span class="id">${id}</span><span class="chips">${ch.split(" ").map(c => `<span>${c}5</span>`).join("")}</span>${tag ? `<span class="tag">${tag}</span>` : ""}<span class="p" aria-label="Hear ${id}">${icon("i-play", "ico fill")}</span></button>`).join("");
+
+  document.addEventListener("click", (e) => {
+    const k = e.target.closest(".key");
+    if (k) { $$(".key").forEach(x => x.setAttribute("aria-checked", String(x === k))); $("#pickKey").textContent = k.getAttribute("aria-label"); return; }
+    const b = e.target.closest(".seg button, .prog, .groove:not([aria-disabled=true])");
+    if (!b || b.closest("#speed")) return;
+    b.parentElement.querySelectorAll(":scope > button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    if (b.closest("#feels")) $("#pickFeel").textContent = b.firstChild.textContent.toLowerCase().replace(/(^|[ -])\w/g, m => m.toUpperCase());
+    if (b.classList.contains("prog")) $("#pickProg").textContent = b.dataset.id;
+    if (b.classList.contains("groove")) markChanged(b);
+  });
+
+  function shapeFor(s) {
+    const p = ["Intro", "2 verses"];
+    if (s >= 180) p.push("Pre-choruses");
+    p.push("3 choruses", "Solo");
+    if (s >= 180) p.push("Bridge");
+    if (s >= 270) p.push("3rd verse", "Double solo");
+    p.push(s >= 240 ? "16-bar choruses" : "8-bar choruses", "Ending");
+    return p;
+  }
+  function setLen(s) {
+    $("#lenBig").textContent = fmt(s);
+    $("#lenMeta").textContent = `${Math.round(s / (4 * 60 / 180))} bars at 180 BPM · ${s < 180 ? "Short" : s < 270 ? "Standard + bridge" : "Extended"}`;
+    $("#len").setAttribute("aria-valuetext", `${Math.floor(s / 60)} minutes ${s % 60} seconds`);
+    const was = $("#shape").dataset.was ? $("#shape").dataset.was.split("|") : null, now = shapeFor(s);
+    $("#shape").innerHTML = now.map(x => `<span class="${was && !was.includes(x) ? "new" : ""}">${x}</span>`).join("");
+    $("#shape").dataset.was = now.join("|");
+  }
+  $("#len").addEventListener("input", (e) => setLen(Number(e.target.value)));
+  setLen(195);
+
+  const fold = (folded) => {
+    $("#setup").hidden = folded; $("#summary").hidden = !folded;
+    if (folded) $("#song").scrollIntoView({ behavior: reduce() ? "auto" : "smooth", block: "start" });
+  };
+  $("#build").addEventListener("click", () => fold(true));
+  $("#editSetup").addEventListener("click", () => fold(false));
+  $$("#summary .s").forEach(b => b.addEventListener("click", () => { fold(false); $$("#setup .cc")[b.dataset.step].scrollIntoView({ block: "center" }); }));
+
+  $("#title").innerHTML = "NEVER SAY GOODNIGHT".split("").map(c => c === " " ? `<span class="sp"></span>` : `<span>${c}</span>`).join("");
+
+  // ---------- Song ----------
+  const BAR = 4 * 60 / 180;
+  const SHAPES = { G5: [3,5,null], D5: [null,5,7], E5: [0,2,null], C5: [null,3,5] }; // frets on E, A, D
+  const CH = ["G5","D5","E5","C5"];
+  const SECTIONS = [
+    { id: "intro", name: "Intro", bars: 8, kind: "riff", sum: `<b>Hook line in octaves</b> over G D Em C · band in on bar 5`, groove: "Hook line in octaves", take: [2, 5] },
+    { id: "verse", name: "Verse", bars: 16, pm: true, rhythm: [2,0,1,1,2,0,1,1], sum: `<b>Gallop</b>, palm-muted · Chords: I-V-vi-IV, sparser · Verse 2 <b>+ push</b>`, groove: "Gallop", take: [3, 4] },
+    { id: "prechorus", name: "Pre-chorus", bars: 8, rhythm: [2,0,0,0,2,0,1,1], chords: ["C5","C5","D5","D5"], sum: `<b>Build with a fill</b> · Climb: IV-V · last hit rings into the chorus`, groove: "Build with a fill", take: [1, 2] },
+    { id: "chorus", name: "Chorus", bars: 16, rhythm: [2,1,1,1,2,1,1,2], sum: `<b>Let-ring eighths with pushes</b> · Chords: I-V-vi-IV · a fourth above the verse · last chorus <b>played twice</b>`, groove: "Let-ring eighths with pushes", take: [5, 8] },
+    { id: "solo", name: "Solo", bars: 16, kind: "lead", sum: `<b>Melodic</b> over the Chorus chords · bar 3 quotes the intro hook · peaks on C`, groove: "Melodic", take: [3, 3] },
+    { id: "breakdown", name: "Bridge", bars: 8, pm: true, rhythm: [2,1,0,1,2,1,0,0], chords: ["E5","E5","C5","C5"], sum: `<b>Chug and choke</b> · Chords: vi-IV · half-time drums`, groove: "Chug and choke", locked: true, take: [2, 2] },
+    { id: "ending", name: "Ending", bars: 2, rhythm: [2,0,0,0,0,0,0,0], chords: ["G5","G5"], sum: `<b>Final hit, let ring</b> · Home: I`, groove: "Final hit, let ring", take: [1, 2] },
+  ];
+  const RUN = [["Intro","intro",8],["Verse 1","verse",16],["Pre-chorus 1","prechorus",8],["Chorus 1","chorus",16],["Verse 2","verse",16,"push"],["Pre-chorus 2","prechorus",8],["Chorus 2","chorus",16],["Solo","solo",16],["Bridge","breakdown",8],["Last chorus","chorus",32,"played twice"],["Ending","ending",2]];
+  let acc = 0;
+  for (const r of RUN) { r[4] = acc * BAR; acc += r[2]; }
+  const TOTAL = acc * BAR;
+  const byId = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
+  SECTIONS.forEach((s, i) => { s.index = i; s.runs = RUN.map((r, k) => ({ r, k })).filter(x => x.r[1] === s.id); });
+
+  $("#strip").innerHTML = RUN.map(([n, id, bars, v, t], i) =>
+    `<button class="fchip" role="listitem" data-i="${i}" data-id="${id}" style="--bars:${bars}"><b>${n}${byId[id].locked ? `<svg class="ico lk"><use href="#i-lock"/></svg>` : ""}</b><small>${fmt(t)} · ${bars} bars</small>${v ? `<span class="v">+ ${v}</span>` : ""}</button>`).join("");
+  $("#scale").insertAdjacentHTML("beforeend", [0, 60, 120, 180].map((t, i) => `<span class="tk${i === 0 ? " l" : ""}" style="left:calc(6px + ${t / TOTAL} * (100% - 12px))">${fmt(t)}</span>`).join(""));
+
+  // Songbook tab bar (SVG): chord name, P.M./let ring, six strings, frets, accents, beamed eighth stems
+  // Each bar is drawn at its column's real pixel width (1 SVG unit = 1px), so tab text keeps one size at every width
+  let W = 240, CW = 27;
+  const H = 136, X0 = 14, SY = 38, SG = 11;
+  const sx = (i) => X0 + CW * (i + .5);
+  function barSvg({ n, name, pm, ring, cells, rep }) {
+    CW = (W - X0 - 8) / 8;
+    let s = `<svg class="tbar" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar ${n}${name ? ", " + name : ""}">`;
+    s += `<text class="bn" x="2" y="10">${n}</text>`;
+    if (name) s += `<text class="cn" x="${X0}" y="11">${name}</text>`;
+    if (pm) s += `<text class="pm" x="${X0}" y="26">P.M.</text><line class="pml" x1="${X0 + 26}" y1="23" x2="${W - 10}" y2="23"/>`;
+    if (ring) s += `<text class="pm" x="${X0}" y="26">let ring</text><line class="pml" x1="${X0 + 46}" y1="23" x2="${W - 10}" y2="23"/>`;
+    for (let k = 0; k < 6; k++) s += `<line class="sl" x1="0" y1="${SY + k * SG}" x2="${W}" y2="${SY + k * SG}"/>`;
+    s += `<line class="bl" x1=".6" y1="${SY}" x2=".6" y2="${SY + 5 * SG}"/><line class="bl" x1="${W - .6}" y1="${SY}" x2="${W - .6}" y2="${SY + 5 * SG}"/>`;
+    const dots = (x) => `<circle class="rep" cx="${x}" cy="${SY + 2 * SG - 5}" r="1.6"/><circle class="rep" cx="${x}" cy="${SY + 3 * SG + 5}" r="1.6"/>`;
+    if (rep === "start") s += dots(6);
+    if (rep === "end") s += dots(W - 6);
+    const top = SY + 5 * SG + 8, bot = H - 6;
+    cells.forEach((c, i) => {
+      if (!c) return;
+      const x = sx(i);
+      for (const [str, f] of c.notes) { const y = SY + str * SG, w = String(f).length > 1 ? 14 : 9; s += `<rect class="frbg" x="${x - w / 2}" y="${y - 6}" width="${w}" height="12"/><text class="fr" x="${x}" y="${y}">${f}</text>`; }
+      if (c.acc) s += `<text class="ac" x="${x}" y="${SY - 4}">&gt;</text>`;
+      s += `<line class="st" x1="${x}" y1="${top}" x2="${x}" y2="${bot}"/>`;
+    });
+    for (let b = 0; b < 4; b++) {
+      const a = cells[2 * b], c = cells[2 * b + 1];
+      if (a && c) s += `<line class="bm" x1="${sx(2 * b) - .5}" y1="${bot - 1.5}" x2="${sx(2 * b + 1) + .5}" y2="${bot - 1.5}"/>`;
+      else if (a || c) { const x = sx(a ? 2 * b : 2 * b + 1); s += `<line class="st" x1="${x}" y1="${bot}" x2="${x + 6}" y2="${bot - 6}"/>`; }
+    }
+    return s + `</svg>`;
+  }
+  const chordCells = (f, rhythm) => rhythm.map(h => h ? { acc: h === 2, notes: f.map((v, k) => v == null ? null : [5 - k, v]).filter(Boolean) } : null);
+  const RIFF = [[[4,5],null,[3,5],null,[4,5],null,[3,7],[3,5]],[[4,10],null,[3,12],null,[4,10],null,[3,9],null],[[5,12],null,[4,14],null,[5,12],[5,12],[4,14],null],[[4,3],null,[3,5],null,[4,3],null,[3,5],[3,7]]];
+  const SOLO = [[[2,7],[2,9],[1,8],null,[1,10],[1,8],[2,9],null],[[1,8],null,[1,8],[2,9],[1,8],null,null,null],[[1,10],[1,8],[1,10],[0,7],null,[0,10],[0,7],null],[[1,8],null,[1,10],null,[2,9],[2,7],null,null]];
+  const leadCells = (row, i) => row.map((n, k) => n ? { acc: k === 0 && i % 2 === 0, notes: [n] } : null);
+  function bars(s, count) {
+    const out = [];
+    for (let b = 0; b < count; b++) {
+      const rep = s.id === "verse" ? (b === 0 ? "start" : b === 3 ? "end" : null) : null;
+      if (s.kind === "riff") out.push(barSvg({ n: b + 1, name: ["G oct", "D oct", "E oct", "C oct"][b % 4], cells: leadCells(RIFF[b % 4], 1) }));
+      else if (s.kind === "lead") out.push(barSvg({ n: b + 1, name: ["G", "D", "Em", "C"][b % 4], cells: leadCells(SOLO[b % 4], b) }));
+      else { const seq = s.chords || CH, nm = seq[b % seq.length]; out.push(barSvg({ n: b + 1, name: nm, pm: s.pm, ring: !s.pm, cells: chordCells(SHAPES[nm], s.rhythm), rep })); }
+    }
+    return out.join("");
+  }
+  function boxSvg(f) {
+    const used = f.filter(v => v != null && v > 0), base = used.length ? Math.min(...used) : 1;
+    let s = `<svg viewBox="0 0 46 58" aria-hidden="true">`;
+    for (let k = 0; k < 6; k++) s += `<line x1="${6 + k * 7}" y1="12" x2="${6 + k * 7}" y2="52" stroke="currentColor" stroke-width="1"/>`;
+    for (let j = 0; j < 5; j++) s += `<line x1="6" y1="${12 + j * 10}" x2="41" y2="${12 + j * 10}" stroke="currentColor" stroke-width="${j === 0 && base === 1 ? 3 : 1}"/>`;
+    for (let k = 0; k < 6; k++) {
+      const v = f[k], x = 6 + k * 7;
+      if (v == null) s += `<text x="${x}" y="8" font-size="7" text-anchor="middle" fill="currentColor" font-family="Space Mono, monospace">×</text>`;
+      else if (v === 0) s += `<circle cx="${x}" cy="5.5" r="2.3" fill="none" stroke="currentColor"/>`;
+      else s += `<circle cx="${x}" cy="${12 + (v - base + .5) * 10}" r="3.2" fill="var(--accent-on-ink)"/>`;
+    }
+    if (base > 1) s += `<text x="45" y="20" font-size="7" text-anchor="end" fill="currentColor" font-family="Space Mono, monospace">${base}</text>`;
+    return s + `</svg>`;
+  }
+
+  // Options per section (PRD §6), grouped into tabs; collapsed until OPTIONS is pressed
+  const glyph = (str) => str.split("").map(c => `<i class="${c === "a" ? "a" : c === "h" ? "h" : c === " " ? "g" : ""}"></i>`).join("");
+  const OPT = {
+    intro: { rhythm: [["Hook line in octaves","ahhh hhhh"],["Octave climb","h.h. h.hh"],["Low-string P.M. riff","hhhh hhhh"],["Open-string pedal riff","h.h. h.h.",1],["Octave riff","h.h. h.h."],["Chugs into open hits","hhhh a..."],["Intro melody","h.hh .hh."]], style: [["Sound",["CLEAN RING","PALM-MUTED","OCTAVES"]],["Register",["LOW","MID"]]], structure: [["Bars",["2","4","8"],2],["Band comes in",["BAR 1","BAR 5","NEVER"],1]], drums: [["Drums",["GUITAR ALONE","COUNT-IN","FULL BAND"],2]] },
+    verse: { rhythm: [["Sparse chugs","a.h. a.h."],["Gallop","a.hh a.hh"],["Stop-time","a... ...."],["Offbeat accents",".a.a .a.a"],["Backbeat chugs","hhah hhah"],["Chugs + dead-strum turnaround","hhhh hhaa"]], style: [["Muting",["PALM-MUTED","HALF-MUTED","OPEN"]],["Shape",["2-NOTE","3-NOTE"]]], structure: [["Bars",["4","8","16"],2],["Verse 2",["SAME","+ PUSH","HALF-TIME","GUITAR ONLY"],1]], drums: [["Drums",["HI-HAT","RIDE","HALF-TIME"]]] },
+    prechorus: { rhythm: [["Build to ring","hhhh hhha"],["Quarter-note climb","h.h. h.h."],["Build with a fill","a... a.hh"],["Stop and hit","a... ...."],["Gallop build","a.hh a.hh"],["Offbeat climb",".h.h .h.a"]], style: [["Sound",["OPEN RING","ACCENTED"]],["Register",["STAY","LIFT"]]], structure: [["Bars",["OFF","2","4","8"],3],["Climb",["IV-V","vi-IV-V","ii-IV-V"]]], drums: [["Into the chorus",["SNARE BUILD","STOP","TOM FILL"]]] },
+    chorus: { rhythm: [["Let-ring eighths with pushes","ahhh ahha"],["Driving eighths","hhhh hhhh"],["Big hits","a... a..."],["Accent hits","ahha hahh"],["Open gallop","a.hh a.hh"],["Half-note anthem","a... a..."]], style: [["Sound",["OPEN RING","DRIVING"]],["Shape",["2-NOTE","3-NOTE","OCTAVE-DOUBLED"],1]], structure: [["Bars",["4","8","16"],2],["Last chorus",["PLAYED TWICE","KEY CHANGE +2","DROP, THEN TWICE"]]], drums: [["Cymbals",["CRASH EVERY BAR","EVERY 4 BARS","RIDE"]]] },
+    solo: { rhythm: [["Melodic","h.hh .hh."],["Hook quote","ahhh h.hh"],["Shred","hhhh hhhh",1]], style: [["Neck",["LOW","HIGH"]],["Bends",["FEW","SOME","LOTS"],1]], structure: [["Bars",["4","8","16"],2],["Plays over",["CHORUS CHORDS","VERSE CHORDS"]]], drums: [["Drums",["FULL BAND","HALF-TIME"]]] },
+    breakdown: { rhythm: [["Chug and choke","ahah ah.."],["Heavy hits and a stop","a... a..."],["Dead-strum fills","ahah ahhh"],["Gallop breakdown","a.hh a.hh"],["Stop-time hits","a... ...."],["Quarter-note chugs","h.h. h.h."]], style: [["Sound",["P.M.","STOP-TIME","GUITAR ALONE"]]], structure: [["Bars",["4","8"],1],["Build back in",["NONE","LAST 2 BARS","LAST 4 BARS"]]], drums: [["Drums",["HALF-TIME","FLOOR TOMS","SILENT"]]] },
+    ending: { rhythm: [["Final hit, let ring","a... ...."],["Stop on the one","a"],["Chorus tag","hhhh a..."],["Fade (chorus ×3)","hhhh hhhh"]], structure: [["Bars",["1","2","4"],1]], drums: [["Last hit",["CRASH + CHOKE","RING OUT"]]] },
+  };
+  const WHY = { "Open-string pedal riff": "Needs open-string roots (E or A)", "Shred": "Advanced only" };
+  const seg = ([label, opts, pick = 0]) => `<div class="group"><span class="glabel">${label}</span><div class="seg wrap" role="group" aria-label="${label}">${opts.map((o, i) => `<button aria-pressed="${i === pick}">${o}</button>`).join("")}</div></div>`;
+  function panelBody(s, tab) {
+    const o = OPT[s.id];
+    if (tab === "rhythm") return `<p class="help">${o.rhythm.length} ways to play the ${s.name.toLowerCase()}. ▶ plays one against the rest of the song before you keep it.</p><div class="grooves">${o.rhythm.map(([n, g, off]) =>
+      `<button class="groove" aria-pressed="${n === s.groove}"${off ? ' aria-disabled="true"' : ""}><b>${n}</b><span class="glyph" aria-hidden="true">${glyph(g)}</span>${off ? `<span class="why">${WHY[n]}</span>` : n === s.groove ? `<span class="tag">In use</span>` : ""}<span class="p" aria-label="Hear ${n}">${icon("i-play", "ico fill")}</span></button>`).join("")}</div>`;
+    return `<div class="optrow">${(o[tab] || []).map(seg).join("")}</div>`;
+  }
+  function panel(s) {
+    const o = OPT[s.id];
+    const tabs = [["rhythm", "RHYTHM"], ["style", s.id === "solo" ? "LEAD STYLE" : "PLAYING STYLE"], ["structure", "STRUCTURE"], ["drums", "DRUMS"]].filter(([k]) => o[k]);
+    return `<div class="panel" id="panel-${s.id}">
+      <div class="ptabs" role="tablist" aria-label="${s.name} options">${tabs.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${i === 0}">${l}</button>`).join("")}</div>
+      <div class="pbody" role="tabpanel">${panelBody(s, "rhythm")}</div>
+      <div class="pfoot"><span class="changed" data-changed>Nothing changed yet. Only the ${s.name.toLowerCase()} will change.</span><button class="btn-small">${icon("i-play", "ico fill")}PREVIEW</button><button class="btn-ink">KEEP</button></div>
+    </div>`;
+  }
+  function markChanged(b) {
+    const card = b.closest(".card"); if (!card) return;
+    $("[data-changed]", card).innerHTML = `Trying <b>${$("b", b).textContent}</b>. Preview it, then keep it or undo.`;
+    const t = $('.ptabs [data-tab="rhythm"]', card);
+    if (t && !$(".dot", t)) t.insertAdjacentHTML("beforeend", `<span class="dot" aria-label="changed"></span>`);
+  }
+
+  $("#sections").innerHTML = SECTIONS.map(s => {
+    const shown = Math.min(s.bars, 8), used = s.kind ? [] : [...new Set(s.chords || CH)];
+    return `<article class="card" id="card-${s.id}" data-id="${s.id}" data-locked="${!!s.locked}" aria-labelledby="h-${s.id}">
+      <div class="card-hd">
+        <div class="ttl"><span class="num">${String(s.index + 1).padStart(2, "0")}</span><h3 id="h-${s.id}">${s.name}</h3><span class="bars">${s.bars} bars</span></div>
+        <div class="uses">${s.runs.map(({ r, k }) => `<span data-k="${k}">${r[0]} · ${fmt(r[4])}</span>`).join("")}</div>
+        <div class="tools">
+          <button class="ib play" aria-label="Play ${s.name}">${icon("i-play", "ico fill")}</button>
+          <div class="takes"><button aria-label="Previous take">‹</button><span><span class="long">take ${s.take[0]} of ${s.take[1]}</span><span class="short" aria-label="take ${s.take[0]} of ${s.take[1]}">${s.take[0]}/${s.take[1]}</span></span><button aria-label="Next take">›</button></div>
+          <button class="ib" aria-label="New take of ${s.name}" title="New take (R)"${s.locked ? " disabled" : ""}>${icon("i-regen")}</button>
+          <button class="ib lock" aria-pressed="${!!s.locked}" aria-label="${s.locked ? "Unlock" : "Lock"} ${s.name}" title="Lock (L)">${icon(s.locked ? "i-lock" : "i-unlock")}</button>
+        </div>
+      </div>
+      <p class="details">${s.sum}${s.locked ? ` · <span class="lock-note">Locked: new builds leave it alone</span>` : ""}</p>
+      <div class="tab-area">
+        ${used.length ? `<div class="cchips">${used.map(c => `<div class="cchip">${boxSvg(SHAPES[c])}<b>${c}</b></div>`).join("")}</div>` : ""}
+        <div class="tab-lines" data-shown="${shown}"></div>
+      </div>
+      <div class="card-foot">
+        ${s.bars > shown ? `<button class="more" data-more="${s.id}">Show all ${s.bars} bars</button>` : ""}
+        <button class="opts-btn" aria-expanded="false" aria-controls="panel-${s.id}">OPTIONS <span class="sum">${s.groove}</span>${icon("i-chev")}</button>
+      </div>
+      <div hidden data-panel>${panel(s)}</div>
+    </article>`;
+  }).join("");
+
+  document.addEventListener("click", (e) => {
+    const ob = e.target.closest(".opts-btn");
+    if (ob) { const open = ob.getAttribute("aria-expanded") !== "true"; ob.setAttribute("aria-expanded", String(open)); $("[data-panel]", ob.closest(".card")).hidden = !open; return; }
+    const tb = e.target.closest(".ptabs [role=tab]");
+    if (tb) { const card = tb.closest(".card"); $$(".ptabs [role=tab]", card).forEach(x => x.setAttribute("aria-selected", String(x === tb))); $(".pbody", card).innerHTML = panelBody(byId[card.dataset.id], tb.dataset.tab); return; }
+    const more = e.target.closest("[data-more]");
+    if (more) { const s = byId[more.dataset.more], tl = $(".tab-lines", more.closest(".card")); tl.dataset.shown = s.bars; drawTabs(); more.remove(); return; }
+    const chip = e.target.closest(".fchip");
+    if (chip) {
+      const card = $(`#card-${chip.dataset.id}`);
+      card.scrollIntoView({ behavior: reduce() ? "auto" : "smooth", block: "start" });
+      card.dataset.flash = "true"; setTimeout(() => card.dataset.flash = "false", 900);
+      seek(RUN[chip.dataset.i][4]); return;
+    }
+    const lock = e.target.closest(".ib.lock");
+    if (lock) {
+      const card = lock.closest(".card"), on = lock.getAttribute("aria-pressed") !== "true", s = byId[card.dataset.id];
+      lock.setAttribute("aria-pressed", String(on)); lock.setAttribute("aria-label", `${on ? "Unlock" : "Lock"} ${s.name}`); lock.innerHTML = icon(on ? "i-lock" : "i-unlock");
+      card.dataset.locked = String(on); lock.previousElementSibling.disabled = on;
+    }
+  });
+
+  // Redraw the tabs at their columns' pixel width whenever the layout changes
+  function drawTabs() {
+    for (const tl of $$(".tab-lines")) {
+      const cols = getComputedStyle(tl).gridTemplateColumns.split(" ").length;
+      W = Math.max(120, Math.floor(tl.clientWidth / cols));
+      tl.innerHTML = bars(byId[tl.closest(".card").dataset.id], Number(tl.dataset.shown));
+    }
+    if (typeof paint === "function") paint();
+  }
+  let lastW = 0;
+  new ResizeObserver(() => { const w = $("#sections").clientWidth; if (w !== lastW) { lastW = w; drawTabs(); } }).observe($("#sections"));
+
+  // ---------- Transport (simulated playback) ----------
+  let t = 0, playing = false, last = 0, speed = 1, loopSlot = null;
+  const slotAt = (time) => { let i = 0; RUN.forEach((r, k) => { if (time >= r[4]) i = k; }); return i; };
+  function paint() {
+    const i = slotAt(t), r = RUN[i], inSlot = Math.floor((t - r[4]) / BAR);
+    $$(".fchip").forEach((c, k) => c.dataset.active = String(playing && k === i));
+    $$(".card").forEach(c => c.dataset.active = String(playing && c.dataset.id === r[1]));
+    $$(".uses span").forEach(u => u.dataset.active = String(playing && Number(u.dataset.k) === i));
+    $$(".ib.play").forEach(b => { const on = playing && b.closest(".card").dataset.id === r[1]; b.classList.toggle("playing", on); b.innerHTML = icon(on ? "i-pause" : "i-play", "ico fill"); });
+    $$(".tbar[data-now]").forEach(b => b.removeAttribute("data-now"));
+    if (playing) { const bs = $$(".tbar", $(`#card-${r[1]}`)); if (bs.length) bs[inSlot % bs.length].dataset.now = "true"; }
+    $("#tNow").textContent = r[0] + (loopSlot != null ? " · looping" : "");
+    $("#tTime").textContent = `${fmt(t)} / ${fmt(TOTAL)} · bar ${Math.floor(t / BAR) + 1}${speed < 1 ? ` · ${Math.round(speed * 100)}%` : ""}`;
+    $("#tBar").style.width = `${t / TOTAL * 100}%`;
+    $("#head").style.left = `calc(6px + ${t / TOTAL} * (100% - 12px))`;
+    $("#playSong").innerHTML = `${icon(playing ? "i-pause" : "i-play", "ico fill")}${playing ? "STOP" : "PLAY SONG"}`;
+  }
+  function frame(now) {
+    if (!playing) return;
+    t += (now - last) / 1000 * speed; last = now;
+    if (loopSlot != null) { const r = RUN[loopSlot]; if (t >= r[4] + r[2] * BAR) t = r[4]; }
+    if (t >= TOTAL) { t = 0; setPlaying(false); return; }
+    paint(); requestAnimationFrame(frame);
+  }
+  function setPlaying(on) {
+    playing = on; $("#transport").classList.toggle("playing", on);
+    $("#play").setAttribute("aria-label", on ? "Pause" : "Play song");
+    $("#playIco").innerHTML = `<use href="#${on ? "i-pause" : "i-play"}"/>`;
+    if (on) { last = performance.now(); requestAnimationFrame(frame); }
+    paint();
+  }
+  function seek(time) { t = time; if (loopSlot != null) loopSlot = slotAt(t); if (!playing) setPlaying(true); else paint(); }
+  $("#play").addEventListener("click", () => setPlaying(!playing));
+  $("#playSong").addEventListener("click", () => { if (playing) setPlaying(false); else seek(0); });
+  $("#loop").addEventListener("click", (e) => { const on = e.currentTarget.getAttribute("aria-pressed") !== "true"; e.currentTarget.setAttribute("aria-pressed", String(on)); loopSlot = on ? slotAt(t) : null; paint(); });
+  $("#count").addEventListener("click", (e) => e.currentTarget.setAttribute("aria-pressed", String(e.currentTarget.getAttribute("aria-pressed") !== "true")));
+  const setSpeed = (pct) => {
+    speed = pct / 100;
+    $$("#speed button").forEach(x => x.setAttribute("aria-pressed", String(parseInt(x.textContent) === pct)));
+    $("#speedCycle").textContent = pct + "%"; $("#speedCycle").setAttribute("aria-label", `Practice speed ${pct}%, tap to change`);
+    paint();
+  };
+  $$("#speed button").forEach(b => b.addEventListener("click", () => setSpeed(parseInt(b.textContent))));
+  const STEPS = [100, 90, 75, 50];
+  $("#speedCycle").addEventListener("click", () => setSpeed(STEPS[(STEPS.indexOf(Math.round(speed * 100)) + 1) % STEPS.length]));
+  // Keep the page's last content clear of the fixed transport, whatever height it ends up
+  new ResizeObserver(([e]) => document.documentElement.style.setProperty("--transport-h", Math.ceil(e.borderBoxSize?.[0]?.blockSize ?? e.target.offsetHeight) + "px")).observe($("#transport"));
+  $$(".ib.play").forEach(b => b.addEventListener("click", () => {
+    const id = b.closest(".card").dataset.id;
+    if (playing && RUN[slotAt(t)][1] === id) setPlaying(false); else seek(RUN.find(r => r[1] === id)[4]);
+  }));
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea")) return;
+    if (e.code === "Space" && !e.target.closest("button")) { e.preventDefault(); setPlaying(!playing); }
+  });
+
+  const copy = (btn) => {
+    const text = "https://palm-mute.app/generator/#g-fp-1-195-i-v3a-vr7gp-pc2-ch5-so3m-br2L-en1";
+    const was = btn.innerHTML, done = () => { btn.innerHTML = "COPIED"; setTimeout(() => btn.innerHTML = was, 1400); };
+    try { navigator.clipboard.writeText(text).then(done, done); } catch { done(); }
+  };
+  $("#copy").addEventListener("click", (e) => copy(e.currentTarget));
+  $("#copyTop").addEventListener("click", (e) => copy(e.currentTarget));
+
+  // MIDI lanes (owner's table; guitars at concert pitch)
+  const LANES = [["Sub","24–38",24,38],["Bass","36–52",36,52],["Piano left hand","43–55",43,55],["Rhythm guitar","40–67 · concert",40,67,1],["Lead vocal (guide)","57–76",57,76],["Piano right hand","67–84",67,84],["Pads / strings","72–88",72,88],["Lead guitar","52–88 · concert",52,88,1],["Synth leads, arps","76–96",76,96]];
+  const lo = 24, hi = 96;
+  $("#lanes tbody").innerHTML = LANES.map(([n, r, a, b, g]) =>
+    `<tr><td>${n}</td><td>${r}</td><td class="roll"><div class="rollbar"><span class="${g ? "gtr" : ""}" style="left:${(a - lo) / (hi - lo) * 100}%;width:${(b - a) / (hi - lo) * 100}%"></span></div></td></tr>`).join("") +
+    `<tr><td>Drums</td><td>GM channel 10</td><td class="roll"></td></tr>`;
+
+  paint();
+})();
+</script>
+</body>
+</html>
