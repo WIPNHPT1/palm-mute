@@ -216,9 +216,28 @@ A solo the Generator writes gets a **song thread** (`songThread` in `lib/generat
 
 A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing BUILD SONG, BUILD AGAIN or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (a build, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
 
+## 5b. MIDI export
+
+**Take it away → DOWNLOAD MIDI** writes the song as one Standard MIDI File (type 1, 480 ticks per quarter note): the tempo, 4/4, the key signature and a marker where each part of the running order starts, then one track per part of the owner's lane table (`data/midi-lanes.json`) and General MIDI drums (`lib/arrange.ts`, written by `lib/midi.ts`, which has no dependencies):
+
+| Track | Notes | What it plays |
+|---|---|---|
+| Sub | 24–38 | The chord's root, held for the bar, under choruses and the breakdown |
+| Bass | 36–52 | The root on every strum of the rhythm guitar (palm-muted strums stay short) |
+| Piano left hand | 43–55 | Root and fifth, held, everywhere but the Intro |
+| Rhythm guitar | concert pitch | Exactly the tab, strum for strum |
+| Lead vocal (guide) | 57–76 | A hook-style melody from the lead engine over the verses and choruses (a placeholder for a singer) |
+| Piano right hand | 67–84 | The chord's triad on every beat, in pre-choruses and choruses |
+| Pads / strings | 72–88 | The triad held, in choruses |
+| Lead guitar | concert pitch | Exactly the Intro melody or Solo, with string bends as pitch bends |
+| Synth leads, arps | 76–96 | An eighth-note arpeggio of the triad in the Last chorus |
+| Drums | channel 10 | Exactly the drums the audio plays |
+
+The guitars and the drums come from the same data as the sound: the playback bars (`lib/playback.ts`) and one drum function (`lib/drums.ts`) that the audio engine also uses. The other parts follow each bar's chord (its root, and minor on the key's ii, iii and vi, since power chords don't say), including a Last chorus that goes up a tone. `npm run verify` builds 120 songs (4 keys × 5 feels × 3 lengths × 2 sets of card options), writes each file, reads it back with a strict parser and checks that every note reads back exactly, sits inside its lane (the guitars at concert pitch), and that the guitars and drums equal the audio; the browser tests download the real file and check it against what PLAY SONG plays.
+
 ## 6. The proofs
 
-`npm run verify` (`scripts/verify-all.mjs` runs the four `scripts/verify-*.ts` suites side by side, about 72 s) runs in CI on every pull request:
+`npm run verify` (`scripts/verify-all.mjs` runs the five `scripts/verify-*.ts` suites side by side, about 75 s) runs in CI on every pull request:
 
 | Suite | What it covers | Checks |
 |---|---|---|
@@ -226,6 +245,7 @@ A solo sent from the Chords page ("Use in my song") plays exactly as previewed t
 | Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, **every hit labelled honestly and with a mute plan, no change over 4 frets per 100 ms, chord downpicking within the cap, the hall of shame**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
 | Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; a build never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text**; Phase 5: **the solo quotes the song's motif, plays the Chorus's chords and peaks on its strongest chord** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
+| MIDI export | Every file reads back exactly through a strict parser; every note inside its lane (guitars at concert pitch); rhythm guitar, lead guitar and drums equal the audio; markers where each part starts; tempo, 4/4, instruments and channels; no drum track when drums are off | 120 songs (4 keys × 5 feels × 3 lengths × 2 option sets) |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. `e2e/song-builder-responsive.spec.ts` is the song builder's responsive gate (docs/song-builder-prd.md B12): no sideways scroll, controls ≥ 44px, text ≥ 12px and nothing clipped, in every project, for the setup, the folded summary and the longest song. It also covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 

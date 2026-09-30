@@ -6,7 +6,7 @@ import { CELLS_PER_BAR, midiOf } from "@/lib/fretboard";
 import type { FeelId, RenderedSection } from "@/lib/generator";
 import { getFeel, libraryVoicings, patternForFeel } from "@/lib/generator";
 import type { Lead } from "@/lib/melody";
-import type { NoteName } from "@/lib/musicTheory";
+import { type NoteName, pitchClassOf } from "@/lib/musicTheory";
 
 export { CELLS_PER_BAR };
 
@@ -47,7 +47,21 @@ export type PlaybackBar = {
   drums?: boolean;
   /** The lead guitar line, cell by cell, played over the rhythm part in `cells`. */
   lead?: (Hit | null)[];
+  /**
+   * The bar's chord for the other instruments (the MIDI arrangement's bass, keys, pads and vocal guide): its
+   * root, the key it's in, and whether it's minor there (ii, iii, vi).
+   */
+  chord?: BarChord;
 };
+
+export type BarChord = { rootPc: number; keyPc: number; minor: boolean };
+
+/** A chord in a key: minor on the key's 2nd, 3rd and 6th (power chords don't say; the scale does). */
+export function barChord(root: NoteName, key: NoteName): BarChord {
+  const rootPc = pitchClassOf(root);
+  const keyPc = pitchClassOf(key);
+  return { rootPc, keyPc, minor: [2, 4, 9].includes((rootPc - keyPc + 12) % 12) };
+}
 
 /** A progression row: its chip voicings, one bar per chord, strummed with the feel's pattern. */
 export function progressionBars(key: NoteName, progressionId: string, feel: FeelId): PlaybackBar[] {
@@ -103,6 +117,7 @@ export function leadBars(lead: Lead, feel: FeelId, backing: boolean): PlaybackBa
     const voicing = voicings[b % voicings.length].voicing;
     return {
       feel,
+      chord: barChord(chord.root, lead.inputs.key),
       drums: backing,
       cells: backing
         ? strum.map((g) => (g === "·" ? null : { notes: voicing.notes.map(midiOf), cells: 1, velocity: g === "▲" ? 0.4 : 0.55, palmMuted: true }))
@@ -118,6 +133,7 @@ export function sectionBars(section: RenderedSection): PlaybackBar[] {
   if (section.lead) return withDrums(leadBars(section.lead, section.feel, true), section.drums);
   const bars: PlaybackBar[] = section.bars.map((bar, b) => ({
     feel: section.feel,
+    ...(bar.chord ? { chord: barChord(bar.chord.root, section.key) } : {}),
     cells: bar.cells.map((ev) =>
       ev
         ? {

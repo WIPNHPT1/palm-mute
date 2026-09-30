@@ -243,6 +243,8 @@ export const libraryRecipe = recipesJson.library as { register: "low" | "lift"; 
 
 export type RenderedSection = {
   id: SectionId;
+  /** The key it's in (a locked section keeps its own; the Last chorus can go up a tone). */
+  key: NoteName;
   label: string;
   /** The feel the section actually renders in (Breakdown forces half-time). */
   feel: FeelId;
@@ -482,6 +484,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
 
   return withOptions({
     id,
+    key: inputs.key,
     label: t.label,
     feel,
     bars,
@@ -643,6 +646,7 @@ function renderRiffSection(id: SectionId, inputs: SectionInputs, feel: FeelId, v
   const spoken = `${getTemplate(id).label}, key of ${inputs.key}: ${variant.name.toLowerCase()}, ${art}. ${bars.length} bars. ` + bars.map((bar, b) => `Over ${bar.chord!.name}: ${said(b)}.`).join(" ");
   return {
     id,
+    key: inputs.key,
     label: getTemplate(id).label,
     feel,
     bars,
@@ -715,6 +719,7 @@ function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): 
   const frets = lead.notes.flatMap((n) => [n.technique?.kind === "bend" ? n.technique.fromFret : n.fret, ...(n.double ? [n.double.fret] : [])]);
   return {
     id,
+    key: inputs.key,
     label: getTemplate(id).label,
     feel,
     bars,

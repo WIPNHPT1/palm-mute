@@ -6,6 +6,7 @@ import { FeelToggle } from "@/components/FeelToggle";
 import { GenerateButton, PlaySongButton, RebuildButton } from "@/components/GenerateButton";
 import { KeyPicker } from "@/components/KeyPicker";
 import { LengthControl } from "@/components/LengthControl";
+import { MidiExportCard } from "@/components/MidiExportCard";
 import { OriginalityBadge } from "@/components/OriginalityBadge";
 import { type GuideStep, PageGuide } from "@/components/PageGuide";
 import { PageHeader } from "@/components/PageHeader";
@@ -254,6 +255,16 @@ export default function GeneratorPage() {
               />
             );
           })}
+        </div>
+      </section>
+
+      {/* Take it away (docs/song-builder-prd.md B8–B9): the song as files. */}
+      <section aria-labelledby="export-title" data-export-section className="flex flex-col gap-[12px]">
+        <p id="export-title" className="m-0 mt-[8px] font-mono text-[12px] tracking-[0.13em] text-accent">
+          TAKE IT AWAY
+        </p>
+        <div className="grid grid-cols-1 gap-[12px] tablet:grid-cols-2">
+          <MidiExportCard song={{ plan, parts: song }} bpm={bpm} keyName={state.key} progressionId={state.progressionId} title={state.title} />
         </div>
       </section>
     </div>
