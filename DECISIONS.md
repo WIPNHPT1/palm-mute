@@ -47,6 +47,18 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Ten progressions | **I-vi-IV-V, I-IV-vi-V, V-vi-IV-I and I-V-IV join the original six** (the owner's "classic set": only I, IV, V and vi, so no new chord types). They rank after the original six in "Most common", so the Generator's default and its first Power Chords rows don't change; brightness 4, 4, 3 and 5. The Chords page shows all ten (two columns on desktop, one on tablet, mini-cards on phones); the Generator can pick any of them for the Chorus. `npm run verify` sweeps all ten | Repo owner, 2026-09-30 |
 | Chords page Sort | **Six sorts that fill the card**: Most common, Brightest, Darkest, **Simplest** (fewest different chords, then the shorter loop), **Home start** (loops that open on I first), **Minor start** (loops that open on vi first); ties keep the curated order. Equal-width buttons fill the Sort card; phones 3 + 3. Feel and Sort share a row when both fit without squeezing their labels (1280px and up), otherwise each takes its own full-width row | Repo owner, 2026-09-30 |
 | Playable rhythm shapes | Fixes from the owner's review of real tabs: **no inverted power chords** in rhythm parts (the Breakdown now uses 2- and 3-note root-position shapes; C5 as E3+A3 read as a wrong G5); **no open D-string root on ringing bars** (open D5 = D0 G2 let ring needs the open low E and A muted, which nothing does; fretted D-root shapes stay as the high-key chorus last resort); **octave shapes are labelled as octaves** ("E oct", "E octave" for screen readers) since they have no fifth, and Fast Punk octave riffs are downpicked. `npm run verify` now asserts all three on every render | Repo owner, 2026-09-30 |
+| Song Engine v2: phase order | **Audible first** (`docs/song-engine-v2-prd.md` §9): 1 Harmonic plan + forms (R6–R9) → 2 Playability, R2 tempo-aware changes and R5 labels first, then R1 muting and R3 picking load (+ R4 rating) → 3 Best-of-N critic → 4 Grooves + riffs → 5 Leads that know the song → 6 Inputs. One PR each. Meanwhile the 2026-09-30 playable-tabs checks keep guarding against the three known bad tabs | Repo owner, 2026-09-30 |
+| v2 song form | **Short form ships first** (fits the Generator's cards better), **Standard with an ending becomes the default** once the Generator's form layout is picked from a mock-up | Repo owner, 2026-09-30 |
+| v2 Verse harmony | **The progression's own chords in a sparser rhythm** (replaces the fixed `I I V V`) | Repo owner, 2026-09-30 |
+| v2 16th-note grid | **Yes, built in Phase 4**, but grooves carry a `cells: 8 \| 16` field from the start so the data doesn't need migrating later | Repo owner, 2026-09-30 |
+| v2 Difficulty input | **Yes, default Intermediate** (Beginner / Intermediate / Advanced) | Repo owner, 2026-09-30 |
+| v2 Best-of-N | **Start at N = 4**; set the final N after timing one Standard-form song on a mid-range phone (budget ~100 ms for Generate) | Repo owner, 2026-09-30 |
+| v2 Style presets | **Three: Skate punk, 2000s pop-punk, Emo** (eras and techniques, never artists) | Repo owner, 2026-09-30 |
+| v2 Last-chorus key change | **Off by default**, available through presets | Repo owner, 2026-09-30 |
+| v2 Open D5 `x-x-0-2-3` | **Allowed for open-key intros and ringing chords only, and only after the R1 muting model can show the low E and A are muted.** Until then the "standard shapes only" rule stands | Repo owner, 2026-09-30 |
+| v2 Picking-hand load (R3) | **Capped by the Difficulty setting, not everywhere**: long all-downstroke eighth runs are the genre, so Advanced allows them and Beginner/Intermediate get alternate picking or rests | Repo owner, 2026-09-30 |
+| v2 Guitarist review gate | **5 generated songs per phase** (fixed seed list) plus the reference-song fixtures, instead of 10 | Repo owner, 2026-09-30 |
+| v2 Locking and repeats (default, confirm in the Phase 1 mock-up) | Locking a section **locks all its repeats** (Verse 1 and Verse 2 are one section with a declared variation); a locked section keeps its chords when the song's plan changes (v1 "frozen once locked"). The Generator's layout for longer forms is picked from a Phase 1 mock-up | Default, 2026-09-30 |
 
 ### Defaults for the next phases (owner can change any of these)
 
@@ -55,9 +67,9 @@ Set by the `/next-phases` routine on 2026-09-27; listed in each PR so the owner 
 | Question | Default |
 |---|---|
 | Chord library (engine brief §13.3) | Generate `data/chord-library.json` from the shape data. Chords-page chips show the voicing the engine picks for that progression |
-| Pre-chorus / final-chorus lift (engine §13.4) | Not now: keep the 5 sections |
+| Pre-chorus / final-chorus lift (engine §13.4) | Not now: keep the 5 sections (superseded by Song Engine v2: forms with a pre-chorus arrive in v2 Phase 1) |
 | Neck control (engine §13.5) | Automatic only; no Low/Mid/High control |
-| 16th-note gallops (engine §13.6) | Off |
+| 16th-note gallops (engine §13.6) | Off (superseded by Song Engine v2: built in v2 Phase 4) |
 | Default intro style (melody §11.2) | Hook (Octaves and Harmony also available) |
 | Lengths (melody §11.4) | Intro 4 bars, solo 8 bars (both selectable) |
 | Technique notation (melody §11.5) | Standard: `b`, `r`, `h`, `p`, `/`, `\`, `~` |
