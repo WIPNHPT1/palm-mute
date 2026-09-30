@@ -9,7 +9,7 @@ import type { Voicing } from "@/lib/voicings";
 /**
  * A progression: waveform glyph, roman-numeral name, chord chips and a play toggle.
  * Horizontal row from tablet up; a vertical mini-card on mobile.
- * `variant="panel"` is the Generator's Power Chords row (click to use it for the Chorus),
+ * `variant="panel"` is the Generator's Power Chords row (click to build the song on it),
  * `"card"` the Chords page card (click to open its panel).
  *
  * The whole row is one button (stretched under the content), and the play button sits on top of it.
@@ -38,9 +38,9 @@ export function ProgressionRow({
   playing: boolean;
   onTogglePlay: () => void;
   onSelect: () => void;
-  /** Accessible name of the row button, e.g. "Use I-V-vi-IV for the Chorus". */
+  /** Accessible name of the row button, e.g. "Use I-V-vi-IV for the song". */
   selectLabel: string;
-  /** Panel rows: this progression is the Chorus (aria-pressed). */
+  /** Panel rows: the song is built on this progression (aria-pressed). */
   selected?: boolean;
   /** Chords cards: this card's panel is open (aria-expanded). */
   expanded?: boolean;

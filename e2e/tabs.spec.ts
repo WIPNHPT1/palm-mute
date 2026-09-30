@@ -26,7 +26,7 @@ test.describe("tabs", () => {
             };
           }),
         );
-        expect(tabs).toHaveLength(5);
+        expect(tabs).toHaveLength(7);
         for (const t of tabs) {
           expect(t.barsPerLine.every((n) => n >= 1 && n <= 2), `${t.section}: bars per line ${t.barsPerLine}`).toBe(true);
           expect(t.inside, `${t.section} tab spills out of its card`).toBe(true);
@@ -50,8 +50,8 @@ test("chord sections never put notes on the B or high e strings", async ({ page 
     await key(page, k).click();
     // The rows the Power Chords panel shows (npm run verify covers all ten progressions in every key).
     for (const progression of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V"]) {
-      await page.getByRole("button", { name: `Use ${progression} for the Chorus` }).click();
-      for (const label of ["Intro", "Verse", "Chorus", "Breakdown"]) {
+      await page.getByRole("button", { name: `Use ${progression} for the song` }).click();
+      for (const label of ["Intro", "Verse", "Pre-chorus", "Chorus", "Breakdown", "Ending"]) {
         const highStrings = await page
           .locator(`section[aria-label="${label}"] svg[data-tab] text[data-row="string"]`)
           .evaluateAll((rows) => rows.map((r) => r.textContent ?? "").filter((t) => /^[Be]\|/.test(t) && /\d/.test(t)));

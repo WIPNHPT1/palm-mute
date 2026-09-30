@@ -6,9 +6,9 @@ import { libraryVoicings } from "@/lib/generator";
 import { type NoteName, keyDisplayName, progressions } from "@/lib/musicTheory";
 
 /**
- * Generator's Power Chords panel: the Chorus progression first, then the next most common four
+ * Generator's Power Chords panel: the song's progression first, then the next most common four
  * (five rows, one per Rhythm Lane feel).
- * Clicking a row makes it the Chorus progression.
+ * Clicking a row builds the song on it (every unlocked part follows the progression).
  */
 export function PowerChordsPanel({
   keyName,
@@ -33,7 +33,7 @@ export function PowerChordsPanel({
           Best progressions · Key of {keyDisplayName(keyName)}
           <span className="hidden tablet:inline"> · E standard</span>
         </div>
-        <div className="mt-[2px] font-mono text-[12px] text-text-faint">Tap a row to use it for the Chorus.</div>
+        <div className="mt-[2px] font-mono text-[12px] text-text-faint">Tap a row to build the song on it.</div>
       </div>
       <div className="flex flex-grow flex-col gap-[10px]">
         {shown.map((p) => (
@@ -45,8 +45,8 @@ export function PowerChordsPanel({
             variantIndex={progressions.indexOf(p)}
             highlighted={p.id === selectedId}
             selected={p.id === selectedId}
-            selectLabel={`Use ${p.id} for the Chorus`}
-            badge={p.id === selectedId ? "Chorus" : undefined}
+            selectLabel={`Use ${p.id} for the song`}
+            badge={p.id === selectedId ? "In use" : undefined}
             onSelect={() => onSelect(p.id)}
             playing={playing === `progression:${p.id}`}
             onTogglePlay={() => onTogglePlay(p.id)}

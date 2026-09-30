@@ -13,15 +13,15 @@ import {
   type SectionId,
   type SectionInputs,
   SECTION_IDS,
-  getTemplate,
   libraryVoicings,
   nextSeed,
   renderSection,
   sectionTarget,
   tabBars,
 } from "@/lib/generator";
-import { PITCH_CLASSES, type Degree, type NoteName, getProgression, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
-import { sectionBars } from "@/lib/playback";
+import { PITCH_CLASSES, type NoteName, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
+import { sectionBars, songBarParts, songBars } from "@/lib/playback";
+import { FORM_IDS, formSlots, sectionDegrees, timesFor } from "@/lib/songPlan";
 import { SETTINGS, checkVoicing } from "@/lib/voicings";
 
 const FEELS: FeelId[] = FEEL_IDS;
@@ -107,15 +107,11 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
       assert.ok(!(v.rootString === "D" && v.open), `${where}: bar ${i + 1} rings an open D-string root`);
     assert.equal(tabBars([bar])[0].label, v.tags.includes("octaveRiff") ? `${bar.chord!.root} oct` : bar.chord!.name, `${where}: bar ${i + 1} label`);
   });
-  // Degrees: every bar's chord is the right chord for the template / progression in this key.
+  // Degrees: every bar's chord comes from the song's harmonic plan over this progression, in this key (R6).
   const keyPc = pitchClassOf(inputs.key);
-  if (s.id === "chorus") {
-    const degrees = getProgression(inputs.progressionId).degrees;
-    s.chords.forEach((c, i) => assert.equal(pitchClassOf(c.root), (keyPc + degreeOffsets[degrees[Math.min(i, degrees.length - 1)]]) % 12, `${where}: bar ${i + 1} chord`));
-  } else {
-    const degrees = getTemplate(s.id).degreeSequence as Degree[];
-    s.chords.forEach((c, i) => assert.equal(pitchClassOf(c.root), (keyPc + degreeOffsets[degrees[i]]) % 12, `${where}: bar ${i + 1} chord`));
-  }
+  const degrees = sectionDegrees(s.id as Exclude<SectionId, "solo">, inputs.progressionId);
+  assert.equal(s.chords.length, degrees.length, `${where}: bar count vs plan`);
+  s.chords.forEach((c, i) => assert.equal(pitchClassOf(c.root), (keyPc + degreeOffsets[degrees[i]]) % 12, `${where}: bar ${i + 1} chord`));
   // 3: hand moves inside a section stay within maxMove frets unless recorded as a shift.
   for (let i = 1; i < s.bars.length; i++) {
     const a = s.voicings.find((v) => v.chord.root === s.bars[i - 1].chord!.root)!.voicing;
@@ -143,8 +139,13 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
 }
 
 // ---------------------------------------------------------------------------
-// The sweep
+// The sweep: every section follows the progression now (Song Engine v2), so all of them are checked for
+// every key × progression × feel × seed.
 
+let pushes = 0;
+let lowestLift = Infinity;
+const energySum: Partial<Record<SectionId, number>> = {};
+let energyCount = 0;
 
 for (const key of PITCH_CLASSES) {
   for (const prog of progressions) {
@@ -153,8 +154,6 @@ for (const key of PITCH_CLASSES) {
         const inputs: SectionInputs = { key, feel, progressionId: prog.id, seed };
         const rendered = {} as Record<SectionId, RenderedSection>;
         for (const id of SECTION_IDS) {
-          // Sections other than the Chorus don't depend on the progression: check them once per key/feel/seed.
-          if (id !== "chorus" && prog !== progressions[0]) continue;
           const where = `${key} ${prog.id} ${feel} ${id} seed ${seed}`;
           const s = renderSection(id, inputs);
           renders++;
@@ -164,16 +163,55 @@ for (const key of PITCH_CLASSES) {
           // 6: deterministic.
           assert.equal(tabText(renderSection(id, inputs).tab), tabText(s.tab), `${where}: same seed, different tab`);
         }
+        const where = `${key} ${prog.id} ${feel} seed ${seed}`;
         // 4: the chorus lifts above the verse (same seed), or matches it when the verse is already high.
-        if (rendered.verse) {
-          const verse = rendered.verse;
-          for (const p of progressions) {
-            const chorus = p === prog ? rendered.chorus : renderSection("chorus", { ...inputs, progressionId: p.id });
-            const where = `${key} ${p.id} ${feel} seed ${seed}`;
-            const high = sectionTarget("verse", key) >= LIMIT - 3 - SETTINGS.chorusLift;
-            assert.ok(avgPosition(chorus) > avgPosition(verse) || (high && avgPosition(chorus) >= avgPosition(verse)), `${where}: chorus (${avgPosition(chorus)}) doesn't lift above verse (${avgPosition(verse)})`);
+        const high = sectionTarget("verse", key) >= LIMIT - 3 - SETTINGS.chorusLift;
+        assert.ok(
+          avgPosition(rendered.chorus) > avgPosition(rendered.verse) || (high && avgPosition(rendered.chorus) >= avgPosition(rendered.verse)),
+          `${where}: chorus (${avgPosition(rendered.chorus)}) doesn't lift above verse (${avgPosition(rendered.verse)})`,
+        );
+        // R8 energy arc: the Chorus is the song's peak over the Verse, for every song.
+        const lift = rendered.chorus.energy - rendered.verse.energy;
+        assert.ok(lift > 0, `${where}: chorus energy ${rendered.chorus.energy.toFixed(3)} ≤ verse ${rendered.verse.energy.toFixed(3)}`);
+        lowestLift = Math.min(lowestLift, lift);
+        for (const id of SECTION_IDS) energySum[id] = (energySum[id] ?? 0) + rendered[id].energy;
+        energyCount++;
+        // R7 variation: Verse 2's push is the only difference from Verse 1 (one bar's last eighth, now the next chord).
+        const v2 = renderSection("verse", inputs, "push");
+        const w2 = `${where} verse 2`;
+        checkLayout(v2, w2);
+        checkChordSection(v2, inputs, w2);
+        if (v2.variation) {
+          pushes++;
+          const b = v2.variation.bar;
+          v2.bars.forEach((bar, i) =>
+            bar.cells.forEach((cell, c) => {
+              if (i === b && c === 7) {
+                assert.ok(cell?.kind === "hit" && cell.accent, `${w2}: no push in bar ${b + 1}`);
+                const next = rendered.verse.bars[b + 1].cells.find((e) => e?.kind === "hit")!;
+                assert.deepEqual(cell!.notes, next.notes, `${w2}: the push isn't the next bar's chord`);
+              } else assert.deepEqual(cell, rendered.verse.bars[i].cells[c], `${w2}: bar ${i + 1} cell ${c + 1} differs from Verse 1`);
+            }),
+          );
+        } else assert.equal(tabText(v2.tab), tabText(rendered.verse.tab), `${w2}: no push, yet it differs from Verse 1`);
+        // R7 forms: every form renders; Play song plays each part's material (× its repeats), in order.
+        if (seed === 0)
+          for (const form of FORM_IDS) {
+            const parts = formSlots(form).map((slot) => ({ section: slot.variation === "push" ? v2 : rendered[slot.section], times: timesFor(slot.variation) }));
+            const bars = songBars(parts);
+            const owner = songBarParts(parts);
+            assert.equal(bars.length, owner.length, `${where} ${form}: bar owners`);
+            let at = 0;
+            parts.forEach((p, i) => {
+              const own = sectionBars(p.section);
+              for (let t = 0; t < p.times; t++)
+                own.forEach((bar) => {
+                  assert.deepEqual(bars[at], bar, `${where} ${form}: part ${i + 1} bar ${at + 1}`);
+                  assert.equal(owner[at++], i);
+                });
+            });
+            assert.equal(at, bars.length, `${where} ${form}: song length`);
           }
-        }
       }
     }
   }
@@ -215,17 +253,21 @@ assert.deepEqual([pc("A", 10), pc("D", 12), pc("E", 10), pc("A", 12), pc("A", 7)
 
 const REFERENCES: { name: string; id: SectionId; key: NoteName; feel: FeelId; progressionId: string }[] = [
   { name: "G chorus, fast punk (brief §4 lifted path)", id: "chorus", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
-  { name: "G verse, fast punk (brief §7: G5 G5 D5 D5, shared A-string note)", id: "verse", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
-  { name: "G intro, fast punk", id: "intro", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
+  { name: "G verse, fast punk (v2: the progression's chords, sparse chugs)", id: "verse", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
+  { name: "G intro, fast punk (v2: the chorus's first two chords)", id: "intro", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
   { name: "A verse, fast punk (open strings)", id: "verse", key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV" },
-  { name: "E breakdown (half-time, dead strums, stop)", id: "breakdown", key: "E", feel: "fast-punk", progressionId: "I-V-vi-IV" },
+  { name: "E breakdown (v2: vi–IV, half-time, stop)", id: "breakdown", key: "E", feel: "fast-punk", progressionId: "I-V-vi-IV" },
   { name: "D intro, half-time", id: "intro", key: "D", feel: "half-time", progressionId: "I-V-vi-IV" },
   { name: "C chorus, half-time, I-IV-V (3 chords over 4 bars)", id: "chorus", key: "C", feel: "half-time", progressionId: "I-IV-V" },
   { name: "F# verse, mid-tempo", id: "verse", key: "F#", feel: "mid-tempo", progressionId: "I-V-vi-IV" },
   { name: "D# chorus, fast punk, vi-IV-I-V (high key)", id: "chorus", key: "D#", feel: "fast-punk", progressionId: "vi-IV-I-V" },
   { name: "B chorus, mid-tempo, I-V-IV-V", id: "chorus", key: "B", feel: "mid-tempo", progressionId: "I-V-IV-V" },
   { name: "G chorus, pop strum (let ring, pushes)", id: "chorus", key: "G", feel: "pop-strum", progressionId: "I-V-vi-IV" },
-  { name: "D verse, ballad (palm-muted quarters)", id: "verse", key: "D", feel: "ballad", progressionId: "I-V-vi-IV" },
+  { name: "D verse, ballad (palm-muted, sparse)", id: "verse", key: "D", feel: "ballad", progressionId: "I-V-vi-IV" },
+  { name: "A pre-chorus, fast punk (v2: IV–V climb into I)", id: "prechorus", key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV" },
+  { name: "E pre-chorus, pop strum, vi-IV-I-V (IV–V into vi)", id: "prechorus", key: "E", feel: "pop-strum", progressionId: "vi-IV-I-V" },
+  { name: "C breakdown, I-IV-V (no vi: IV–V)", id: "breakdown", key: "C", feel: "fast-punk", progressionId: "I-IV-V" },
+  { name: "G ending, fast punk (final hit, let ring)", id: "ending", key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV" },
 ];
 
 const fixturePath = join(process.cwd(), "scripts/fixtures/reference-tabs.json");
@@ -240,5 +282,7 @@ if (process.argv.includes("--update-fixtures")) {
 }
 for (const a of actual.slice(0, 2)) console.log(`\n${a.name}:\n${a.tab.join("\n")}`);
 
-console.log(`\nVoicing engine: ${renders} distinct section renders checked, covering 12 keys × ${progressions.length} progressions × ${FEELS.length} feels × 5 sections × ${SEEDS} seeds (only the Chorus depends on the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
+const arc = SECTION_IDS.filter((id) => id !== "solo").map((id) => `${id} ${(energySum[id]! / energyCount).toFixed(2)}`).join(", ");
+console.log(`\nVoicing engine: ${renders} section renders checked, covering 12 keys × ${progressions.length} progressions × ${FEELS.length} feels × ${SECTION_IDS.length} sections × ${SEEDS} seeds (every section follows the progression), ${shiftCount} recorded position shifts, ${REFERENCES.length} reference tabs.`);
+console.log(`Song plan: ${FORM_IDS.length} forms render for every key × progression × feel; Verse 2 adds its push in ${pushes} of ${energyCount} songs${pushes < energyCount ? " (the rest have no chord change to push into)" : ""}. Energy arc (mean): ${arc}; smallest chorus-over-verse lift ${lowestLift.toFixed(3)}.`);
 console.log("All voicing-engine checks passed.");

@@ -36,7 +36,7 @@ test.describe("active section", () => {
     await expect.poll(() => borderColor(page, "Verse")).not.toBe(plain);
     // The Chorus says which progression it plays (the red row in Power Chords).
     await expect(card(page, "Chorus")).toContainText("Chords: I-V-vi-IV");
-    await page.getByRole("button", { name: "Use vi-IV-I-V for the Chorus" }).click();
+    await page.getByRole("button", { name: "Use vi-IV-I-V for the song" }).click();
     await expect(card(page, "Chorus")).toContainText("Chords: vi-IV-I-V");
   });
 

@@ -39,7 +39,7 @@ test.describe("chords UX", () => {
     await page.getByRole("link", { name: "Open the Generator" }).click();
     await expect(page).toHaveURL(/\/generator\/$/);
     await expect(key(page, "C")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByRole("button", { name: "Use IV-I-V-vi for the Chorus" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Use IV-I-V-vi for the song" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("Chorus, key of C: ");
     await expect(page.locator('section[aria-label="Chorus"] p.sr-only')).toContainText("F5, C5, G5, A5.");
     await expect(page.locator('section[aria-label="Intro"]')).toContainText("4 bars · Hook melody");

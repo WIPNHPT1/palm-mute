@@ -20,7 +20,8 @@ import {
 } from "@/lib/generator";
 import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
-import { type PlaybackBar, progressionBars, sectionBars, songBars } from "@/lib/playback";
+import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
+import { type FormId, type FormSlot, DEFAULT_FORM, formSlots, timesFor } from "@/lib/songPlan";
 import { type OriginalityStatus, checkOriginality } from "@/lib/originalityCheck";
 
 type SectionState = {
@@ -43,6 +44,8 @@ export type GeneratorState = {
   feel: FeelId;
   midTempoBpm: number;
   progressionId: string;
+  /** The song's form (data/song-forms.json): its running order. No control for it yet (PRD R22, Phase 6). */
+  form: FormId;
   sections: Record<SectionId, SectionState>;
   originalityStatus: OriginalityStatus;
   /** What's playing, if anything: `progression:<id>`, `section:<id>`, `strum` or `song` (see PlayTarget). */
@@ -79,6 +82,7 @@ function initialState(): GeneratorState {
   }
   return {
     ...DEFAULTS,
+    form: DEFAULT_FORM,
     midTempoBpm: MID_TEMPO.default,
     sections,
     originalityStatus: "pass",
@@ -167,6 +171,8 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
 type GeneratorContextValue = {
   state: GeneratorState;
   rendered: Record<SectionId, RenderedSection>;
+  /** The song's running order: each part's slot and what it plays (repeats reuse their section's material). */
+  song: (SongPart & { slot: FormSlot })[];
   setKey: (key: NoteName) => void;
   setFeel: (feel: FeelId) => void;
   setMidTempoBpm: (bpm: number) => void;
@@ -183,9 +189,13 @@ type GeneratorContextValue = {
   playStrum: (feel: FeelId) => void;
   /** Starts the target, or stops it if it's the one playing. */
   togglePlay: (target: PlayTarget) => void;
+  /** Plays the song from one part of its running order (the strip's parts). */
+  playSongFrom: (part: number) => void;
   stopPlayback: () => void;
   /** The section sounding right now, if any (a section play, or wherever Play song has reached). */
   activeSection: SectionId | null;
+  /** While the song plays: the running-order part sounding now. */
+  activePart: number | null;
 };
 
 const GeneratorContext = createContext<GeneratorContextValue | null>(null);
@@ -198,6 +208,18 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     for (const id of SECTION_IDS) out[id] = renderSection(id, inputsFor(state, id));
     return out;
   }, [state]);
+
+  // A repeat plays its section's material; a declared variation (Verse 2's push) re-renders it from the
+  // same inputs, so locking a section locks every place it plays.
+  const song = useMemo(
+    () =>
+      formSlots(state.form).map((slot) => ({
+        slot,
+        section: slot.variation === "push" ? renderSection(slot.section, inputsFor(state, slot.section), "push") : rendered[slot.section],
+        times: timesFor(slot.variation),
+      })),
+    [state, rendered],
+  );
 
   const generate = useCallback(() => {
     const seeds: Partial<Record<SectionId, number>> = {};
@@ -214,11 +236,9 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   const regenerateSection = useCallback(
     (id: SectionId) => {
       if (state.sections[id].locked) return;
-      if (id === "chorus") {
-        dispatch({ type: "regenerate", id, seed: state.sections.chorus.seed, progressionId: nextProgressionId(state.progressionId) });
-      } else {
-        dispatch({ type: "regenerate", id, seed: nextSeed(id, inputsFor(state, id)) });
-      }
+      // Every section follows the progression now (Song Engine v2), so the Chorus's ↻ rewrites its
+      // rhythm and voicing like the others instead of swapping the progression under the whole song.
+      dispatch({ type: "regenerate", id, seed: nextSeed(id, inputsFor(state, id)) });
     },
     [state],
   );
@@ -228,15 +248,17 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   // and lock changes: whenever the bars for the playing target change, playback restarts with them.
   // Custom targets (Chords page previews) keep the bars they were started with.
   const customBars = useRef<PlaybackBar[]>([]);
+  /** The running-order part Play song starts from (the strip can start it anywhere). */
+  const songFrom = useRef(0);
   const barsFor = useCallback(
     (target: PlayTarget): PlaybackBar[] => {
       if (target.startsWith("custom:")) return customBars.current;
-      if (target === "song") return songBars(SECTION_IDS.map((id) => rendered[id]));
+      if (target === "song") return songBars(song.slice(songFrom.current));
       if (target.startsWith("section:")) return sectionBars(rendered[target.slice(8) as SectionId]);
       if (target === "strum") return progressionBars(state.key, state.progressionId, state.feel);
       return progressionBars(state.key, target.slice(12), state.feel);
     },
-    [rendered, state.key, state.feel, state.progressionId],
+    [rendered, song, state.key, state.feel, state.progressionId],
   );
 
   // A token guards against a slow async start() finishing after the user already hit stop.
@@ -248,29 +270,41 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   // The section card that's sounding right now (red border). A section's own play button lights its
   // card straight away; Play song moves the light card by card with the music.
   const [activeSection, setActiveSection] = useState<SectionId | null>(null);
-  const renderedRef = useRef(rendered);
-  renderedRef.current = rendered;
+  const [activePart, setActivePart] = useState<number | null>(null);
+  const songRef = useRef(song);
+  songRef.current = song;
 
   const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[], loop = target !== "song") => {
     const token = ++playToken.current;
-    let barSections: SectionId[] = [];
-    if (target === "song") barSections = SECTION_IDS.flatMap((id) => sectionBars(renderedRef.current[id]).map(() => id));
-    setActiveSection(target.startsWith("section:") ? (target.slice(8) as SectionId) : target === "song" ? "intro" : null);
+    let barParts: number[] = [];
+    const from = songFrom.current;
+    if (target === "song") barParts = songBarParts(songRef.current.slice(from)).map((i) => i + from);
+    const light = (part: number) => {
+      setActivePart(part);
+      setActiveSection(songRef.current[part].slot.section);
+    };
+    if (target === "song") light(from);
+    else {
+      setActivePart(null);
+      setActiveSection(target.startsWith("section:") ? (target.slice(8) as SectionId) : null);
+    }
     const ok = await audio.play({
       bars,
       bpm: bpmRef.current,
       loop,
-      onBar: target === "song" ? (i) => token === playToken.current && setActiveSection(barSections[i]) : undefined,
+      onBar: target === "song" ? (i) => token === playToken.current && light(barParts[i]) : undefined,
       onEnd: () => {
         if (token !== playToken.current) return;
         dispatch({ type: "setPlaying", target: null });
         setActiveSection(null);
+        setActivePart(null);
       },
     });
     if (token !== playToken.current) return;
     if (!ok) {
       dispatch({ type: "setPlaying", target: null });
       setActiveSection(null);
+      setActivePart(null);
     }
   }, []);
 
@@ -278,16 +312,27 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     playToken.current++;
     audio.stop();
     setActiveSection(null);
+    setActivePart(null);
     dispatch({ type: "setPlaying", target: null });
   }, []);
 
   const togglePlay = useCallback(
     (target: PlayTarget) => {
       if (state.playing === target) return stopPlayback();
+      if (target === "song") songFrom.current = 0;
       dispatch({ type: "setPlaying", target });
       void start(target, barsFor(target));
     },
     [state.playing, barsFor, start, stopPlayback],
+  );
+
+  const playSongFrom = useCallback(
+    (part: number) => {
+      songFrom.current = part;
+      dispatch({ type: "setPlaying", target: "song" });
+      void start("song", barsFor("song"));
+    },
+    [barsFor, start],
   );
 
   const playStrum = useCallback(
@@ -338,6 +383,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       rendered,
+      song,
       setKey: (key) => dispatch({ type: "setKey", key }),
       setFeel: (feel) => dispatch({ type: "setFeel", feel }),
       setMidTempoBpm: (bpm) => dispatch({ type: "setMidTempoBpm", bpm }),
@@ -351,10 +397,12 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       playCustom,
       playStrum,
       togglePlay,
+      playSongFrom,
       stopPlayback,
       activeSection,
+      activePart,
     }),
-    [state, rendered, generate, regenerateSection, togglePlay, stopPlayback, playCustom, playStrum, activeSection],
+    [state, rendered, song, generate, regenerateSection, togglePlay, playSongFrom, stopPlayback, playCustom, playStrum, activeSection, activePart],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;

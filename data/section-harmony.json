@@ -1,0 +1,25 @@
+{
+  "_note": "Song Engine v2 harmonic plan (docs/song-engine-v2-prd.md R6): which chords each section plays, as a rule over the chosen progression's degrees. Pure data, resolved by lib/songPlan.ts; the plan is a pure function of (progression, section). Rules: `progression` = the progression stretched to `bars` bars (a 3-chord loop holds its last chord); `pattern` = picks from the progression by index (`pick`, cycled over `bars`); `byChorusStart` = degrees chosen by the progression's first chord (`map`), so the section sets up the Chorus; `darkest` = the first `pairs` entry whose chords are both in the progression, cycled by `pick` over `bars`, else `fallback`; `fixed` = these degrees. `label` starts the card's plan line (\"Climb: IV-V\"). The Solo has no rule: the lead engine plays over the progression.",
+  "sections": {
+    "intro": { "label": "Chorus opener", "rule": "pattern", "bars": 4, "pick": [0, 1, 0, 1], "why": "The Chorus's first two chords: the intro sets up the hook" },
+    "verse": { "label": "Progression, sparser", "rule": "progression", "bars": 4, "why": "The progression's own chords, in a sparser palm-muted rhythm (owner call, 2026-09-30)" },
+    "prechorus": {
+      "label": "Climb",
+      "rule": "byChorusStart",
+      "bars": 4,
+      "map": { "I": ["IV", "IV", "V", "V"], "vi": ["IV", "IV", "V", "V"], "IV": ["vi", "vi", "V", "V"], "V": ["vi", "vi", "IV", "IV"] },
+      "why": "A climb into the Chorus's first chord: IV–V into I or vi; vi–V into IV; vi–IV into V"
+    },
+    "chorus": { "label": "Chords", "rule": "progression", "bars": 4, "why": "The chosen progression: the song's hook" },
+    "breakdown": {
+      "label": "Darkest two",
+      "rule": "darkest",
+      "bars": 4,
+      "pairs": [["vi", "IV"], ["vi", "V"], ["IV", "V"]],
+      "pick": [0, 1, 0, 1],
+      "fallback": ["I", "I", "I", "I"],
+      "why": "The progression's darkest two chords (vi first), else a tonic pedal"
+    },
+    "ending": { "label": "Home", "rule": "fixed", "degrees": ["I"], "why": "Home: one last tonic" }
+  }
+}

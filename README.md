@@ -49,7 +49,7 @@
 
 <table>
 <tr>
-<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/generator-dark.jpg"><img src="docs/readme/generator-light.jpg" alt="The Generator: key and feel controls, five section cards with real bar tabs, the Power Chords panel and the Rhythm Lane"></picture><p align="center"><b>Generator:</b> a whole song in one screen</p></td>
+<td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/generator-dark.jpg"><img src="docs/readme/generator-light.jpg" alt="The Generator: key and feel controls, the song's running order, seven section cards with real bar tabs, the Power Chords panel and the Rhythm Lane"></picture><p align="center"><b>Generator:</b> a whole song in one screen</p></td>
 <td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/chords-dark.jpg"><img src="docs/readme/chords-light.jpg" alt="The Chords page with I-V-vi-IV in G open, showing a Classic lead solo tab with bends, hammer-ons and slides"></picture><p align="center"><b>Chords:</b> write a solo over any progression</p></td>
 </tr>
 <tr>
@@ -125,9 +125,11 @@ Tab, audio and screen-reader text all come from **one** set of events, so what y
 ```text
 $ npm run verify
 All data-layer checks passed.
-Voicing engine: 42000 distinct section renders checked, covering 12 keys × 10 progressions × 5 feels
-× 5 sections × 50 seeds (only the Chorus depends on the progression), 0 recorded position shifts,
-12 reference tabs.
+Voicing engine: 210000 section renders checked, covering 12 keys × 10 progressions × 5 feels
+× 7 sections × 50 seeds (every section follows the progression), 0 recorded position shifts,
+16 reference tabs.
+Song plan: 2 forms render for every key × progression × feel; Verse 2 adds its push in 30000 of 30000
+songs. Energy arc (mean): … verse 0.26, prechorus 0.54, chorus 0.88 …
 All voicing-engine checks passed.
 Lead engine: 72000 leads checked (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds);
 95.5% of strong beats on chord notes; … brief §4 hook + 9 reference outputs.

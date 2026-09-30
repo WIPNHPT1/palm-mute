@@ -5,6 +5,7 @@ Palm/Mute writes pop-punk songs the way a guitarist would, and then **proves** i
 - [1. The fretboard in one paragraph](#1-the-fretboard-in-one-paragraph)
 - [2. Power chords: where on the neck](#2-power-chords-where-on-the-neck)
 - [3. Section recipes: how it's played](#3-section-recipes-how-its-played)
+- [3b. The song: plan, form and energy](#3b-the-song-plan-form-and-energy)
 - [4. Tabs](#4-tabs)
 - [5. Intro melodies and solos](#5-intro-melodies-and-solos)
 - [6. The proofs](#6-the-proofs)
@@ -79,13 +80,38 @@ Each bar is palm-muted (`pm`) or rings (`ring`). A recipe can also mark accents,
 
 | Section | Fast Punk | Half-Time | Mid-Tempo | Pop Strum | Ballad |
 |---|---|---|---|---|---|
-| Verse | `DDDDDDDD` P.M., accents on 1 and the "and" of 2 | `D..D..D.` P.M. | `.U.U.U.U` P.M. skank | `D.DU.UDU` P.M. | `D.D.D.D.` P.M. quarters |
+| Verse | `D.DDD.DD` P.M., sparse chugs, accents on 1 and 3 | `D..D..D.` P.M. | `.U.U.U.U` P.M. skank | `D..U.UD.` P.M. | `D...D.D.` P.M. |
+| Pre-chorus | `DDDDDDDD` P.M. ×2, then `D-D-D-D-` · `D-D-DDDD` let ring (a build) | `D..D..D.` ×2 → `D---D---` · `D---D-DD` | `.U.U.U.U` ×2 → `D-DUD-DU` · `D-DUDUDU` | `D.DU.UDU` ×2 → `D-DU-UDU` · `D-DUDUDU` | `D.D.D.D.` ×2 → `D---D---` · `D---D-D-` |
 | Chorus | `DDDDDDDD` let ring, pushes into bars 2 and 4 | `D--D--D-` | `D-DUD-DU` | `D-DU-UDU` | `D---D---` |
 | Breakdown | (always half-time) `D---D-xx` · `D---D---` · `D---D-xx` · `D.......` N.C. | | | | |
+| Ending | `D-------` one final hit, let ring (or `D.......` stopped), at the Chorus's height | | | | |
 
 Fast Punk and Half-Time share one 180 BPM click (the half-time feel is the drums, not the tempo). Mid-Tempo is adjustable (120–150). Pop Strum (150) and Ballad (80) have fixed tempos of their own.
 
 Recipe plus voicing path gives **bar-by-bar events**. The tab, the audio and the screen-reader sentence are all rendered from those same events.
+
+## 3b. The song: plan, form and energy
+
+`data/section-harmony.json` · `data/song-forms.json` · `data/energy.json` · `lib/songPlan.ts` (Song Engine v2, Phase 1)
+
+**One progression drives the whole song.** Each section's chords are a rule over the chosen progression, so a vi-IV-I-V song has a vi-IV-I-V verse:
+
+| Section | Rule | In I-V-vi-IV | In vi-IV-I-V | In I-IV-V |
+|---|---|---|---|---|
+| Intro | The Chorus's first two chords | I V I V | vi IV vi IV | I IV I IV |
+| Verse | The progression itself, sparser and palm-muted | I V vi IV | vi IV I V | I IV V V |
+| Pre-chorus | A climb into the Chorus's first chord | IV IV V V | IV IV V V | IV IV V V |
+| Chorus | The progression | I V vi IV | vi IV I V | I IV V V |
+| Breakdown | The darkest two chords (vi first), else a tonic pedal | vi IV vi IV | vi IV vi IV | IV V IV V |
+| Ending | Home | I | I | I |
+
+A 3-chord loop holds its last chord for the fourth bar. The Solo is the lead engine over the progression.
+
+**Forms.** The Generator shows the **Standard** form: Intro · Verse 1 · Pre-chorus · Chorus · Verse 2 · Pre-chorus · Chorus · Solo · Breakdown · Last chorus · Ending (57 bars, about 1:16 at 180 BPM). A **Short** form (no pre-chorus) is in the data for a later length control. Repeats reuse their section's material, with one declared variation each: **Verse 2 adds a push** (the next chord an eighth early at the first chord change after bar 1) and the **Last chorus plays twice**. Nothing else may differ, and verify checks it. Locking a section locks every place it plays.
+
+**Energy.** Each chord section gets a score from what its tab plays: sounding eighths, how much rings, 3-note shapes and how high on the neck (weights in `data/energy.json`). The Chorus must beat the Verse in every song. Mean over the sweep: Verse 0.26 → Pre-chorus 0.54 → Chorus 0.88. The smallest gap between Chorus and Verse anywhere is 0.40.
+
+**On the page** (option A from `docs/mockups/song-form.html`): a running-order strip sized by length (tap a part to play the song from there), and one card per part, in the order each first plays. A card lists every place it plays. Red is whatever is sounding now.
 
 ## 4. Tabs
 
@@ -120,8 +146,8 @@ Real bars, **2 per line**, with header rows for chord names, P.M./let ring spans
 
 | Suite | What it covers | Checks |
 |---|---|---|
-| Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel | All keys × feels × sections |
-| Voicing engine | Brief §11: right pitches and degrees, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus not below verse, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 42,000 distinct renders covering 12 keys × 10 progressions × 5 feels × 5 sections × 50 seeds, plus 12 hand-checked reference tabs |
+| Data layer | Progressions per key, sort, playback = card, spoken text, song titles, a strum, tempo and recipe rhythm for every feel, a plan for every progression × section, forms that start on the Intro and end on the Ending | All keys × feels × sections |
+| Voicing engine | Brief §11: right pitches and **degrees from the song's plan**, fret limit, stretch, allowed strings, no rare shapes, hand moves ≤ 5 frets, chorus above verse, **chorus energy above verse**, Verse 2 = Verse 1 + its push only, every form plays each part's material in order, aligned tabs, determinism, **audio = tab** (parsed back from the text), `chord-library.json` up to date | 210,000 renders covering 12 keys × 10 progressions × 5 feels × 7 sections × 50 seeds, plus 16 hand-checked reference tabs |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. It covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
@@ -134,6 +160,9 @@ Nothing musical is hard-coded:
 |---|---|
 | `data/engine-settings.json` | Move the chorus lift, tighten or loosen voice leading, make shapes more or less likely, change the fret limit |
 | `data/section-recipes.json` | Add rhythm variants, change which shapes a section may use |
+| `data/section-harmony.json` | Change which chords a section plays over the progression |
+| `data/song-forms.json` | Change the running order, or a repeat's variation |
+| `data/energy.json` | Reweight what makes a section feel bigger |
 | `data/lead-rules.json` | Change the melodic taste (steps vs leaps, chord notes on strong beats, the solo's arc, bends) |
 | `data/lead-rhythms.json` | Add rhythm cells for melodies and solos |
 

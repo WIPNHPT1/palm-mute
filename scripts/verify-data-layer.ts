@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import { chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
-import { FEEL_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns } from "@/lib/generator";
+import { FEEL_IDS, SECTION_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns, sectionTemplates } from "@/lib/generator";
+import { DEFAULT_FORM, FORM_IDS, formSlots, sectionDegrees } from "@/lib/songPlan";
 import { progressionBars } from "@/lib/playback";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
 
@@ -97,5 +98,30 @@ for (const t of TITLES) {
   for (let r = 0; r < 6; r++) assert.equal(new Set(shown.slice(r * 90, r * 90 + 90)).size, 90, `round ${r + 1} repeats a title`);
   for (let i = 1; i < shown.length; i++) assert.notEqual(shown[i], shown[i - 1], `back-to-back repeat at ${i}`);
 }
+
+// Song Engine v2 plan (data/section-harmony.json, data/song-forms.json): every section has a template and a
+// recipe (or is the lead Solo); every progression gets a plan for every chord section, using only its own
+// chords plus the classic set; every form starts on the Intro, ends on the Ending, and plays every section.
+for (const id of SECTION_IDS) {
+  assert.ok(sectionTemplates.some((t) => t.id === id), `${id}: no template`);
+  if (id !== "solo") assert.ok(recipes[id], `${id}: no recipe`);
+}
+assert.deepEqual(sectionTemplates.map((t) => t.id), SECTION_IDS, "templates list every section, in card order");
+for (const p of progressions)
+  for (const id of SECTION_IDS) {
+    if (id === "solo") continue;
+    const degrees = sectionDegrees(id, p.id);
+    assert.ok(degrees.length >= 1 && degrees.length <= 4, `${p.id} ${id}: ${degrees.length} bars`);
+    for (const d of degrees) assert.ok(["I", "IV", "V", "vi"].includes(d), `${p.id} ${id}: ${d} is outside the classic set`);
+    if (id === "verse" || id === "chorus" || id === "intro") for (const d of degrees) assert.ok(p.degrees.includes(d), `${p.id} ${id}: ${d} isn't in the progression`);
+  }
+for (const form of FORM_IDS) {
+  const slots = formSlots(form);
+  assert.equal(slots[0].section, "intro", `${form} starts on the Intro`);
+  assert.equal(slots.at(-1)!.section, "ending", `${form} ends on the Ending`);
+  for (const id of SECTION_IDS) if (form === "standard" || id !== "prechorus") assert.ok(slots.some((s) => s.section === id), `${form} never plays ${id}`);
+  assert.equal(new Set(slots.map((s) => s.name)).size, slots.length, `${form}: part names repeat`);
+}
+assert.equal(DEFAULT_FORM, "standard", "Standard is the default form (DECISIONS.md)");
 
 console.log("\nAll data-layer checks passed.");

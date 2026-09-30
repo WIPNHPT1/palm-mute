@@ -1,0 +1,4 @@
+{
+  "_note": "Section energy (docs/song-engine-v2-prd.md R8), a 0–1-ish score per chord section computed by lib/songPlan.ts from what the tab actually plays: `density` = sounding eighths per bar ÷ 8 (dead strums count half, let-ring cells that sustain count as sounding), `ring` = share of bars let ring (vs palm-muted), `notes` = share of 3-note shapes, `register` = average hand position ÷ 12. Verify asserts the Chorus beats the Verse for every key, progression, feel and seed, and reports the song's arc.",
+  "weights": { "density": 0.35, "ring": 0.35, "notes": 0.1, "register": 0.2 }
+}
