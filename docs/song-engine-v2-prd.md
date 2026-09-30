@@ -1,6 +1,6 @@
 # PRD: Song Engine v2 — the best pop-punk songs a guitarist can actually play
 
-**Status:** Draft for owner review · **Written:** 2026-09-30 · **Scope:** the generation engine only (what gets written), not page design.
+**Status:** Approved with changes (owner, 2026-09-30: see §9, §10 and `DECISIONS.md`) · **Written:** 2026-09-30 · **Scope:** the generation engine only (what gets written), not page design.
 
 This document is self-contained: a new Claude Code session should be able to pick it up cold. Read `CLAUDE.md` (safety rules, one PR per phase, build + lint + verify + e2e before every PR), `DECISIONS.md` (owner calls that override defaults) and `docs/HOW-IT-WORKS.md` (the current engine) first.
 
@@ -135,32 +135,39 @@ Keep: `progressions.json`, `feels.json`, `voicing-shapes.json`, `lead-*.json`. A
 
 1. **Verify (every build):** all v1 invariants + R1, R2, R5, R6, R7, R8, R13 as hard checks; distributions for R3, R4, R17 printed in the summary. Keep runtime ≤ ~2 minutes (sample seeds if the product grows too large; document the sampling).
 2. **Reference songs:** 10–15 hand-checked whole songs at seed 0 (spread across keys, feels, progressions, forms), stored as fixtures and diffed like today's reference tabs.
-3. **Guitarist review protocol:** before each phase merges, the owner (or a guitarist tester) plays 10 generated songs picked by a fixed seed list and scores each on the four questions in §4 (1–5). Target: median ≥ 4 on every question; zero "a chord reads wrong". Results go in the PR.
+3. **Guitarist review protocol:** before each phase merges, the owner (or a guitarist tester) plays 5 generated songs picked by a fixed seed list (plus the reference-song fixtures) and scores each on the four questions in §4 (1–5). Target: median ≥ 4 on every question; zero "a chord reads wrong". Results go in the PR.
 4. **Regression guard:** a fixed "hall of shame" list of every tab the owner has flagged (starting with the three from 2026-09-30) that must never reappear.
 
 ## 9. Delivery plan (one PR each, per `CLAUDE.md`)
 
+Reordered by the owner on 2026-09-30 (**audible first**): the biggest complaints (sections ignore the progression; no song form) ship first. The 2026-09-30 playable-tabs checks keep guarding against the known bad tabs in the meantime.
+
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| 1 Playability model | R1–R3, R5 (+ R4 rating, no UI) | Verify enforces mute plans and change speed; hall-of-shame passes; no reference tab gets harder |
-| 2 Harmonic plan + forms | R6–R9 | Every section follows the plan; Standard form renders; Play song plays the form |
-| 3 Best-of-N critic | R17–R19 | Critic scores reported; guitarist review median ≥ 4 |
-| 4 Grooves + riffs | R11–R13 (+ R14 if approved) | ≥ 6 grooves per role per feel; moving intro riffs proven |
+| 1 Harmonic plan + forms | R6–R9. **Short form first**; Standard becomes the default once the Generator's form layout is picked from a mock-up (§10 #9) | Every section follows the plan; Short form renders and Play song plays it; Standard form renders in verify |
+| 2 Playability model | R2 + R5 first, then R1, R3 (capped by difficulty) and the R4 rating (no UI) | Verify enforces change speed and mute plans; hall-of-shame passes; no reference tab gets harder |
+| 3 Best-of-N critic | R17–R19, **N = 4** to start, tuned after timing on a phone | Critic scores reported; guitarist review median ≥ 4 |
+| 4 Grooves + riffs | R11–R14 (16ths approved) | ≥ 6 grooves per role per feel; moving intro riffs proven; 16-cell bars in tab, audio and verify |
 | 5 Leads that know the song | R15–R16 | Motif thread in every song |
-| 6 Inputs | R20–R22 (+ R4 UI, R10) | Presets and difficulty change output measurably; e2e covers the controls |
+| 6 Inputs | R20–R22 + R4 UI (default Intermediate), R10 (presets only) | Presets and difficulty change output measurably; e2e covers the controls |
 
-Each phase: mock-up or listening page first where the change is audible (`docs/mockups/`), owner picks, then build; update `docs/HOW-IT-WORKS.md`, `DECISIONS.md` and the README numbers.
+Each phase: mock-up or listening page first where the change is audible (`docs/mockups/`), owner picks, then build; update `docs/HOW-IT-WORKS.md`, `DECISIONS.md` and the README numbers. `data/grooves.json` carries a `cells: 8 | 16` field from its first version. Guitarist review (§8.3): **5 songs per phase** from a fixed seed list plus the reference-song fixtures.
 
-## 10. Open decisions for the owner (recommended defaults in **bold**)
+## 10. Decisions (resolved by the owner, 2026-09-30)
 
-1. Song form default: **Standard with an ending** / Short / keep today's five sections.
-2. Verse harmony: **the progression's own chords in a sparser rhythm** / a related loop (different order) / keep `I I V V`.
-3. 16th-note grid for gallops and fills: **yes, in Phase 4** / not in v2.
-4. Difficulty input: **yes, default Intermediate** / rating only, no input.
-5. Best-of-N size: **N = 8** (tune for phone speed) / other.
-6. Style presets: **three (Skate punk, 2000s pop-punk, Emo)** / none in v2.
-7. Last-chorus key change: **off by default, available in presets** / never.
-8. Open D5 as the 3-note `x-x-0-2-3` shape (currently excluded by the "standard shapes only" rule because its octave sits on the B string): **allow for open-key intros and ringing chords only** / keep excluded.
+| # | Question | Answer |
+|---|---|---|
+| 1 | Song form default | **Short first, then Standard with an ending** as the default once the form layout (#9) is picked |
+| 2 | Verse harmony | **The progression's own chords in a sparser rhythm** |
+| 3 | 16th-note grid | **Yes, in Phase 4**; groove data has a `cells` field from day one |
+| 4 | Difficulty input | **Yes, default Intermediate** |
+| 5 | Best-of-N size | **N = 4 to start**; final N set after timing a Standard song on a mid-range phone |
+| 6 | Style presets | **Three: Skate punk, 2000s pop-punk, Emo** |
+| 7 | Last-chorus key change | **Off by default, available in presets** |
+| 8 | Open D5 `x-x-0-2-3` | **Allowed for open-key intros and ringing chords only, once R1 proves the low E and A are muted**; excluded until then |
+| 9 | Generator layout for longer forms | **Open: decided from a Phase 1 mock-up** (e.g. cards for unique sections + a form strip, vs. a card per section) |
+| 10 | Locking and repeats (R19) | **Default:** locking a section locks all its repeats (V1 and V2 are one section with a declared variation); a locked section keeps its degrees when the plan changes (v1 "frozen once locked"). Confirm in the Phase 1 mock-up |
+| 11 | Picking-hand load (R3) | **Capped by difficulty**, not globally: long all-down eighth runs are the genre |
 
 ## 11. Risks
 
