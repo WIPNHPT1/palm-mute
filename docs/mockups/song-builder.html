@@ -79,6 +79,41 @@
   .badge { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 7px 14px 7px 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
   .badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
 
+
+  /* ---- "How to use" guide (components/PageGuide.tsx + app/globals.css, the owner's "Setlist posters"), new text for the song builder ---- */
+  .guide { display: flex; flex-direction: column; gap: 8px; }
+  .guide-posters { list-style: none; margin: 0; padding: 8px 0 4px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 22px); }
+  @media (max-width: 1279px) { .guide-posters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .guide-poster { --fg: currentColor; position: relative; overflow: hidden; border-radius: 12px; padding: 18px 20px 20px; min-height: 196px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; box-shadow: 0 2px 4px rgb(23 19 16 / .05), 0 30px 60px -30px rgb(23 19 16 / .35); }
+  :root.dark .guide-poster, :root[data-theme="dark"] .guide-poster { box-shadow: 0 2px 4px rgb(0 0 0 / .4), 0 30px 60px -30px rgb(0 0 0 / .8); }
+  .guide-poster::after { content: ""; position: absolute; right: -24px; bottom: -24px; width: 55%; aspect-ratio: 1; border-radius: 50%; background-image: radial-gradient(circle, currentColor 1.3px, transparent 1.8px); background-size: 9px 9px; opacity: .2; -webkit-mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); pointer-events: none; }
+  .guide-tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; opacity: .85; }
+  .guide-no { position: absolute; top: 10px; right: 16px; font-family: var(--font-display); font-size: 72px; line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--fg); opacity: .8; }
+  .guide-poster > div { position: relative; z-index: 1; }
+  .guide-title { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; text-transform: uppercase; font-size: clamp(19px, 1.6vw, 24px); line-height: 1.02; }
+  .guide-body { margin: 0; font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+  .guide-body b { font-weight: 700; }
+  .guide-ink { --fg: var(--text-on-dark); background: var(--ink); color: var(--text-on-dark); rotate: -1.2deg; }
+  .guide-ink .guide-body { color: var(--text-on-dark-muted); }
+  :root.dark .guide-ink, :root[data-theme="dark"] .guide-ink { border: 1px solid var(--line-strong); }
+  .guide-red { --fg: var(--text-on-accent); background: var(--accent); color: var(--text-on-accent); rotate: .9deg; }
+  .guide-outline { --fg: var(--text-primary); border: 1.5px solid var(--text-primary); background: var(--surface); color: var(--text-primary); rotate: -.6deg; }
+  .guide-outline .guide-body { color: var(--text-secondary); }
+  .guide-brass { --fg: #171310; background: var(--brass); color: #171310; rotate: 1deg; }
+  @media (max-width: 560px) {
+    .guide-posters { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .guide-poster { min-height: 0; gap: 10px; padding: 16px 18px 18px; }
+    .guide-no { font-size: 52px; top: 12px; }
+  }
+  .guide-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+  .guide-sig { display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; color: var(--text-faint); }
+  .guide-sig::before { content: ""; width: 40px; height: 2px; background: var(--accent); }
+  .guide-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-muted); cursor: pointer; }
+  .guide-toggle:hover { color: var(--text-primary); }
+  .guide-show { display: none; align-self: flex-start; margin-top: -8px; }
+  :root.guide-hidden .guide-posters, :root.guide-hidden .guide-foot { display: none; }
+  :root.guide-hidden .guide-show { display: inline-flex; }
+
   /* ---- ControlCard ---- */
   .cc { display: flex; flex-direction: column; gap: 9px; border: 1px solid var(--line); border-radius: var(--r-outer); background: var(--surface); padding: 14px 16px; min-width: 0; }
   @media (min-width: 834px) { .cc { padding: 14px 18px; } }
@@ -399,6 +434,25 @@
     <div class="badge"><i></i>CHORD PATTERNS ONLY · NO TABS STORED</div>
   </div>
 
+
+  <!-- "How to use": the same four posters, new text for the song builder -->
+  <section class="guide" aria-label="How to use the song generator">
+    <ol class="guide-posters">
+      <li class="guide-poster guide-ink"><span class="guide-tag">STEP 01</span><span class="guide-no" aria-hidden="true">01</span><div><h2 class="guide-title">Set up</h2><p class="guide-body">Pick a <b>key</b>, a <b>feel</b>, the <b>chords</b> and how <b>long</b> the song runs, from 2:30 to 5:30.</p></div></li>
+      <li class="guide-poster guide-red"><span class="guide-tag">STEP 02</span><span class="guide-no" aria-hidden="true">02</span><div><h2 class="guide-title">Build</h2><p class="guide-body"><b>BUILD SONG</b> writes every part as real power-chord tabs, sized to fit your length.</p></div></li>
+      <li class="guide-poster guide-outline"><span class="guide-tag">STEP 03</span><span class="guide-no" aria-hidden="true">03</span><div><h2 class="guide-title">Shape each part</h2><p class="guide-body">Open a part's <b>Options</b> to change its rhythm, style, bars or drums. <b>Lock</b> what you love; ↻ tries a new take.</p></div></li>
+      <li class="guide-poster guide-brass"><span class="guide-tag">STEP 04</span><span class="guide-no" aria-hidden="true">04</span><div><h2 class="guide-title">Take it away</h2><p class="guide-body">Practise with <b>loop</b> and <b>speed</b>, then download the <b>PDF</b> songbook or <b>MIDI</b>, or copy a link.</p></div></li>
+    </ol>
+    <div class="guide-foot">
+      <span class="guide-sig">YOUR KEY · YOUR LENGTH · EVERY PART</span>
+      <button type="button" class="guide-toggle" id="guideHide" aria-expanded="true">HIDE THE GUIDE <span aria-hidden="true">✕</span></button>
+    </div>
+    <button type="button" class="guide-toggle guide-show" id="guideShow" aria-expanded="false">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.6v.1" stroke-linecap="round"/></svg>
+      HOW TO USE
+    </button>
+  </section>
+
   <!-- Setup: four ControlCards -->
   <section class="setup" id="setup" aria-label="Set up your song">
     <div class="setup-row two">
@@ -533,6 +587,18 @@
     document.documentElement.classList.toggle("dark", on);
     document.documentElement.classList.toggle("light", !on);
   });
+
+
+  // Guide: hiding is remembered under a new key, so anyone who hid the old guide sees the new text once
+  const GUIDE_KEY = "palm-mute-guide-generator-v2";
+  const setGuide = (hide, save) => {
+    document.documentElement.classList.toggle("guide-hidden", hide);
+    $("#guideHide").setAttribute("aria-expanded", String(!hide)); $("#guideShow").setAttribute("aria-expanded", String(!hide));
+    if (save) try { localStorage.setItem(GUIDE_KEY, hide ? "hidden" : "shown"); } catch {}
+  };
+  try { if (localStorage.getItem(GUIDE_KEY) === "hidden") setGuide(true, false); } catch {}
+  $("#guideHide").addEventListener("click", () => setGuide(true, true));
+  $("#guideShow").addEventListener("click", () => setGuide(false, true));
 
   // ---------- Setup ----------
   // KeyPicker order starts at A (components/KeyPicker.tsx)

@@ -98,7 +98,20 @@ Changing Key/Feel/Chords/Length after a build re-builds **unlocked** sections (l
 
   Hard rules (asserted, not eyeballed): no sideways page scroll; nothing scrolls sideways inside a card; every control ≥ 44×44px; no text under 12px (tab art excepted, but tab text is constant size); nothing clipped; the page's bottom padding follows the transport's measured height so the last content is never hidden; a section's options panel and the export cards stay usable at 320px.
 
-### 5.5 Folded in from v2 Phase 6 (P1)
+### 5.5 "How to use" guide (P0)
+
+- **B13** The Generator keeps its **Setlist posters** guide (`components/PageGuide.tsx`, owner's pick): same four posters, colours, tilt and "Hide the guide", with **new text** for the song builder (owner, 2026-09-30):
+
+| Step | Poster | Title | Text |
+|---|---|---|---|
+| 01 | ink | Set up | Pick a **key**, a **feel**, the **chords** and how **long** the song runs, from 2:30 to 5:30. |
+| 02 | red | Build | **BUILD SONG** writes every part as real power-chord tabs, sized to fit your length. |
+| 03 | outlined | Shape each part | Open a part's **Options** to change its rhythm, style, bars or drums. **Lock** what you love; ↻ tries a new take. |
+| 04 | brass | Take it away | Practise with **loop** and **speed**, then download the **PDF** songbook or **MIDI**, or copy a link. |
+
+  Signature line: **YOUR KEY · YOUR LENGTH · EVERY PART**. The guide stays full size after BUILD SONG. **Shown once more to people who hid the old guide:** the Generator's saved key becomes `palm-mute-guide-generator-v2` (`lib/guide.ts`, still applied before first paint); Chords keeps its key. Lands in phase 1 with the setup; later phases update the text only if they change what a step does. Covered by the B12 responsive gate (4 → 2 → 1 posters at 1280 / 560px).
+
+### 5.6 Folded in from v2 Phase 6 (P1)
 
 - **B10 Difficulty** (Beginner / Intermediate / Advanced, default Intermediate) in the setup row — already decided in DECISIONS.md; it caps picking load and filters grooves.
 - **B11 Style presets** (Skate punk / 2000s pop-punk / Emo) — decided; optional chip row above Key that pre-sets feel, grooves and form weights. *Can be deferred if the build runs long.*
@@ -169,7 +182,7 @@ One branch and PR per phase, **stacked** (each branches from the previous, since
 | # | Branch | Scope | Exit criteria |
 |---|---|---|---|
 | 0 | `fix/solo-keeps-its-thread` | Move the uncommitted Solo-thread follow-up onto a fresh branch from `main` and open its own PR (PR #40 is already merged) | e2e critic spec passes |
-| 1 | `feature/song-builder-setup` | B1–B4, new forms, length engine | Every (feel × 2:30…5:30 step) lands within tolerance in verify; e2e drives the slider |
+| 1 | `feature/song-builder-setup` | B1–B4, new forms, length engine, B13 guide text | Every (feel × 2:30…5:30 step) lands within tolerance in verify; e2e drives the slider |
 | 2 | `feature/full-width-sections` | B5–B7, §6 panels, new Ending grooves | Every option renders playable tabs in every feel (verify sweep); ↻ still changes only its own section; no sideways scroll 320–1920 |
 | 3 | `feature/midi-export` | B9, lanes, drums, derived parts | SMF parses (round-trip test), every note in its lane, markers match form, length matches the card times |
 | 4 | `feature/pdf-export` | B8 | PDF generated in e2e for 3 songs, page count sane, fonts embedded, text extractable |
