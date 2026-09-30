@@ -5,7 +5,6 @@ import { feel, lastPlayback } from "./helpers";
 // Five feels (DECISIONS.md): Fast Punk, Half-Time, Mid-Tempo, Pop Strum and Ballad, with five
 // Power Chords rows and five Rhythm Lane cards to match.
 
-const FEELS = [/FAST PUNK/, /HALF-TIME/, /MID-TEMPO/, /POP STRUM/, /BALLAD/];
 const lane = (page: Page) => page.getByRole("heading", { name: "RHYTHM LANE" }).locator("xpath=../..");
 const powerChords = (page: Page) => page.getByRole("heading", { name: "POWER CHORDS" }).locator("xpath=../..");
 

@@ -5,6 +5,7 @@ import { ControlCard } from "@/components/ControlCard";
 import { FeelToggle } from "@/components/FeelToggle";
 import { KeyPicker } from "@/components/KeyPicker";
 import { type GuideStep, PageGuide } from "@/components/PageGuide";
+import { OriginalityBadge } from "@/components/OriginalityBadge";
 import { PageHeader } from "@/components/PageHeader";
 import { ProgressionPanel } from "@/components/ProgressionPanel";
 import { ProgressionRow } from "@/components/ProgressionRow";
@@ -50,7 +51,7 @@ export default function ChordsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
-      <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" />
+      <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" aside={<OriginalityBadge />} />
       <PageGuide page="chords" label="How to use the Chords page" steps={GUIDE} signature="6 PROGRESSIONS · 12 KEYS · INTROS + SOLOS" />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:gap-[12px] desktop:items-stretch">
