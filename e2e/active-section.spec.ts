@@ -1,8 +1,8 @@
 import { type Page } from "@playwright/test";
 import { expect, onlyAtWidths, test } from "./fixtures";
 
-// Red on a section card means "sounding now" (DECISIONS.md), like the red Power Chords row and Rhythm
-// Lane card mean "in use". It follows Play song card by card, and nothing is red when nothing plays.
+// Red on a section card means "sounding now" (DECISIONS.md), like the red progression row in the setup
+// means "in use". It follows Play song card by card, and nothing is red when nothing plays.
 const card = (page: Page, label: string) => page.locator(`section[aria-label="${label}"]`);
 const active = (page: Page) =>
   page.locator("section[aria-label][data-active='true']").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
@@ -34,7 +34,7 @@ test.describe("active section", () => {
     // (after the border's 0.2s colour transition)
     const plain = await borderColor(page, "Intro");
     await expect.poll(() => borderColor(page, "Verse")).not.toBe(plain);
-    // The Chorus says which progression it plays (the red row in Power Chords).
+    // The Chorus says which progression it plays (the red row in the setup's Chords step).
     await expect(card(page, "Chorus")).toContainText("Chords: I-V-vi-IV");
     await page.getByRole("button", { name: "Use vi-IV-I-V for the song" }).click();
     await expect(card(page, "Chorus")).toContainText("Chords: vi-IV-I-V");
@@ -49,7 +49,7 @@ test.describe("active section", () => {
     await expect.poll(() => active(page)).toEqual(["Chorus"]);
     await card(page, "Chorus").getByRole("button", { name: "Stop Chorus" }).click();
     await expect.poll(() => active(page)).toEqual([]);
-    // Playing a Power Chords row isn't a section: no card lights up.
+    // Playing a progression row isn't a section: no card lights up.
     await page.getByRole("button", { name: "Play I-V-vi-IV" }).click();
     await page.waitForTimeout(300);
     expect(await active(page)).toEqual([]);
@@ -59,8 +59,10 @@ test.describe("active section", () => {
     test.slow();
     await page.getByRole("button", { name: "PLAY SONG" }).click();
     await expect.poll(() => active(page)).toEqual(["Intro"]);
-    // The Intro is 4 bars at 180 BPM (about 5.3 seconds); then the Verse lights up.
-    await expect.poll(() => active(page), { timeout: 15_000 }).toEqual(["Verse"]);
+    // Play from Pre-chorus 1 (8 bars at 180 BPM, about 10.7 seconds at the default length); then the Chorus lights up.
+    await page.getByRole("navigation", { name: "Song running order" }).getByRole("button", { name: /^Play the song from Pre-chorus 1 / }).click();
+    await expect.poll(() => active(page)).toEqual(["Pre-chorus"]);
+    await expect.poll(() => active(page), { timeout: 15_000 }).toEqual(["Chorus"]);
     await page.getByRole("button", { name: "STOP SONG" }).click();
     await expect.poll(() => active(page)).toEqual([]);
   });

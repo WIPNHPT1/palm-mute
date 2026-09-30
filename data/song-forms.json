@@ -1,40 +1,317 @@
 {
-  "_note": "Song forms (docs/song-engine-v2-prd.md R7): the running order of a song, as section ids from data/song-section-templates.json. A section that plays more than once reuses its material; `variation` names a controlled change from `variations` (the only difference verify allows between repeats). `default` is the form the Generator shows (owner call, 2026-09-30: Standard with an ending, once the form layout was picked).",
+  "_note": "Song forms (docs/song-engine-v2-prd.md R7) and the song-length plan (docs/song-builder-prd.md B2–B3). A form is the song's running order, as section ids from data/song-section-templates.json. A section that plays more than once reuses its material; `variation` names a controlled change from `variations` (the only difference verify allows between repeats). Each slot plays its section's material `times` times in a row, between `min` and `max`. lib/songLength.ts picks the form and every slot's `times` for a target length at the feel's tempo: it grows each form from its minimum one step at a time, in `growth` order (a step adds one more time to every slot with that `grow` tag that can still grow), keeps the step closest to the target, then nudges single slots tagged `fine` up or down one time at a time while that brings it closer (so the plan isn't stuck on the coarse steps). Among forms that land within `toleranceBars`, it keeps the cheapest by `formCost` + `stepCost` × steps + the miss in bars (so a longer song gets a fuller form before it gets more repeats); if none lands that close, the closest. Standard is the form at the default length (3:15).",
   "default": "standard",
+  "length": {
+    "_note": "The Length slider, in seconds (owner, 2026-09-30: 2:30 to 5:30).",
+    "min": 150,
+    "max": 330,
+    "step": 15,
+    "default": 195
+  },
+  "toleranceBars": 4,
+  "stepCost": 0.5,
+  "formCost": {
+    "short": 6,
+    "standard": 0,
+    "extended": 10
+  },
+  "growth": [
+    "chorus",
+    "last",
+    "verse",
+    "solo",
+    "intro",
+    "break",
+    "pre",
+    "reprise",
+    "chorus",
+    "last",
+    "solo",
+    "intro",
+    "break",
+    "reprise",
+    "chorus",
+    "last",
+    "verse",
+    "solo",
+    "intro",
+    "break",
+    "reprise",
+    "verse"
+  ],
   "variations": {
-    "push": { "label": "adds a push", "_note": "The next chord arrives an eighth early at the first chord change after bar 1 (where the section has no push already)." },
-    "double": { "label": "played twice", "_note": "The whole section plays twice in a row." }
+    "push": {
+      "label": "adds a push",
+      "_note": "The next chord arrives an eighth early at the first chord change after bar 1 (where the section has no push already)."
+    }
   },
   "forms": {
     "short": {
       "label": "Short",
       "slots": [
-        { "section": "intro", "name": "Intro" },
-        { "section": "verse", "name": "Verse 1" },
-        { "section": "chorus", "name": "Chorus 1" },
-        { "section": "verse", "name": "Verse 2", "variation": "push" },
-        { "section": "chorus", "name": "Chorus 2" },
-        { "section": "solo", "name": "Solo" },
-        { "section": "breakdown", "name": "Breakdown" },
-        { "section": "chorus", "name": "Last chorus", "variation": "double" },
-        { "section": "ending", "name": "Ending" }
+        {
+          "section": "intro",
+          "name": "Intro",
+          "min": 1,
+          "max": 4,
+          "grow": "intro"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 1",
+          "min": 1,
+          "max": 2,
+          "grow": "verse"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 1",
+          "min": 1,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 2",
+          "variation": "push",
+          "min": 1,
+          "max": 2,
+          "grow": "verse"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 2",
+          "min": 1,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "solo",
+          "name": "Solo",
+          "min": 1,
+          "max": 2,
+          "grow": "solo"
+        },
+        {
+          "section": "breakdown",
+          "name": "Breakdown",
+          "min": 1,
+          "max": 2,
+          "grow": "break"
+        },
+        {
+          "section": "chorus",
+          "name": "Last chorus",
+          "min": 2,
+          "max": 4,
+          "grow": "last"
+        },
+        {
+          "section": "ending",
+          "name": "Ending",
+          "min": 1,
+          "max": 1
+        }
       ]
     },
     "standard": {
       "label": "Standard",
       "slots": [
-        { "section": "intro", "name": "Intro" },
-        { "section": "verse", "name": "Verse 1" },
-        { "section": "prechorus", "name": "Pre-chorus 1" },
-        { "section": "chorus", "name": "Chorus 1" },
-        { "section": "verse", "name": "Verse 2", "variation": "push" },
-        { "section": "prechorus", "name": "Pre-chorus 2" },
-        { "section": "chorus", "name": "Chorus 2" },
-        { "section": "solo", "name": "Solo" },
-        { "section": "breakdown", "name": "Breakdown" },
-        { "section": "chorus", "name": "Last chorus", "variation": "double" },
-        { "section": "ending", "name": "Ending" }
+        {
+          "section": "intro",
+          "name": "Intro",
+          "min": 1,
+          "max": 4,
+          "grow": "intro"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 1",
+          "min": 1,
+          "max": 2,
+          "grow": "verse"
+        },
+        {
+          "section": "prechorus",
+          "name": "Pre-chorus 1",
+          "min": 1,
+          "max": 2,
+          "grow": "pre"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 1",
+          "min": 1,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 2",
+          "variation": "push",
+          "min": 1,
+          "max": 2,
+          "grow": "verse"
+        },
+        {
+          "section": "prechorus",
+          "name": "Pre-chorus 2",
+          "min": 1,
+          "max": 2,
+          "grow": "pre"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 2",
+          "min": 1,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "solo",
+          "name": "Solo",
+          "min": 1,
+          "max": 2,
+          "grow": "solo"
+        },
+        {
+          "section": "breakdown",
+          "name": "Breakdown",
+          "min": 1,
+          "max": 4,
+          "grow": "break"
+        },
+        {
+          "section": "chorus",
+          "name": "Last chorus",
+          "min": 2,
+          "max": 4,
+          "grow": "last"
+        },
+        {
+          "section": "ending",
+          "name": "Ending",
+          "min": 1,
+          "max": 1
+        }
+      ]
+    },
+    "extended": {
+      "label": "Extended",
+      "slots": [
+        {
+          "section": "intro",
+          "name": "Intro",
+          "min": 1,
+          "max": 4,
+          "grow": "intro"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 1",
+          "min": 1,
+          "max": 3,
+          "grow": "verse"
+        },
+        {
+          "section": "prechorus",
+          "name": "Pre-chorus 1",
+          "min": 1,
+          "max": 2,
+          "grow": "pre"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 1",
+          "min": 2,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "intro",
+          "name": "Intro reprise",
+          "min": 1,
+          "max": 4,
+          "grow": "reprise"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 2",
+          "variation": "push",
+          "min": 1,
+          "max": 3,
+          "grow": "verse"
+        },
+        {
+          "section": "prechorus",
+          "name": "Pre-chorus 2",
+          "min": 1,
+          "max": 2,
+          "grow": "pre"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 2",
+          "min": 2,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "solo",
+          "name": "Solo",
+          "min": 1,
+          "max": 4,
+          "grow": "solo"
+        },
+        {
+          "section": "breakdown",
+          "name": "Breakdown",
+          "min": 1,
+          "max": 4,
+          "grow": "break"
+        },
+        {
+          "section": "verse",
+          "name": "Verse 3",
+          "min": 1,
+          "max": 3,
+          "grow": "verse"
+        },
+        {
+          "section": "prechorus",
+          "name": "Pre-chorus 3",
+          "min": 1,
+          "max": 2,
+          "grow": "pre"
+        },
+        {
+          "section": "chorus",
+          "name": "Chorus 3",
+          "min": 2,
+          "max": 4,
+          "grow": "chorus"
+        },
+        {
+          "section": "chorus",
+          "name": "Last chorus",
+          "min": 2,
+          "max": 6,
+          "grow": "last"
+        },
+        {
+          "section": "ending",
+          "name": "Ending",
+          "min": 1,
+          "max": 1
+        }
       ]
     }
-  }
+  },
+  "fine": [
+    "intro",
+    "reprise",
+    "break",
+    "last",
+    "solo"
+  ]
 }

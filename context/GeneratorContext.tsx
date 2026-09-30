@@ -13,7 +13,6 @@ import {
   MID_TEMPO,
   SECTION_IDS,
   getTemplate,
-  nextProgressionId,
   nextSeed,
   playbackBpm,
   renderSection,
@@ -22,7 +21,9 @@ import {
 import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
 import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
-import { type FormId, type FormSlot, DEFAULT_FORM, formSlots, timesFor } from "@/lib/songPlan";
+import type { FormSlot } from "@/lib/songPlan";
+import { type SongPlan, LENGTH, planSong } from "@/lib/songLength";
+import { TITLES, titleBag } from "@/lib/titleGenerator";
 import { type Fixed, bestSectionTake, bestSong } from "@/lib/critic";
 import type { SongThread } from "@/lib/generator";
 import { type OriginalityStatus, checkOriginality } from "@/lib/originalityCheck";
@@ -52,8 +53,13 @@ export type GeneratorState = {
   feel: FeelId;
   midTempoBpm: number;
   progressionId: string;
-  /** The song's form (data/song-forms.json): its running order. No control for it yet (PRD R22, Phase 6). */
-  form: FormId;
+  /**
+   * How long the song should run, in seconds (the Length slider, 2:30–5:30). The form and every part's
+   * repeats follow from it at the feel's tempo (lib/songLength.ts).
+   */
+  lengthSec: number;
+  /** The song's title (the title generator's shuffle bag deals a new one on every BUILD SONG). */
+  title: string;
   /** GENERATE's song seed: the critic's best of N takes for it (data/critic.json). The page opens on song 0. */
   songSeed: number;
   sections: Record<SectionId, SectionState>;
@@ -72,7 +78,8 @@ type Action =
   | { type: "setKey"; key: NoteName }
   | { type: "setFeel"; feel: FeelId }
   | { type: "setMidTempoBpm"; bpm: number }
-  | { type: "generate"; seeds: Partial<Record<SectionId, number>>; progressionId: string; songSeed: number; originality: OriginalityStatus }
+  | { type: "generate"; seeds: Partial<Record<SectionId, number>>; songSeed: number; originality: OriginalityStatus; title: string }
+  | { type: "setLength"; seconds: number }
   | { type: "regenerate"; id: SectionId; seed: number; progressionId?: string }
   | { type: "toggleLock"; id: SectionId }
   | { type: "setProgression"; progressionId: string }
@@ -94,7 +101,8 @@ function initialState(): GeneratorState {
   }
   return rethread({
     ...DEFAULTS,
-    form: DEFAULT_FORM,
+    lengthSec: LENGTH.default,
+    title: TITLES[0],
     songSeed: 0,
     midTempoBpm: MID_TEMPO.default,
     sections,
@@ -142,8 +150,10 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         if (sections[id].locked) continue;
         sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed, lead: ownLead(sections[id].lead) };
       }
-      return rethread({ ...state, sections, progressionId: action.progressionId, songSeed: action.songSeed, originalityStatus: action.originality });
+      return rethread({ ...state, sections, songSeed: action.songSeed, originalityStatus: action.originality, title: action.title });
     }
+    case "setLength":
+      return { ...state, lengthSec: Math.min(LENGTH.max, Math.max(LENGTH.min, action.seconds)) };
     case "regenerate": {
       const s = state.sections[action.id];
       if (s.locked) return state; // locked = don't touch, full stop
@@ -211,6 +221,11 @@ type GeneratorContextValue = {
   rendered: Record<SectionId, RenderedSection>;
   /** The song's running order: each part's slot and what it plays (repeats reuse their section's material). */
   song: (SongPart & { slot: FormSlot })[];
+  /** The length plan behind it: the form, each part's repeats, and the length in bars and seconds. */
+  plan: SongPlan;
+  /** The playback tempo for the page's feel. */
+  bpm: number;
+  setLength: (seconds: number) => void;
   setKey: (key: NoteName) => void;
   setFeel: (feel: FeelId) => void;
   setMidTempoBpm: (bpm: number) => void;
@@ -247,23 +262,30 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     return out;
   }, [state]);
 
+  // The length plan (lib/songLength.ts): the form and each part's repeats for the Length slider at this tempo.
+  const bpm = playbackBpm(state.feel, state.midTempoBpm);
+  const plan = useMemo(
+    () => planSong(state.lengthSec, bpm, (id) => rendered[id].bars.length * rendered[id].repeat),
+    [state.lengthSec, bpm, rendered],
+  );
+
   // A repeat plays its section's material; a declared variation (Verse 2's push) re-renders it from the
   // same inputs, so locking a section locks every place it plays.
   const song = useMemo(
     () =>
-      formSlots(state.form).map((slot) => ({
+      plan.slots.map((slot) => ({
         slot,
         section: slot.variation === "push" ? renderSection(slot.section, inputsFor(state, slot.section), "push") : rendered[slot.section],
-        times: timesFor(slot.variation),
+        times: slot.times,
       })),
-    [state, rendered],
+    [state, rendered, plan],
   );
 
-  // GENERATE (R18): a new progression (unless the Chorus is locked), then the critic's best of N takes of the
-  // song for the next song seed. Locked sections, and parts carrying a lead line, keep their own inputs.
+  // BUILD SONG (R18): the critic's best of N takes of the song on the chosen progression, for the next song
+  // seed, and a new title. Locked sections, and parts carrying a lead line, keep their own inputs.
   const generate = useCallback(() => {
     const started = performance.now();
-    const progressionId = state.sections.chorus.locked ? state.progressionId : nextProgressionId(state.progressionId);
+    const progressionId = state.progressionId;
     const songSeed = state.songSeed + 1;
     const fixed: Fixed = {};
     const current: Partial<Record<SectionId, number>> = {};
@@ -285,7 +307,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     );
     // How long the critic took (e2e/critic.spec.ts holds it under the PRD's ~100 ms on a throttled CPU).
     (window as Window & { __palmMuteGenerateMs?: number }).__palmMuteGenerateMs = performance.now() - started;
-    dispatch({ type: "generate", seeds, progressionId, songSeed, originality: checkOriginality(preview) });
+    dispatch({ type: "generate", seeds, songSeed, originality: checkOriginality(preview), title: titleBag.next() });
   }, [state]);
 
   const regenerateSection = useCallback(
@@ -320,7 +342,6 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
 
   // A token guards against a slow async start() finishing after the user already hit stop.
   const playToken = useRef(0);
-  const bpm = playbackBpm(state.feel, state.midTempoBpm);
   const bpmRef = useRef(bpm);
   bpmRef.current = bpm;
 
@@ -441,6 +462,9 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       state,
       rendered,
       song,
+      plan,
+      bpm,
+      setLength: (seconds) => dispatch({ type: "setLength", seconds }),
       setKey: (key) => dispatch({ type: "setKey", key }),
       setFeel: (feel) => dispatch({ type: "setFeel", feel }),
       setMidTempoBpm: (bpm) => dispatch({ type: "setMidTempoBpm", bpm }),
@@ -459,7 +483,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       activeSection,
       activePart,
     }),
-    [state, rendered, song, generate, regenerateSection, togglePlay, playSongFrom, stopPlayback, playCustom, playStrum, activeSection, activePart],
+    [state, rendered, song, plan, bpm, generate, regenerateSection, togglePlay, playSongFrom, stopPlayback, playCustom, playStrum, activeSection, activePart],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;

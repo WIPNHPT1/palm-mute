@@ -2,7 +2,7 @@ import { expect, gotoAndSettle, horizontalOverflow, test } from "./fixtures";
 
 // "How to use" posters under the Generator and Chords titles (owner's pick: Count In poster style).
 const GUIDES = [
-  { path: "/generator/", label: "How to use the Generator", titles: ["Key + feel", "Generate", "Lock & remix", "Play along"] },
+  { path: "/generator/", label: "How to use the Generator", titles: ["Set up", "Build", "Shape each part", "Take it away"] },
   { path: "/chords/", label: "How to use the Chords page", titles: ["Pick a key", "Listen", "Write a lead", "Use it"] },
 ];
 
