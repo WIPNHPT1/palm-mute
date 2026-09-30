@@ -1,14 +1,14 @@
 import { ROUTES, expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, test } from "./fixtures";
 
 test.describe("layout", () => {
-  test("section grid: 5 columns at 1280px, 2 at 1279px", async ({ page }, info) => {
+  test("section grid: 4 columns at 1280px, 2 at 1279px", async ({ page }, info) => {
     onlyAtWidths(info, [1440]);
     lightOnly(info);
     await page.goto("/generator/");
     const columns = () =>
       page.locator('section[aria-label="Intro"]').evaluate((el) => getComputedStyle(el.parentElement!).gridTemplateColumns.split(" ").length);
     await page.setViewportSize({ width: 1280, height: 900 });
-    expect(await columns()).toBe(5);
+    expect(await columns()).toBe(4); // seven parts: 4 + 3 (option A, DECISIONS.md)
     await page.setViewportSize({ width: 1279, height: 900 });
     expect(await columns()).toBe(2);
     await page.setViewportSize({ width: 833, height: 900 });

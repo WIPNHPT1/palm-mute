@@ -127,8 +127,16 @@ export function sectionBars(section: RenderedSection): PlaybackBar[] {
   return Array.from({ length: section.repeat }, () => bars).flat();
 }
 
-/** The whole song, top to bottom, played once. */
-export function songBars(sections: RenderedSection[]): PlaybackBar[] {
-  return sections.flatMap(sectionBars);
+/** One part of the song's running order as it plays: the section (with its variation) and how many times in a row. */
+export type SongPart = { section: RenderedSection; times: number };
+
+/** The whole song in its form's running order (data/song-forms.json), played once. */
+export function songBars(parts: SongPart[]): PlaybackBar[] {
+  return parts.flatMap(({ section, times }) => Array.from({ length: times }, () => sectionBars(section)).flat());
+}
+
+/** The running-order index each song bar belongs to (lights the strip and cards as the song plays). */
+export function songBarParts(parts: SongPart[]): number[] {
+  return parts.flatMap(({ section, times }, i) => Array(sectionBars(section).length * times).fill(i));
 }
 

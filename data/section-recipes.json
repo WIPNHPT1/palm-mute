@@ -37,41 +37,72 @@
       ]
     },
     "verse": {
+      "_note": "Song Engine v2: the Verse plays the progression's own chords (data/section-harmony.json) in a sparser, palm-muted rhythm than the Chorus, so the Chorus is the lift (owner call, 2026-09-30).",
       "register": "low",
       "openStrings": true,
       "repeat": 2,
       "variants": [
         {
-          "name": "Palm-muted chugs",
+          "name": "Sparse chugs",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD"], "articulation": ["pm"], "accents": [0, 3] },
+            "fast-punk": { "bars": ["D.DDD.DD"], "articulation": ["pm"], "accents": [0, 4] },
             "half-time": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0] },
             "mid-tempo": { "bars": [".U.U.U.U"], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D.DU.UDU"], "articulation": ["pm"], "accents": [0] },
-            "ballad": { "bars": ["D.D.D.D."], "articulation": ["pm"], "accents": [0] }
+            "pop-strum": { "bars": ["D..U.UD."], "articulation": ["pm"], "accents": [0] },
+            "ballad": { "bars": ["D...D.D."], "articulation": ["pm"], "accents": [0] }
           }
         },
         {
           "name": "Chugs with a dead-strum turnaround",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD", "DDDDDDxx"], "articulation": ["pm"], "accents": [0, 3] },
+            "fast-punk": { "bars": ["D.DDD.DD", "D.DDD.xx"], "articulation": ["pm"], "accents": [0, 4] },
             "half-time": { "bars": ["D..D..D.", "D..D.xDx"], "articulation": ["pm"], "accents": [0] },
             "mid-tempo": { "bars": [".U.U.U.U", ".U.U.UxU"], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D.DU.UDU", "D.DU.UxU"], "articulation": ["pm"], "accents": [0] },
-            "ballad": { "bars": ["D.D.D.D.", "D.D.D.xD"], "articulation": ["pm"], "accents": [0] }
+            "pop-strum": { "bars": ["D..U.UD.", "D..U.Ux."], "articulation": ["pm"], "accents": [0] },
+            "ballad": { "bars": ["D...D.D.", "D...D.xD"], "articulation": ["pm"], "accents": [0] }
           }
         },
         {
           "name": "Offbeat accents",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD"], "articulation": ["pm"], "accents": [0, 3, 6] },
+            "fast-punk": { "bars": ["D.DD.DD."], "articulation": ["pm"], "accents": [0, 3, 6] },
             "half-time": { "bars": ["D..D.DD."], "articulation": ["pm"], "accents": [0, 3] },
-            "mid-tempo": { "bars": [".UDU.UDU"], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D.DU.UDU"], "articulation": ["pm"], "accents": [0, 3, 5] },
-            "ballad": { "bars": ["D.DUD.D."], "articulation": ["pm"], "accents": [0, 3] }
+            "mid-tempo": { "bars": [".UD..UD."], "articulation": ["pm"], "accents": [] },
+            "pop-strum": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3, 6] },
+            "ballad": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3] }
+          }
+        }
+      ]
+    },
+    "prechorus": {
+      "_note": "Song Engine v2: a 4-bar climb from palm-muted to ringing that sets up the Chorus's first chord (data/section-harmony.json).",
+      "register": "low",
+      "openStrings": true,
+      "repeat": 1,
+      "variants": [
+        {
+          "name": "Build to ring",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "fast-punk": { "bars": ["DDDDDDDD", "DDDDDDDD", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
+            "half-time": { "bars": ["D..D..D.", "D..D..D.", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
+            "mid-tempo": { "bars": [".U.U.U.U", ".U.U.U.U", "D-DUD-DU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
+            "pop-strum": { "bars": ["D.DU.UDU", "D.DU.UDU", "D-DU-UDU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
+            "ballad": { "bars": ["D.D.D.D.", "D.D.D.D.", "D---D---", "D---D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] }
+          }
+        },
+        {
+          "name": "Quarter-note climb",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "fast-punk": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "DDDDDDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 2, 4, 6] },
+            "half-time": { "bars": ["D...D...", "D...D...", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
+            "mid-tempo": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
+            "pop-strum": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
+            "ballad": { "bars": ["D...D...", "D...D...", "D---D---", "D-D-D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] }
           }
         }
       ]
@@ -123,6 +154,37 @@
           "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
             "half-time": { "bars": ["D--xD--x", "D---D-xx", "D--xD--x", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3 }
+          }
+        }
+      ]
+    },
+    "ending": {
+      "_note": "Song Engine v2 (PRD R9): one bar, the tonic at the Chorus's height. Every feel plays the same final hit (at its own tempo).",
+      "register": "lift",
+      "openStrings": false,
+      "prefer": ["threeNote"],
+      "repeat": 1,
+      "variants": [
+        {
+          "name": "Final hit, let ring",
+          "shapes": ["E3", "A3", "E2", "A2"],
+          "rhythms": {
+            "fast-punk": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
+            "half-time": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
+            "mid-tempo": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
+            "pop-strum": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
+            "ballad": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] }
+          }
+        },
+        {
+          "name": "Stop on the one",
+          "shapes": ["E3", "A3", "E2", "A2"],
+          "rhythms": {
+            "fast-punk": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
+            "half-time": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
+            "mid-tempo": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
+            "pop-strum": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
+            "ballad": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 }
           }
         }
       ]

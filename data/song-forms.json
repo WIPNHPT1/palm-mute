@@ -1,0 +1,40 @@
+{
+  "_note": "Song forms (docs/song-engine-v2-prd.md R7): the running order of a song, as section ids from data/song-section-templates.json. A section that plays more than once reuses its material; `variation` names a controlled change from `variations` (the only difference verify allows between repeats). `default` is the form the Generator shows (owner call, 2026-09-30: Standard with an ending, once the form layout was picked).",
+  "default": "standard",
+  "variations": {
+    "push": { "label": "adds a push", "_note": "The next chord arrives an eighth early at the first chord change after bar 1 (where the section has no push already)." },
+    "double": { "label": "played twice", "_note": "The whole section plays twice in a row." }
+  },
+  "forms": {
+    "short": {
+      "label": "Short",
+      "slots": [
+        { "section": "intro", "name": "Intro" },
+        { "section": "verse", "name": "Verse 1" },
+        { "section": "chorus", "name": "Chorus 1" },
+        { "section": "verse", "name": "Verse 2", "variation": "push" },
+        { "section": "chorus", "name": "Chorus 2" },
+        { "section": "solo", "name": "Solo" },
+        { "section": "breakdown", "name": "Breakdown" },
+        { "section": "chorus", "name": "Last chorus", "variation": "double" },
+        { "section": "ending", "name": "Ending" }
+      ]
+    },
+    "standard": {
+      "label": "Standard",
+      "slots": [
+        { "section": "intro", "name": "Intro" },
+        { "section": "verse", "name": "Verse 1" },
+        { "section": "prechorus", "name": "Pre-chorus 1" },
+        { "section": "chorus", "name": "Chorus 1" },
+        { "section": "verse", "name": "Verse 2", "variation": "push" },
+        { "section": "prechorus", "name": "Pre-chorus 2" },
+        { "section": "chorus", "name": "Chorus 2" },
+        { "section": "solo", "name": "Solo" },
+        { "section": "breakdown", "name": "Breakdown" },
+        { "section": "chorus", "name": "Last chorus", "variation": "double" },
+        { "section": "ending", "name": "Ending" }
+      ]
+    }
+  }
+}

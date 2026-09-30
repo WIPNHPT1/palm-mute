@@ -22,6 +22,8 @@ export function SectionCard({
   updateTo,
   active,
   progressionId,
+  plan,
+  uses,
   playing,
   onRegenerate,
   onToggleLock,
@@ -43,6 +45,10 @@ export function SectionCard({
   active: boolean;
   /** The Chorus: the Power Chords progression it plays. */
   progressionId?: string;
+  /** What the section plays in the song's plan (e.g. "The progression's own chords, sparser"). */
+  plan?: string;
+  /** Where the section plays in the song's running order, when it plays more than once. */
+  uses?: { name: string; variation?: string; active: boolean }[];
   playing: boolean;
   onRegenerate: () => void;
   onToggleLock: () => void;
@@ -119,13 +125,30 @@ export function SectionCard({
       </div>
       <div data-details className="flex items-start justify-between gap-[6px]">
         <div className="min-w-0 font-mono text-[12px] leading-[1.35] text-text-faint">
-          {progressionId && <div className="font-bold text-text-muted">Chords: {progressionId}</div>}
+          {progressionId ? <div className="font-bold text-text-muted">Chords: {progressionId}</div> : plan && <div className="font-bold text-text-muted">{plan}</div>}
           <div>{section.caption}</div>
           <div data-frets>
             {section.frets[1] === 0 ? "Open strings" : `Frets ${section.frets[0] === 0 ? "open" : section.frets[0]}–${section.frets[1]}`}
             {section.repeat > 1 ? ` · ×${section.repeat}` : ""}
           </div>
           {locked && lockedIn && <div className="font-bold text-text-muted">Locked in {lockedIn}</div>}
+          {uses && uses.length > 1 && (
+            <div data-uses>
+              <div>Plays {uses.length}× in the song</div>
+              <ul className="mt-[3px] flex flex-wrap gap-[4px]">
+                {uses.map((u) => (
+                  <li
+                    key={u.name}
+                    data-active={u.active}
+                    className={`rounded-[4px] border px-[6px] py-[1px] ${u.active ? "border-accent bg-accent text-text-on-accent" : "border-line text-text-muted"}`}
+                  >
+                    {u.name}
+                    {u.variation ? ` · ${u.variation}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         <PlayButton playing={playing} onClick={onTogglePlay} label={section.label} iconSize={12} className="-mb-[12px] -mr-[12px] -mt-[13px]" />
       </div>

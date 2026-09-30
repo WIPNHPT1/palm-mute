@@ -13,7 +13,6 @@ import {
   tabText,
 } from "@/lib/fretboard";
 import {
-  type Degree,
   type NoteName,
   type ResolvedChord,
   pitchClassOf,
@@ -22,15 +21,15 @@ import {
   resolveProgression,
 } from "@/lib/musicTheory";
 import { type Lead, type LeadPart, type LeadStyle, defaultLeadStyle, generateLead, styleLabel } from "@/lib/melody";
+import { type ChordSectionId, type SectionId, type VariationId, sectionDegrees, sectionEnergy } from "@/lib/songPlan";
 import { type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
 
 export type FeelId = "fast-punk" | "half-time" | "mid-tempo" | "pop-strum" | "ballad";
 /** Every feel, in Feel-control order (feels.json). */
 export const FEEL_IDS: FeelId[] = ["fast-punk", "half-time", "mid-tempo", "pop-strum", "ballad"];
-export type SectionId = "intro" | "verse" | "chorus" | "solo" | "breakdown";
 export type Glyph = "▼" | "▲" | "·";
 
-export const SECTION_IDS: SectionId[] = ["intro", "verse", "chorus", "solo", "breakdown"];
+export { type SectionId, SECTION_IDS } from "@/lib/songPlan";
 
 export type Feel = {
   id: FeelId;
@@ -58,7 +57,6 @@ type SectionTemplate = {
   label: string;
   bars: number;
   muted: boolean;
-  degreeSequence?: Degree[] | "USE_SELECTED_PROGRESSION";
   type?: "lead";
   caption: string;
   lockedByDefault: boolean;
@@ -170,7 +168,7 @@ type RhythmSpec = {
 type Variant = { name: string; shapes: string[]; rhythms: Partial<Record<FeelId, RhythmSpec>> };
 type SectionRecipe = { register: "low" | "lift"; openStrings: boolean; repeat: number; prefer?: ShapeTag[]; variants: Variant[] };
 
-export const recipes = recipesJson.sections as unknown as Record<Exclude<SectionId, "solo">, SectionRecipe>;
+export const recipes = recipesJson.sections as unknown as Record<ChordSectionId, SectionRecipe>;
 export const libraryRecipe = recipesJson.library as { register: "low" | "lift"; openStrings: boolean; shapes: string[] };
 
 export type RenderedSection = {
@@ -196,24 +194,25 @@ export type RenderedSection = {
   spoken: string;
   /** Lead sections (Solo, or an Intro melody): the line itself, for playback and copying. */
   lead?: Lead;
+  /** A form variation this render includes (e.g. Verse 2's push), and the bar it changed. */
+  variation?: { id: VariationId; bar: number };
+  /** Chord sections: energy from what the tab plays (lib/songPlan.ts, data/energy.json). */
+  energy: number;
 };
 
-/** Chord sections' bar-by-bar chords: the template's degrees, or the progression stretched to 4 bars. */
-function sectionChords(id: SectionId, inputs: SectionInputs, t: SectionTemplate): ResolvedChord[] {
-  if (t.degreeSequence === "USE_SELECTED_PROGRESSION") {
-    const prog = resolveProgression(inputs.key, inputs.progressionId);
-    return Array.from({ length: 4 }, (_, i) => prog[Math.min(i, prog.length - 1)]);
-  }
-  return resolveDegrees(inputs.key, t.degreeSequence!);
+/** Chord sections' bar-by-bar chords: the song's harmonic plan over the chosen progression (data/section-harmony.json). */
+function sectionChords(id: ChordSectionId, inputs: SectionInputs): ResolvedChord[] {
+  return resolveDegrees(inputs.key, sectionDegrees(id, inputs.progressionId));
 }
 
 /** Target hand position for a section in a key. */
-export function sectionTarget(id: Exclude<SectionId, "solo">, key: NoteName): number {
+export function sectionTarget(id: ChordSectionId, key: NoteName): number {
   return registerTarget(pitchClassOf(key), recipes[id].register);
 }
 
 // The chord section played before each one, for a soft pull on its first chord (so boundaries stay playable).
-const PREVIOUS: Partial<Record<SectionId, Exclude<SectionId, "solo">>> = { verse: "intro", chorus: "verse", breakdown: "chorus" };
+// A pull toward that section's zone, not its last chord, so regenerating one section never changes another.
+const PREVIOUS: Partial<Record<SectionId, ChordSectionId>> = { verse: "intro", prechorus: "verse", chorus: "verse", breakdown: "chorus", ending: "chorus" };
 
 /** Library voicings: what chord chips show and progression play buttons play (2-note, low/mid, compact). */
 export function libraryVoicings(key: NoteName, progressionId: string): { chord: ResolvedChord; voicing: Voicing }[] {
@@ -256,15 +255,19 @@ function fretRange(notes: Fretted[]): [number, number] {
   return frets.length ? [Math.min(...frets), Math.max(...frets)] : [0, 0];
 }
 
-export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSection {
+/**
+ * A section as its card shows it. `variation` renders a repeat's declared change (data/song-forms.json):
+ * "push" moves the next chord an eighth early at the first chord change after bar 1 that has no push yet.
+ */
+export function renderSection(id: SectionId, inputs: SectionInputs, variation?: VariationId): RenderedSection {
   const t = getTemplate(id);
   const feel = t.forceFeel ?? inputs.feel;
   if (id === "solo" || (id === "intro" && inputs.lead)) return renderLeadSection(id, inputs, feel);
 
-  const recipe = recipes[id as Exclude<SectionId, "solo">];
+  const recipe = recipes[id];
   const variant = recipe.variants[inputs.seed % recipe.variants.length];
   const rhythm = variant.rhythms[feel] ?? variant.rhythms[Object.keys(variant.rhythms)[0] as FeelId]!;
-  const chords = sectionChords(id, inputs, t);
+  const chords = sectionChords(id, inputs);
   const keyPc = pitchClassOf(inputs.key);
   const prev = PREVIOUS[id];
   const muted = rhythm.articulation.filter((a) => a === "pm").length > rhythm.articulation.length / 2;
@@ -279,8 +282,9 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
       carryFrom: prev ? registerTarget(keyPc, recipes[prev].register) : undefined,
     },
   );
-  // The Chorus never sits below the Verse (brief §11.4): in high keys, where the lift has little room
-  // under fret 12, keep only takes at or above this seed's Verse register (else the highest take).
+  // The Chorus never sits below the Verse (brief §11.4) and lifts above it where it can: keep takes above
+  // this seed's Verse register; in high keys, where the lift has little room under fret 12, takes level
+  // with it (else the highest take). Since v2 the Verse plays the same chords, so "level" can happen.
   let pool = paths;
   if (id === "chorus") {
     const avg = (vs: Voicing[]) => {
@@ -289,17 +293,27 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
     };
     const verse = renderSection("verse", { ...inputs, lead: null });
     const floor = avg(verse.voicings.map((v) => v.voicing));
-    const high = paths.filter((p) => avg(p.voicings) >= floor - 1e-9);
-    pool = high.length ? high : [paths.reduce((a, b) => (avg(b.voicings) > avg(a.voicings) ? b : a))];
+    const above = paths.filter((p) => avg(p.voicings) > floor + 1e-9);
+    const level = paths.filter((p) => avg(p.voicings) >= floor - 1e-9);
+    pool = above.length ? above : level.length ? level : [paths.reduce((a, b) => (avg(b.voicings) > avg(a.voicings) ? b : a))];
   }
   const path = pool[Math.floor(inputs.seed / recipe.variants.length) % pool.length];
 
+  const pushes = [...(rhythm.pushes ?? [])];
+  let varied: RenderedSection["variation"];
+  if (variation === "push") {
+    const b = chords.findIndex((c, i) => i >= 1 && i + 1 < chords.length && chords[i + 1].root !== c.root && !pushes.includes(i));
+    if (b >= 0) {
+      pushes.push(b);
+      varied = { id: "push", bar: b };
+    }
+  }
   const bars: SectionBar[] = chords.map((chord, b) => {
     const articulation = rhythm.articulation[b % rhythm.articulation.length];
     const pattern = rhythm.bars[b % rhythm.bars.length];
     const cells = eventsFor(pattern, path.voicings[b], articulation, rhythm.accents ?? []);
     // Push: the next bar's chord arrives on this bar's last eighth.
-    if (rhythm.pushes?.includes(b) && b + 1 < chords.length && chords[b + 1].root !== chord.root) {
+    if (pushes.includes(b) && b + 1 < chords.length && chords[b + 1].root !== chord.root) {
       const next = path.voicings[b + 1];
       cells[CELLS_PER_BAR - 1] = { kind: "hit", notes: next.notes.map(({ string, fret }) => ({ string, fret })), accent: true, up: false, palmMuted: articulation === "pm", cells: 1 };
     }
@@ -319,7 +333,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
   const dead = bars.some((b) => b.cells.some((c) => c?.kind === "dead"));
   const spoken =
     `${t.label}, key of ${inputs.key}: ${variant.name.toLowerCase()}, ${art}${dead ? ", with dead strums" : ""}` +
-    `${rhythm.stopBar !== undefined ? ", ending on a stop" : ""}. ` +
+    `${rhythm.stopBar !== undefined ? ", ending on a stop" : ""}${varied ? `, with a push into bar ${varied.bar + 2}` : ""}. ` +
     `${bars.length} bars${repeat > 1 ? `, played ${repeat} times` : ""}: ${bars.map((b) => spokenLabel(b.chord!, path.voicings[bars.indexOf(b)])).join(", ")}. ` +
     voicings.map((v) => `${spokenLabel(v.chord, v.voicing)}: ${describeNotes(v.voicing.notes)}`).join(". ") +
     ".";
@@ -333,10 +347,12 @@ export function renderSection(id: SectionId, inputs: SectionInputs): RenderedSec
     chords,
     voicings,
     tab: renderTab(tabBars(bars)),
-    caption: `${bars.length * repeat} bars · ${variant.name}`,
+    caption: `${bars.length * repeat} ${bars.length * repeat === 1 ? "bar" : "bars"} · ${variant.name}`,
     shifts: path.shifts,
     frets: fretRange(allNotes),
     spoken,
+    ...(varied ? { variation: varied } : {}),
+    energy: sectionEnergy(bars, voicings.map((v) => v.voicing)),
   };
 }
 
@@ -390,6 +406,7 @@ function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): 
     frets: [Math.min(...frets), Math.max(...frets)],
     spoken: lead.spoken,
     lead,
+    energy: 0,
   };
 }
 

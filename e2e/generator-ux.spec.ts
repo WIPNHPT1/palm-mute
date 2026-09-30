@@ -27,7 +27,7 @@ test.describe("generator UX", () => {
 
   test("each section plays exactly what its tab shows, at the selected feel", async ({ page }) => {
     await feel(page, /HALF-TIME/).click();
-    for (const label of ["Intro", "Verse", "Chorus", "Solo", "Breakdown"]) {
+    for (const label of ["Intro", "Verse", "Pre-chorus", "Chorus", "Solo", "Breakdown", "Ending"]) {
       const card = section(page, label);
       await card.getByRole("button", { name: `Play ${label}` }).click();
       await expect(card.getByRole("button", { name: `Stop ${label}` })).toHaveAttribute("aria-pressed", "true");
@@ -54,7 +54,7 @@ test.describe("generator UX", () => {
     expect(await lastPlayback(page)).toBeNull();
   });
 
-  test("Play song plays every section once, top to bottom", async ({ page }) => {
+  test("Play song plays the Standard form once, top to bottom", async ({ page }) => {
     await feel(page, /MID-TEMPO/).click();
     await page.getByRole("button", { name: "PLAY SONG" }).click();
     await expect(page.getByRole("button", { name: "STOP SONG" })).toHaveAttribute("aria-pressed", "true");
@@ -62,31 +62,68 @@ test.describe("generator UX", () => {
     expect(pb.loop).toBe(false);
     expect(pb.bpm).toBe(140);
     const tabs: Record<string, ReturnType<typeof parseTab>> = {};
-    for (const label of ["Intro", "Verse", "Chorus", "Solo", "Breakdown"]) tabs[label] = parseTab(await tabRows(page, label));
-    // Intro 4 + Verse 4 × 2 + Chorus 4 + Solo 8 (the lead engine; its line is compared) + Breakdown 4.
-    const expected = [...tabs.Intro, ...tabs.Verse, ...tabs.Verse, ...tabs.Chorus, ...tabs.Solo, ...tabs.Breakdown];
-    expect(playedCells(pb)).toEqual(expected);
-    // Intro, Verse and Chorus play at the page's feel.
-    expect(pb.bars.slice(0, 16).every((b) => b.feel === "mid-tempo")).toBe(true);
-    expect(pb.bars.slice(24).every((b) => b.feel === "half-time")).toBe(true); // Breakdown is always half-time
-    expect(pb.bars.slice(16, 24).every((b) => b.lead && b.cells.some(Boolean))).toBe(true); // the solo plays over its chords
+    for (const label of ["Intro", "Verse", "Pre-chorus", "Chorus", "Solo", "Breakdown", "Ending"]) tabs[label] = parseTab(await tabRows(page, label));
+    // data/song-forms.json, Standard: Intro, Verse 1 (4 bars × 2), Pre-chorus, Chorus, Verse 2, Pre-chorus,
+    // Chorus, Solo (8), Breakdown, Last chorus (× 2), Ending (1): 57 bars.
+    const verse = [...tabs.Verse, ...tabs.Verse];
+    const pre = tabs["Pre-chorus"];
+    const expected = [...tabs.Intro, ...verse, ...pre, ...tabs.Chorus, ...verse, ...pre, ...tabs.Chorus, ...tabs.Solo, ...tabs.Breakdown, ...tabs.Chorus, ...tabs.Chorus, ...tabs.Ending];
+    const played = playedCells(pb);
+    expect(played).toHaveLength(57);
+    // Verse 2 is Verse 1 with one push (the only declared variation): bars 21–28 may differ only on a bar's last eighth.
+    const diffs: string[] = [];
+    played.forEach((bar, b) =>
+      bar.forEach((cell, c) => {
+        if (JSON.stringify(cell) !== JSON.stringify(expected[b][c])) diffs.push(`${b + 1}:${c + 1}`);
+      }),
+    );
+    expect(diffs.length).toBeGreaterThan(0);
+    for (const d of diffs) {
+      const [b, c] = d.split(":").map(Number);
+      expect(b >= 21 && b <= 28 && c === 8, `bar ${b} cell ${c} differs outside Verse 2's push`).toBe(true);
+    }
+    // Everything plays at the page's feel, except the Breakdown (always half-time); the Solo is a lead line.
+    const feels = pb.bars.map((b) => b.feel);
+    expect(feels.slice(0, 44).every((f) => f === "mid-tempo")).toBe(true);
+    expect(feels.slice(44, 48).every((f) => f === "half-time")).toBe(true);
+    expect(feels.slice(48).every((f) => f === "mid-tempo")).toBe(true);
+    expect(pb.bars.slice(36, 44).every((b) => b.lead && b.cells.some(Boolean))).toBe(true); // the solo plays over its chords
     await page.getByRole("button", { name: "STOP SONG" }).click();
     await expect(page.getByRole("button", { name: "PLAY SONG" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("the running order plays the song from any part and lights it", async ({ page }) => {
+    const strip = page.getByRole("navigation", { name: "Song running order" });
+    await expect(strip.getByRole("button")).toHaveCount(11);
+    await strip.getByRole("button", { name: /^Play the song from Last chorus/ }).click();
+    await expect(page.getByRole("button", { name: "STOP SONG" })).toHaveAttribute("aria-pressed", "true");
+    const pb = (await lastPlayback(page))!;
+    // Last chorus (4 bars × 2) + Ending (1).
+    expect(pb.bars).toHaveLength(9);
+    expect(playedCells(pb).slice(0, 4)).toEqual(parseTab(await tabRows(page, "Chorus")));
+    await expect(strip.getByRole("button", { name: /^Play the song from Last chorus/ })).toHaveAttribute("data-active", "true");
+    await expect(section(page, "Chorus")).toHaveAttribute("data-active", "true");
+    await expect(section(page, "Chorus").locator("[data-uses] li[data-active='true']")).toHaveText("Last chorus · played twice");
+    // Locking a part shows on every place it plays.
+    await section(page, "Verse").getByRole("button", { name: "Lock Verse" }).click();
+    await expect(strip.locator("button", { hasText: "Verse" }).locator("svg")).toHaveCount(2);
+    await page.getByRole("button", { name: "STOP SONG" }).click();
+    await expect(strip.locator("[data-active='true']")).toHaveCount(0);
   });
 
   test("clicking a Power Chords row makes it the Chorus progression", async ({ page }) => {
     const chorus = section(page, "Chorus");
     const before = await chorus.locator("svg[data-tab]").textContent();
-    await page.getByRole("button", { name: "Use vi-IV-I-V for the Chorus" }).click();
-    await expect(page.getByRole("button", { name: "Use vi-IV-I-V for the Chorus" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("button", { name: "Use I-V-vi-IV for the Chorus" })).toHaveAttribute("aria-pressed", "false");
+    await page.getByRole("button", { name: "Use vi-IV-I-V for the song" }).click();
+    await expect(page.getByRole("button", { name: "Use vi-IV-I-V for the song" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Use I-V-vi-IV for the song" })).toHaveAttribute("aria-pressed", "false");
     expect(await chorus.locator("svg[data-tab]").textContent()).not.toBe(before);
     await expect(chorus.locator("p.sr-only")).toContainText("Chorus, key of A: ");
     await expect(chorus.locator("p.sr-only")).toContainText("F#5, D5, A5, E5.");
     await expect(page.getByText("Strums for vi-IV-I-V · Key of A")).toBeVisible();
     // A locked Chorus keeps its progression and offers the update instead.
     await chorus.getByRole("button", { name: "Lock Chorus" }).click();
-    await page.getByRole("button", { name: "Use I-IV-V for the Chorus" }).click();
+    await page.getByRole("button", { name: "Use I-IV-V for the song" }).click();
     await expect(chorus).toContainText("Locked in A · vi-IV-I-V");
     await chorus.getByRole("button", { name: "Update to I-IV-V" }).click();
     await expect(chorus).toContainText("Locked in A · I-IV-V");

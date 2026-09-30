@@ -12,7 +12,7 @@ test("Power Chords and Rhythm Lane headers line up on desktop", async ({ page },
     for (const k of ["A", "F# / Gb"]) {
       await key(page, k).click();
       for (const row of ["I-V-vi-IV", "vi-IV-I-V"]) {
-        await page.getByRole("button", { name: `Use ${row} for the Chorus` }).click();
+        await page.getByRole("button", { name: `Use ${row} for the song` }).click();
         const tops = await page.evaluate(() => {
           const panel = (title: string) => [...document.querySelectorAll("h2")].find((h) => h.textContent === title)!.closest("div")!.parentElement!;
           const chords = panel("POWER CHORDS"), lane = panel("RHYTHM LANE");
