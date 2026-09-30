@@ -9,13 +9,14 @@ type Box = { label: string; x: number; y: number; w: number; h: number; labelY: 
 async function controls(page: Page): Promise<Box[]> {
   return page.locator("[data-control]").evaluateAll((cards) =>
     cards.map((c) => {
+      // Page coordinates: clicking a control can scroll the page on phones.
       const r = c.getBoundingClientRect();
       const label = c.firstElementChild!.getBoundingClientRect();
       const overflow = [...c.querySelectorAll("button, input")]
         .map((el) => ({ el, b: el.getBoundingClientRect() }))
         .filter(({ b }) => b.width && (b.left < r.left - 0.5 || b.right > r.right + 0.5 || b.bottom > r.bottom + 0.5))
         .map(({ el }) => el.getAttribute("aria-label") ?? el.textContent?.trim() ?? "?");
-      return { label: c.getAttribute("data-control")!, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), labelY: Math.round(label.top), overflow };
+      return { label: c.getAttribute("data-control")!, x: Math.round(r.left), y: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height), labelY: Math.round(label.top + scrollY), overflow };
     }),
   );
 }

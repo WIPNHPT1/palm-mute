@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How-to-use explainers · Palm/Mute mock-up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Site tokens (tailwind.config.js), light and dark. The mock-up follows the OS theme until you pick one. */
+  :root, [data-theme="light"] {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --brass:#B8862E;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --ink-soft:#2A241C;
+    --t-primary:#171310; --t-secondary:#4E4738; --t-muted:#6B6152; --t-faint:#72675A;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#FFF9EF;
+    --accent-rgb: 194 58 38; --dot: rgb(23 19 16 / .22);
+    --shadow-lift: 0 2px 4px rgba(23,19,16,.05), 0 30px 60px -30px rgba(23,19,16,.35);
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --ink-soft:#2A241C;
+    --t-primary:#F1EADB; --t-secondary:#CFC5B0; --t-muted:#A89C86; --t-faint:#9A8E7B;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#140F0C;
+    --accent-rgb: 232 90 66; --dot: rgb(246 241 228 / .16);
+    --shadow-lift: 0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #8a8378; font-family: "Space Grotesk", sans-serif; }
+  [data-theme="dark"] body, body[data-theme="dark"] { background: #050403; }
+  .display { font-family: "Archivo Black", sans-serif; font-weight: 400; }
+  .mono { font-family: "Space Mono", monospace; }
+
+  /* ---------- mock-up chrome ---------- */
+  .chrome { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between;
+    padding: 12px 20px; background: #171310; color: #F6F1E4; font-family: "Space Mono", monospace; font-size: 12px; }
+  .chrome b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 14px; letter-spacing: .02em; }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #463B30; border-radius: 7px; }
+  .seg button { min-height: 36px; padding: 0 12px; border: 0; border-radius: 5px; background: transparent; color: #D9CFB9; font: inherit; letter-spacing: .08em; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: #E5573F; color: #140F0C; font-weight: 700; }
+  .note { max-width: 1440px; margin: 20px auto 0; padding: 0 20px; color: #F6F1E4; font-family: "Space Mono", monospace; font-size: 12px; line-height: 1.6; }
+  .option-label { max-width: 1440px; margin: 34px auto 10px; padding: 0 20px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; color: #F6F1E4; }
+  .option-label .display { font-size: 22px; }
+  .option-label .mono { font-size: 12px; color: #D9CFB9; letter-spacing: .06em; }
+
+  /* ---------- a simplified site page ---------- */
+  .page { max-width: 1440px; margin: 0 auto; background: var(--paper); color: var(--t-primary); border-radius: 12px; overflow: hidden; }
+  .bar { height: 64px; background: var(--ink); color: var(--on-dark); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--pad); }
+  .bar .display { font-size: 16px; display: flex; align-items: center; }
+  .bar .display svg { width: .6em; height: .9em; margin: 0 .04em; }
+  .burger { width: 22px; height: 8px; border-top: 2px solid currentColor; border-bottom: 2px solid currentColor; }
+  .main { --pad: 20px; padding: 22px var(--pad) 28px; display: flex; flex-direction: column; gap: 14px; }
+  .page { --pad: 20px; }
+  @media (min-width: 834px) { .page, .main { --pad: 32px; } .bar { height: 76px; } }
+  @media (min-width: 1280px) { .page, .main { --pad: 56px; } .main { padding-top: 32px; } }
+  .kicker { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .13em; color: var(--accent); margin-bottom: 7px; }
+  h1 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: clamp(25px, 3vw, 34px); line-height: 1.05; letter-spacing: -.01em; margin: 0; }
+  /* the rest of the page, faded, so you can see where the explainer sits */
+  .ghost { display: grid; gap: 12px; opacity: .45; pointer-events: none; }
+  .ghost .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .ghost .box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; height: 90px; flex: 1 1 260px; }
+  .ghost .cards { display: grid; gap: 12px; grid-template-columns: repeat(5, 1fr); }
+  .ghost .cards div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; height: 150px; }
+  @media (max-width: 1279px) { .ghost .cards { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 833px) { .ghost .cards { grid-template-columns: 1fr; } .ghost .cards div:nth-child(n+3) { display: none; } }
+  .ghost .label { font-family: "Space Mono", monospace; font-size: 12px; color: var(--t-faint); letter-spacing: .1em; }
+  .hide { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .1em; color: var(--t-muted); background: none; border: 0; min-height: 44px; padding: 0 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .hide:hover { color: var(--t-primary); }
+
+  /* ---------- OPTION 1: setlist posters ---------- */
+  .o1 { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(12px, 1.6vw, 22px); padding: 8px 0 4px; }
+  @media (max-width: 1279px) { .o1 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .o1 { grid-template-columns: 1fr; } }
+  .poster { position: relative; overflow: hidden; border-radius: 12px; padding: 18px 20px 20px; min-height: 196px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; box-shadow: var(--shadow-lift); }
+  .poster::after { content: ""; position: absolute; right: -24px; bottom: -24px; width: 55%; aspect-ratio: 1; border-radius: 50%;
+    background-image: radial-gradient(circle, currentColor 1.3px, transparent 1.8px); background-size: 9px 9px; opacity: .2;
+    -webkit-mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); }
+  .poster .tag { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .14em; opacity: .8; }
+  .poster .no { position: absolute; top: 10px; right: 16px; font-family: "Archivo Black", sans-serif; font-size: 72px; line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px var(--fg); opacity: .8; }
+  .poster h3 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: clamp(19px, 1.6vw, 24px); line-height: 1.02; text-transform: uppercase; margin: 0 0 8px; position: relative; z-index: 1; }
+  .poster p { margin: 0; font-size: 15px; line-height: 1.5; position: relative; z-index: 1; }
+  .poster p b { font-weight: 700; }
+  .pi { --fg: var(--on-dark); background: var(--ink); color: var(--on-dark); rotate: -1.2deg; }
+  .pi p { color: var(--on-dark-muted); }
+  .pr { --fg: var(--on-accent); background: var(--accent); color: var(--on-accent); rotate: .9deg; }
+  .po { --fg: var(--t-primary); background: var(--surface); color: var(--t-primary); border: 1.5px solid var(--t-primary); rotate: -.6deg; }
+  .po p { color: var(--t-secondary); }
+  .pb { --fg: #171310; background: var(--brass); color: #171310; rotate: 1deg; }
+  [data-theme="dark"] .pi { border: 1px solid var(--line-strong); }
+  .o1-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .sig { display: flex; gap: 14px; align-items: center; font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .12em; color: var(--t-faint); }
+  .sig::before { content: ""; width: 40px; height: 2px; background: var(--accent); }
+
+  /* ---------- OPTION 2: marker lede ---------- */
+  .o2 { padding: 6px 0 8px; }
+  .o2 .lede { font-weight: 600; font-size: clamp(22px, 2.9vw, 42px); line-height: 1.16; letter-spacing: -.02em; margin: 0; max-width: 1180px; }
+  .o2 mark { color: inherit; background: linear-gradient(transparent 58%, rgb(var(--accent-rgb) / .38) 58% 92%, transparent 92%) no-repeat 0 0 / 0% 100%;
+    transition: background-size 1s cubic-bezier(.16, 1, .3, 1); transition-delay: calc(var(--d, 0) * 220ms + 200ms); }
+  .o2.in mark { background-size: 100% 100%; }
+  .steps { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; counter-reset: s; }
+  .steps li { counter-increment: s; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px 0 6px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface);
+    font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .08em; color: var(--t-secondary); }
+  .steps li::before { content: counter(s, decimal-leading-zero); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--accent-on-ink); font-weight: 700; }
+  [data-theme="dark"] .steps li::before { border: 1px solid var(--line-strong); }
+  .steps li.arrow { counter-increment: none; border: 0; background: none; padding: 0; color: var(--t-faint); }
+  .steps li.arrow::before { display: none; }
+  .o2 .sig { margin-top: 18px; }
+
+  /* ---------- OPTION 3: liner notes ---------- */
+  .o3 { position: relative; overflow: hidden; background: var(--ink); color: var(--on-dark); border-radius: 14px; padding: clamp(22px, 3vw, 40px);
+    display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.6fr) auto; gap: clamp(20px, 3.5vw, 56px); align-items: center; }
+  [data-theme="dark"] .o3 { border: 1px solid var(--line-strong); }
+  .o3::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle, rgb(246 241 228 / .08) 1.3px, transparent 1.8px); background-size: 10px 10px;
+    -webkit-mask: radial-gradient(circle at 85% 30%, #000, transparent 60%); mask: radial-gradient(circle at 85% 30%, #000, transparent 60%); pointer-events: none; }
+  @media (max-width: 1100px) { .o3 { grid-template-columns: 1fr 1fr; } .o3 .stamp { display: none; } }
+  @media (max-width: 700px) { .o3 { grid-template-columns: 1fr; } }
+  .o3 .side { font-family: "Space Mono", monospace; font-size: 12px; letter-spacing: .16em; color: var(--accent-on-ink); margin-bottom: 12px; }
+  .o3 h2 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: clamp(34px, 4.2vw, 64px); line-height: .9; letter-spacing: -.02em; text-transform: uppercase; margin: 0 0 14px; }
+  .o3 .blurb { margin: 0; font-size: 15px; line-height: 1.55; color: var(--on-dark-muted); max-width: 340px; }
+  .tracks { list-style: none; margin: 0; padding: 0; counter-reset: t; position: relative; }
+  .tracks li { counter-increment: t; display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--ink-soft); }
+  .tracks li:last-child { border-bottom: 1px solid var(--ink-soft); }
+  .tracks li::before { content: counter(t, decimal-leading-zero); font-family: "Space Mono", monospace; font-size: 12px; color: var(--accent-on-ink); letter-spacing: .1em; }
+  .tracks b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 16px; letter-spacing: .01em; text-transform: uppercase; display: block; margin-bottom: 3px; }
+  .tracks span { font-size: 14px; line-height: 1.45; color: var(--on-dark-muted); }
+  .tracks i { font-style: normal; font-family: "Space Mono", monospace; font-size: 12px; color: var(--on-dark-faint); white-space: nowrap; }
+  .stamp { position: relative; width: 170px; aspect-ratio: 1; color: var(--accent-on-ink); rotate: -9deg; }
+  .stamp svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .stamp .ring { animation: turn 24s linear infinite; transform-origin: 50% 50%; }
+  .stamp text { font-family: "Archivo Black", sans-serif; font-size: 14px; letter-spacing: .14em; fill: currentColor; }
+  .stamp .core { position: absolute; inset: 24%; border-radius: 50%; border: 3px solid currentColor; display: grid; place-items: center; text-align: center;
+    font-family: "Archivo Black", sans-serif; font-size: 20px; line-height: .95; }
+  .stamp .core small { display: block; font-family: "Space Mono", monospace; font-size: 10px; letter-spacing: .18em; margin-top: 6px; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .stamp .ring { animation: none; } .o2 mark { transition: none; background-size: 100% 100%; } }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <b>PALM⚡MUTE · How-to-use explainers · 3 options</b>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <div class="seg" role="group" aria-label="Page"><button data-page="generator" aria-pressed="true">GENERATOR</button><button data-page="chords" aria-pressed="false">CHORDS</button></div>
+    <div class="seg" role="group" aria-label="Theme"><button data-theme-btn="light">LIGHT</button><button data-theme-btn="dark">DARK</button></div>
+  </div>
+</div>
+<p class="note">Each option sits between the page title and the controls (the faded blocks). Everything is live HTML in the site's own light and dark tokens: resize the window to see phones and tablets. Option 1 and 2 include a "Hide the guide" link (the real build would remember it).</p>
+<div id="options"></div>
+
+<script>
+const BOLT = '<svg viewBox="0 0 12 20"><path d="M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z" fill="var(--accent-on-ink)"/></svg>';
+const PAGES = {
+  generator: {
+    kicker: "SONGWRITING ENGINE", title: "SONG GENERATOR",
+    lede: 'Pick a <mark style="--d:0">key</mark> and a <mark style="--d:1">feel</mark>, hit <mark style="--d:2">Generate</mark>, then <mark style="--d:3">lock</mark> the parts you love and remix the rest.',
+    blurb: "Palm/Mute writes a whole song: intro, verse, chorus, solo and breakdown, as tabs you can play.",
+    steps: [
+      { t: "Key + feel", b: "Pick a <b>key</b> for every chord, and a <b>feel</b> for the strum and tempo.", k: "10 SEC" },
+      { t: "Generate", b: "<b>GENERATE</b> writes all five sections as real power-chord tabs.", k: "1 CLICK" },
+      { t: "Lock & remix", b: "<b>Lock</b> a section to keep it. <b>↻</b> rewrites just that one.", k: "🔒 ↻" },
+      { t: "Play along", b: "<b>▷</b> loops a section, <b>PLAY SONG</b> plays it all. Tap a Power Chords row to change the chorus.", k: "▷" },
+    ],
+    chips: ["KEY + FEEL", "GENERATE", "LOCK & REMIX", "PLAY ALONG"],
+    sig: "FIVE SECTIONS · REAL TABS · ABOUT A MINUTE",
+  },
+  chords: {
+    kicker: "POWER CHORD LIBRARY", title: "CHORDS",
+    lede: 'Pick a <mark style="--d:0">key</mark>, <mark style="--d:1">listen</mark> to the progressions pop-punk runs on, then write an <mark style="--d:2">intro or a solo</mark> over one and send it to <mark style="--d:3">your song</mark>.',
+    blurb: "The six progressions behind pop-punk, in any key, with the shapes to play them.",
+    steps: [
+      { t: "Pick a key", b: "Every card shows its chords in your <b>key</b>, numbered I, V, vi, IV.", k: "12 KEYS" },
+      { t: "Listen", b: "<b>▷</b> plays a progression. <b>Sort</b> by most common, brightest or darkest.", k: "▷" },
+      { t: "Write a lead", b: "<b>Open a card</b> for an intro melody or a guitar solo: style, length, <b>Generate</b>.", k: "HOOK · SOLO" },
+      { t: "Use it", b: "<b>USE IN MY SONG</b> sends the key, the chorus and your lead to the Generator.", k: "→ GENERATOR" },
+    ],
+    chips: ["PICK A KEY", "LISTEN", "WRITE A LEAD", "USE IN MY SONG"],
+    sig: "6 PROGRESSIONS · 12 KEYS · INTROS + SOLOS",
+  },
+};
+
+const ghost = (page) => `
+  <div class="ghost" aria-hidden="true">
+    <div class="row"><div class="box"></div><div class="box"></div></div>
+    <div class="label">${page === "generator" ? "SECTION CARDS · POWER CHORDS · RHYTHM LANE" : "PROGRESSION CARDS"}</div>
+    <div class="cards"><div></div><div></div><div></div><div></div><div></div></div>
+  </div>`;
+const head = (p) => `<div><div class="kicker">${p.kicker}</div><h1>${p.title}</h1></div>`;
+const frame = (inner) => `<div class="page"><div class="bar"><span class="display">PALM${BOLT}MUTE</span><span class="burger"></span></div><div class="main">${inner}</div></div>`;
+const hide = `<button class="hide" type="button">HIDE THE GUIDE <span aria-hidden="true">✕</span></button>`;
+
+const OPTIONS = [
+  {
+    name: "Option 1 · Setlist posters",
+    about: "Four tilted poster cards like Count In's “How it works”: ink, red, outlined, brass. Biggest and most visual; stacks on phones.",
+    render: (p) => `${head(p)}
+      <section aria-label="How to use this page">
+        <div class="o1">${p.steps.map((s, i) => `
+          <article class="poster ${["pi", "pr", "po", "pb"][i]}">
+            <span class="tag">STEP ${String(i + 1).padStart(2, "0")}</span>
+            <span class="no" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span>
+            <div><h3>${s.t}</h3><p>${s.b}</p></div>
+          </article>`).join("")}
+        </div>
+        <div class="o1-foot"><span class="sig">${p.sig}</span>${hide}</div>
+      </section>`,
+  },
+  {
+    name: "Option 2 · Marker lede",
+    about: "One big sentence with red marker highlights that draw in, like the Count In intro, plus numbered step pills. Lightest touch; reads in two seconds.",
+    render: (p) => `${head(p)}
+      <section class="o2" aria-label="How to use this page">
+        <p class="lede">${p.lede}</p>
+        <ol class="steps">${p.chips.map((c, i) => `<li>${c}</li>${i < p.chips.length - 1 ? '<li class="arrow" aria-hidden="true">→</li>' : ""}`).join("")}</ol>
+        <div class="o1-foot"><span class="sig">${p.sig}</span>${hide}</div>
+      </section>`,
+  },
+  {
+    name: "Option 3 · Liner notes",
+    about: "An ink “Side A” band with a track list of steps and a rotating START HERE stamp, like Count In's stamp band. Most character; stays ink in both themes.",
+    render: (p) => `${head(p)}
+      <section class="o3" aria-label="How to use this page">
+        <div>
+          <div class="side">SIDE A · HOW TO USE</div>
+          <h2>Start<br>here.</h2>
+          <p class="blurb">${p.blurb}</p>
+        </div>
+        <ol class="tracks">${p.steps.map((s) => `<li><div><b>${s.t}</b><span>${s.b.replace(/<\/?b>/g, "")}</span></div><i>${s.k}</i></li>`).join("")}</ol>
+        <div class="stamp" aria-hidden="true">
+          <svg viewBox="0 0 200 200" class="ring"><defs><path id="c" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
+            <text textLength="486" lengthAdjust="spacing"><textPath href="#c" textLength="486" lengthAdjust="spacing">START HERE · HOW TO USE · START HERE · HOW TO USE ·</textPath></text></svg>
+          <div class="core"><div>01<br>→04<small>STEPS</small></div></div>
+        </div>
+      </section>`,
+  },
+];
+
+let page = "generator";
+function render() {
+  const p = PAGES[page];
+  document.getElementById("options").innerHTML = OPTIONS.map((o) => `
+    <div class="option-label"><span class="display">${o.name}</span><span class="mono">${o.about}</span></div>
+    ${frame(o.render(p) + ghost(page))}`).join("");
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".o2").forEach((el) => el.classList.add("in"))));
+  document.querySelectorAll(".hide").forEach((b) => (b.onclick = () => b.closest("section").animate([{ opacity: 1 }, { opacity: .25 }, { opacity: 1 }], 600)));
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll("[data-theme-btn]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeBtn === t)));
+}
+document.querySelectorAll("[data-page]").forEach((b) => (b.onclick = () => {
+  page = b.dataset.page;
+  document.querySelectorAll("[data-page]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+document.querySelectorAll("[data-theme-btn]").forEach((b) => (b.onclick = () => setTheme(b.dataset.themeBtn)));
+setTheme(matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+render();
+</script>
+</body>
+</html>

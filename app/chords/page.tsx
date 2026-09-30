@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ControlCard } from "@/components/ControlCard";
 import { FeelToggle } from "@/components/FeelToggle";
 import { KeyPicker } from "@/components/KeyPicker";
+import { type GuideStep, PageGuide } from "@/components/PageGuide";
 import { PageHeader } from "@/components/PageHeader";
 import { ProgressionPanel } from "@/components/ProgressionPanel";
 import { ProgressionRow } from "@/components/ProgressionRow";
@@ -24,6 +25,13 @@ const ORDER = ["order-none", "order-1", "order-2", "order-3", "order-4", "order-
 const DESKTOP_ORDER = ["desktop:order-none", "desktop:order-1", "desktop:order-2", "desktop:order-3", "desktop:order-4", "desktop:order-5", "desktop:order-6", "desktop:order-7", "desktop:order-8", "desktop:order-9", "desktop:order-10", "desktop:order-11"];
 const PANEL_ID = "progression-panel";
 
+const GUIDE: GuideStep[] = [
+  { title: "Pick a key", body: <>Every card shows its chords in your <b>key</b>, numbered I, V, vi, IV.</> },
+  { title: "Listen", body: <><b>▷</b> plays a progression. <b>Sort</b> by most common, brightest or darkest.</> },
+  { title: "Write a lead", body: <><b>Open a card</b> for an intro melody or a guitar solo: style, length, <b>Generate</b>.</> },
+  { title: "Use it", body: <><b>USE IN MY SONG</b> sends the key, the chorus and your lead to the Generator.</> },
+];
+
 export default function ChordsPage() {
   // Key and feel live in the shared context, so they carry over to/from the Generator.
   const { state, setKey, setFeel, setMidTempoBpm, togglePlay } = useGenerator();
@@ -43,6 +51,7 @@ export default function ChordsPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
       <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" />
+      <PageGuide page="chords" label="How to use the Chords page" steps={GUIDE} signature="6 PROGRESSIONS · 12 KEYS · INTROS + SOLOS" />
 
       <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:gap-[12px] desktop:items-stretch">
         <ControlCard label="Key" className="tablet:basis-full desktop:basis-auto">
