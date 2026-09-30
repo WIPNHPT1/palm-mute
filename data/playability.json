@@ -18,7 +18,7 @@
     "default": "intermediate"
   },
   "rating": {
-    "_note": "R4, a 1–5 difficulty per section (and the song's hardest section): 1 + the sum of these points, rounded and clamped. `speed` per unit of the fastest change over comfort; `mute` per thumb or lean mute; `run` per 8 downstrokes over 16 in the longest fast downpicked run; `stretch` per fret of span over 2; `high` when the hand goes above fret 9; `threeNote` for 3-note shapes in a fast palm-muted part.",
+    "_note": "R4, a 1–5 difficulty per section (and the song's hardest section): 1 + the sum of these points, rounded and clamped. `speed` per unit of the fastest change over comfort; `mute` per muting technique the section needs (thumb, lean; each counts once); `run` per 8 downstrokes over 16 in the longest fast downpicked run; `stretch` per fret of span over 2; `high` when the hand goes above fret 9; `threeNote` for 3-note shapes in a fast palm-muted part.",
     "points": { "speed": 0.5, "mute": 0.5, "run": 0.5, "stretch": 0.5, "high": 0.5, "threeNote": 0.5, "base": 1 }
   }
 }

@@ -45,9 +45,10 @@ for (const f of FEEL_IDS) {
   for (const [id, recipe] of Object.entries(recipes)) {
     if (id === "breakdown") continue; // always half-time
     for (const v of recipe.variants) {
-      const r = v.rhythms[f];
+      if (v.riff) continue; // intro riffs are written from scale steps, the same in every feel
+      const r = v.rhythms[f] ?? v.rhythms.all;
       assert.ok(r, `${id} "${v.name}" has a ${f} rhythm`);
-      for (const bar of r.bars) assert.match(bar, /^[DUx.-]{8}$/, `${id} "${v.name}" ${f}: 8 cells`);
+      for (const bar of r.bars) assert.match(bar, /^([DUx.-]{8}|[DUx.-]{16})$/, `${id} "${v.name}" ${f}: 8 or 16 cells`);
     }
   }
 }
@@ -123,5 +124,26 @@ for (const form of FORM_IDS) {
   assert.equal(new Set(slots.map((s) => s.name)).size, slots.length, `${form}: part names repeat`);
 }
 assert.equal(DEFAULT_FORM, "standard", "Standard is the default form (DECISIONS.md)");
+
+// Song Engine v2 Phase 4 grooves (DECISIONS.md): at least 6 per section role in every feel (the Breakdown is
+// always half-time; Intro riffs count for the Intro); every groove's drums and stops sit inside its bars.
+for (const role of ["intro", "verse", "prechorus", "chorus", "breakdown"] as const) {
+  for (const f of role === "breakdown" ? (["half-time"] as const) : FEEL_IDS)
+    assert.ok(recipes[role].variants.filter((v) => v.riff || v.rhythms[f] || v.rhythms.all).length >= 6, `${role} has fewer than 6 grooves in ${f}`);
+  for (const v of recipes[role].variants)
+    for (const r of Object.values(v.rhythms)) {
+      r!.bars.forEach((bar, b) => {
+        const drums = r!.drums?.[b % r!.drums.length];
+        for (const cells of Object.values(drums ?? {})) for (const c of cells as number[]) assert.ok(c >= 0 && c < bar.length, `${role} "${v.name}": drum on cell ${c} of a ${bar.length}-cell bar`);
+        const stop = r!.stopCells?.[b % r!.stopCells.length];
+        if (stop !== null && stop !== undefined) assert.ok(/[DUx]/.test(bar.slice(0, stop + 1)), `${role} "${v.name}": a stop before any hit`);
+      });
+      for (const acc of r!.accents ?? []) assert.ok(acc >= 0 && acc < 8, `${role} "${v.name}": accents are eighths (0–7)`);
+    }
+}
+for (const v of recipes.intro.variants.filter((x) => x.riff)) {
+  const riff = v.riff!;
+  for (const bar of riff.bars) for (const [cell] of bar) assert.ok(cell >= 0 && cell < riff.grid, `intro "${v.name}": cell ${cell} outside a ${riff.grid}-cell bar`);
+}
 
 console.log("\nAll data-layer checks passed.");

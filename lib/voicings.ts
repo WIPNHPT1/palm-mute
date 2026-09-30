@@ -171,7 +171,7 @@ export type VoicedPath = {
  * chords stay put"), so the search runs over the distinct chords in order of appearance, with a
  * move cost between every pair of consecutive bars.
  */
-export function voicePaths(roots: number[], style: SectionStyle, opts = SETTINGS.alternatives): VoicedPath[] {
+export function voicePaths(roots: number[], style: SectionStyle, opts: { margin: number; max: number } = SETTINGS.alternatives): VoicedPath[] {
   const distinct = [...new Set(roots)];
   const timing = style.timing;
   // R1: a shape must have a mute plan on every bar it's played (a ringing open D root can't).

@@ -22,16 +22,24 @@ export function renderSong(inputs: Record<SectionId, SectionInputs>): Song {
 export type Critique = { total: number; parts: Record<"playability" | "arc" | "hook" | "variety" | "flow", number> };
 
 const CHORD_SECTIONS = ["intro", "verse", "prechorus", "chorus", "breakdown", "ending"] as const;
-const chordSection = (s: RenderedSection) => !s.lead && s.voicings.length > 0;
+/** A rhythm-guitar part (chords or an Intro riff): not a lead line. */
+const chordSection = (s: RenderedSection) => !s.lead && s.bars.some((bar) => bar.cells.some(Boolean));
 const avgPosition = (s: RenderedSection) => s.voicings.reduce((a, v) => a + v.voicing.position, 0) / Math.max(1, s.voicings.length);
-/** Sounding eighths per bar ÷ 8 (a let-ring hit counts for every eighth it sustains). */
+/** Share of each bar that sounds (a let-ring hit counts for every cell it sustains), averaged over the bars. */
 const density = (s: RenderedSection) =>
-  s.bars.reduce((a, bar) => a + bar.cells.reduce((n, ev) => n + (!ev ? 0 : ev.kind === "dead" ? 0.5 : Math.min(ev.cells, 8)), 0), 0) / (8 * Math.max(1, s.bars.length));
+  s.bars.reduce((a, bar) => a + bar.cells.reduce((n, ev) => n + (!ev ? 0 : ev.kind === "dead" ? 0.5 : Math.min(ev.cells, bar.cells.length)), 0) / bar.cells.length, 0) /
+  Math.max(1, s.bars.length);
 
 /** The first and last voicing a section's hand plays (its first and last bars). */
 function ends(s: RenderedSection): [number, number] {
-  const at = (bar: RenderedSection["bars"][number]) => s.voicings.find((v) => v.chord.root === bar.chord?.root)?.voicing.position ?? 0;
-  return [at(s.bars[0]), at(s.bars[s.bars.length - 1])];
+  // Read off the notes played (chords and riffs alike): the first and the last fretted hand position.
+  const positions = s.bars.flatMap((bar) =>
+    bar.cells.flatMap((ev) => {
+      const fretted = ev?.notes.filter((n) => n.fret > 0) ?? [];
+      return fretted.length ? [Math.min(...fretted.map((n) => n.fret))] : ev ? [0] : [];
+    }),
+  );
+  return [positions[0] ?? 0, positions[positions.length - 1] ?? 0];
 }
 
 /** R17: one score for a whole song (data/critic.json). Higher is better. */

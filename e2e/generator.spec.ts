@@ -71,12 +71,13 @@ test.describe("generator", () => {
   });
 
   test("the feel changes the rhythm", async ({ page }) => {
-    const fast = await sectionText(page, "Intro");
+    // The Verse strums, so its rhythm follows the feel (an Intro riff keeps its notes in every feel).
+    const fast = await sectionText(page, "Verse");
     await feel(page, /HALF-TIME/).click();
-    const half = await sectionText(page, "Intro");
+    const half = await sectionText(page, "Verse");
     expect(half).not.toBe(fast);
-    await feel(page, /MID-TEMPO/).click();
-    expect(await sectionText(page, "Intro")).not.toBe(half);
+    await feel(page, /BALLAD/).click();
+    expect(await sectionText(page, "Verse")).not.toBe(half);
     // Breakdown is always half-time.
     const breakdown = await sectionText(page, "Breakdown");
     await feel(page, /FAST PUNK/).click();

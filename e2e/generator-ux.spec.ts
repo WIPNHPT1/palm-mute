@@ -70,7 +70,7 @@ test.describe("generator UX", () => {
     const expected = [...tabs.Intro, ...verse, ...pre, ...tabs.Chorus, ...verse, ...pre, ...tabs.Chorus, ...tabs.Solo, ...tabs.Breakdown, ...tabs.Chorus, ...tabs.Chorus, ...tabs.Ending];
     const played = playedCells(pb);
     expect(played).toHaveLength(57);
-    // Verse 2 is Verse 1 with one push (the only declared variation): bars 21–28 may differ only on a bar's last eighth.
+    // Verse 2 is Verse 1 with one push (the only declared variation): bars 21–28 may differ only on a bar's last cell.
     const diffs: string[] = [];
     played.forEach((bar, b) =>
       bar.forEach((cell, c) => {
@@ -80,7 +80,7 @@ test.describe("generator UX", () => {
     expect(diffs.length).toBeGreaterThan(0);
     for (const d of diffs) {
       const [b, c] = d.split(":").map(Number);
-      expect(b >= 21 && b <= 28 && c === 8, `bar ${b} cell ${c} differs outside Verse 2's push`).toBe(true);
+      expect(b >= 21 && b <= 28 && c === expected[b - 1].length, `bar ${b} cell ${c} differs outside Verse 2's push`).toBe(true);
     }
     // Everything plays at the page's feel, except the Breakdown (always half-time); the Solo is a lead line.
     const feels = pb.bars.map((b) => b.feel);

@@ -1,5 +1,5 @@
 {
-  "_note": "How each section is played (docs/power-chord-engine-brief.md §6). `register`: low = the key's lowest comfortable zone (open strings when the key has them), lift = chorusLift frets higher (engine-settings.json). `shapes`: voicing-shapes.json ids the path search may use. `rhythms`: per feel, a list of variants; seed 0 plays the first, regenerate cycles through them. Rhythm cells, 8 per bar (eighth notes): D = downstroke, U = upstroke, x = dead strum, - = let the last hit ring, . = rest. `articulation` per bar (cycled): pm = palm-muted, ring = let ring. `accents`: accented cells in every bar. `pushes`: bars whose last cell plays the next bar's chord an eighth early. `stopBar`: a full-band stop after that bar's first hit (N.C.).",
+  "_note": "How each section is played (docs/power-chord-engine-brief.md §6). `register`: low = the key's lowest comfortable zone (open strings when the key has them), lift = chorusLift frets higher (engine-settings.json). `shapes`: voicing-shapes.json ids the path search may use. `rhythms`: per feel, a list of variants; seed 0 plays the first, regenerate cycles through them. Rhythm cells, 8 per bar (eighth notes): D = downstroke, U = upstroke, x = dead strum, - = let the last hit ring, . = rest. `articulation` per bar (cycled): pm = palm-muted, ring = let ring. `accents`: accented cells in every bar. `pushes`: bars whose last cell plays the next bar's chord an eighth early. `stopBar`: a full-band stop after that bar's first hit (N.C.). Song Engine v2 Phase 4 (DECISIONS.md): a bar is 8 cells, or 16 (sixteenths) where a groove needs them (gallops, fills); accents stay in eighths (0–7). `all` is a rhythm for every feel without its own. `drums` (per bar, cycled; null = the feel's template) is the groove's own kit in the bar's grid, so kicks land with the accents (R13). `stopCells` (per bar, cycled; null = none) is a full-band stop after that cell. Intro `riff` variants write a line from scale steps over each bar's chord (lib/riffs.ts); `requires: \"openRoots\"` limits one to songs whose Intro chords sit on open strings.",
   "library": {
     "_note": "The voicing shown on chord chips (Chords page, Power Chords panel) and played by their play buttons (with the feel's strum from rhythm-patterns.json): compact 2-note shapes in the low/mid zone.",
     "register": "low",
@@ -16,23 +16,48 @@
           "name": "Octave riff",
           "shapes": ["OctA", "OctE"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD", "DDDDD-DD"], "articulation": ["ring"], "accents": [0] },
-            "half-time": { "bars": ["D-DUD-DU"], "articulation": ["ring"], "accents": [0, 4] },
-            "mid-tempo": { "bars": ["D-.UD-.U"], "articulation": ["ring"], "accents": [0] },
-            "pop-strum": { "bars": ["D-DU-UDU"], "articulation": ["ring"], "accents": [0] },
-            "ballad": { "bars": ["D---D---"], "articulation": ["ring"], "accents": [0, 4] }
+            "fast-punk": {"bars": ["DDDDDDDD", "DDDDD-DD"], "articulation": ["ring"], "accents": [0]},
+            "half-time": {"bars": ["D-DUD-DU"], "articulation": ["ring"], "accents": [0, 4]},
+            "mid-tempo": {"bars": ["D-.UD-.U"], "articulation": ["ring"], "accents": [0]},
+            "pop-strum": {"bars": ["D-DU-UDU"], "articulation": ["ring"], "accents": [0]},
+            "ballad": {"bars": ["D---D---"], "articulation": ["ring"], "accents": [0, 4]}
           }
         },
         {
           "name": "Chugs into open hits",
           "shapes": ["E2", "A2"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD", "DDDDDDDD", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "half-time": { "bars": ["D..D..D.", "D..D..D.", "D-----D-", "D-----DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "mid-tempo": { "bars": [".U.U.U.U", ".U.U.U.U", "D---D---", "D---D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [] },
-            "pop-strum": { "bars": ["D.DU.UDU", "D.DU.UDU", "D---D---", "D---D-DU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "ballad": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-------", "D---D---"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] }
+            "fast-punk": {"bars": ["DDDDDDDD", "DDDDDDDD", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "half-time": {"bars": ["D..D..D.", "D..D..D.", "D-----D-", "D-----DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "mid-tempo": {"bars": [".U.U.U.U", ".U.U.U.U", "D---D---", "D---D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": []},
+            "pop-strum": {"bars": ["D.DU.UDU", "D.DU.UDU", "D---D---", "D---D-DU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "ballad": {"bars": ["D.D.D.D.", "D.D.D.D.", "D-------", "D---D---"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]}
           }
+        },
+        {
+          "name": "Octave climb",
+          "shapes": ["OctA", "OctE"],
+          "rhythms": {},
+          "riff": {"kind": "octaves", "articulation": "ring", "grid": 8, "bars": [[[0, 0], [2, 2], [4, 4], [6, 7]]]}
+        },
+        {
+          "name": "Low-string P.M. riff",
+          "shapes": [],
+          "rhythms": {},
+          "riff": {"kind": "single", "articulation": "pm", "grid": 16, "bars": [[[0, 0], [2, 0], [3, 0], [4, 0], [6, 0], [7, 0], [8, 1], [10, 1], [12, 2], [14, 2]]]}
+        },
+        {
+          "name": "Open-string pedal riff",
+          "shapes": [],
+          "rhythms": {},
+          "requires": "openRoots",
+          "riff": {"kind": "pedal", "articulation": "ring", "grid": 8, "bars": [[[1, 4], [3, 5], [5, 6], [7, 7]]], "pedalCells": [0, 2, 4, 6]}
+        },
+        {
+          "name": "Hook line in octaves",
+          "shapes": ["OctA", "OctE"],
+          "rhythms": {},
+          "riff": {"kind": "octaves", "articulation": "ring", "grid": 8, "bars": [[[0, 0], [2, 1], [4, 2], [6, 1]], [[0, 2], [4, 0]]]}
         }
       ]
     },
@@ -46,33 +71,56 @@
           "name": "Sparse chugs",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["D.DDD.DD"], "articulation": ["pm"], "accents": [0, 4] },
-            "half-time": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0] },
-            "mid-tempo": { "bars": [".U.U.U.U"], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D..U.UD."], "articulation": ["pm"], "accents": [0] },
-            "ballad": { "bars": ["D...D.D."], "articulation": ["pm"], "accents": [0] }
+            "fast-punk": {"bars": ["D.DDD.DD"], "articulation": ["pm"], "accents": [0, 4]},
+            "half-time": {"bars": ["D..D..D."], "articulation": ["pm"], "accents": [0]},
+            "mid-tempo": {"bars": [".U.U.U.U"], "articulation": ["pm"], "accents": []},
+            "pop-strum": {"bars": ["D..U.UD."], "articulation": ["pm"], "accents": [0]},
+            "ballad": {"bars": ["D...D.D."], "articulation": ["pm"], "accents": [0]}
           }
         },
         {
           "name": "Chugs with a dead-strum turnaround",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["D.DDD.DD", "D.DDD.xx"], "articulation": ["pm"], "accents": [0, 4] },
-            "half-time": { "bars": ["D..D..D.", "D..D.xDx"], "articulation": ["pm"], "accents": [0] },
-            "mid-tempo": { "bars": [".U.U.U.U", ".U.U.UxU"], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D..U.UD.", "D..U.Ux."], "articulation": ["pm"], "accents": [0] },
-            "ballad": { "bars": ["D...D.D.", "D...D.xD"], "articulation": ["pm"], "accents": [0] }
+            "fast-punk": {"bars": ["D.DDD.DD", "D.DDD.xx"], "articulation": ["pm"], "accents": [0, 4]},
+            "half-time": {"bars": ["D..D..D.", "D..D.xDx"], "articulation": ["pm"], "accents": [0]},
+            "mid-tempo": {"bars": [".U.U.U.U", ".U.U.UxU"], "articulation": ["pm"], "accents": []},
+            "pop-strum": {"bars": ["D..U.UD.", "D..U.Ux."], "articulation": ["pm"], "accents": [0]},
+            "ballad": {"bars": ["D...D.D.", "D...D.xD"], "articulation": ["pm"], "accents": [0]}
           }
         },
         {
           "name": "Offbeat accents",
           "shapes": ["E2", "A2", "D2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["D.DD.DD."], "articulation": ["pm"], "accents": [0, 3, 6] },
-            "half-time": { "bars": ["D..D.DD."], "articulation": ["pm"], "accents": [0, 3] },
-            "mid-tempo": { "bars": [".UD..UD."], "articulation": ["pm"], "accents": [] },
-            "pop-strum": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3, 6] },
-            "ballad": { "bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3] }
+            "fast-punk": {"bars": ["D.DD.DD."], "articulation": ["pm"], "accents": [0, 3, 6]},
+            "half-time": {"bars": ["D..D.DD."], "articulation": ["pm"], "accents": [0, 3]},
+            "mid-tempo": {"bars": [".UD..UD."], "articulation": ["pm"], "accents": []},
+            "pop-strum": {"bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3, 6]},
+            "ballad": {"bars": ["D..D..D."], "articulation": ["pm"], "accents": [0, 3]}
+          }
+        },
+        {
+          "name": "Gallop",
+          "shapes": ["E2", "A2", "D2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["D.DUD.DUD.DUD.D."], "articulation": ["pm"], "accents": [0, 4], "drums": [{"kick": [0, 2, 3, 8, 10, 11], "snare": [4, 12], "hat": [0, 2, 4, 6, 8, 10, 12, 14]}]},
+            "ballad": {"bars": ["D...D.DUD...D.DU"], "articulation": ["pm"], "accents": [0], "drums": [{"kick": [0, 6, 7], "hat": [0, 4, 8, 12]}]}
+          }
+        },
+        {
+          "name": "Stop-time",
+          "shapes": ["E2", "A2", "D2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["D..D....", "D..D....", "D..D....", "D.D.D.D."], "articulation": ["ring", "ring", "ring", "pm"], "accents": [0, 3], "stopCells": [3, 3, 3, null], "drums": [{"kick": [0, 3], "crash": [0]}, {"kick": [0, 3]}, {"kick": [0, 3], "crash": [0]}, null]}
+          }
+        },
+        {
+          "name": "Backbeat chugs",
+          "shapes": ["E2", "A2", "D2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["DDDDDDDD"], "articulation": ["pm"], "accents": [2, 6], "drums": [{"kick": [0, 4], "snare": [2, 6], "hat": [0, 1, 2, 3, 4, 5, 6, 7]}]},
+            "ballad": {"bars": ["D.D.D.D."], "articulation": ["pm"], "accents": [2, 6], "drums": [{"kick": [0, 4], "snare": [2, 6], "hat": [0, 2, 4, 6]}]}
           }
         }
       ]
@@ -87,22 +135,50 @@
           "name": "Build to ring",
           "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD", "DDDDDDDD", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
-            "half-time": { "bars": ["D..D..D.", "D..D..D.", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "mid-tempo": { "bars": [".U.U.U.U", ".U.U.U.U", "D-DUD-DU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "pop-strum": { "bars": ["D.DU.UDU", "D.DU.UDU", "D-DU-UDU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0] },
-            "ballad": { "bars": ["D.D.D.D.", "D.D.D.D.", "D---D---", "D---D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] }
+            "fast-punk": {"bars": ["DDDDDDDD", "DDDDDDDD", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]},
+            "half-time": {"bars": ["D..D..D.", "D..D..D.", "D---D---", "D---D-DD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "mid-tempo": {"bars": [".U.U.U.U", ".U.U.U.U", "D-DUD-DU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "pop-strum": {"bars": ["D.DU.UDU", "D.DU.UDU", "D-DU-UDU", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0]},
+            "ballad": {"bars": ["D.D.D.D.", "D.D.D.D.", "D---D---", "D---D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]}
           }
         },
         {
           "name": "Quarter-note climb",
           "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
-            "fast-punk": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "DDDDDDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 2, 4, 6] },
-            "half-time": { "bars": ["D...D...", "D...D...", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
-            "mid-tempo": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
-            "pop-strum": { "bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] },
-            "ballad": { "bars": ["D...D...", "D...D...", "D---D---", "D-D-D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4] }
+            "fast-punk": {"bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "DDDDDDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 2, 4, 6]},
+            "half-time": {"bars": ["D...D...", "D...D...", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]},
+            "mid-tempo": {"bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]},
+            "pop-strum": {"bars": ["D.D.D.D.", "D.D.D.D.", "D-D-D-D-", "D-DUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]},
+            "ballad": {"bars": ["D...D...", "D...D...", "D---D---", "D-D-D-D-"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]}
+          }
+        },
+        {
+          "name": "Build with a fill",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["D.D.D.D.", "D.D.D.D.", "D.D.D.D.", "D.D.D.D.DUDUDUDU"], "articulation": ["pm", "pm", "pm", "ring"], "accents": [0, 4], "drums": [null, null, null, {"kick": [0, 4], "snare": [8, 9, 10, 11, 12, 13, 14, 15], "hat": [0, 2, 4, 6]}]}
+          }
+        },
+        {
+          "name": "Stop and hit",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["D...D...", "D...D...", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4], "drums": [{"kick": [0, 4], "hat": [0, 2, 4, 6]}, {"kick": [0, 4], "hat": [0, 2, 4, 6]}, {"kick": [0, 2, 4, 6], "snare": [2, 6], "hat": [0, 1, 2, 3, 4, 5, 6, 7]}, {"kick": [0, 2, 4, 5, 6, 7], "snare": [2, 6], "crash": [0]}]}
+          }
+        },
+        {
+          "name": "Gallop build",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": ["D.DUD.DUD.DUD.D.", "D.DUD.DUD.DUD.D.", "D-D-D-D-", "D-D-DDDD"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4], "drums": [{"kick": [0, 2, 3, 8, 10, 11], "snare": [4, 12], "hat": [0, 2, 4, 6, 8, 10, 12, 14]}, {"kick": [0, 2, 3, 8, 10, 11], "snare": [4, 12], "hat": [0, 2, 4, 6, 8, 10, 12, 14]}, null, null]}
+          }
+        },
+        {
+          "name": "Offbeat climb",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "all": {"bars": [".U.U.U.U", ".U.U.U.U", "D-DUD-DU", "DUDUDUDU"], "articulation": ["pm", "pm", "ring", "ring"], "accents": [0, 4]}
           }
         }
       ]
@@ -117,22 +193,52 @@
           "name": "Let-ring eighths with pushes",
           "shapes": ["E3", "A3", "E2", "A2", "D2"],
           "rhythms": {
-            "fast-punk": { "bars": ["DDDDDDDD"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
-            "half-time": { "bars": ["D--D--D-"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
-            "mid-tempo": { "bars": ["D-DUD-DU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
-            "pop-strum": { "bars": ["D-DU-UDU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
-            "ballad": { "bars": ["D---D---"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2] }
+            "fast-punk": {"bars": ["DDDDDDDD"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]},
+            "half-time": {"bars": ["D--D--D-"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]},
+            "mid-tempo": {"bars": ["D-DUD-DU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]},
+            "pop-strum": {"bars": ["D-DU-UDU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]},
+            "ballad": {"bars": ["D---D---"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2]}
           }
         },
         {
           "name": "Big hits",
           "shapes": ["E3", "A3", "E2", "A2", "D2"],
           "rhythms": {
-            "fast-punk": { "bars": ["D-D-DDDD"], "articulation": ["ring"], "accents": [0, 2], "pushes": [0, 2] },
-            "half-time": { "bars": ["D---D-DD"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2] },
-            "mid-tempo": { "bars": ["D--UD-DU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2] },
-            "pop-strum": { "bars": ["D-D-DUDU"], "articulation": ["ring"], "accents": [0, 2], "pushes": [0, 2] },
-            "ballad": { "bars": ["D---D-D-"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2] }
+            "fast-punk": {"bars": ["D-D-DDDD"], "articulation": ["ring"], "accents": [0, 2], "pushes": [0, 2]},
+            "half-time": {"bars": ["D---D-DD"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2]},
+            "mid-tempo": {"bars": ["D--UD-DU"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]},
+            "pop-strum": {"bars": ["D-D-DUDU"], "articulation": ["ring"], "accents": [0, 2], "pushes": [0, 2]},
+            "ballad": {"bars": ["D---D-D-"], "articulation": ["ring"], "accents": [0, 4], "pushes": [0, 2]}
+          }
+        },
+        {
+          "name": "Accent hits",
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
+          "rhythms": {
+            "all": {"bars": ["D--D--DD"], "articulation": ["ring"], "accents": [0, 3, 6], "drums": [{"kick": [0, 3, 6], "crash": [0, 3], "snare": [2, 6], "hat": [1, 4, 5, 7]}]}
+          }
+        },
+        {
+          "name": "Open gallop",
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
+          "rhythms": {
+            "all": {"bars": ["D-DUD-DUD-DUD-D-"], "articulation": ["ring"], "accents": [0, 2, 4, 6], "drums": [{"kick": [0, 2, 3, 8, 10, 11], "snare": [4, 12], "hat": [0, 2, 4, 6, 8, 10, 12, 14], "crash": [0]}]},
+            "ballad": {"bars": ["D---D-DUD---D-DU"], "articulation": ["ring"], "accents": [0, 4], "drums": [{"kick": [0, 6, 7], "snare": [8], "hat": [0, 4, 8, 12], "crash": [0]}]}
+          }
+        },
+        {
+          "name": "Half-note anthem",
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
+          "rhythms": {
+            "all": {"bars": ["D---D---"], "articulation": ["ring"], "accents": [0, 4], "pushes": [1, 3], "drums": [{"kick": [0, 4], "snare": [2, 6], "hat": [0, 1, 2, 3, 4, 5, 6, 7], "crash": [0, 4]}]}
+          }
+        },
+        {
+          "name": "Driving eighths",
+          "shapes": ["E3", "A3", "E2", "A2", "D2"],
+          "rhythms": {
+            "all": {"bars": ["DDDDDDDD"], "articulation": ["ring"], "accents": [0], "pushes": [0, 1, 2], "drums": [{"kick": [0, 3, 4], "snare": [2, 6], "hat": [0, 1, 2, 3, 4, 5, 6, 7], "crash": [0]}]},
+            "ballad": {"bars": ["D-D-D-D-"], "articulation": ["ring"], "accents": [0], "pushes": [0, 2]}
           }
         }
       ]
@@ -146,14 +252,42 @@
           "name": "Heavy hits and a stop",
           "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
-            "half-time": { "bars": ["D---D-xx", "D---D---", "D---D-xx", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3 }
+            "half-time": {"bars": ["D---D-xx", "D---D---", "D---D-xx", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3}
           }
         },
         {
           "name": "Dead-strum fills",
           "shapes": ["E2", "A2", "E3", "A3"],
           "rhythms": {
-            "half-time": { "bars": ["D--xD--x", "D---D-xx", "D--xD--x", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3 }
+            "half-time": {"bars": ["D--xD--x", "D---D-xx", "D--xD--x", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3}
+          }
+        },
+        {
+          "name": "Gallop breakdown",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "half-time": {"bars": ["D---D-D-", "D---D-D-", "D.DUD.DUD.DUD.D.", "D......."], "articulation": ["ring", "ring", "pm", "ring"], "accents": [0, 4], "stopBar": 3, "drums": [null, null, {"kick": [0, 2, 3, 8, 10, 11], "snare": [8], "hat": [0, 2, 4, 6, 8, 10, 12, 14]}, null]}
+          }
+        },
+        {
+          "name": "Stop-time hits",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "half-time": {"bars": ["D..D....", "D..D....", "D..D....", "D......."], "articulation": ["ring"], "accents": [0, 3], "stopCells": [3, 3, 3, 0], "drums": [{"kick": [0, 3], "crash": [0]}, {"kick": [0, 3]}, {"kick": [0, 3], "crash": [0]}, {"kick": [0], "crash": [0]}]}
+          }
+        },
+        {
+          "name": "Quarter-note chugs",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "half-time": {"bars": ["D.D.D.D.", "D.D.D.D.", "D.D.D.D.", "D......."], "articulation": ["pm", "pm", "pm", "ring"], "accents": [0, 4], "stopBar": 3}
+          }
+        },
+        {
+          "name": "Chug and choke",
+          "shapes": ["E2", "A2", "E3", "A3"],
+          "rhythms": {
+            "half-time": {"bars": ["D-xxD-xx", "D-xxD-xx", "D-xxD-xx", "D......."], "articulation": ["ring"], "accents": [0, 4], "stopBar": 3}
           }
         }
       ]
@@ -169,22 +303,22 @@
           "name": "Final hit, let ring",
           "shapes": ["E3", "A3", "E2", "A2"],
           "rhythms": {
-            "fast-punk": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
-            "half-time": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
-            "mid-tempo": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
-            "pop-strum": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] },
-            "ballad": { "bars": ["D-------"], "articulation": ["ring"], "accents": [0] }
+            "fast-punk": {"bars": ["D-------"], "articulation": ["ring"], "accents": [0]},
+            "half-time": {"bars": ["D-------"], "articulation": ["ring"], "accents": [0]},
+            "mid-tempo": {"bars": ["D-------"], "articulation": ["ring"], "accents": [0]},
+            "pop-strum": {"bars": ["D-------"], "articulation": ["ring"], "accents": [0]},
+            "ballad": {"bars": ["D-------"], "articulation": ["ring"], "accents": [0]}
           }
         },
         {
           "name": "Stop on the one",
           "shapes": ["E3", "A3", "E2", "A2"],
           "rhythms": {
-            "fast-punk": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
-            "half-time": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
-            "mid-tempo": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
-            "pop-strum": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 },
-            "ballad": { "bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0 }
+            "fast-punk": {"bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0},
+            "half-time": {"bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0},
+            "mid-tempo": {"bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0},
+            "pop-strum": {"bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0},
+            "ballad": {"bars": ["D......."], "articulation": ["ring"], "accents": [0], "stopBar": 0}
           }
         }
       ]

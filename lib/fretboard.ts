@@ -8,6 +8,8 @@ export type { TabString };
 /** Strings low to high, the order shapes are written in. */
 export const LOW_TO_HIGH: TabString[] = ["E", "A", "D", "G", "B", "e"];
 export const CELLS_PER_BAR = 8;
+/** Bars that need sixteenth notes (gallops, fills) have 16 cells; every other bar keeps 8 (DECISIONS.md, layout D). */
+export const SIXTEENTHS_PER_BAR = 16;
 
 export type Fretted = { string: TabString; fret: number };
 
@@ -79,8 +81,15 @@ export function renderTab(bars: TabBar[], barsPerLine = 2): TabLineGroup[] {
   const anyArt = bars.some((b) => b.articulation || b.stopAt !== undefined);
   const groups: TabLineGroup[] = [];
 
-  for (let start = 0; start < bars.length; start += barsPerLine) {
-    const line = bars.slice(start, start + barsPerLine);
+  // Layout D (DECISIONS.md): eighth-note bars go barsPerLine to a line; a 16th-note bar gets a line to itself,
+  // so its text stays as big as an eighth-note line's.
+  const lines: TabBar[][] = [];
+  for (let i = 0; i < bars.length; ) {
+    const line = [bars[i++]];
+    while (line[0].cells.length <= CELLS_PER_BAR && line.length < barsPerLine && i < bars.length && bars[i].cells.length <= CELLS_PER_BAR) line.push(bars[i++]);
+    lines.push(line);
+  }
+  for (const line of lines) {
     const strings = TAB_STRINGS.map((s) => `${s}|`);
     let labels = " ".repeat(PREFIX);
     let accents = " ".repeat(PREFIX);
