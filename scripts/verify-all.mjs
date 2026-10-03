@@ -2,7 +2,7 @@
 // long as the slowest one. Each suite's output is printed in order once it finishes; any failure fails the run.
 import { spawn } from "node:child_process";
 
-const SUITES = ["verify-data-layer", "verify-voicings", "verify-critic", "verify-melody", "verify-midi"];
+const SUITES = ["verify-data-layer", "verify-voicings", "verify-critic", "verify-melody", "verify-midi", "verify-pdf"];
 const started = Date.now();
 const runs = SUITES.map(
   (name) =>

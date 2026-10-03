@@ -147,6 +147,9 @@ All lead-engine checks passed.
 MIDI: 120 songs (4 keys × 5 feels × 3 lengths × 2 option sets), 628768 notes: every file reads back exactly,
 every note in its lane, guitars and drums = audio.
 All MIDI checks passed.
+PDF songbook: 120 songbooks, 654 pages (…): fonts embedded, every page on the paper, nothing outside the margins
+or overlapping, every section and bar present.
+All PDF checks passed.
 ```
 
 What "checked" means:

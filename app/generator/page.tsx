@@ -7,6 +7,7 @@ import { GenerateButton, PlaySongButton, RebuildButton } from "@/components/Gene
 import { KeyPicker } from "@/components/KeyPicker";
 import { LengthControl } from "@/components/LengthControl";
 import { MidiExportCard } from "@/components/MidiExportCard";
+import { PdfExportCard } from "@/components/PdfExportCard";
 import { OriginalityBadge } from "@/components/OriginalityBadge";
 import { type GuideStep, PageGuide } from "@/components/PageGuide";
 import { PageHeader } from "@/components/PageHeader";
@@ -264,6 +265,20 @@ export default function GeneratorPage() {
           TAKE IT AWAY
         </p>
         <div className="grid grid-cols-1 gap-[12px] tablet:grid-cols-2">
+          <PdfExportCard
+            input={{
+              song: { plan, parts: song },
+              rendered,
+              title: state.title,
+              keyName: keyDisplayName(state.key),
+              feel: feelLabel,
+              bpm,
+              progressionId: state.progressionId,
+              degrees: Object.fromEntries(
+                SECTION_IDS.flatMap((id) => (id === "solo" || rendered[id].lead ? [] : [[id, plannedDegrees(id, inputsFor(state, id).progressionId, rendered[id].groove)]])),
+              ),
+            }}
+          />
           <MidiExportCard song={{ plan, parts: song }} bpm={bpm} keyName={state.key} progressionId={state.progressionId} title={state.title} />
         </div>
       </section>
