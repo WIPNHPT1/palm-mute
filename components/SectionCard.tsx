@@ -42,6 +42,7 @@ export function SectionCard({
   degrees,
   options,
   optionsSummary,
+  nowBar,
   className = "",
 }: {
   section: RenderedSection;
@@ -72,6 +73,8 @@ export function SectionCard({
   options?: ReactNode;
   /** What the Options button says is in use, e.g. "Gallop". */
   optionsSummary?: string;
+  /** The tab bar sounding now (the transport's cursor), if this section is playing. */
+  nowBar?: number | null;
   className?: string;
 }) {
   const tabletUp = useTabletUp();
@@ -174,7 +177,7 @@ export function SectionCard({
       )}
 
       <div id={tabId} data-tab-area className="px-[14px] pt-[10px] tablet:px-[16px]">
-        <TabBlock groups={shown} spoken={section.spoken} rhythm={rhythmOf(section)} repeat={section.repeat} complete={shown.length === groups.length} />
+        <TabBlock groups={shown} spoken={section.spoken} rhythm={rhythmOf(section)} repeat={section.repeat} complete={shown.length === groups.length} nowBar={nowBar} />
       </div>
 
       <div data-actions className="flex flex-wrap items-center gap-[8px] px-[14px] pb-[12px] pt-[10px] tablet:px-[16px]">
