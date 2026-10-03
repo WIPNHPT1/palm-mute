@@ -1,0 +1,52 @@
+{
+  "_note": "Style presets (docs/song-builder-prd.md B11; DECISIONS.md: Skate punk, 2000s pop-punk, Emo; eras and techniques, never artists). A preset is a starting point, not a lock: it sets the feel (and Mid-Tempo's tempo), sometimes the progression, the length, and each unlocked section's Options. `grooves` lists the grooves it prefers per section, best first: the first one that can play in the song's key, tempo and difficulty is used. `options` adds playing style, shapes or structure. Locked sections are never touched. npm run verify checks every name here exists.",
+  "presets": {
+    "skate": {
+      "label": "Skate punk",
+      "description": "Fast and tight: palm-muted gallops, driving choruses, a short song that stops on a hit.",
+      "feel": "fast-punk",
+      "lengthSec": 150,
+      "grooves": {
+        "intro": ["Low-string P.M. riff", "Chugs into open hits"],
+        "verse": ["Gallop", "Sparse chugs"],
+        "prechorus": ["Gallop build", "Build with a fill"],
+        "chorus": ["Driving eighths", "Open gallop"],
+        "breakdown": ["Gallop breakdown", "Chug and choke"],
+        "ending": ["Stop on the one"]
+      },
+      "options": { "verse": { "sound": "pm" } }
+    },
+    "poppunk": {
+      "label": "2000s pop-punk",
+      "description": "Big and bright: an octave hook, offbeat verses, 3-note choruses with pushes, and the last chorus up a tone.",
+      "feel": "pop-strum",
+      "lengthSec": 195,
+      "grooves": {
+        "intro": ["Hook line in octaves", "Octave riff"],
+        "verse": ["Offbeat accents", "Backbeat chugs"],
+        "prechorus": ["Build with a fill", "Build to ring"],
+        "chorus": ["Let-ring eighths with pushes", "Big hits"],
+        "breakdown": ["Stop-time hits", "Heavy hits and a stop"],
+        "ending": ["Chorus tag", "Final hit, let ring"]
+      },
+      "options": { "chorus": { "shape": "three", "keyUp": true } }
+    },
+    "emo": {
+      "label": "Emo",
+      "description": "Slower and darker: a progression that starts on the sad vi chord, ringing open-string riffs, half-note anthems and a fade.",
+      "feel": "mid-tempo",
+      "midTempoBpm": 130,
+      "progressionId": "vi-IV-I-V",
+      "lengthSec": 240,
+      "grooves": {
+        "intro": ["Open-string pedal riff", "Octave climb"],
+        "verse": ["Sparse chugs", "Stop-time"],
+        "prechorus": ["Quarter-note climb", "Build to ring"],
+        "chorus": ["Half-note anthem", "Let-ring eighths with pushes"],
+        "breakdown": ["Quarter-note chugs", "Dead-strum fills"],
+        "ending": ["Fade out", "Final hit, let ring"]
+      },
+      "options": { "verse": { "sound": "ring" } }
+    }
+  }
+}

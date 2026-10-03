@@ -25,6 +25,8 @@ import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarP
 import type { FormSlot } from "@/lib/songPlan";
 import { type SongPlan, LENGTH } from "@/lib/songLength";
 import { songParts, songPlan } from "@/lib/song";
+import { type Difficulty, DEFAULT_DIFFICULTY } from "@/lib/playability";
+import { type PresetId, PRESETS, presetOptions } from "@/lib/presets";
 import { TITLES, titleBag } from "@/lib/titleGenerator";
 import { type Fixed, bestSectionTake, bestSong } from "@/lib/critic";
 import type { SongThread } from "@/lib/generator";
@@ -64,6 +66,10 @@ export type GeneratorState = {
   lengthSec: number;
   /** The song's title (the title generator's shuffle bag deals a new one on every BUILD SONG). */
   title: string;
+  /** The Difficulty control (data/difficulty.json): what the Generator may write. */
+  difficulty: Difficulty;
+  /** The style preset the song started from, if any (data/style-presets.json). */
+  preset: PresetId | null;
   /** GENERATE's song seed: the critic's best of N takes for it (data/critic.json). The page opens on song 0. */
   songSeed: number;
   sections: Record<SectionId, SectionState>;
@@ -84,6 +90,8 @@ type Action =
   | { type: "setMidTempoBpm"; bpm: number }
   | { type: "generate"; seeds: Partial<Record<SectionId, number>>; songSeed: number; originality: OriginalityStatus; title: string }
   | { type: "setLength"; seconds: number }
+  | { type: "setDifficulty"; difficulty: Difficulty }
+  | { type: "applyPreset"; preset: PresetId | null }
   | { type: "setOptions"; id: SectionId; options: SectionOptions }
   | { type: "setLead"; id: SectionId; lead: { style: LeadStyle; bars: number } | null }
   | { type: "regenerate"; id: SectionId; seed: number; progressionId?: string }
@@ -109,6 +117,8 @@ function initialState(): GeneratorState {
     ...DEFAULTS,
     lengthSec: LENGTH.default,
     title: TITLES[0],
+    difficulty: DEFAULT_DIFFICULTY,
+    preset: null,
     songSeed: 0,
     midTempoBpm: MID_TEMPO.default,
     sections,
@@ -125,7 +135,7 @@ export function inputsForAll(state: GeneratorState): Record<SectionId, SectionIn
 export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
   const s = state.sections[id];
   if (s.locked && s.frozen) return s.frozen;
-  const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead, options: s.options };
+  const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead, options: s.options, difficulty: state.difficulty };
   // A Generator-written Solo knows the song (R15, R16): it quotes the Intro and plays over the Chorus's chords.
   if (id === "solo" && !s.lead?.sent && s.thread) return { ...inputs, thread: s.thread };
   return inputs;
@@ -174,6 +184,32 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       if (s.locked) return state;
       const next = { ...state, sections: { ...state.sections, [action.id]: { ...s, lead: action.lead, ...(action.lead ? {} : { seed: 0 }) } } };
       return action.id === "solo" ? rethread(next) : next;
+    }
+    case "setDifficulty":
+      return { ...state, difficulty: action.difficulty };
+    case "applyPreset": {
+      // "Your own": the song's own setup again (unlocked sections lose the preset's Options).
+      if (!action.preset) {
+        const sections = { ...state.sections };
+        for (const id of SECTION_IDS) if (!sections[id].locked) sections[id] = { ...sections[id], options: {} };
+        return rethread({ ...state, sections, preset: null });
+      }
+      const p = PRESETS[action.preset];
+      const next: GeneratorState = {
+        ...state,
+        preset: action.preset,
+        feel: p.feel,
+        midTempoBpm: p.midTempoBpm ?? state.midTempoBpm,
+        progressionId: p.progressionId ?? state.progressionId,
+        lengthSec: p.lengthSec,
+      };
+      // Each unlocked section's Options for the preset, chosen for the song's new key, feel and progression.
+      const sections = { ...next.sections };
+      for (const id of SECTION_IDS) {
+        if (sections[id].locked) continue;
+        sections[id] = { ...sections[id], options: presetOptions(p, id, inputsFor(next, id)) };
+      }
+      return rethread({ ...next, sections });
     }
     case "setLength":
       return { ...state, lengthSec: Math.min(LENGTH.max, Math.max(LENGTH.min, action.seconds)) };
@@ -249,6 +285,9 @@ type GeneratorContextValue = {
   /** The playback tempo for the page's feel. */
   bpm: number;
   setLength: (seconds: number) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
+  /** Start from a style preset (or null: your own). Locked sections stay as they are. */
+  applyPreset: (preset: PresetId | null) => void;
   /** A section card's Options (only that section changes). */
   setOptions: (id: SectionId, options: SectionOptions) => void;
   /** A lead's style and length from its card, or null to put the Intro back to power chords. */
@@ -311,11 +350,11 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       if (s.locked && s.frozen) fixed[id] = s.frozen;
       // The Solo takes the next seed: the new progression or Intro changes its song thread, so it's always a new
       // take, and it isn't rendered here (the critic doesn't judge lead lines).
-      else if (id === "solo") fixed[id] = { key: state.key, feel: state.feel, progressionId, seed: s.seed + 1, lead: s.lead, options: s.options };
+      else if (id === "solo") fixed[id] = { key: state.key, feel: state.feel, progressionId, seed: s.seed + 1, lead: s.lead, options: s.options, difficulty: state.difficulty };
       else if (s.lead) fixed[id] = { ...inputsFor(state, id), progressionId, seed: nextSeed(id, inputsFor(state, id)) };
     }
     const options = Object.fromEntries(SECTION_IDS.map((id) => [id, state.sections[id].options]));
-    const best = bestSong({ key: state.key, feel: state.feel, progressionId }, songSeed, fixed, current, undefined, options);
+    const best = bestSong({ key: state.key, feel: state.feel, progressionId, difficulty: state.difficulty }, songSeed, fixed, current, undefined, options);
     const seeds: Partial<Record<SectionId, number>> = {};
     for (const id of SECTION_IDS) if (!state.sections[id].locked) seeds[id] = best.seeds[id];
     // The originality check is about chord patterns, so lead lines (the Solo, an Intro melody) aren't previewed.
@@ -482,6 +521,8 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       plan,
       bpm,
       setLength: (seconds) => dispatch({ type: "setLength", seconds }),
+      setDifficulty: (difficulty) => dispatch({ type: "setDifficulty", difficulty }),
+      applyPreset: (preset) => dispatch({ type: "applyPreset", preset }),
       setOptions: (id, options) => dispatch({ type: "setOptions", id, options }),
       setLead: (id, lead) => dispatch({ type: "setLead", id, lead }),
       setKey: (key) => dispatch({ type: "setKey", key }),

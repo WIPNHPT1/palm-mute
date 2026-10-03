@@ -1,0 +1,37 @@
+{
+  "_note": "The Difficulty control (docs/song-builder-prd.md B10; DECISIONS.md: Beginner / Intermediate / Advanced, default Intermediate). What each level lets the Generator write: `maxCells` = the finest rhythm grid (8 = eighths only, 16 = sixteenth-note gallops and fills); `riffs` = Intro riffs (single notes and octaves) or strummed chords only; `shapes` = shape sizes in rhythm parts (`two` = 2-note power chords only, null = the recipe's mix); `soloStyles` = the lead styles a Generator-written solo may use (a solo sent from the Chords page always plays as previewed). The picking-hand cap per level is in data/playability.json (`picking.caps`). A card's own Options can't pick what the level rules out: those choices show greyed with the level they need.",
+  "levels": {
+    "beginner": {
+      "label": "Beginner",
+      "maxCells": 8,
+      "riffs": false,
+      "shapes": "two",
+      "soloStyles": [
+        "chill",
+        "classic"
+      ]
+    },
+    "intermediate": {
+      "label": "Intermediate",
+      "maxCells": 16,
+      "riffs": true,
+      "shapes": null,
+      "soloStyles": [
+        "chill",
+        "classic",
+        "shred"
+      ]
+    },
+    "advanced": {
+      "label": "Advanced",
+      "maxCells": 16,
+      "riffs": true,
+      "shapes": null,
+      "soloStyles": [
+        "chill",
+        "classic",
+        "shred"
+      ]
+    }
+  }
+}

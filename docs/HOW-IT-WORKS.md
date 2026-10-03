@@ -216,6 +216,12 @@ A solo the Generator writes gets a **song thread** (`songThread` in `lib/generat
 
 A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing BUILD SONG, BUILD AGAIN or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (a build, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
 
+## 5a. Difficulty and style presets
+
+**Difficulty** (Beginner / Intermediate / Advanced, default Intermediate) is an input to every section, like the key: the voicing search, the critic and the cards all see it (`data/difficulty.json`). A Beginner's song uses eighth-note grooves and 2-note shapes only, no Intro riffs, downpicked runs of at most 8 (over that, chord strums alternate), and Chill or Classic solos; Intermediate adds gallops, riffs and shred solos with runs up to 16; Advanced lifts the run cap. Grooves a level rules out stay on the Rhythm tab, greyed with the level they need. `npm run verify` renders every level across keys, progressions and feels through the same checks, and checks that a Beginner's sections really have no sixteenths, riffs or 3-note shapes.
+
+**Style presets** (`data/style-presets.json`) are starting points: Skate punk (fast, palm-muted gallops, 2:30, stops on a hit), 2000s pop-punk (Pop Strum, an octave hook, 3-note choruses with pushes, the last chorus up a tone) and Emo (Mid-Tempo at 130, vi-IV-I-V, ringing open-string riffs, half-note anthems, 4:00, a fade). A preset sets the setup and each unlocked section's Options, choosing for each section the first of its preferred grooves that can play in the song's key; everything stays editable, and **Your own** clears it. Verify checks every preset finds a playable groove for every section it names, in every key.
+
 ## 5b. MIDI export
 
 **Take it away → DOWNLOAD MIDI** writes the song as one Standard MIDI File (type 1, 480 ticks per quarter note): the tempo, 4/4, the key signature and a marker where each part of the running order starts, then one track per part of the owner's lane table (`data/midi-lanes.json`) and General MIDI drums (`lib/arrange.ts`, written by `lib/midi.ts`, which has no dependencies):

@@ -41,6 +41,7 @@ export function SectionOptionsPanel({
   timesRange,
   materialBars,
   previewing,
+  soloStyles,
   onChange,
   onLead,
   onPreview,
@@ -58,6 +59,8 @@ export function SectionOptionsPanel({
   materialBars: number;
   /** The groove being previewed, if any. */
   previewing: string | null;
+  /** The solo styles the Difficulty allows. */
+  soloStyles: string[];
   onChange: (options: SectionOptions) => void;
   onLead: (lead: Lead) => void;
   onPreview: (groove: string) => void;
@@ -89,7 +92,8 @@ export function SectionOptionsPanel({
 
   const body = () => {
     if (tab === "rhythm" && leadPart) {
-      const styles = leadPart === "solo" ? SOLO_STYLES : INTRO_STYLES;
+      // A solo's styles follow the Difficulty (shred is Intermediate and up).
+      const styles = leadPart === "solo" ? SOLO_STYLES.filter((st) => soloStyles.includes(st)) : INTRO_STYLES;
       return (
         <div className="flex flex-col gap-[12px]">
           <p className="m-0 max-w-[72ch] font-mono text-[12px] leading-[1.6] text-text-muted">

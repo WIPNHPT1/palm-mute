@@ -1,10 +1,11 @@
 // Quick self-check for the lib/ data layer: `npm run verify`.
 import assert from "node:assert/strict";
-import { chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
+import { PITCH_CLASSES, chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
-import { FEEL_IDS, SECTION_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns, sectionTemplates } from "@/lib/generator";
+import { type SectionId, FEEL_IDS, SECTION_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns, sectionTemplates } from "@/lib/generator";
 import { DEFAULT_FORM, FORM_IDS, formSlots, formSpec, sectionDegrees } from "@/lib/songPlan";
 import { LENGTH, barSeconds, formatLength, planSong } from "@/lib/songLength";
+import { PRESETS, PRESET_IDS, presetSectionOptions } from "@/lib/presets";
 import formsJson from "@/data/song-forms.json";
 import { progressionBars } from "@/lib/playback";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
@@ -176,3 +177,20 @@ for (const v of recipes.intro.variants.filter((x) => x.riff)) {
 }
 
 console.log("\nAll data-layer checks passed.");
+
+// Style presets (data/style-presets.json): every groove they name exists in that section's recipe, their feels,
+// progressions and lengths are real, and in every key each preset finds a playable groove for every section it
+// names (its first choice, or a fallback).
+for (const id of PRESET_IDS) {
+  const p = PRESETS[id];
+  assert.ok(FEEL_IDS.includes(p.feel), `${id}: feel ${p.feel}`);
+  if (p.progressionId) assert.ok(progressions.some((x) => x.id === p.progressionId), `${id}: progression ${p.progressionId}`);
+  assert.ok(p.lengthSec >= LENGTH.min && p.lengthSec <= LENGTH.max && (p.lengthSec - LENGTH.min) % LENGTH.step === 0, `${id}: length ${p.lengthSec}`);
+  for (const [section, names] of Object.entries(p.grooves))
+    for (const n of names!) assert.ok(recipes[section as Exclude<SectionId, "solo">].variants.some((v) => v.name === n), `${id}: ${section} has no groove "${n}"`);
+  for (const key of PITCH_CLASSES) {
+    const options = presetSectionOptions(p, () => ({ key, feel: p.feel, progressionId: p.progressionId ?? "I-V-vi-IV", seed: 0 }));
+    for (const section of Object.keys(p.grooves)) assert.ok(options[section as SectionId].groove, `${id} in ${key}: no playable ${section} groove`);
+  }
+}
+console.log(`Style presets: ${PRESET_IDS.length} (${PRESET_IDS.map((i) => PRESETS[i].label).join(", ")}) find a playable groove for every section they name, in every key.`);
