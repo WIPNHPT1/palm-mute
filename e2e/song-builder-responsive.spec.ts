@@ -108,4 +108,20 @@ test.describe("song builder: every screen", () => {
     expect(box.x).toBe(0);
     expect(Math.round(box.width)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
   });
+
+  test("from the final sweep: the length marks never collide, and each export button sits with its controls", async ({ page }) => {
+    await gotoAndSettle(page, "/generator/");
+    for (const len of ["150", "240", "330"]) {
+      await page.getByRole("slider", { name: "Song length" }).fill(len);
+      const boxes = await page.locator("[data-length] .text-brass").evaluateAll((els) =>
+        els.filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect()).map((r) => [r.left, r.right] as const),
+      );
+      for (let i = 1; i < boxes.length; i++) expect(boxes[i][0], `${len}s: marks ${i} and ${i + 1} overlap`).toBeGreaterThanOrEqual(boxes[i - 1][1] - 0.5);
+    }
+    // From tablet up, DOWNLOAD PDF shares its row with the paper switch, as DOWNLOAD MIDI does with its switch.
+    if (projectWidth(test.info()) >= 834) {
+      const [btn, sw] = await Promise.all([page.getByRole("button", { name: "DOWNLOAD PDF" }).boundingBox(), page.getByRole("radiogroup", { name: "Paper size" }).boundingBox()]);
+      expect(Math.abs(btn!.y + btn!.height / 2 - (sw!.y + sw!.height / 2))).toBeLessThan(4);
+    }
+  });
 });
