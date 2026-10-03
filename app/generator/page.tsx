@@ -18,6 +18,8 @@ import { SectionOptionsPanel } from "@/components/SectionOptionsPanel";
 import { SetupSummary } from "@/components/SetupSummary";
 import { SongHeader } from "@/components/SongHeader";
 import { Transport } from "@/components/Transport";
+import { ShareCard, copyText } from "@/components/ShareCard";
+import { decodeSong } from "@/lib/share";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
 import { DIFFICULTIES, DIFFICULTY, SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
 import { type PresetId, PRESETS, PRESET_IDS } from "@/lib/presets";
@@ -95,7 +97,30 @@ export default function GeneratorPage() {
     setSpeed,
     setCountIn,
     setLoopPart,
+    selectTake,
+    loadShared,
+    shareFragment,
   } = useGenerator();
+
+  // A shared link ("#song=…"): open that song once, then tidy the address bar.
+  const [shared, setShared] = useState<"loaded" | "invalid" | null>(null);
+  useEffect(() => {
+    if (!location.hash.includes("song=")) return;
+    const song = decodeSong(location.hash);
+    if (song) {
+      loadShared(song);
+      setShared("loaded");
+      setSetupOpen(false);
+    } else setShared("invalid");
+    history.replaceState(null, "", location.pathname + location.search);
+    // Only when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // The page's address is only known in the browser (the static page renders without it).
+  const [here, setHere] = useState("");
+  useEffect(() => setHere(location.origin + location.pathname), []);
+  const link = here ? `${here}#${shareFragment()}` : "";
+  const [linkStatus, setLinkStatus] = useState("");
 
   // Keyboard: Space plays or stops the song, R builds it again (not while typing, or on a focused control).
   const keys = useRef({ togglePlay, generate });
@@ -249,13 +274,32 @@ export default function GeneratorPage() {
         />
       )}
 
+      {shared && (
+        <div role="status" data-shared-notice className="flex flex-wrap items-center gap-[10px] rounded-outer border border-line bg-surface px-[16px] py-[10px] font-mono text-[12px] text-text-secondary">
+          <span className="mr-auto">{shared === "loaded" ? "You're listening to a shared song. Change anything you like: it's yours now." : "That link couldn't be read, so here's a fresh song instead."}</span>
+          <button type="button" onClick={() => setShared(null)} className="min-h-[44px] px-[8px] font-bold hover:text-text-primary">
+            DISMISS
+          </button>
+        </div>
+      )}
+
       <section ref={songRef} aria-label="Your song" className="flex scroll-mt-[96px] flex-col gap-[12px] tablet:gap-[14px]">
+        <p className="sr-only" role="status">
+          {linkStatus}
+        </p>
         <SongHeader
           title={state.title}
           facts={`${keyDisplayName(state.key)} · ${feelLabel} · ${bpm} BPM · ${state.progressionId}`}
           detail={`${formatLength(plan.seconds)} · ${plan.bars} bars · ${formLabel(plan.form)}`}
           actions={
             <>
+              <button
+                type="button"
+                onClick={async () => setLinkStatus((await copyText(link)) ? "Link copied." : "Copy the link from Share the song below.")}
+                className="flex min-h-[48px] items-center justify-center gap-[8px] rounded-outer border border-line bg-paper px-[16px] font-mono text-[12px] font-bold hover:border-accent"
+              >
+                COPY LINK
+              </button>
               {/* Another take of the whole song on the same setup, without reopening it. */}
               <RebuildButton onClick={generate} />
               <PlaySongButton playing={state.playing === "song"} onClick={() => togglePlay("song")} />
@@ -300,6 +344,7 @@ export default function GeneratorPage() {
                 extraAction={id === "intro" && s.lead && !s.locked ? { label: "Back to power chords", onClick: clearIntroLead } : undefined}
                 degrees={id === "solo" || section.lead ? undefined : plannedDegrees(id, inputsFor(state, id).progressionId, section.groove)}
                 nowBar={position?.section === id ? position.bar : null}
+                takes={{ take: s.take, count: s.takes.length, onSelect: (take) => selectTake(id, take) }}
                 optionsSummary={section.lead ? `${styleLabel(id === "solo" ? "solo" : "intro", section.lead.inputs.style)} · ${section.lead.chords.length} bars` : section.groove}
                 options={
                   <SectionOptionsPanel
@@ -346,6 +391,7 @@ export default function GeneratorPage() {
             }}
           />
           <MidiExportCard song={{ plan, parts: song }} bpm={bpm} keyName={state.key} progressionId={state.progressionId} title={state.title} />
+          <ShareCard link={link} />
         </div>
       </section>
 

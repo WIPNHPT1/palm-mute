@@ -1,11 +1,13 @@
 // Quick self-check for the lib/ data layer: `npm run verify`.
 import assert from "node:assert/strict";
-import { PITCH_CLASSES, chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
+import { type Degree, PITCH_CLASSES, chordMidiNotes, resolveProgression, sortProgressions, progressions } from "@/lib/musicTheory";
 import { tabText } from "@/lib/fretboard";
 import { type SectionId, FEEL_IDS, SECTION_IDS, feels, nextSeed, patternForFeel, playbackBpm, recipes, renderSection, rhythmPatterns, sectionTemplates } from "@/lib/generator";
 import { DEFAULT_FORM, FORM_IDS, formSlots, formSpec, sectionDegrees } from "@/lib/songPlan";
 import { LENGTH, barSeconds, formatLength, planSong } from "@/lib/songLength";
 import { PRESETS, PRESET_IDS, presetSectionOptions } from "@/lib/presets";
+import { type SharedSong, decodeSong, encodeSong } from "@/lib/share";
+import { TITLES as ALL_TITLES } from "@/lib/titleGenerator";
 import formsJson from "@/data/song-forms.json";
 import { progressionBars } from "@/lib/playback";
 import { TITLES, MAX_TITLE_LENGTH, createTitleBag } from "@/lib/titleGenerator";
@@ -194,3 +196,36 @@ for (const id of PRESET_IDS) {
   }
 }
 console.log(`Style presets: ${PRESET_IDS.length} (${PRESET_IDS.map((i) => PRESETS[i].label).join(", ")}) find a playable groove for every section they name, in every key.`);
+
+// Share links (lib/share.ts): every song survives the trip through a link unchanged: setups across every key,
+// feel and preset, each section's take, lead, options and thread, and locked sections with what they were
+// locked in. Links that don't check out come back null or with the bad parts dropped, never throwing.
+{
+  let links = 0;
+  const longest = { n: 0 };
+  for (const k of PITCH_CLASSES)
+    for (const f of FEEL_IDS) {
+      const preset = PRESET_IDS[(links % (PRESET_IDS.length + 1)) - 1] ?? null;
+      const sections = Object.fromEntries(
+        SECTION_IDS.map((id, i) => {
+          const options = id === "solo" ? {} : { groove: recipes[id].variants[i % recipes[id].variants.length].name, ...(id === "verse" ? { noPush: true, sound: "pm" as const } : {}), ...(id === "chorus" ? { keyUp: true, times: 3 } : {}) };
+          const lead = id === "solo" ? { style: "shred" as const, bars: 16 } : id === "intro" && links % 2 ? { style: "hook" as const, bars: 8, sent: true } : null;
+          const locked = id === "breakdown";
+          const thread = id === "solo" ? { quote: { rhythm: "n-n-n.n.", intervals: [2, -2, 5], from: "the Intro riff" }, degrees: ["I", "V", "vi", "IV"] as Degree[], peakDegree: "vi" as Degree } : undefined;
+          return [id, { seed: (links * 7 + i) % 40, lead, options, ...(thread ? { thread } : {}), locked, frozen: locked ? { key: "D" as const, feel: "half-time" as const, progressionId: "I-IV-V", seed: 11, lead: null, options: { drums: "none" as const }, difficulty: "beginner" as const } : null }];
+        }),
+      ) as SharedSong["sections"];
+      const song: SharedSong = { key: k, feel: f, midTempoBpm: 130, progressionId: progressions[links % progressions.length].id, lengthSec: LENGTH.min + LENGTH.step * (links % 13), difficulty: (["beginner", "intermediate", "advanced"] as const)[links % 3], preset, songSeed: links, title: ALL_TITLES[links % ALL_TITLES.length], sections };
+      const link = encodeSong(song);
+      longest.n = Math.max(longest.n, link.length);
+      assert.deepEqual(decodeSong("#" + link), song, `${k} ${f}: the song changed through its link`);
+      links++;
+    }
+  for (const bad of ["", "#song=", "#song=!!!", "#song=bm90IGpzb24", `#song=${Buffer.from(JSON.stringify({ v: 2 })).toString("base64url")}`]) assert.equal(decodeSong(bad), null, `"${bad}" should not open`);
+  const odd = decodeSong(`#song=${Buffer.from(JSON.stringify({ v: 1, k: "G", f: "ballad", p: "I-IV-V", n: 9999, t: 5000, g: -4, s: { verse: { s: 1e12, o: { groove: "Moonwalk", times: 99, sound: "loud" } } } })).toString("base64url")}`)!;
+  assert.equal(odd.lengthSec, LENGTH.default);
+  assert.equal(odd.title, ALL_TITLES[0]);
+  assert.deepEqual(odd.sections.verse, { seed: 0, lead: null, options: {}, locked: false, frozen: null });
+  console.log(`Share links: ${links} songs (every key × feel, presets, leads, options, threads, a locked part) open unchanged from their links (longest ${longest.n} characters); broken and tampered links are refused or cleaned.`);
+}
+
