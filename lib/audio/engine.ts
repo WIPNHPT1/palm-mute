@@ -16,12 +16,14 @@ export type PlaybackRequest = {
   onEnd?: () => void;
   /** Called as each bar starts sounding (index into `bars`), in time with the audio. */
   onBar?: (bar: number) => void;
+  /** Practice: one bar of clicks (four quarter notes) before the music starts. */
+  countIn?: boolean;
 };
 
 declare global {
   interface Window {
     /** The last request handed to the engine; read by the browser tests to check sound = tab. */
-    __palmMuteLastPlayback?: { bars: PlaybackBar[]; bpm: number; loop: boolean } | null;
+    __palmMuteLastPlayback?: { bars: PlaybackBar[]; bpm: number; loop: boolean; countIn?: boolean } | null;
     /** Strings plucked on the Count In page (MIDI note, velocity), newest last; read by the browser tests. */
     __palmMutePlucks?: { midi: number; velocity: number }[];
   }
@@ -112,7 +114,7 @@ async function ensureTone(): Promise<ToneModule> {
 
 /** Starts (or restarts) playback. Resolves false if audio couldn't start — never throws. */
 export async function play(req: PlaybackRequest): Promise<boolean> {
-  window.__palmMuteLastPlayback = { bars: req.bars, bpm: req.bpm, loop: req.loop };
+  window.__palmMuteLastPlayback = { bars: req.bars, bpm: req.bpm, loop: req.loop, countIn: !!req.countIn };
   const mine = ++generation;
   try {
     const T = await ensureTone();
@@ -170,10 +172,13 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
       "16n",
     );
     sequence.loop = req.loop;
-    sequence.start(0);
+    // A count-in: four clicks on the beats of an empty first bar, then the music (a stop cancels them too).
+    const lead = req.countIn ? 1 : 0;
+    if (req.countIn) for (let beat = 0; beat < 4; beat++) transport.scheduleOnce((time) => v.rim.triggerAttackRelease("32n", time, beat === 0 ? 1 : 0.7), `0:${beat}`);
+    sequence.start(`${lead}m`);
     if (!req.loop && req.onEnd) {
       const onEnd = req.onEnd;
-      transport.scheduleOnce((time) => T.getDraw().schedule(onEnd, time), `${req.bars.length}m`);
+      transport.scheduleOnce((time) => T.getDraw().schedule(onEnd, time), `${req.bars.length + lead}m`);
     }
     transport.start("+0.05");
     return true;

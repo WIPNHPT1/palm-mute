@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ControlCard } from "@/components/ControlCard";
 import { FeelToggle } from "@/components/FeelToggle";
 import { GenerateButton, PlaySongButton, RebuildButton } from "@/components/GenerateButton";
@@ -17,6 +17,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { SectionOptionsPanel } from "@/components/SectionOptionsPanel";
 import { SetupSummary } from "@/components/SetupSummary";
 import { SongHeader } from "@/components/SongHeader";
+import { Transport } from "@/components/Transport";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
 import { DIFFICULTIES, DIFFICULTY, SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
 import { type PresetId, PRESETS, PRESET_IDS } from "@/lib/presets";
@@ -89,7 +90,29 @@ export default function GeneratorPage() {
     clearIntroLead,
     activeSection,
     activePart,
+    position,
+    practice,
+    setSpeed,
+    setCountIn,
+    setLoopPart,
   } = useGenerator();
+
+  // Keyboard: Space plays or stops the song, R builds it again (not while typing, or on a focused control).
+  const keys = useRef({ togglePlay, generate });
+  keys.current = { togglePlay, generate };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, select, button, a, [role=radio], [role=tab], [contenteditable=true]")) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        keys.current.togglePlay("song");
+      } else if (e.key === "r" || e.key === "R") keys.current.generate();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // The setup is open until BUILD SONG, then folds to a one-line summary (EDIT SETUP opens it again).
   const [setupOpen, setSetupOpen] = useState(true);
@@ -276,6 +299,7 @@ export default function GeneratorPage() {
                 onTogglePlay={() => togglePlay(`section:${id}`)}
                 extraAction={id === "intro" && s.lead && !s.locked ? { label: "Back to power chords", onClick: clearIntroLead } : undefined}
                 degrees={id === "solo" || section.lead ? undefined : plannedDegrees(id, inputsFor(state, id).progressionId, section.groove)}
+                nowBar={position?.section === id ? position.bar : null}
                 optionsSummary={section.lead ? `${styleLabel(id === "solo" ? "solo" : "intro", section.lead.inputs.style)} · ${section.lead.chords.length} bars` : section.groove}
                 options={
                   <SectionOptionsPanel
@@ -324,6 +348,19 @@ export default function GeneratorPage() {
           <MidiExportCard song={{ plan, parts: song }} bpm={bpm} keyName={state.key} progressionId={state.progressionId} title={state.title} />
         </div>
       </section>
+
+      <Transport
+        playing={state.playing === "song"}
+        onPlay={() => togglePlay("song")}
+        partName={activePart !== null ? song[activePart]?.slot.name ?? null : position ? rendered[position.section].label : null}
+        songBar={position?.songBar ?? null}
+        totalBars={plan.bars}
+        barSeconds={barSeconds(bpm)}
+        practice={practice}
+        onSpeed={setSpeed}
+        onCountIn={setCountIn}
+        onLoopPart={setLoopPart}
+      />
     </div>
   );
 }

@@ -222,6 +222,10 @@ A solo sent from the Chords page ("Use in my song") plays exactly as previewed t
 
 **Style presets** (`data/style-presets.json`) are starting points: Skate punk (fast, palm-muted gallops, 2:30, stops on a hit), 2000s pop-punk (Pop Strum, an octave hook, 3-note choruses with pushes, the last chorus up a tone) and Emo (Mid-Tempo at 130, vi-IV-I-V, ringing open-string riffs, half-note anthems, 4:00, a fade). A preset sets the setup and each unlocked section's Options, choosing for each section the first of its preferred grooves that can play in the song's key; everything stays editable, and **Your own** clears it. Verify checks every preset finds a playable groove for every section it names, in every key.
 
+### Practising: the transport
+
+The bar fixed to the bottom of the Generator plays the song from the top (or from any part of the running order) and says where it is. **Loop part** plays one part round and round; **count-in** plays a bar of four clicks first (scheduled on the same clock as the music, so a stop cancels them); **speed** sets the tempo to 90, 75 or 50% of the song's (a slower tempo, not a lower pitch). As each bar starts, the card it belongs to lights its tab bar under a cursor: the song's bar is mapped back to the bar of the card's tab (a part plays its material several times, and the tab shows it once). Space and R are the keyboard shortcuts for play and build again.
+
 ## 5b. MIDI export
 
 **Take it away → DOWNLOAD MIDI** writes the song as one Standard MIDI File (type 1, 480 ticks per quarter note): the tempo, 4/4, the key signature and a marker where each part of the running order starts, then one track per part of the owner's lane table (`data/midi-lanes.json`) and General MIDI drums (`lib/arrange.ts`, written by `lib/midi.ts`, which has no dependencies):

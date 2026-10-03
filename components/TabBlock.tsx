@@ -81,6 +81,7 @@ export function TabBlock({
   firstBar = 1,
   repeat = 1,
   complete = true,
+  nowBar,
   className = "",
   svgClassName = "",
 }: {
@@ -93,6 +94,8 @@ export function TabBlock({
   repeat?: number;
   /** false when only the first lines show: the closing repeat marks belong to the tab's real end. */
   complete?: boolean;
+  /** The bar sounding now (0-based within this tab), highlighted while it plays. */
+  nowBar?: number | null;
   className?: string;
   /** Extra classes for the drawing (e.g. a max width, so a double-width card keeps the row's scale). */
   svgClassName?: string;
@@ -100,11 +103,13 @@ export function TabBlock({
   const songbook = !!rhythm && groups.every((g) => g.layout);
   const rows: { text: string; kind: "chords" | "header" | "string"; y: number }[] = [];
   const extras: ReactNode[] = [];
+  const behind: ReactNode[] = [];
   let y = FONT;
   let bar = firstBar - 1;
   const last = groups.length - 1;
   groups.forEach((g, gi) => {
     if (gi > 0) y += GROUP_GAP;
+    const groupTop = y - FONT;
     if (songbook) {
       // Bar numbers over each bar line.
       g.layout!.forEach((b, k) => {
@@ -150,6 +155,13 @@ export function TabBlock({
         const cells = rhythm![bar + k - (firstBar - 1)];
         if (cells) extras.push(<g key={`st${gi}-${k}`}>{stems(cells, b.cells, top)}</g>);
       });
+      // The cursor: the bar sounding now, from its opening bar line to its closing one.
+      const k = nowBar !== null && nowBar !== undefined ? nowBar - (bar - (firstBar - 1)) : -1;
+      if (k >= 0 && k < g.layout!.length) {
+        const b = g.layout![k];
+        const x0 = (b.cells[0] - 1) * ADVANCE;
+        behind.push(<rect key={`now${gi}`} data-now={nowBar} x={x0} y={groupTop} width={(b.end - b.cells[0] + 1) * ADVANCE} height={y + STEM_BAND - groupTop - FONT * 0.6} rx={3} className="fill-accent/15" />);
+      }
       bar += g.layout!.length;
       y += STEM_BAND;
     }
@@ -168,6 +180,7 @@ export function TabBlock({
         height={height}
         className={`block h-auto max-w-full font-mono ${svgClassName}`}
       >
+        {behind}
         {rows.map((r, i) => (
           <text
             key={i}

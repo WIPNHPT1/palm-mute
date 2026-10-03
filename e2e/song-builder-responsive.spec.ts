@@ -98,4 +98,14 @@ test.describe("song builder: every screen", () => {
     const cards = await page.locator("[data-export-section] [data-export]").evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })));
     for (const c of cards) expect(c.right).toBeLessThanOrEqual((await page.evaluate(() => innerWidth)) + 0.5);
   });
+
+  test("the transport is one row and fits", async ({ page }) => {
+    await gotoAndSettle(page, "/generator/");
+    expect(await problems(page, "[data-transport]")).toEqual([]);
+    // One row: every control's middle on one line, and the bar no taller than its controls need.
+    const box = (await page.locator("[data-transport]").boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(72);
+    expect(box.x).toBe(0);
+    expect(Math.round(box.width)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+  });
 });
