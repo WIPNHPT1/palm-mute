@@ -1,9 +1,9 @@
 import { expect, gotoAndSettle, horizontalOverflow, test } from "./fixtures";
 
-// "How to use" posters under the Generator and Chords titles (owner's pick: Count In poster style).
+// "How to use" posters under the Generator and Chord Lab titles (owner's pick: Count In poster style).
 const GUIDES = [
   { path: "/generator/", label: "How to use the Generator", titles: ["Set up", "Build", "Shape each part", "Take it away"] },
-  { path: "/chords/", label: "How to use the Chords page", titles: ["Pick a key", "Listen", "Write a lead", "Use it"] },
+  { path: "/chords/", label: "How to use the Chord Lab", titles: ["Look it up", "Name it", "Build a loop", "Move it"] },
 ];
 
 for (const g of GUIDES) {
@@ -44,9 +44,9 @@ test("hiding a guide is remembered per page, applies before paint, and can be un
   expect(await page.evaluate(() => document.documentElement.classList.contains("guide-hidden-generator"))).toBe(true);
   await expect(page.getByRole("region", { name: "How to use the Generator" }).locator("ol")).toBeHidden();
 
-  // The Chords page keeps its own guide.
+  // The Chord Lab keeps its own guide.
   await page.goto("/chords/");
-  await expect(page.getByRole("region", { name: "How to use the Chords page" }).locator("ol")).toBeVisible();
+  await expect(page.getByRole("region", { name: "How to use the Chord Lab" }).locator("ol")).toBeVisible();
 
   // And back again.
   await page.goto("/generator/");

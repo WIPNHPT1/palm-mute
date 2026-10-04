@@ -10,7 +10,7 @@ import { applyTheme, currentTheme } from "@/lib/theme";
 const LINKS = [
   { href: "/", label: "Count In" },
   { href: "/generator/", label: "Generator" },
-  { href: "/chords/", label: "Chords" },
+  { href: "/chords/", label: "Chord Lab" },
 ];
 
 function isActive(pathname: string, href: string) {

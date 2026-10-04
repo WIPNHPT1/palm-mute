@@ -1,0 +1,9 @@
+{
+  "_note": "Chord Lab tunings (docs/chord-lab-prd.md L18). Strings low to high, as open-string MIDI notes; names are what each string is tuned to. Every diagram, fret number and sound in the Lab follows the picked tuning.",
+  "tunings": [
+    { "id": "e-standard", "label": "E standard", "short": "E STD", "strings": [{ "name": "E", "midi": 40 }, { "name": "A", "midi": 45 }, { "name": "D", "midi": 50 }, { "name": "G", "midi": 55 }, { "name": "B", "midi": 59 }, { "name": "e", "midi": 64 }] },
+    { "id": "eb-standard", "label": "Eb standard", "short": "Eb STD", "strings": [{ "name": "Eb", "midi": 39 }, { "name": "Ab", "midi": 44 }, { "name": "Db", "midi": 49 }, { "name": "Gb", "midi": 54 }, { "name": "Bb", "midi": 58 }, { "name": "eb", "midi": 63 }] },
+    { "id": "drop-d", "label": "Drop D", "short": "DROP D", "strings": [{ "name": "D", "midi": 38 }, { "name": "A", "midi": 45 }, { "name": "D", "midi": 50 }, { "name": "G", "midi": 55 }, { "name": "B", "midi": 59 }, { "name": "e", "midi": 64 }] },
+    { "id": "drop-c-sharp", "label": "Drop C#", "short": "DROP C#", "strings": [{ "name": "C#", "midi": 37 }, { "name": "G#", "midi": 44 }, { "name": "C#", "midi": 49 }, { "name": "F#", "midi": 54 }, { "name": "A#", "midi": 58 }, { "name": "d#", "midi": 63 }] }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_note": "Chord Lab chord types (docs/chord-lab-prd.md L1): what pop-punk guitarists use, beyond power chords. Intervals in semitones from the root; `optional` intervals may be left out of a voicing (the 5th of the 7th chords). `symbol` follows the root in a chord name.",
+  "types": [
+    { "id": "5", "label": "5", "name": "power chord", "symbol": "5", "intervals": [0, 7], "sounds": "No 3rd, so it's neither happy nor sad: the genre's engine." },
+    { "id": "oct", "label": "OCT", "name": "octave", "symbol": " octave", "intervals": [0], "sounds": "Just the root, twice. Riffs, intros and lead lines." },
+    { "id": "maj", "label": "MAJOR", "name": "major", "symbol": "", "intervals": [0, 4, 7], "sounds": "Bright and settled." },
+    { "id": "min", "label": "MINOR", "name": "minor", "symbol": "m", "intervals": [0, 3, 7], "sounds": "Darker: the sad side of the key." },
+    { "id": "sus2", "label": "SUS2", "name": "suspended 2nd", "symbol": "sus2", "intervals": [0, 2, 7], "sounds": "Open and floating: chorus shimmer." },
+    { "id": "sus4", "label": "SUS4", "name": "suspended 4th", "symbol": "sus4", "intervals": [0, 5, 7], "sounds": "Hanging: it wants to fall back to the major." },
+    { "id": "add9", "label": "ADD9", "name": "added 9th", "symbol": "add9", "intervals": [0, 2, 4, 7], "sounds": "Major with a sparkle on top." },
+    { "id": "7", "label": "7", "name": "dominant 7th", "symbol": "7", "intervals": [0, 4, 7, 10], "optional": [7], "sounds": "A bluesy pull towards the next chord." },
+    { "id": "maj7", "label": "MAJ7", "name": "major 7th", "symbol": "maj7", "intervals": [0, 4, 7, 11], "optional": [7], "sounds": "Soft and dreamy." },
+    { "id": "m7", "label": "M7", "name": "minor 7th", "symbol": "m7", "intervals": [0, 3, 7, 10], "optional": [7], "sounds": "Mellow minor." }
+  ]
+}

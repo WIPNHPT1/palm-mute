@@ -25,7 +25,7 @@ export function Encore({ fine }: { fine: boolean }) {
           <Link className="ci-mag solid" href="/generator/" onPointerMove={lean} onPointerLeave={settle}>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l14 9-14 9z" /></svg>START WRITING
           </Link>
-          <Link className="ci-mag line" href="/chords/" onPointerMove={lean} onPointerLeave={settle}>BROWSE THE CHORD LIBRARY</Link>
+          <Link className="ci-mag line" href="/chords/" onPointerMove={lean} onPointerLeave={settle}>OPEN THE CHORD LAB</Link>
         </div>
       </div>
     </section>

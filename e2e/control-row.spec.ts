@@ -21,7 +21,7 @@ async function controls(page: Page): Promise<Box[]> {
   );
 }
 
-for (const path of ["/chords/", "/generator/"]) {
+for (const path of ["/generator/"]) {
   test(`${path}: picking Mid-Tempo doesn't push the controls around, and there's no tempo to set`, async ({ page }) => {
     await gotoAndSettle(page, path);
     const before = await controls(page);

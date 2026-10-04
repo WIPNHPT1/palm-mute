@@ -18,7 +18,7 @@ import {
   renderSection,
   songThread,
 } from "@/lib/generator";
-import { type LeadPart, type LeadStyle, defaultLeadStyle } from "@/lib/melody";
+import { type LeadStyle, defaultLeadStyle } from "@/lib/melody";
 import type { NoteName } from "@/lib/musicTheory";
 import { type PlaybackBar, type SongPart, progressionBars, sectionBars, songBarParts, songBars } from "@/lib/playback";
 import type { FormSlot } from "@/lib/songPlan";
@@ -64,9 +64,6 @@ const withTake = (s: SectionState, seed: number): Pick<SectionState, "seed" | "t
 /** A fresh history, starting from this take. */
 const freshTakes = (seed: number): Pick<SectionState, "seed" | "takes" | "take"> => ({ seed, takes: [seed], take: 0 });
 
-/** A melody or solo sent from the Chords page ("Use in my song"). */
-export type LeadHandoff = { part: LeadPart; style: LeadStyle; bars: number; seed: number };
-
 export type GeneratorState = {
   key: NoteName;
   feel: FeelId;
@@ -111,7 +108,6 @@ type Action =
   | { type: "toggleLock"; id: SectionId }
   | { type: "setProgression"; progressionId: string }
   | { type: "updateLocked"; id: SectionId }
-  | { type: "useInSong"; key: NoteName; progressionId: string; lead?: LeadHandoff }
   | { type: "clearIntroLead" }
   | { type: "setPlaying"; target: PlayTarget | null };
 
@@ -274,26 +270,6 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       if (action.id === "solo" && frozen.thread) frozen.thread = threadFor({ ...state, sections: { ...state.sections, solo: { ...s, locked: false } } });
       return { ...state, sections: { ...state.sections, [action.id]: { ...s, frozen } } };
     }
-    case "useInSong": {
-      // Chords page → Generator: the key, the progression as the Chorus, and optionally a melody for the
-      // Intro or a solo for the Solo. An explicit hand-off, so locked sections take it too (and stay locked).
-      const sections = { ...state.sections };
-      const chorus = sections.chorus;
-      if (chorus.locked && chorus.frozen) sections.chorus = { ...chorus, frozen: { ...chorus.frozen, key: action.key, progressionId: action.progressionId } };
-      if (action.lead) {
-        const id = action.lead.part as SectionId;
-        // Sent from the Chords page: it plays exactly as previewed there (no song thread).
-        const lead = { style: action.lead.style, bars: action.lead.bars, sent: true };
-        const s = sections[id];
-        sections[id] = {
-          ...s,
-          lead,
-          ...freshTakes(action.lead.seed),
-          frozen: s.locked && s.frozen ? { ...s.frozen, key: action.key, progressionId: action.progressionId, seed: action.lead.seed, lead } : s.frozen,
-        };
-      }
-      return rethread({ ...state, key: action.key, progressionId: action.progressionId, sections });
-    }
     case "clearIntroLead": {
       // "Back to chords": the Intro returns to power chords.
       const s = state.sections.intro;
@@ -365,7 +341,6 @@ type GeneratorContextValue = {
   toggleLock: (id: SectionId) => void;
   setProgression: (progressionId: string) => void;
   updateLocked: (id: SectionId) => void;
-  sendToSong: (key: NoteName, progressionId: string, lead?: LeadHandoff) => void;
   clearIntroLead: () => void;
   /** Plays bars the caller built (the Chords page's melody and solo previews). */
   playCustom: (id: string, bars: PlaybackBar[], loop: boolean) => void;
@@ -652,7 +627,6 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       toggleLock: (id) => dispatch({ type: "toggleLock", id }),
       setProgression: (progressionId) => dispatch({ type: "setProgression", progressionId }),
       updateLocked: (id) => dispatch({ type: "updateLocked", id }),
-      sendToSong: (key, progressionId, lead) => dispatch({ type: "useInSong", key, progressionId, lead }),
       clearIntroLead: () => dispatch({ type: "clearIntroLead" }),
       playCustom,
       playStrum,
