@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Encore } from "@/components/count-in/Encore";
 import { PowerChordDiagram } from "@/components/count-in/PowerChordDiagram";
+import { Scope } from "@/components/count-in/Scope";
 import { Setlist } from "@/components/count-in/Setlist";
 import { Stage } from "@/components/count-in/Stage";
 import { StampBand } from "@/components/count-in/StampBand";
@@ -29,7 +30,8 @@ export function CountIn() {
 
       <Stage reduced={reduced} fine={fine} />
 
-      <section className="ci-intro" aria-label="What Palm/Mute does">
+      <section className="ci-intro" aria-label="What Palm/Mute does" data-scope>
+        <Scope />
         <div className="ci-wrap" data-reveal>
           <p>
             Palm/Mute studies the chord progressions, palm-muted rhythms and song structures behind <mark className="[--d:0]">pop-punk hits.</mark> Then it writes
@@ -42,7 +44,8 @@ export function CountIn() {
       <Setlist reduced={reduced} />
       <StampBand />
 
-      <section className="ci-two" aria-labelledby="ci-two">
+      <section className="ci-two" aria-labelledby="ci-two" data-scope>
+        <Scope />
         <div className="ci-wrap ci-tn-grid">
           <div className="ci-huge2" data-reveal aria-hidden="true">2<span>NOTES</span></div>
           <div data-reveal className="[--d:1]">
