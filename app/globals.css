@@ -427,44 +427,14 @@
   .page-wipe[data-phase="reveal"] > i { transform: scaleX(0); transform-origin: right; transition: transform 520ms cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(var(--i) * 25ms); }
 }
 
-/* ---- Stage layer on big screens (lib/stage.ts, components/StageBackground.tsx and SideRails.tsx) ---- */
+/* ---- Stage layer on big screens (lib/stage.ts and components/StageBackground.tsx) ---- */
 @layer components {
   :root { --stage-top: 64px; }
   @media (min-width: 834px) { :root { --stage-top: 76px; } }
   @media (min-width: 1600px) { :root { --stage-top: calc(76px * var(--page-zoom)); } }
-  /* both sit behind the page (the page's shell is z-index 1) and never take a click */
-  .stage-bg, .stage-rail { position: fixed; z-index: 0; pointer-events: none; }
-  .stage-bg { display: none; left: 0; top: var(--stage-top); width: 100%; height: calc(100% - var(--stage-top)); }
+  /* sits behind the page (the page's shell is z-index 1) and never takes a click */
+  .stage-bg { position: fixed; z-index: 0; pointer-events: none; display: none; left: 0; top: var(--stage-top); width: 100%; height: calc(100% - var(--stage-top)); }
   @media (min-width: 834px) { .stage-bg { display: block; } }
-
-  .stage-rail { display: none; top: var(--stage-top); bottom: 0; width: calc((100vw - 1280px * var(--page-zoom)) / 2); overflow: hidden; }
-  @media (min-width: 1600px) { .stage-rail { display: block; } }
-  .stage-rail.left { left: 0; }
-  .stage-rail.right { right: 0; }
-  .stage-board {
-    --fs: 96px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: min(46%, 150px);
-    background-color: rgb(var(--color-line) / 0.45);
-    background-image: radial-gradient(circle, rgb(var(--color-line-strong)) 5px, transparent 5.5px), linear-gradient(to bottom, rgb(var(--color-line-strong)) 0 3px, transparent 3px);
-    background-size: 100% calc(var(--fs) * 2), 100% var(--fs);
-    background-repeat: repeat-y;
-    background-position: 50% calc(var(--sy, 0px) * -0.45 + var(--fs) / 2), 0 calc(var(--sy, 0px) * -0.45);
-    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-  }
-  .stage-rail.left .stage-board { right: 18%; }
-  .stage-rail.right .stage-board { left: 18%; }
-  .stage-board > i { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgb(var(--color-text-faintest)); opacity: 0.55; }
-  [data-playing="true"] .stage-board > i { animation: stage-vib 90ms linear infinite alternate; }
-  [data-playing="true"] .stage-board > i:nth-child(2n) { animation-duration: 70ms; }
-  [data-playing="true"] .stage-board > i:nth-child(3n) { animation-duration: 110ms; }
-  @keyframes stage-vib { from { transform: translateX(-1px); } to { transform: translateX(1px); } }
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-playing="true"] .stage-board > i { animation: none; }
 }
 
 /* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----

@@ -6,7 +6,6 @@ import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { KeyFinder } from "@/components/lab/KeyFinder";
 import { LabProvider, useLab } from "@/components/lab/LabContext";
-import { SideRails } from "@/components/SideRails";
 import { StageBackground } from "@/components/StageBackground";
 import { MoodMap } from "@/components/lab/MoodMap";
 import { LabSetup } from "@/components/lab/LabSetup";
@@ -30,15 +29,10 @@ const GUIDE: GuideStep[] = [
   { title: "Move it", body: <>Find the <b>key</b>, then shift it: another key, a <b>capo</b> or a drop <b>tuning</b>.</> },
 ];
 
-/** The Lab's moving strings and fretboard rails (they react while the Lab is playing). */
+/** The Lab's moving background, the same scope as the Generator's (it reacts while the Lab is playing). */
 function LabStage() {
   const { playing } = useLab();
-  return (
-    <>
-      <StageBackground kind="strings" playing={playing !== null} />
-      <SideRails playing={playing !== null} />
-    </>
-  );
+  return <StageBackground playing={playing !== null} />;
 }
 
 export default function ChordLabPage() {
