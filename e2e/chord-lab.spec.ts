@@ -521,3 +521,61 @@ test.describe("chord lab: mood map", () => {
     expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([7, 2, 4, 0]); // G D Em C: roots in the bass
   });
 });
+
+// Keyboard: one Tab stop per radio group, arrow keys inside it
+test.describe("chord lab: keyboard", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("Tab reaches the first Dictionary shape in at most 20 stops (each group is one stop)", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    // Counting Tab presses needs a browser that Tabs to buttons: Safari doesn't unless its setting is on, and
+    // WebKit on macOS follows it. The per-group check below (one radio in the Tab order) runs in both.
+    if (info.project.name.startsWith("chromium")) {
+      let stops = 0;
+      for (; stops < 60; stops++) {
+        await page.keyboard.press("Tab");
+        if (await page.evaluate(() => !!document.activeElement?.closest("[data-voicing]"))) break;
+      }
+      expect(stops + 1).toBeLessThanOrEqual(20);
+    }
+    // Every radio group on the page has exactly one radio in the Tab order.
+    const groups = await page.locator('[role="radiogroup"]').evaluateAll((els) => els.filter((e) => e.getClientRects().length).map((e) => ({ label: e.getAttribute("aria-label") ?? e.getAttribute("aria-labelledby"), tabbable: [...e.querySelectorAll('[role="radio"]')].filter((r) => (r as HTMLElement).tabIndex === 0).length })));
+    expect(groups.length).toBeGreaterThan(5);
+    for (const g of groups) expect(g.tabbable, `${g.label}`).toBe(1);
+  });
+
+  test("arrow keys move inside a radio group and select; Home and End go to the ends; Shift+Tab leaves it", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    const roots = page.getByRole("radiogroup", { name: "Root" }).getByRole("radio");
+    await roots.nth(7).focus(); // G
+    await expect(roots.nth(7)).toHaveAttribute("aria-checked", "true");
+    await page.keyboard.press("ArrowRight");
+    await expect(roots.nth(8)).toBeFocused();
+    await expect(roots.nth(8)).toHaveAttribute("aria-checked", "true"); // selection follows focus
+    await expect(dictionary(page).locator("[data-chord-info]")).toContainText("G#");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowLeft");
+    await expect(roots.nth(6)).toBeFocused();
+    await page.keyboard.press("End");
+    await expect(roots.nth(11)).toBeFocused();
+    await page.keyboard.press("ArrowDown"); // wraps
+    await expect(roots.nth(0)).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(roots.nth(0)).toBeFocused();
+    await page.keyboard.press("ArrowUp"); // wraps backwards
+    await expect(roots.nth(11)).toBeFocused();
+    // One Shift+Tab leaves the group (the previous group's single stop, not another root).
+    await page.keyboard.press("Shift+Tab");
+    expect(await page.evaluate(() => document.activeElement?.closest('[role="radiogroup"]')?.getAttribute("aria-label"))).not.toBe("Root");
+    // The Lab's other groups too: a tuning change by keyboard stops what was playing and re-names the shapes.
+    const tunings = page.getByRole("radiogroup", { name: "Tuning" }).getByRole("radio");
+    await tunings.nth(0).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(tunings.nth(1)).toHaveAttribute("aria-checked", "true");
+    await expect(tunings.nth(0)).toHaveAttribute("aria-checked", "false");
+  });
+});

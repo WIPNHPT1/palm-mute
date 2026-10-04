@@ -31,6 +31,7 @@ import {
   shapeText,
   voicingsFor,
 } from "@/lib/lab/chords";
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { arpeggioBars, strumBars } from "@/lib/lab/sound";
 import { PITCH_CLASSES, enharmonicOf, keyDisplayName, pitchClassOf } from "@/lib/musicTheory";
 
@@ -111,7 +112,7 @@ function Difficulty({ value }: { value: number }) {
 /** Root picker: twelve note chips (sharps with their flat names). */
 function RootChips({ value, onChange }: { value: number; onChange: (root: number) => void }) {
   return (
-    <div role="radiogroup" aria-label="Root" className="flex flex-wrap gap-[4px]">
+    <div role="radiogroup" aria-label="Root" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
       {PITCH_CLASSES.map((n, i) => {
         const flat = enharmonicOf(n);
         return (
@@ -120,6 +121,7 @@ function RootChips({ value, onChange }: { value: number; onChange: (root: number
             type="button"
             role="radio"
             aria-checked={i === value}
+            tabIndex={rovingTabIndex(i === value, true, i)}
             aria-label={keyDisplayName(n)}
             onClick={() => onChange(i)}
             className={`flex min-h-[44px] min-w-[44px] items-center justify-center gap-[4px] rounded-mid border px-[10px] font-mono text-[12px] font-bold ${
@@ -137,13 +139,14 @@ function RootChips({ value, onChange }: { value: number; onChange: (root: number
 
 function TypeChips({ value, onChange }: { value: ChordTypeId; onChange: (t: ChordTypeId) => void }) {
   return (
-    <div role="radiogroup" aria-label="Chord type" className="flex flex-wrap gap-[4px]">
-      {CHORD_TYPES.map((t) => (
+    <div role="radiogroup" aria-label="Chord type" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
+      {CHORD_TYPES.map((t, i) => (
         <button
           key={t.id}
           type="button"
           role="radio"
           aria-checked={t.id === value}
+          tabIndex={rovingTabIndex(t.id === value, true, i)}
           onClick={() => onChange(t.id)}
           className={`min-h-[44px] min-w-[44px] rounded-mid border px-[12px] font-mono text-[12px] font-bold ${
             t.id === value ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-paper text-text-secondary hover:border-text-faintest"

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { useLab } from "@/components/lab/LabContext";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import { chordName, easiestVoicing, getTuning, noteName, shapeNotes } from "@/lib/lab/chords";
@@ -135,7 +136,7 @@ export function KeyFinder() {
                 <span className="font-mono text-[12px] text-text-faint" id="to-key-label">
                   Or go to a key: {noteName(best.key)} major →
                 </span>
-                <div role="radiogroup" aria-labelledby="to-key-label" className="flex flex-wrap gap-[4px]">
+                <div role="radiogroup" aria-labelledby="to-key-label" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
                   {Array.from({ length: 12 }, (_, k) => {
                     const delta = (((k - best.key + 6) % 12) + 12) % 12 - 6; // the shortest way round
                     return (
@@ -144,6 +145,7 @@ export function KeyFinder() {
                         type="button"
                         role="radio"
                         aria-checked={k === targetKey}
+                        tabIndex={rovingTabIndex(k === targetKey, true, k)}
                         aria-label={`Move to ${noteName(k)} major`}
                         onClick={() => setShift(delta)}
                         className={`min-h-[44px] min-w-[44px] rounded-mid border px-[8px] font-mono text-[12px] font-bold ${k === targetKey ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-paper text-text-secondary hover:border-text-faintest"}`}

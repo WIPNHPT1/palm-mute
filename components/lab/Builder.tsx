@@ -9,6 +9,7 @@ import { GroupLabel } from "@/components/lab/ToolCard";
 import { type ChordTypeId, chordName, chordType, easiestVoicing, shapeNotes } from "@/lib/lab/chords";
 import { type DegreeId, DEGREES, degreeRoot, getDegree, nextMoves, typesFor } from "@/lib/lab/keys";
 import { type LoopChord, START_LOOP, brightnessWords, classicWords, restlessnessWords, vibeOf } from "@/lib/lab/mood";
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { loopBars } from "@/lib/lab/sound";
 import { pitchClassOf } from "@/lib/musicTheory";
 
@@ -123,13 +124,14 @@ export function Builder() {
           <GroupLabel>
             Chord {selected + 1}: {sel.degree} ({nameOf(sel)})
           </GroupLabel>
-          <div role="radiogroup" aria-label="Chord type" className="flex flex-wrap gap-[4px]">
-            {typesFor(sel.degree).map((t) => (
+          <div role="radiogroup" aria-label="Chord type" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
+            {typesFor(sel.degree).map((t, i) => (
               <button
                 key={t}
                 type="button"
                 role="radio"
                 aria-checked={sel.type === t}
+                tabIndex={rovingTabIndex(sel.type === t, typesFor(sel.degree).includes(sel.type), i)}
                 onClick={() => edit(loop.map((c, i) => (i === selected ? { ...c, type: t } : c)))}
                 className={`min-h-[44px] min-w-[44px] rounded-mid border px-[12px] font-mono text-[12px] font-bold ${
                   sel.type === t ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-surface text-text-secondary hover:border-text-faintest"
