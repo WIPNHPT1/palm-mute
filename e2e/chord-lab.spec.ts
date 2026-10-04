@@ -27,6 +27,15 @@ test.describe("chord lab: setup and dictionary", () => {
     await expect(page.getByRole("button", { name: /USE IN MY SONG/ })).toHaveCount(0);
   });
 
+  test("the Key card says what the key is for", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(page.locator('[data-control="Key"]')).toContainText("Used by the Builder, Key finder, scale and Mood map. Pick the Dictionary's chord below.");
+    await radio(page, "Key", "D").click();
+    await expect(dictionary(page).locator("[data-chord-info]")).toContainText("G (major)"); // the Dictionary's chord is its own
+    await expect(dictionary(page)).toContainText("Scale of D (from the setup)");
+  });
+
   test("G major opens on the open G, and every shape is a G chord up the neck", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);

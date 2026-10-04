@@ -359,7 +359,7 @@ export function Dictionary() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-[8px]">
-          <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">Scale of {keyDisplayName(key)}</span>
+          <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">Scale of {keyDisplayName(key)} (from the setup)</span>
           <SegmentedControl<Scale> label="Scale" options={SCALES} value={scale} onChange={setScale} stretch className="w-full tablet:w-[340px]" />
         </div>
         <Neck
