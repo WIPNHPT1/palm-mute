@@ -10,13 +10,13 @@ import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 export function FeelToggle({ feel, onFeelChange }: { feel: FeelId; onFeelChange: (feel: FeelId) => void }) {
   return (
     <div className="flex flex-col gap-[10px]">
-      <div role="radiogroup" aria-label="Feel" onKeyDown={onRovingKeyDown} className="flex flex-col gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] tablet:flex-row">
+      <div role="radiogroup" aria-label="Feel" onKeyDown={onRovingKeyDown} className="sig-seg flex flex-col gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] tablet:flex-row">
         {feels.map((f, i) => {
           const active = f.id === feel;
           const pattern = patternForFeel(f.id);
           const bpm = f.displayBpm;
           return (
-            <div key={f.id} className={`rounded-[5px] tablet:flex-auto ${active ? "bg-ink text-text-on-dark dark:shadow-[inset_0_0_0_1px_theme(colors.line-strong)]" : ""}`}>
+            <div key={f.id} className={`rounded-[5px] tablet:flex-auto ${active ? "sig-on bg-ink text-text-on-dark dark:shadow-[inset_0_0_0_1px_theme(colors.line-strong)]" : ""}`}>
               <button
                 type="button"
                 role="radio"

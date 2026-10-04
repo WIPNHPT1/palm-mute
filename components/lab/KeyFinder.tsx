@@ -5,6 +5,7 @@ import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
 import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { useLab } from "@/components/lab/LabContext";
+import { FieldStatus } from "@/components/lab/FieldStatus";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import { chordName, easiestVoicing, getTuning, noteName, shapeNotes } from "@/lib/lab/chords";
 import { type ParsedChord, findKeys, keyName, parseChord, relativeMinor, shapeFor, splitChords, transpose } from "@/lib/lab/keys";
@@ -32,13 +33,13 @@ function ChordList({ chords, current }: { chords: ParsedChord[]; current: number
 function Stepper({ label, value, text, onChange, min, max }: { label: string; value: number; text: string; onChange: (v: number) => void; min: number; max: number }) {
   return (
     <div role="group" aria-label={label} className="flex items-center gap-[6px]">
-      <button type="button" aria-label={`${label} down`} disabled={value <= min} onClick={() => onChange(value - 1)} className="min-h-[44px] min-w-[44px] rounded-mid border border-line bg-paper font-mono text-[14px] font-bold disabled:text-text-disabled">
+      <button type="button" aria-label={`${label} down`} disabled={value <= min} onClick={() => onChange(value - 1)} className="min-h-[44px] min-w-[44px] sig-btn-2 font-mono text-[14px] font-bold disabled:text-text-disabled">
         −
       </button>
       <output aria-label={`${label} now`} className="min-w-[96px] text-center font-mono text-[12px] text-text-primary">
         {text}
       </output>
-      <button type="button" aria-label={`${label} up`} disabled={value >= max} onClick={() => onChange(value + 1)} className="min-h-[44px] min-w-[44px] rounded-mid border border-line bg-paper font-mono text-[14px] font-bold disabled:text-text-disabled">
+      <button type="button" aria-label={`${label} up`} disabled={value >= max} onClick={() => onChange(value + 1)} className="min-h-[44px] min-w-[44px] sig-btn-2 font-mono text-[14px] font-bold disabled:text-text-disabled">
         +
       </button>
     </div>
@@ -96,6 +97,7 @@ export function KeyFinder() {
         <label htmlFor="key-finder-input">
           <GroupLabel>Chords (2 to 8): G D Em C, G/B, F#m7 Bbadd9, A5 E5</GroupLabel>
         </label>
+        <div className="sig-field max-w-[640px]" data-state={unread.length ? "bad" : chords.length >= 2 ? "ok" : ""}>
         <input
           id="key-finder-input"
           value={text}
@@ -106,8 +108,11 @@ export function KeyFinder() {
           autoComplete="off"
           spellCheck={false}
           aria-describedby="key-finder-help"
-          className="min-h-[44px] w-full max-w-[640px] rounded-mid border border-line bg-paper px-[12px] font-mono text-[14px] text-text-primary"
+          className="sig-input"
+          aria-invalid={unread.length > 0}
         />
+          <FieldStatus state={unread.length ? "bad" : "ok"} />
+        </div>
         <p id="key-finder-help" className="font-mono text-[12px] text-text-faint">
           {help.length ? help.join(" ") : chords.length < 2 ? "Add at least two chords." : tokens.length > 8 ? "Only the first eight are used." : "Names are read as typed: # or b for sharps and flats, / for a bass note."}
         </p>
@@ -197,7 +202,7 @@ export function KeyFinder() {
                 type="button"
                 aria-pressed={playing === PLAY_ID}
                 onClick={() => toggle(PLAY_ID, bars(), true)}
-                className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent shadow-button"
+                className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid sig-btn bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent"
               >
                 {playing === PLAY_ID ? <StopIcon size={11} /> : <PlayIcon size={11} filled />}
                 {playing === PLAY_ID ? "STOP" : "HEAR IT"}

@@ -79,7 +79,7 @@ export function Transport({
           onClick={onPlay}
           aria-pressed={playing}
           aria-label={playing ? "Stop the song" : "Play the song"}
-          className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full bg-accent text-text-on-accent shadow-button"
+          className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full sig-btn bg-accent text-text-on-accent"
         >
           {playing ? <StopIcon size={14} /> : <PlayIcon size={14} />}
         </button>
@@ -131,7 +131,7 @@ export function Transport({
                 aria-checked={practice.speed === sp}
                 tabIndex={rovingTabIndex(practice.speed === sp, SPEEDS.includes(practice.speed), i)}
                 onClick={() => onSpeed(sp)}
-                className={`min-h-[44px] min-w-[44px] rounded-[5px] px-[6px] font-mono text-[12px] tabular-nums ${practice.speed === sp ? "bg-text-on-dark font-bold text-ink" : "text-text-on-dark-muted hover:text-text-on-dark"}`}
+                className={`min-h-[44px] min-w-[44px] rounded-[5px] px-[6px] font-mono text-[12px] tabular-nums ${practice.speed === sp ? "sig-on bg-text-on-dark font-bold text-ink" : "text-text-on-dark-muted hover:text-text-on-dark"}`}
               >
                 {Math.round(sp * 100)}%
               </button>

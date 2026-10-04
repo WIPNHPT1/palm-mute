@@ -295,7 +295,11 @@ export default function GeneratorPage() {
       )}
 
       {shared && (
-        <div role="status" data-shared-notice className="flex flex-wrap items-center gap-[10px] rounded-outer border border-line bg-surface px-[16px] py-[10px] font-mono text-[12px] text-text-secondary">
+        <div role="status" data-shared-notice className="sig-notice flex flex-wrap items-center gap-[10px] rounded-outer border border-line bg-surface px-[16px] py-[10px] font-mono text-[12px] text-text-secondary">
+          <svg className="sig-notice-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
           <span className="mr-auto">{shared === "loaded" ? "You're listening to a shared song. Change anything you like: it's yours now." : "That link couldn't be read, so here's a fresh song instead."}</span>
           <button type="button" onClick={() => setShared(null)} className="min-h-[44px] px-[8px] font-bold hover:text-text-primary">
             DISMISS

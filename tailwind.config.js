@@ -89,6 +89,30 @@ const shadows = {
   },
 };
 
+// Signature finish (owner's pick, docs/mockups/premium-components.html): highlights and shadows are translucent
+// tints of the palette above, never new hues. Used by the .sig-* classes in app/globals.css.
+const sig = {
+  light: {
+    "--sig-hi": "rgba(255,255,255,0.7)",
+    "--sig-hi-btn": "rgba(255,255,255,0.24)",
+    "--sig-lo-btn": "rgba(0,0,0,0.16)",
+    "--sig-sh-1": "0 1px 2px rgba(23,19,16,0.06), 0 12px 24px -16px rgba(23,19,16,0.32)",
+    "--sig-sh-2": "0 2px 4px rgba(23,19,16,0.06), 0 22px 36px -20px rgba(23,19,16,0.38)",
+    "--sig-inset": "inset 0 1px 3px rgba(23,19,16,0.14)",
+    "--sig-grain": "0.05",
+  },
+  dark: {
+    "--sig-hi": "rgba(246,241,228,0.07)",
+    "--sig-hi-btn": "rgba(255,255,255,0.2)",
+    "--sig-lo-btn": "rgba(0,0,0,0.28)",
+    "--sig-sh-1": "0 1px 2px rgba(0,0,0,0.4), 0 12px 24px -16px rgba(0,0,0,0.8)",
+    "--sig-sh-2": "0 2px 4px rgba(0,0,0,0.4), 0 22px 36px -20px rgba(0,0,0,0.9)",
+    "--sig-inset": "inset 0 1px 3px rgba(0,0,0,0.5)",
+    "--sig-grain": "0.07",
+  },
+};
+const sigEase = { "--sig-out": "cubic-bezier(0.2, 0.7, 0.2, 1)", "--sig-spring": "cubic-bezier(0.34, 1.56, 0.64, 1)" };
+
 const toChannels = (hex) => {
   const n = parseInt(hex.slice(1), 16);
   return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
@@ -96,6 +120,8 @@ const toChannels = (hex) => {
 const cssVars = (mode) => ({
   ...Object.fromEntries(Object.entries(palettes[mode]).map(([k, v]) => [`--color-${k}`, toChannels(v)])),
   ...Object.fromEntries(Object.entries(shadows[mode]).map(([k, v]) => [`--shadow-${k}`, v])),
+  ...sig[mode],
+  ...sigEase,
 });
 const color = (name) => `rgb(var(--color-${name}) / <alpha-value>)`;
 
@@ -164,6 +190,7 @@ module.exports = {
         "card-highlight": "var(--shadow-card-highlight)",
         button: "var(--shadow-button)",
       },
+      transitionTimingFunction: { out: "cubic-bezier(0.2, 0.7, 0.2, 1)", spring: "cubic-bezier(0.34, 1.56, 0.64, 1)" },
       screens: {
         // tablet matches design-tokens.json. desktop is 1280 (not the tokens' 1440) so common laptop
         // widths get the 5-column layout — see DECISIONS.md.

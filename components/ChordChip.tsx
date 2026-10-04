@@ -13,7 +13,7 @@ export function ChordChip({ chord, notes, degree }: { chord: ResolvedChord; note
       role="img"
       aria-label={`${degree ? `${degree} chord, ` : ""}${chord.name}: ${describeNotes(notes)}`}
       data-chip
-      className="flex flex-col items-center gap-[3px] rounded-small bg-chip-bg px-[8px] py-[6px]"
+      className="sig-chip flex flex-col items-center gap-[3px] rounded-small bg-chip-bg px-[8px] py-[6px]"
     >
       {degree && <div className="font-mono text-[12px] leading-none text-text-on-dark-faint">{degree}</div>}
       <div className="w-[3ch] text-center font-mono text-[12px] font-bold text-chip-label">{chord.name}</div>

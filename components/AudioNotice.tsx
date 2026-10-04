@@ -17,10 +17,14 @@ export function AudioNotice() {
       <div
         role="status"
         data-audio-notice
-        className="pointer-events-auto flex max-w-[560px] flex-wrap items-center gap-x-[12px] gap-y-[4px] rounded-outer border-[1.5px] border-accent bg-surface px-[14px] py-[8px] font-mono text-[12px] leading-[1.5] text-text-primary shadow-card"
+        className="sig-notice pointer-events-auto flex max-w-[560px] flex-wrap items-center gap-x-[12px] gap-y-[4px] rounded-outer border-[1.5px] border-accent bg-surface px-[14px] py-[8px] font-mono text-[12px] leading-[1.5] text-text-primary shadow-card"
       >
+        <svg className="sig-notice-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+          <path d="m17 9 4 6m0-6-4 6" />
+        </svg>
         <span>Couldn&apos;t start sound. On iPhone, turn off Silent mode and tap play again.</span>
-        <button type="button" onClick={() => setBlocked(false)} className="ml-auto min-h-[44px] min-w-[44px] rounded-mid border border-line bg-paper px-[12px] font-bold">
+        <button type="button" onClick={() => setBlocked(false)} className="ml-auto min-h-[44px] min-w-[44px] sig-btn-2 px-[12px] font-bold">
           DISMISS
         </button>
       </div>

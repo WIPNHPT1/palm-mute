@@ -28,7 +28,7 @@ export function PdfExportCard({ input }: { input: Omit<SongbookInput, "size" | "
     }
   };
   return (
-    <div data-export="pdf" className="flex min-w-0 flex-col gap-[12px] rounded-outer border border-line bg-surface px-[16px] py-[14px] shadow-card tablet:px-[18px] tablet:py-[16px]">
+    <div data-export="pdf" className="flex min-w-0 flex-col gap-[12px] sig-surface rounded-outer border border-line bg-surface px-[16px] py-[14px] tablet:px-[18px] tablet:py-[16px]">
       <h3 className="m-0 font-display text-[17px] leading-[1.3]">PDF songbook</h3>
       <p className="m-0 max-w-[62ch] font-mono text-[12px] leading-[1.6] text-text-muted">
         A cover with the song&apos;s facts and running order, a chart of every chord shape and the form with times, then every section&apos;s full tab with bar
@@ -72,7 +72,7 @@ export function PdfExportCard({ input }: { input: Omit<SongbookInput, "size" | "
           type="button"
           onClick={save}
           disabled={status.busy}
-          className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent shadow-button transition-transform active:scale-[0.98] disabled:opacity-60"
+          className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer sig-btn bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent disabled:opacity-60"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
             <path d="M12 4v12M6 11l6 6 6-6M5 20h14" />

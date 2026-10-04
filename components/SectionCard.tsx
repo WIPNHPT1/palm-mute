@@ -12,7 +12,7 @@ import type { Degree } from "@/lib/musicTheory";
 
 /** Secondary action in the card's footer. */
 const ACTION_BUTTON =
-  "min-h-[44px] rounded-mid border border-line bg-paper px-[12px] text-left font-mono text-[12px] font-bold text-text-primary hover:border-accent";
+  "min-h-[44px] sig-btn-2 px-[12px] text-left font-mono text-[12px] font-bold text-text-primary hover:border-accent";
 
 /** 44×44 icon button. */
 const ICON_BUTTON = "flex h-[44px] w-[44px] items-center justify-center rounded-mid";
@@ -100,12 +100,12 @@ export function SectionCard({
       data-active={active}
       data-locked={locked}
       data-section={section.id}
-      className={`min-w-0 scroll-mt-[96px] rounded-outer bg-surface transition-[border-color,box-shadow] duration-200 ${
+      className={`sig-surface min-w-0 scroll-mt-[96px] rounded-outer bg-surface transition-[border-color,box-shadow] duration-200 ${
         active
           ? "border-[1.5px] border-accent shadow-card-highlight"
           : locked
-            ? "border-[1.5px] border-ink shadow-card dark:border-text-faint"
-            : "border-[1.5px] border-line shadow-card"
+            ? "border-[1.5px] border-ink dark:border-text-faint"
+            : "border-[1.5px] border-line"
       } ${className}`}
     >
       <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[4px] px-[14px] pt-[10px] tablet:px-[16px]">

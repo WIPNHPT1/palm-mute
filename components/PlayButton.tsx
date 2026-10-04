@@ -28,10 +28,14 @@ export function PlayButton({
       aria-pressed={playing}
       aria-label={`${playing ? "Stop" : "Play"} ${label}`}
       data-playing={playing}
-      className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-mid ${
+      className={`sig-play flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full ${
         playing ? "text-accent" : "text-text-muted hover:text-text-primary"
       } ${className}`}
     >
+      <svg className="sig-ring" viewBox="0 0 44 44" aria-hidden="true">
+        <circle className="sig-ring-track" cx="22" cy="22" r="19" />
+        <circle className="sig-ring-prog" cx="22" cy="22" r="19" />
+      </svg>
       {playing ? <StopIcon size={iconSize} /> : <PlayIcon size={iconSize} filled={false} />}
     </button>
   );
