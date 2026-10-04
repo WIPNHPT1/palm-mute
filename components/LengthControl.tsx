@@ -74,13 +74,14 @@ export function LengthControl({
         aria-valuetext={spokenLength(seconds)}
         className="h-[44px] w-full cursor-pointer accent-accent"
       />
-      <div className="relative h-[34px] font-mono text-[12px] text-text-faint" aria-hidden="true">
+      <div className="relative h-[16px] font-mono text-[12px] text-text-faint tablet:h-[34px]" aria-hidden="true">
         <span className="absolute left-0 top-0">{formatLength(LENGTH.min)}</span>
         <span className="absolute right-0 top-0">{formatLength(LENGTH.max)}</span>
+        {/* Where the form changes: from tablet up (on a phone the labels would collide; the readout names the form). */}
         {marks.map((m, i) => (
           <span
             key={m.label + m.at}
-            className="absolute top-[17px] whitespace-nowrap text-brass"
+            className="absolute top-[17px] hidden whitespace-nowrap text-brass tablet:inline"
             style={i === 0 ? { left: 0 } : m.at > 0.8 ? { right: `${(1 - m.at) * 100}%` } : { left: `${m.at * 100}%`, transform: "translateX(-50%)" }}
           >
             {m.label}

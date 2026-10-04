@@ -61,7 +61,7 @@ export function PdfExportCard({ input }: { input: Omit<SongbookInput, "size" | "
           value={size}
           onChange={setSize}
           stretch
-          className="w-[170px]"
+          className="w-[140px]"
         />
         <button
           type="button"
