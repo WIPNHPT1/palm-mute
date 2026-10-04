@@ -63,18 +63,20 @@ export function NameIt() {
 
   return (
     <>
-      <p className="max-w-[900px] font-mono text-[12px] leading-[1.6] text-text-muted">
+      <p className="max-w-[900px] font-mono text-[12px] leading-[1.6] text-text-muted max-tablet:order-1">
         Tap a fret on each string you play (tap it again to take it off), or type the shape low string first, like x32010.
       </p>
-      <Neck
-        tuning={tuning}
-        left={left}
-        onTap={tap}
-        muted={frets.flatMap((f, s) => (f === null ? [s] : []))}
-        dots={frets.flatMap((f, s) => (f === null ? [] : [{ string: s, fret: f, label: noteName(strings[s].midi + f), color: "accent" as const, filled: true }]))}
-        label={`Neck to tap a shape on${notes.length ? `: ${id}` : ""}`}
-      />
-      <div className="flex flex-wrap items-end gap-[10px]">
+      <div className="max-tablet:order-3">
+        <Neck
+          tuning={tuning}
+          left={left}
+          onTap={tap}
+          muted={frets.flatMap((f, s) => (f === null ? [s] : []))}
+          dots={frets.flatMap((f, s) => (f === null ? [] : [{ string: s, fret: f, label: noteName(strings[s].midi + f), color: "accent" as const, filled: true }]))}
+          label={`Neck to tap a shape on${notes.length ? `: ${id}` : ""}`}
+        />
+      </div>
+      <div className="flex flex-wrap items-end gap-[10px] max-tablet:order-4">
         <label className="flex min-w-0 flex-[1_1_220px] flex-col gap-[6px]">
           <GroupLabel>Shape, low string first</GroupLabel>
           <input
@@ -99,7 +101,7 @@ export function NameIt() {
           CLEAR
         </button>
       </div>
-      <p id="name-it-help" className="font-mono text-[12px] text-text-faint">
+      <p id="name-it-help" className="font-mono text-[12px] text-text-faint max-tablet:order-5">
         {bad ? "Six strings, x for a string you don't play, frets 0–15 (dashes between them for frets over 9)." : (
           <>
             Try:{" "}
@@ -115,7 +117,13 @@ export function NameIt() {
         )}
       </p>
 
-      <div className="flex flex-col gap-[10px]" aria-live="polite" data-named>
+      {/* The answer. On phones the neck is two screens tall, so the name, its play buttons and any hint stay pinned
+          under the top bar, above the neck, while you tap (the rest of the answer follows the neck's controls). */}
+      <div
+        className="flex flex-col gap-[10px] max-tablet:sticky max-tablet:top-[64px] max-tablet:z-20 max-tablet:order-2 max-tablet:-mx-[16px] max-tablet:border-b max-tablet:border-line max-tablet:bg-surface max-tablet:px-[16px] max-tablet:py-[8px] max-tablet:shadow-card"
+        aria-live="polite"
+        data-named
+      >
         <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[6px]">
           <span className="font-display text-[34px] leading-none" data-chord-name>
             {best ? best.name : "—"}
@@ -129,6 +137,26 @@ export function NameIt() {
           {names.length > 1 && <span className="font-mono text-[12px] text-text-muted">also: {names.slice(1, 4).map((n) => n.name).join(", ")}</span>}
         </div>
         {message && <p className="font-mono text-[12px] text-text-muted">{message}</p>}
+        {near && (
+          <div className="flex flex-wrap items-center gap-[10px] rounded-outer border border-dashed border-line-strong p-[8px] font-mono text-[12px] text-text-secondary tablet:p-[12px]" data-near>
+            <span>
+              Did you mean <b className="text-text-primary">{chordName(near.voicing.root, near.voicing.type)}</b>? Move the {strings[near.string].name} string from fret {near.from} to {near.to}.
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setBad(false);
+                setFrets(near.voicing.frets);
+              }}
+              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-bold text-text-primary hover:border-accent"
+            >
+              USE {shapeText(near.voicing.frets)}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-[10px] max-tablet:order-6 tablet:-mt-[6px]" data-named-details>
         {notes.length >= 2 && (
           <p className="font-mono text-[12px] text-text-muted">
             Notes, low to high: {notes.map((n) => noteName(n)).join(" · ")}
@@ -157,23 +185,6 @@ export function NameIt() {
               className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold hover:border-accent"
             >
               LOOK UP {best.name.toUpperCase()} IN THE DICTIONARY
-            </button>
-          </div>
-        )}
-        {near && (
-          <div className="flex flex-wrap items-center gap-[10px] rounded-outer border border-dashed border-line-strong p-[12px] font-mono text-[12px] text-text-secondary" data-near>
-            <span>
-              Did you mean <b className="text-text-primary">{chordName(near.voicing.root, near.voicing.type)}</b>? Move the {strings[near.string].name} string from fret {near.from} to {near.to}.
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setBad(false);
-                setFrets(near.voicing.frets);
-              }}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-bold text-text-primary hover:border-accent"
-            >
-              USE {shapeText(near.voicing.frets)}
             </button>
           </div>
         )}

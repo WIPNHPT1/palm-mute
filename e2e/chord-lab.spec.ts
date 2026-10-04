@@ -1,5 +1,5 @@
 import { type Page } from "@playwright/test";
-import { expect, gotoAndSettle, lightOnly, onlyAtWidths, test } from "./fixtures";
+import { expect, gotoAndSettle, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
 import { lastPlayback } from "./helpers";
 
 // The Chord Lab (docs/chord-lab-prd.md): its setup and the Dictionary with its neck.
@@ -166,6 +166,31 @@ test.describe("chord lab: name that chord", () => {
     await expect(nameIt(page).getByRole("list", { name: "Keys C belongs to" })).toContainText("C major: I");
     await tap(2, 2); // tap again to take it off
     await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).toHaveValue("x3x010");
+  });
+
+  test("on a phone the answer stays on screen while you tap the tall neck", async ({ page }, info) => {
+    onlyAtWidths(info, [320, 390]);
+    lightOnly(info);
+    // A short phone as well as a tall one.
+    for (const height of [568, 844]) {
+      await page.setViewportSize({ width: projectWidth(info), height });
+      await page.goto("/chords/#name-it");
+      await page.waitForLoadState("networkidle");
+      await nameIt(page).getByRole("button", { name: "CLEAR" }).click();
+      const neck = nameIt(page).locator('svg[data-neck="vertical"]');
+      await neck.scrollIntoViewIfNeeded();
+      // Shapes the tool names as you add strings: a C chord, string by string (the fret 15 tap is the furthest down).
+      for (const [s, f] of [[1, 3], [2, 2], [3, 0], [4, 1], [5, 0], [2, 15]] as const) {
+        const rect = nameIt(page).locator(`rect[data-tap="${s}:${f}"]`).filter({ visible: true }).first();
+        await rect.click(); // a real tap: it fails if anything covers the target
+        const box = (await named(page).boundingBox())!;
+        const view = page.viewportSize()!;
+        expect(box.y, `chord name below the top bar after tapping ${s}:${f} at ${height}px`).toBeGreaterThanOrEqual(60);
+        expect(box.y + box.height, `chord name inside the screen after tapping ${s}:${f} at ${height}px`).toBeLessThanOrEqual(view.height);
+        if (s === 5) await expect(named(page)).toHaveText("C");
+      }
+      await expect(page.locator("[data-chord-name]")).toHaveCount(1);
+    }
   });
 
   test("typing a shape names it: inversions, sus and add9, power chords, and non-chords", async ({ page }, info) => {
