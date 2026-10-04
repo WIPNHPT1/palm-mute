@@ -2,6 +2,7 @@
 
 import { type ReactNode, useId, useState } from "react";
 import { ChordChip } from "@/components/ChordChip";
+import { FlapText } from "@/components/FlapText";
 import { LockIcon } from "@/components/icons/LockIcon";
 import { RegenerateIcon } from "@/components/icons/RegenerateIcon";
 import { PlayButton } from "@/components/PlayButton";
@@ -111,7 +112,9 @@ export function SectionCard({
       <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[4px] px-[14px] pt-[10px] tablet:px-[16px]">
         <div className="flex min-w-0 items-baseline gap-[8px]">
           <span className={`font-mono text-[15px] font-bold ${active ? "text-accent" : "text-text-faint"}`}>{String(index + 1).padStart(2, "0")}</span>
-          <h2 className="font-display text-[17px] leading-[1.3]">{section.label}</h2>
+          <h2 className="font-display text-[17px] leading-[1.3]">
+            <FlapText text={section.label} />
+          </h2>
           <span className="whitespace-nowrap font-mono text-[12px] text-text-faint">
             {played} {played === 1 ? "bar" : "bars"}
           </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
+import { FlapText } from "@/components/FlapText";
 
 export type LabTool = { id: string; n: number; title: string; hint: string };
 
@@ -17,7 +18,7 @@ export function ToolCard({ tool, children }: { tool: LabTool; children: ReactNod
       <div className="sig-card-hd flex flex-wrap items-baseline gap-x-[10px] gap-y-[4px] px-[16px] pt-[14px] tablet:px-[20px]">
         <span className="sig-num font-mono text-[12px] font-bold">{String(tool.n).padStart(2, "0")}</span>
         <h2 id={`${tool.id}-title`} className="font-display text-[18px] leading-tight">
-          {tool.title}
+          <FlapText text={tool.title} />
         </h2>
         <span className="font-mono text-[12px] text-text-faint">{tool.hint}</span>
       </div>

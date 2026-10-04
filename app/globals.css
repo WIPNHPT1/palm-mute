@@ -5,6 +5,14 @@
 @layer base {
   html {
     @apply bg-paper;
+    /* The width the Generator, Chord Lab, About page and top bar cap at. */
+    --page-max: 1440px;
+    --page-zoom: 1;
+  }
+  /* Big screens (lib/stage.ts): the Generator and the Chord Lab grow with the window from 1600px, on a slightly
+     narrower page so the sides are free for the fretboard rails. Everything scales together, so nothing reflows. */
+  @media (min-width: 1600px) {
+    [data-zoom="on"] { zoom: var(--page-zoom); --page-max: 1280px; }
   }
   body {
     @apply bg-paper font-ui text-text-primary antialiased;
@@ -45,28 +53,32 @@
     18%, 100% { transform: rotateY(360deg); }
   }
 
-  /* ---- Shutter hamburger: lines part on hover; icon spins half a turn into an X ---- */
-  .shutter-icon {
-    position: absolute;
-    inset: 0;
-    transition: transform 0.6s cubic-bezier(0.7, 0, 0.2, 1);
-  }
-  .shutter-icon > span {
+  /* ---- Menu button: three strings (owner's pick, docs/mockups/stage-options.html). Hover plucks them, one after
+     another; opening snaps the middle string and crosses the other two into a close mark. ---- */
+  .string-icon { position: absolute; inset: 0; }
+  .string-icon > span {
     position: absolute;
     left: 12px;
     width: 20px;
     height: 1.75px;
     border-radius: 2px;
     background: currentColor;
-    transition: transform 0.5s cubic-bezier(0.7, 0, 0.2, 1);
+    transition: transform 450ms cubic-bezier(0.7, 0, 0.2, 1), opacity 300ms, background 300ms;
   }
-  .shutter-icon > span:first-child { top: 18.5px; }
-  .shutter-icon > span:last-child { top: 24.5px; }
-  button:hover > .shutter-icon:not([data-open="true"]) > span:first-child { transform: translateX(-3px); }
-  button:hover > .shutter-icon:not([data-open="true"]) > span:last-child { transform: translateX(3px); }
-  .shutter-icon[data-open="true"] { transform: rotate(180deg); }
-  .shutter-icon[data-open="true"] > span:first-child { transform: translateY(3px) rotate(45deg); }
-  .shutter-icon[data-open="true"] > span:last-child { transform: translateY(-3px) rotate(-45deg); }
+  .string-icon > span:nth-child(1) { top: 15px; }
+  .string-icon > span:nth-child(2) { top: 21px; }
+  .string-icon > span:nth-child(3) { top: 27px; }
+  button:hover > .string-icon:not([data-open="true"]) > span { animation: string-pluck 260ms ease-out 3 alternate; }
+  button:hover > .string-icon:not([data-open="true"]) > span:nth-child(2) { animation-delay: 60ms; }
+  button:hover > .string-icon:not([data-open="true"]) > span:nth-child(3) { animation-delay: 120ms; }
+  @keyframes string-pluck {
+    0% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(-1.2px) scaleY(1.6); }
+    100% { transform: translateY(1px) scaleY(1); }
+  }
+  .string-icon[data-open="true"] > span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .string-icon[data-open="true"] > span:nth-child(2) { transform: scaleX(0); opacity: 0; background: rgb(var(--color-accent-on-ink)); }
+  .string-icon[data-open="true"] > span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
   /* ---- Shutter menu: full-screen bands wipe in from the left, one per page ---- */
   .shutter-menu {
@@ -392,6 +404,69 @@
   .sig-notice, .sig-notice-ic, .sig-chip[aria-current="true"]::after, .sig-ring-prog, .sig-beat, .sig-pill[aria-checked="true"], .sig-rise, button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
 }
 
+/* ---- Split-flap card titles (components/FlapText.tsx): letters flip in, one after another, the first time a card
+   scrolls into view. Before the observer runs (or without it) the title is simply there. ---- */
+@layer components {
+  .flap > span { display: inline-block; white-space: pre; }
+  .flap[data-flap="wait"] > span { opacity: 0; }
+  .flap[data-flap="go"] > span { animation: flap-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i) * 32ms); }
+  @keyframes flap-in {
+    0% { transform: perspective(200px) rotateX(90deg); opacity: 0; }
+    60% { transform: perspective(200px) rotateX(-14deg); opacity: 1; }
+    100% { transform: none; opacity: 1; }
+  }
+}
+
+/* ---- Page change shutter (components/PageWipe.tsx): bands close from the left over the old page, then open off the
+   new one to the right, the menu's ink and red. ---- */
+@layer components {
+  .page-wipe { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; pointer-events: none; }
+  .page-wipe > i { flex: 1; transform: scaleX(0); transform-origin: left; background: rgb(var(--color-ink)); }
+  .page-wipe > i:nth-child(2n) { background: rgb(var(--color-accent)); }
+  .page-wipe[data-phase="cover"] > i { transform: scaleX(1); transition: transform 420ms cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(var(--i) * 25ms); }
+  .page-wipe[data-phase="reveal"] > i { transform: scaleX(0); transform-origin: right; transition: transform 520ms cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(var(--i) * 25ms); }
+}
+
+/* ---- Stage layer on big screens (lib/stage.ts, components/StageBackground.tsx and SideRails.tsx) ---- */
+@layer components {
+  :root { --stage-top: 64px; }
+  @media (min-width: 834px) { :root { --stage-top: 76px; } }
+  @media (min-width: 1600px) { :root { --stage-top: calc(76px * var(--page-zoom)); } }
+  /* both sit behind the page (the page's shell is z-index 1) and never take a click */
+  .stage-bg, .stage-rail { position: fixed; z-index: 0; pointer-events: none; }
+  .stage-bg { display: none; left: 0; top: var(--stage-top); width: 100%; height: calc(100% - var(--stage-top)); }
+  @media (min-width: 834px) { .stage-bg { display: block; } }
+
+  .stage-rail { display: none; top: var(--stage-top); bottom: 0; width: calc((100vw - 1280px * var(--page-zoom)) / 2); overflow: hidden; }
+  @media (min-width: 1600px) { .stage-rail { display: block; } }
+  .stage-rail.left { left: 0; }
+  .stage-rail.right { right: 0; }
+  .stage-board {
+    --fs: 96px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(46%, 150px);
+    background-color: rgb(var(--color-line) / 0.45);
+    background-image: radial-gradient(circle, rgb(var(--color-line-strong)) 5px, transparent 5.5px), linear-gradient(to bottom, rgb(var(--color-line-strong)) 0 3px, transparent 3px);
+    background-size: 100% calc(var(--fs) * 2), 100% var(--fs);
+    background-repeat: repeat-y;
+    background-position: 50% calc(var(--sy, 0px) * -0.45 + var(--fs) / 2), 0 calc(var(--sy, 0px) * -0.45);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
+  .stage-rail.left .stage-board { right: 18%; }
+  .stage-rail.right .stage-board { left: 18%; }
+  .stage-board > i { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgb(var(--color-text-faintest)); opacity: 0.55; }
+  [data-playing="true"] .stage-board > i { animation: stage-vib 90ms linear infinite alternate; }
+  [data-playing="true"] .stage-board > i:nth-child(2n) { animation-duration: 70ms; }
+  [data-playing="true"] .stage-board > i:nth-child(3n) { animation-duration: 110ms; }
+  @keyframes stage-vib { from { transform: translateX(-1px); } to { transform: translateX(1px); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-playing="true"] .stage-board > i { animation: none; }
+}
+
 /* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----
    Count In's "How it works" posters in miniature: ink, red, outlined and brass cards with big outlined
    step numbers. Hidden per page by a class on <html> (lib/guide.ts), so a hidden guide never flashes. */
@@ -511,8 +586,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wordmark-bolt svg { animation: none; }
-  .shutter-icon,
-  .shutter-icon > span,
+  .string-icon > span { animation: none !important; }
+  .string-icon > span,
   .shutter-menu,
   .shutter-band::before,
   .shutter-band::after,

@@ -1,5 +1,5 @@
 import { expect, gotoAndSettle, lightOnly, projectWidth, test } from "./fixtures";
-import { lastPlayback, parseTab, playedCells, section, tabRows } from "./helpers";
+import { lastPlayback, pageZoom, parseTab, playedCells, section, tabRows } from "./helpers";
 
 // Full-width section cards (docs/song-builder-prd.md B5): the tab is a songbook (bar numbers, rhythm stems,
 // repeat marks) at (nearly) its real 12px size, 2 bars to a line on phones and 4 from tablet up; long tabs show
@@ -22,12 +22,14 @@ test.describe("section cards", () => {
     const scales = await page.locator("[data-sections] svg[data-tab]").evaluateAll((svgs) =>
       svgs.map((svg) => ({ scale: svg.getBoundingClientRect().width / (svg as SVGSVGElement).viewBox.baseVal.width, overflow: svg.parentElement!.scrollWidth - svg.parentElement!.clientWidth })),
     );
+    // (On big screens the whole page is zoomed, the tabs with it: 12px is then 12px × the zoom.)
+    const zoom = await pageZoom(page);
     for (const s of scales) {
-      expect(s.scale).toBeLessThanOrEqual(1.001);
-      expect(s.overflow).toBeLessThanOrEqual(0);
+      expect(s.scale).toBeLessThanOrEqual(1.001 * zoom);
+      expect(s.overflow).toBeLessThanOrEqual(zoom > 1 ? 1 : 0); // zoomed boxes can round by a pixel
     }
     // From tablet up a 4-bar line fits at (nearly) full size: at 834px two-digit frets may shrink it a little.
-    if (!phone) for (const s of scales) expect(s.scale).toBeGreaterThan(0.9);
+    if (!phone) for (const s of scales) expect(s.scale).toBeGreaterThan(0.9 * zoom);
   });
 
   test("the tab shows rhythm stems under every strum, and repeat marks on the Verse", async ({ page }, info) => {

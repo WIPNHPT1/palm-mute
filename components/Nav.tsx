@@ -84,7 +84,7 @@ export function Nav() {
   return (
     <>
       <header className="sticky top-0 z-50 bg-ink text-text-on-dark">
-        <div className="mx-auto flex h-[64px] max-w-[1440px] items-center justify-between px-[20px] tablet:h-[76px] tablet:px-[32px] desktop:px-[56px]">
+        <div className="mx-auto flex h-[64px] max-w-[var(--page-max)] items-center justify-between px-[20px] tablet:h-[76px] tablet:px-[32px] desktop:px-[56px]">
           <Link href="/" className="flex min-h-[44px] items-center font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
             <Wordmark />
           </Link>
@@ -97,7 +97,8 @@ export function Nav() {
             aria-controls="site-menu"
             onClick={() => setMenuOpen((o) => !o)}
           >
-            <span className="shutter-icon" data-open={menuOpen} aria-hidden="true">
+            <span className="string-icon" data-open={menuOpen} aria-hidden="true">
+              <span />
               <span />
               <span />
             </span>
@@ -114,7 +115,7 @@ export function Nav() {
                 aria-current={current ? "page" : undefined}
                 // Also close when picking the page you're already on (pathname doesn't change then).
                 onClick={() => setMenuOpen(false)}
-                className="shutter-content mx-auto flex w-full max-w-[1440px] items-center gap-[14px] px-[20px] tablet:gap-[22px] tablet:px-[32px] desktop:px-[56px]"
+                className="shutter-content mx-auto flex w-full max-w-[var(--page-max)] items-center gap-[14px] px-[20px] tablet:gap-[22px] tablet:px-[32px] desktop:px-[56px]"
               >
                 <span className="shutter-index w-[24px] shrink-0 font-mono text-[12px]">{String(i + 1).padStart(2, "0")}</span>
                 <span className="shutter-label font-display text-[clamp(34px,7vw,96px)] uppercase leading-none tracking-[-0.01em]" data-current={current}>
@@ -137,7 +138,7 @@ export function Nav() {
           );
         })}
         <div className="shutter-band is-strip">
-          <div className="shutter-content mx-auto flex w-full max-w-[1440px] items-center justify-between px-[20px] tablet:px-[32px] desktop:px-[56px]">
+          <div className="shutter-content mx-auto flex w-full max-w-[var(--page-max)] items-center justify-between px-[20px] tablet:px-[32px] desktop:px-[56px]">
             <DarkToggle dark={dark} onToggle={toggleDark} />
             <a
               href={REPO_URL}

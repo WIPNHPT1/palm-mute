@@ -5,7 +5,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { KeyFinder } from "@/components/lab/KeyFinder";
-import { LabProvider } from "@/components/lab/LabContext";
+import { LabProvider, useLab } from "@/components/lab/LabContext";
+import { SideRails } from "@/components/SideRails";
+import { StageBackground } from "@/components/StageBackground";
 import { MoodMap } from "@/components/lab/MoodMap";
 import { LabSetup } from "@/components/lab/LabSetup";
 import { NameIt } from "@/components/lab/NameIt";
@@ -28,10 +30,22 @@ const GUIDE: GuideStep[] = [
   { title: "Move it", body: <>Find the <b>key</b>, then shift it: another key, a <b>capo</b> or a drop <b>tuning</b>.</> },
 ];
 
+/** The Lab's moving strings and fretboard rails (they react while the Lab is playing). */
+function LabStage() {
+  const { playing } = useLab();
+  return (
+    <>
+      <StageBackground kind="strings" playing={playing !== null} />
+      <SideRails playing={playing !== null} />
+    </>
+  );
+}
+
 export default function ChordLabPage() {
   return (
     <LabProvider>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:px-[56px] desktop:pb-[40px] desktop:pt-[32px]">
+      <LabStage />
+      <div className="mx-auto flex w-full max-w-[var(--page-max)] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:px-[56px] desktop:pb-[40px] desktop:pt-[32px]">
         <PageHeader kicker="SONGWRITING TOOLS" title="CHORD LAB" />
         <PageGuide page="chords" label="How to use the Chord Lab" steps={GUIDE} signature="10 CHORD TYPES · 4 TUNINGS · THE SHAPES PLAYERS USE" />
         <LabSetup />
