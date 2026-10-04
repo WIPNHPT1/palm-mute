@@ -138,3 +138,83 @@ test.describe("chord lab: setup and dictionary", () => {
     expect(await x("2:0")).toBeGreaterThan(await x("0:3")); // on the right
   });
 });
+
+// 02 Name that chord
+const nameIt = (page: Page) => page.locator('[data-tool="name-it"]');
+const named = (page: Page) => nameIt(page).locator("[data-chord-name]");
+const typeShape = async (page: Page, shape: string) => nameIt(page).getByRole("textbox", { name: /Shape/ }).fill(shape);
+
+test.describe("chord lab: name that chord", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("tapping frets on the neck names the chord as you go", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(named(page)).toHaveText("—");
+    const tap = (s: number, f: number) => nameIt(page).locator(`rect[data-tap="${s}:${f}"]`).filter({ visible: true }).first().click({ force: true });
+    await tap(1, 3);
+    await expect(nameIt(page)).toContainText("One note: C");
+    await tap(2, 2);
+    await tap(3, 0);
+    await tap(4, 1);
+    await tap(5, 0);
+    await expect(named(page)).toHaveText("C");
+    await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).toHaveValue("x32010");
+    await expect(nameIt(page).getByRole("list", { name: "Keys C belongs to" })).toContainText("G major: IV");
+    await expect(nameIt(page).getByRole("list", { name: "Keys C belongs to" })).toContainText("C major: I");
+    await tap(2, 2); // tap again to take it off
+    await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).toHaveValue("x3x010");
+  });
+
+  test("typing a shape names it: inversions, sus and add9, power chords, and non-chords", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    for (const [shape, name] of [["320003", "G"], ["x32033", "Cadd9"], ["x02210", "Am"], ["x30013", "Csus2"], ["355xxx", "G5"], ["032010", "C/E"]] as const) {
+      await typeShape(page, shape);
+      await expect(named(page), shape).toHaveText(name);
+    }
+    await typeShape(page, "x34xxx");
+    await expect(nameIt(page)).toContainText("Not a chord in the Lab");
+    await typeShape(page, "x3201");
+    await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).toHaveAttribute("aria-invalid", "true");
+    await expect(nameIt(page)).toContainText("Six strings");
+    await typeShape(page, "x-12-14-14-14-12");
+    await expect(named(page)).toHaveText("A");
+  });
+
+  test("a sounding shape plays exactly the notes the tab says", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await typeShape(page, "x32010");
+    await nameIt(page).getByRole("button", { name: "Play C strummed" }).click();
+    const pb = (await lastPlayback(page))!;
+    expect(pb.bpm).toBe(150);
+    expect(pb.bars[0].cells[0]!.notes).toEqual([48, 52, 55, 60, 64]); // x32010 in E standard
+  });
+
+  test("a shape one fret off a chord suggests the fix; a dictionary shape links to it", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await typeShape(page, "x32011");
+    await expect(nameIt(page).locator("[data-near]")).toContainText("Did you mean");
+    await nameIt(page).locator("[data-near]").getByRole("button", { name: /^USE / }).click();
+    await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).not.toHaveValue("x32013");
+    // A shape the Dictionary has: look it up there, opened on that very shape.
+    await typeShape(page, "x02210");
+    await nameIt(page).getByRole("button", { name: "LOOK UP AM IN THE DICTIONARY" }).click();
+    await expect(dictionary(page).locator("[data-chord-info]")).toContainText("Am (minor)");
+    await expect(dictionary(page).locator('[data-voicing="x02210"] button[aria-label$="show on the neck"]')).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("it follows the tuning, and the neck mirrors for left-handed players", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await radio(page, "Tuning", "DROP D").click();
+    await typeShape(page, "000xxx");
+    await expect(named(page)).toHaveText("D5");
+    await radio(page, "Tuning", "E STD").click();
+    await expect(named(page)).toHaveText("Asus4/E"); // the same frets are different notes in another tuning
+  });
+});

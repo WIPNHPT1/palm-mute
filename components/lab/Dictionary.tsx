@@ -177,13 +177,24 @@ function Toggle({ pressed, onClick, children }: { pressed: boolean; onClick: () 
  * the chord everywhere on the neck with the picked voicing filled in.
  */
 export function Dictionary() {
-  const { chord, setChord, tuning, left, key, toggle, playing } = useLab();
+  const { chord, setChord, shapeRequest, tuning, left, key, toggle, playing } = useLab();
   const { root, type } = chord;
   const [position, setPosition] = useState<Position>("all");
   const [easy, setEasy] = useState(false);
   const [noBarre, setNoBarre] = useState(false);
   const [scale, setScale] = useState<Scale>("off");
   const [picked, setPicked] = useState<string | null>(null);
+
+  // "Look it up" from Name that chord: open on that shape, with every filter cleared so it's shown.
+  const [handled, setHandled] = useState(0);
+  useEffect(() => {
+    if (!shapeRequest || shapeRequest.n === handled) return;
+    setHandled(shapeRequest.n);
+    setPosition("all");
+    setEasy(false);
+    setNoBarre(false);
+    setPicked(shapeRequest.shape);
+  }, [shapeRequest, handled]);
 
   const all = voicingsFor(root, type, tuning);
   const shown = useMemo(
