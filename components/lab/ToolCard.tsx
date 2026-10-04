@@ -68,7 +68,7 @@ export function ToolStrip({ tools }: { tools: LabTool[] }) {
             {String(t.n).padStart(2, "0")} {t.title}
           </b>
           {t.hint}
-          <svg className="sig-strip-arrow" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg className="w-[12px] h-[12px] sig-strip-arrow" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" />
           </svg>
         </a>

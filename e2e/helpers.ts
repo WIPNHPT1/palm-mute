@@ -65,24 +65,26 @@ export function playedCells(pb: NonNullable<Playback>) {
   );
 }
 
-/** Problems inside `root` (the responsive gates): controls under 44px, text under 12px, sideways scroll, clipped text. */
+/** Problems inside `root` (the responsive gates): controls under 44px, text under 12px (both in design pixels, so
+ * 10% smaller from 1440px), sideways scroll, clipped text. */
 export async function layoutProblems(page: Page, root: string): Promise<string[]> {
   return page.locator(root).evaluateAll((roots) => {
     const out: string[] = [];
+    const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1;
     const name = (el: Element) => `${el.tagName.toLowerCase()}${el.getAttribute("aria-label") ? `[${el.getAttribute("aria-label")}]` : ""} "${(el.textContent ?? "").trim().slice(0, 30)}"`;
     for (const root of roots) {
       for (const el of root.querySelectorAll<HTMLElement>("button, input, [role=radio], a[href]")) {
         const r = el.getBoundingClientRect();
         if (!r.width || getComputedStyle(el).visibility === "hidden") continue;
         // A stretched row button (the whole progression row) is as big as its row.
-        if (r.width < 43.5 || r.height < 43.5) out.push(`small control ${Math.round(r.width)}×${Math.round(r.height)}: ${name(el)}`);
+        if (r.width < 43.5 * u || r.height < 43.5 * u) out.push(`small control ${Math.round(r.width)}×${Math.round(r.height)}: ${name(el)}`);
       }
       for (const el of root.querySelectorAll<HTMLElement>("*")) {
         // Tab art and screen-reader-only text are hidden on purpose.
         if (el.closest("svg, [aria-hidden='true'], .sr-only")) continue;
         const text = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
         const style = getComputedStyle(el);
-        if (text && el.getBoundingClientRect().width && parseFloat(style.fontSize) < 12) out.push(`text ${style.fontSize}: ${name(el)}`);
+        if (text && el.getBoundingClientRect().width && parseFloat(style.fontSize) < 12 * u - 0.01) out.push(`text ${style.fontSize}: ${name(el)}`);
         if ((style.overflowX === "auto" || style.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 1) out.push(`scrolls sideways: ${name(el)}`);
         if (text && style.overflow === "hidden" && el.scrollWidth > el.clientWidth + 1) out.push(`clipped: ${name(el)}`);
       }
@@ -92,12 +94,9 @@ export async function layoutProblems(page: Page, root: string): Promise<string[]
 }
 
 /**
- * The page's zoom (lib/stage.ts): 1, or more on the Generator and the Chord Lab in windows 1600px and wider. Sizes
- * measured on screen grow by it, and WebKit can round a zoomed box by a pixel.
+ * The design unit in CSS pixels (--u, DECISIONS.md "Design scale"): 1, or 0.9 from a 1440px window, where the whole
+ * design draws 10% smaller. Sizes measured on screen scale by it, and a scaled box can round by a pixel.
  */
-export async function pageZoom(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const el = document.querySelector("[data-zoom]");
-    return el ? Number(getComputedStyle(el).zoom) || 1 : 1;
-  });
+export async function designUnit(page: Page): Promise<number> {
+  return page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1);
 }

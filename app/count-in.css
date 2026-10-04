@@ -1,6 +1,8 @@
 /* Count In home page. Ported from the approved mock-up; colors come from the design-token variables
    emitted by tailwind.config.js (--color-*), so light/dark switch with the rest of the site.
-   Every class is prefixed ci- to keep this page's styles out of the other pages' way. */
+   Every class is prefixed ci- to keep this page's styles out of the other pages' way.
+   Pixel sizes here are design pixels: the build rewrites them to the design unit (--u, 10% smaller from a 1440px
+   window; scripts/postcss-design-unit.js). */
 
 
 .ci {

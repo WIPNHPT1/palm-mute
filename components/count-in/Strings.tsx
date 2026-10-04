@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as audio from "@/lib/audio/engine";
+import { designUnit } from "@/lib/designUnit";
 import { OPEN_STRING_MIDI, TAB_STRINGS } from "@/lib/musicTheory";
 
 const THICKNESS = [1, 1.3, 1.7, 2.2, 2.8, 3.4]; // e → E
@@ -45,7 +46,7 @@ export function Strings({ reduced }: { reduced: boolean }) {
     const N = TAB_STRINGS.length, amp = new Array(N).fill(0), px = new Array(N).fill(0.5), hot = new Array(N).fill(0);
     // running = on screen; scheduled = a frame is queued. The loop sleeps once every string is still and
     // the page isn't scrolling (no work while idle), and a pluck, scroll or resize wakes it.
-    let W = 0, H = 0, t = 0, lastY: number | null = null, lastT = 0, running = false, scheduled = false, frame = 0, lastScroll = scrollY, vel = 0;
+    let W = 0, H = 0, u = 1, t = 0, lastY: number | null = null, lastT = 0, running = false, scheduled = false, frame = 0, lastScroll = scrollY, vel = 0;
     let colors = { str: "", acc: "" };
     const readColors = () => {
       const cs = getComputedStyle(el);
@@ -53,6 +54,7 @@ export function Strings({ reduced }: { reduced: boolean }) {
     };
     const size = () => {
       const dpr = Math.min(2, devicePixelRatio || 1);
+      u = designUnit(); // string thickness is in design pixels
       W = el.clientWidth; H = el.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
@@ -67,7 +69,7 @@ export function Strings({ reduced }: { reduced: boolean }) {
         ctx.beginPath(); ctx.moveTo(0, y0);
         // the string is pulled into a triangle at the pluck point
         for (let x = 0; x <= W; x += 6) ctx.lineTo(x, y0 + a * (x < x0 ? x / x0 : (W - x) / (W - x0)));
-        ctx.lineWidth = THICKNESS[i];
+        ctx.lineWidth = THICKNESS[i] * u;
         ctx.strokeStyle = hot[i] > 0.05 ? colors.acc : colors.str;
         ctx.globalAlpha = 0.55 + Math.min(0.45, hot[i]);
         ctx.stroke();

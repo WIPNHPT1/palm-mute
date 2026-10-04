@@ -7,12 +7,12 @@
     @apply bg-paper;
     /* The width the Generator, Chord Lab, About page and top bar cap at. */
     --page-max: 1440px;
-    --page-zoom: 1;
+    /* The design unit (scripts/postcss-design-unit.js rewrites every pixel size in this CSS to it): the whole
+       design draws 10% smaller from a 1440px window, as at 90% browser zoom (owner's pick, DECISIONS.md). */
+    --u: 1px;
   }
-  /* Big screens (lib/stage.ts): the Generator and the Chord Lab grow with the window from 1600px, on a slightly
-     narrower page so the sides are free for the fretboard rails. Everything scales together, so nothing reflows. */
-  @media (min-width: 1600px) {
-    [data-zoom="on"] { zoom: var(--page-zoom); --page-max: 1280px; }
+  @media (min-width: 1440px) {
+    html { --u: 0.9px; }
   }
   body {
     @apply bg-paper font-ui text-text-primary antialiased;
@@ -427,11 +427,10 @@
   .page-wipe[data-phase="reveal"] > i { transform: scaleX(0); transform-origin: right; transition: transform 520ms cubic-bezier(0.7, 0, 0.2, 1); transition-delay: calc(var(--i) * 25ms); }
 }
 
-/* ---- Stage layer on big screens (lib/stage.ts and components/StageBackground.tsx) ---- */
+/* ---- Stage layer on big screens (components/StageBackground.tsx) ---- */
 @layer components {
   :root { --stage-top: 64px; }
   @media (min-width: 834px) { :root { --stage-top: 76px; } }
-  @media (min-width: 1600px) { :root { --stage-top: calc(76px * var(--page-zoom)); } }
   /* sits behind the page (the page's shell is z-index 1) and never takes a click */
   .stage-bg { position: fixed; z-index: 0; pointer-events: none; display: none; left: 0; top: var(--stage-top); width: 100%; height: calc(100% - var(--stage-top)); }
   @media (min-width: 834px) { .stage-bg { display: block; } }

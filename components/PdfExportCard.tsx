@@ -74,7 +74,7 @@ export function PdfExportCard({ input }: { input: Omit<SongbookInput, "size" | "
           disabled={status.busy}
           className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer sig-btn bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent disabled:opacity-60"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+          <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
             <path d="M12 4v12M6 11l6 6 6-6M5 20h14" />
           </svg>
           DOWNLOAD PDF

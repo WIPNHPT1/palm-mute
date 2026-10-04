@@ -93,7 +93,7 @@ export function MidiExportCard({ song, bpm, keyName, progressionId, title }: { s
               className="flex h-[18px] w-[18px] items-center justify-center rounded-[4px] border-[1.5px] border-text-muted text-text-on-accent peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
             >
               {drums && (
-                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <svg className="w-[12px] h-[12px]" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4">
                   <path d="M3 8.5l3.2 3L13 4.5" />
                 </svg>
               )}
@@ -107,7 +107,7 @@ export function MidiExportCard({ song, bpm, keyName, progressionId, title }: { s
           onClick={save}
           className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer sig-btn bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+          <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
             <path d="M12 4v12M6 11l6 6 6-6M5 20h14" />
           </svg>
           DOWNLOAD MIDI
