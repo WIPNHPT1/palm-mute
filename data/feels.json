@@ -1,10 +1,35 @@
 {
-  "_architecture_note": "This resolves the open question flagged during the original PRD discussion: Fast Punk and Half-Time are NOT two tempos — they are two drum-feel templates played against the SAME master click. Mid-Tempo is a genuinely separate, independently adjustable tempo. Pop Strum (150) and Ballad (80) each have their own fixed tempo (owner's call, DECISIONS.md). Keep 'tempo' and 'feel template' as two distinct state fields in the app; do not hardcode BPM per feel in the UI layer.",
+  "_architecture_note": "This resolves the open question flagged during the original PRD discussion: Fast Punk and Half-Time are NOT two tempos — they are two drum-feel templates played against the SAME master click. Mid-Tempo (140), Pop Strum (150) and Ballad (80) each have their own fixed tempo (owner's calls, DECISIONS.md; Mid-Tempo's slider was removed 2026-10-04). Keep 'tempo' and 'feel template' as two distinct state fields in the app; do not hardcode BPM per feel in the UI layer.",
   "masterTempos": {
-    "punkMaster": { "bpm": 180, "label": "Punk master tempo", "usedBy": ["fast-punk", "half-time"] },
-    "midTempoDefault": { "bpm": 140, "min": 120, "max": 150, "adjustable": true, "usedBy": ["mid-tempo"] },
-    "popStrum": { "bpm": 150, "label": "Pop Strum tempo (fixed)", "usedBy": ["pop-strum"] },
-    "ballad": { "bpm": 80, "label": "Ballad tempo (fixed)", "usedBy": ["ballad"] }
+    "punkMaster": {
+      "bpm": 180,
+      "label": "Punk master tempo",
+      "usedBy": [
+        "fast-punk",
+        "half-time"
+      ]
+    },
+    "midTempo": {
+      "bpm": 140,
+      "label": "Mid-Tempo tempo (fixed)",
+      "usedBy": [
+        "mid-tempo"
+      ]
+    },
+    "popStrum": {
+      "bpm": 150,
+      "label": "Pop Strum tempo (fixed)",
+      "usedBy": [
+        "pop-strum"
+      ]
+    },
+    "ballad": {
+      "bpm": 80,
+      "label": "Ballad tempo (fixed)",
+      "usedBy": [
+        "ballad"
+      ]
+    }
   },
   "feels": [
     {
@@ -27,8 +52,8 @@
     {
       "id": "mid-tempo",
       "label": "MID-TEMPO",
-      "tempoSource": "midTempoDefault",
-      "displayBpm": "user-adjustable, default 140",
+      "tempoSource": "midTempo",
+      "displayBpm": 140,
       "drumFeel": "skank/offbeat-driven, kick on 1 and 3, hats on the upbeats",
       "rhythmPatternId": "syncopated-skank"
     },

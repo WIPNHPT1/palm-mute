@@ -48,7 +48,7 @@ for (const key of KEYS)
         for (const v of VARIANTS) {
           const where = `${key} ${feel} ${lengthSec}s ${size} ${v.name}`;
           const inputs = Object.fromEntries(SECTION_IDS.map((id) => [id, { key, feel, progressionId: "I-V-vi-IV", seed: 0, lead: v.lead(id), options: v.options[id] }])) as Record<SectionId, SectionInputs>;
-          const bpm = playbackBpm(feel, 140);
+          const bpm = playbackBpm(feel);
           const song = buildSong(inputs, lengthSec, bpm);
           const degrees = Object.fromEntries(SECTION_IDS.flatMap((id) => (id === "solo" || song.rendered[id].lead ? [] : [[id, plannedDegrees(id, "I-V-vi-IV", song.rendered[id].groove)]])));
           const input = { song, rendered: song.rendered, title: TITLE, keyName: key, feel: getFeel(feel).label, bpm, progressionId: "I-V-vi-IV", degrees, date: "30 September 2026", size };

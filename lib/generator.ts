@@ -78,11 +78,6 @@ export const rhythmPatterns = rhythmJson.patterns as RhythmPattern[];
 export const sectionTemplates = templatesJson.sections as SectionTemplate[];
 
 export const PUNK_MASTER_BPM = feelsJson.masterTempos.punkMaster.bpm;
-export const MID_TEMPO = {
-  default: feelsJson.masterTempos.midTempoDefault.bpm,
-  min: feelsJson.masterTempos.midTempoDefault.min,
-  max: feelsJson.masterTempos.midTempoDefault.max,
-};
 
 export function getFeel(id: FeelId): Feel {
   return feels.find((f) => f.id === id)!;
@@ -99,12 +94,11 @@ export function getTemplate(id: SectionId): SectionTemplate {
 
 /**
  * The playback clock for a feel. Fast Punk and Half-Time share the punk master tempo (the
- * half-time feel comes from the drum template, not a tempo change); Mid-Tempo is the adjustable
- * one; Pop Strum and Ballad each have their own fixed tempo.
+ * half-time feel comes from the drum template, not a tempo change); Mid-Tempo, Pop Strum and
+ * Ballad each have their own fixed tempo.
  */
-export function playbackBpm(feel: FeelId, midTempoBpm: number): number {
-  const source = getFeel(feel).tempoSource;
-  return source === "midTempoDefault" ? midTempoBpm : feelsJson.masterTempos[source].bpm;
+export function playbackBpm(feel: FeelId): number {
+  return feelsJson.masterTempos[getFeel(feel).tempoSource].bpm;
 }
 
 // ---------------------------------------------------------------------------
@@ -375,7 +369,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const degrees = sectionDegrees(id, inputs.progressionId);
   // Variants a song can use: a pedal riff needs its chords' roots on open strings, and a riff has to be
   // playable at this tempo in this key (lib/riffs.ts).
-  const bpmFor = playbackBpm(feel, MID_TEMPO.max);
+  const bpmFor = playbackBpm(feel);
   const level = DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY];
   const playable = recipe.variants.filter(
     (v) => !v.riff || (riffFits(v.riff, keyPc, degrees) && writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpmFor) !== null),
@@ -401,7 +395,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const muted = rhythm.articulation.filter((a) => a === "pm").length > rhythm.articulation.length / 2;
   // Playability (R1, R2): the search knows the rhythm, so it prices each change by the time the hand has
   // at this feel's tempo (Mid-Tempo at its fastest) and gives every shape a mute plan on its bars.
-  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  const bpm = playbackBpm(feel);
   const patterns = chords.map((_, b) => rhythm.bars[b % rhythm.bars.length]);
   const articulations = chords.map((_, b) => rhythm.articulation[b % rhythm.articulation.length]);
   const roots = chords.map((c) => pitchClassOf(c.root));
@@ -623,7 +617,7 @@ export function tabBars(bars: SectionBar[]): TabBar[] {
 function renderRiffSection(id: SectionId, inputs: SectionInputs, feel: FeelId, variant: Variant, degrees: Degree[], chords: ResolvedChord[]): RenderedSection {
   const spec = variant.riff!;
   const keyPc = pitchClassOf(inputs.key);
-  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  const bpm = playbackBpm(feel);
   const events = writeRiff(spec, keyPc, degrees, registerTarget(keyPc, "low"), bpm)!;
   const bars: SectionBar[] = chords.map((chord, b) => ({
     chord,
@@ -795,7 +789,7 @@ export function grooveChoices(id: SectionId, inputs: SectionInputs): GrooveChoic
   const feel = getTemplate(id).forceFeel ?? inputs.feel;
   const keyPc = pitchClassOf(inputs.key);
   const degrees = sectionDegrees(id, inputs.progressionId);
-  const bpm = playbackBpm(feel, MID_TEMPO.max);
+  const bpm = playbackBpm(feel);
   return recipe.variants.map((v) => {
     const rhythm = v.rhythms[feel] ?? v.rhythms.all ?? Object.values(v.rhythms)[0];
     const sizes = (["two", "three"] as const).filter((size) => v.shapes.some((id) => (size === "two" ? ["E2", "A2", "D2"] : ["E3", "A3", "D3"]).includes(id)));

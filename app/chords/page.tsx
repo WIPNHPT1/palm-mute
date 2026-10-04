@@ -39,7 +39,7 @@ const GUIDE: GuideStep[] = [
 
 export default function ChordsPage() {
   // Key and feel live in the shared context, so they carry over to/from the Generator.
-  const { state, setKey, setFeel, setMidTempoBpm, togglePlay } = useGenerator();
+  const { state, setKey, setFeel, togglePlay } = useGenerator();
   const [sort, setSort] = useState<SortMode>("most-common");
   const [openId, setOpenId] = useState<string | null>(null);
   const sorted = sortProgressions(progressions, sort);
@@ -64,7 +64,7 @@ export default function ChordsPage() {
           <KeyPicker value={state.key} onChange={setKey} />
         </ControlCard>
         <ControlCard label="Feel" className="tablet:min-w-fit tablet:flex-1">
-          <FeelToggle feel={state.feel} midTempoBpm={state.midTempoBpm} onFeelChange={setFeel} onBpmChange={setMidTempoBpm} />
+          <FeelToggle feel={state.feel} onFeelChange={setFeel} />
         </ControlCard>
         {/* Feel and Sort share a row when both fit without squeezing (min-w-fit); otherwise Sort wraps under Feel and both fill their rows. */}
         <ControlCard label="Sort" className="min-w-fit tablet:flex-1">

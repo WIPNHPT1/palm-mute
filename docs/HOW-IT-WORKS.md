@@ -88,7 +88,7 @@ Each bar is palm-muted (`pm`) or rings (`ring`). A recipe can also mark accents,
 | Breakdown | (always half-time) `D---D-xx` · `D---D---` · `D---D-xx` · `D.......` N.C. | | | | |
 | Ending | `D-------` one final hit, let ring (or `D.......` stopped), at the Chorus's height | | | | |
 
-Fast Punk and Half-Time share one 180 BPM click (the half-time feel is the drums, not the tempo). Mid-Tempo is adjustable (120–150). Pop Strum (150) and Ballad (80) have fixed tempos of their own.
+Fast Punk and Half-Time share one 180 BPM click (the half-time feel is the drums, not the tempo). Mid-Tempo (140), Pop Strum (150) and Ballad (80) have fixed tempos of their own.
 
 Recipe plus voicing path gives **bar-by-bar events**. The tab, the audio and the screen-reader sentence are all rendered from those same events.
 
@@ -144,7 +144,7 @@ The voicing search knows each section's rhythm and tempo, so it judges a shape t
   - Strings **below** the root: the root finger's tip takes the nearest, and the thumb takes the low E. On palm-muted bars, an accurate pick can skip the rest.
 
   A shape with no mute plan on a bar is never used there. That's why an open D5 can chug palm-muted but never ring: nothing mutes the open A. It's also why the `x-x-0-2-3` open D5 stays out for ringing chords.
-- **Tempo-aware changes (R2).** A change costs its fret-equivalents: frets moved, +1 for a new root string, +0.5 for a 2↔3-note switch, +0.5 for leaving open position. That's divided by the time the hand actually has: from the old chord's last fretted hit to the new chord's first. A push counts as the eighth it lands on, and dead strums free the hand. Over 2 per 100 ms the search pays for it; **over 4 is never allowed**. Mid-Tempo is judged at 150. Fastest in the sweep: 3.90 (Fast Punk).
+- **Tempo-aware changes (R2).** A change costs its fret-equivalents: frets moved, +1 for a new root string, +0.5 for a 2↔3-note switch, +0.5 for leaving open position. That's divided by the time the hand actually has: from the old chord's last fretted hit to the new chord's first. A push counts as the eighth it lands on, and dead strums free the hand. Over 2 per 100 ms the search pays for it; **over 4 is never allowed**. Mid-Tempo is judged at its 140. Fastest in the sweep: 3.90 (Fast Punk).
 - **Picking hand (R3).** Fast downstroke runs (eighths at 5 strums a second or more) are capped by difficulty: Beginner 8, **Intermediate 16** (what the Generator plays until the Difficulty control arrives), Advanced no cap. Over the cap, chord strums alternate, with upstrokes on the offbeats. Only the pick direction changes, not the tab. Octave riffs skip a string, so they stay downpicked and count toward the rating.
 - **Label honesty (R5).** A bar's name matches its notes: "C5" is exactly the root and fifth, "C oct" the root alone. A push plays the next bar's chord.
 - **Rating (R4).** Each chord section gets 1–5 from its fastest change, thumb and lean mutes, long downpicked runs, stretch, high positions and 3-note shapes in fast palm-muting. A song is as hard as its hardest section. There's no UI for it yet (Phase 6). Today everything rates 1–3.
@@ -220,7 +220,7 @@ A solo sent from the Chords page ("Use in my song") plays exactly as previewed t
 
 **Difficulty** (Beginner / Intermediate / Advanced, default Intermediate) is an input to every section, like the key: the voicing search, the critic and the cards all see it (`data/difficulty.json`). A Beginner's song uses eighth-note grooves and 2-note shapes only, no Intro riffs, downpicked runs of at most 8 (over that, chord strums alternate), and Chill or Classic solos; Intermediate adds gallops, riffs and shred solos with runs up to 16; Advanced lifts the run cap. Grooves a level rules out stay on the Rhythm tab, greyed with the level they need. `npm run verify` renders every level across keys, progressions and feels through the same checks, and checks that a Beginner's sections really have no sixteenths, riffs or 3-note shapes.
 
-**Style presets** (`data/style-presets.json`) are starting points: Skate punk (fast, palm-muted gallops, 2:30, stops on a hit), 2000s pop-punk (Pop Strum, an octave hook, 3-note choruses with pushes, the last chorus up a tone) and Emo (Mid-Tempo at 130, vi-IV-I-V, ringing open-string riffs, half-note anthems, 4:00, a fade). A preset sets the setup and each unlocked section's Options, choosing for each section the first of its preferred grooves that can play in the song's key; everything stays editable, and **Your own** clears it. Verify checks every preset finds a playable groove for every section it names, in every key.
+**Style presets** (`data/style-presets.json`) are starting points: Skate punk (fast, palm-muted gallops, 2:30, stops on a hit) and 2000s pop-punk (Pop Strum, an octave hook, 3-note choruses with pushes, the last chorus up a tone). A preset sets the setup and each unlocked section's Options, choosing for each section the first of its preferred grooves that can play in the song's key; everything stays editable, and **Your own** clears it. Verify checks every preset finds a playable groove for every section it names, in every key.
 
 ### Practising: the transport
 

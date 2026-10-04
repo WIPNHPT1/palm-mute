@@ -28,7 +28,7 @@ for (const key of KEYS)
         const inputs = Object.fromEntries(
           SECTION_IDS.map((id) => [id, { key, feel, progressionId: "I-V-vi-IV", seed: 0, lead: id === "solo" ? { style: "classic", bars: 8 } : null, options: set.options[id] }]),
         ) as Record<SectionId, SectionInputs>;
-        const bpm = playbackBpm(feel, 140);
+        const bpm = playbackBpm(feel);
         const song = buildSong(inputs, lengthSec, bpm);
         const input = { song, bpm, key, progressionId: "I-V-vi-IV", title: "Your Ex's New Place" };
         const arranged = arrange(input);

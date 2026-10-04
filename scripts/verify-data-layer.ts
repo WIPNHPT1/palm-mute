@@ -57,9 +57,8 @@ for (const f of FEEL_IDS) {
     }
   }
 }
-assert.deepEqual(FEEL_IDS.map((f) => playbackBpm(f, 140)), [180, 180, 140, 150, 80]);
-assert.equal(playbackBpm("mid-tempo", 125), 125);
-assert.equal(playbackBpm("pop-strum", 125), 150, "Pop Strum's tempo is fixed");
+// Every feel has one fixed tempo (Mid-Tempo's slider was removed, DECISIONS.md).
+assert.deepEqual(FEEL_IDS.map((f) => playbackBpm(f)), [180, 180, 140, 150, 80]);
 {
   // The feel's recipe rhythm really changes the Verse, for every feel.
   const verses = FEEL_IDS.map((f) => tabText(renderSection("verse", { key: "A", feel: f, progressionId: "I-V-vi-IV", seed: 0 }).tab));
@@ -215,7 +214,7 @@ console.log(`Style presets: ${PRESET_IDS.length} (${PRESET_IDS.map((i) => PRESET
           return [id, { seed: (links * 7 + i) % 40, lead, options, ...(thread ? { thread } : {}), locked, frozen: locked ? { key: "D" as const, feel: "half-time" as const, progressionId: "I-IV-V", seed: 11, lead: null, options: { drums: "none" as const }, difficulty: "beginner" as const } : null }];
         }),
       ) as SharedSong["sections"];
-      const song: SharedSong = { key: k, feel: f, midTempoBpm: 130, progressionId: progressions[links % progressions.length].id, lengthSec: LENGTH.min + LENGTH.step * (links % 13), difficulty: (["beginner", "intermediate", "advanced"] as const)[links % 3], preset, songSeed: links, title: ALL_TITLES[links % ALL_TITLES.length], sections };
+      const song: SharedSong = { key: k, feel: f, progressionId: progressions[links % progressions.length].id, lengthSec: LENGTH.min + LENGTH.step * (links % 13), difficulty: (["beginner", "intermediate", "advanced"] as const)[links % 3], preset, songSeed: links, title: ALL_TITLES[links % ALL_TITLES.length], sections };
       const link = encodeSong(song);
       longest.n = Math.max(longest.n, link.length);
       assert.deepEqual(decodeSong("#" + link), song, `${k} ${f}: the song changed through its link`);

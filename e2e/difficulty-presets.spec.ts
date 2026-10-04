@@ -33,16 +33,17 @@ test.describe("difficulty and presets", () => {
     await expect(page.getByRole("region", { name: "Song setup" })).toContainText("Beginner");
   });
 
-  test("a style preset sets the feel, length, progression and grooves; Your own clears them", async ({ page }) => {
+  test("a style preset sets the feel, length and grooves; Your own clears them", async ({ page }) => {
     const presets = page.getByRole("radiogroup", { name: "Style preset" });
-    await presets.getByRole("radio", { name: "EMO" }).click();
-    await expect(page.locator("[data-preset-description]")).toContainText("starts on the sad vi chord");
-    await expect(feel(page, /MID-TEMPO/)).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByRole("button", { name: "Use vi-IV-I-V for the song" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("slider", { name: "Song length" })).toHaveValue("240");
-    await expect(section(page, "Chorus").locator("[data-details]")).toContainText("Half-note anthem");
-    await expect(section(page, "Ending").locator("[data-details]")).toContainText("Fade out");
-    // 2000s pop-punk: the last chorus goes up a tone.
+    // Two styles and your own (Emo was removed, DECISIONS.md).
+    await expect(presets.getByRole("radio")).toHaveText(["YOUR OWN", "SKATE PUNK", "2000S POP-PUNK"]);
+    await presets.getByRole("radio", { name: "SKATE PUNK" }).click();
+    await expect(page.locator("[data-preset-description]")).toContainText("palm-muted gallops");
+    await expect(feel(page, /FAST PUNK/)).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("slider", { name: "Song length" })).toHaveValue("150");
+    await expect(section(page, "Chorus").locator("[data-details]")).toContainText("Driving eighths");
+    await expect(section(page, "Ending").locator("[data-details]")).toContainText("Stop on the one");
+    // 2000s pop-punk: Pop Strum, and the last chorus goes up a tone.
     await presets.getByRole("radio", { name: "2000S POP-PUNK" }).click();
     await expect(feel(page, /POP STRUM/)).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("navigation", { name: "Song running order" }).getByRole("button", { name: /^Play the song from Last chorus .*up a tone/ })).toHaveCount(1);
@@ -53,6 +54,7 @@ test.describe("difficulty and presets", () => {
     expect(await section(page, "Verse").locator("svg[data-tab]").textContent()).toBe(verse);
     await expect(section(page, "Chorus").locator("[data-details]")).toContainText("Driving eighths");
     // Your own: the preset's options go; the setup it chose stays editable.
+    await presets.getByRole("radio", { name: "2000S POP-PUNK" }).click();
     await presets.getByRole("radio", { name: "YOUR OWN" }).click();
     await expect(page.getByRole("navigation", { name: "Song running order" })).not.toContainText("up a tone");
   });

@@ -75,7 +75,6 @@ export default function GeneratorPage() {
     bpm,
     setKey,
     setFeel,
-    setMidTempoBpm,
     setLength,
     setDifficulty,
     applyPreset,
@@ -214,7 +213,7 @@ export default function GeneratorPage() {
               <KeyPicker value={state.key} onChange={setKey} />
             </ControlCard>
             <ControlCard id={STEPS[1]} step={2} label="Feel" picked={feelLabel} className="tablet:flex-1">
-              <FeelToggle feel={state.feel} midTempoBpm={state.midTempoBpm} onFeelChange={setFeel} onBpmChange={setMidTempoBpm} />
+              <FeelToggle feel={state.feel} onFeelChange={setFeel} />
             </ControlCard>
           </div>
           <ControlCard id={STEPS[2]} step={3} label="Chords" picked={state.progressionId} hint={`Tap to use · ▷ to hear it in ${keyDisplayName(state.key)}`}>
