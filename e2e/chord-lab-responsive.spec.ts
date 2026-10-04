@@ -117,4 +117,25 @@ test.describe("chord lab: every screen", () => {
     if (w >= 1280) expect(panel.x).toBeGreaterThan(plot.x + plot.width - 1);
     else expect(panel.y).toBeGreaterThan(plot.y + plot.height - 1);
   });
+
+  test("the whole page at once: every tool in an unusual state, every strip link lands on its card", async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+    await page.getByRole("radiogroup", { name: "Tuning" }).getByRole("radio", { name: "DROP C#", exact: true }).click();
+    await page.getByRole("radiogroup", { name: "Handed" }).getByRole("radio", { name: "LEFT", exact: true }).click();
+    await page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name: "A# / Bb" }).click();
+    await page.getByRole("radiogroup", { name: "Chord type" }).getByRole("radio", { name: "MAJ7", exact: true }).click();
+    await page.locator('[data-tool="name-it"] input').fill("x-12-14-14-14-12");
+    await page.locator('[data-tool="builder"]').getByRole("button", { name: "Add bVII, G#5", exact: true }).click();
+    await page.locator('[data-tool="key-finder"] input').fill("A#m F# G# C#m7 Eb");
+    await page.locator('[data-tool="mood-map"] [data-chip="I-bVII-IV-I"]').click();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    expect(await layoutProblems(page, "main")).toEqual([]);
+    // Each strip link scrolls its card into view (below the sticky bar).
+    for (const [id, name] of [["dictionary", /Dictionary/], ["name-it", /Name that chord/], ["builder", /Progression builder/], ["key-finder", /Key finder/], ["mood-map", /Mood map/]] as const) {
+      await page.getByRole("navigation", { name: "Lab tools" }).getByRole("link", { name }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect.poll(async () => Math.round((await page.locator(`#${id}`).boundingBox())!.y)).toBeLessThan(200);
+      expect((await page.locator(`#${id}`).boundingBox())!.y).toBeGreaterThanOrEqual(60);
+    }
+  });
 });

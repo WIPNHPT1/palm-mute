@@ -209,12 +209,11 @@ async function main() {
         await p.evaluate(() => document.querySelector("[data-song-header]")!.scrollIntoView({ block: "start" }));
         await p.evaluate(() => window.scrollBy(0, -110));
       });
-      await screenshot(shot, "/chords/", "chords", theme, async (p) => {
+      // The Chord Lab: the Dictionary on G major with its neck, the first thing a visitor opens.
+      await screenshot(shot, "/chords/", "chord-lab", theme, async (p) => {
         await p.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name: "G", exact: true }).click();
-        await p.locator('[data-progression="I-V-vi-IV"] > button').click();
-        await p.getByRole("tab", { name: "Lead solo" }).click();
-        await p.locator("#progression-panel").scrollIntoViewIfNeeded();
-        await p.evaluate(() => window.scrollBy(0, -140));
+        await p.evaluate(() => document.getElementById("dictionary")!.scrollIntoView({ block: "start" }));
+        await p.evaluate(() => window.scrollBy(0, -110));
       });
       await screenshot(shot, "/", "count-in", theme);
     }
