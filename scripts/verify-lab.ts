@@ -20,7 +20,11 @@ import {
   stretchOk,
   voicingsFor,
 } from "@/lib/lab/chords";
+import movesJson from "@/data/chord-moves.json";
+import { type DegreeId, DEGREES, DEGREE_IDS, degreeRoot, nextMoves, typesFor } from "@/lib/lab/keys";
+import { brightness, classicness, restlessness } from "@/lib/lab/mood";
 import { LAB_BPM, arpeggioBars, loopBars, strumBars } from "@/lib/lab/sound";
+import { progressions } from "@/lib/musicTheory";
 
 let voicings = 0;
 const perTuning: Record<string, number> = {};
@@ -115,6 +119,34 @@ assert.equal(LAB_BPM, 150);
 assert.equal(strumBars([43, 47, 50]).length, 1);
 assert.deepEqual(arpeggioBars([50, 43, 47])[0].cells.slice(0, 3).map((c) => c!.notes[0]), [43, 47, 50]);
 assert.equal(loopBars([[43], [50], [52]]).length, 3);
+
+// Builder data: every degree has moves, every move goes to a real degree, and the three suggestions are the top three.
+for (const d of DEGREE_IDS) {
+  const moves = (movesJson.moves as Record<string, Record<string, number>>)[d];
+  assert.ok(moves, `no moves from ${d}`);
+  for (const [to, w] of Object.entries(moves)) assert.ok(DEGREE_IDS.includes(to as DegreeId) && w > 0, `${d} -> ${to}`);
+  assert.equal(nextMoves(d).length, 3, `${d}: three suggestions`);
+  assert.ok(typesFor(d)[0] === DEGREES.find((x) => x.id === d)!.quality, `${d}: natural quality first`);
+  for (const k of Object.keys(movesJson.brightness.degree)) assert.ok(DEGREE_IDS.includes(k as DegreeId), `brightness for unknown degree ${k}`);
+}
+// The degrees in a key: I of G is G, V is D, bVII is F, iv is C (minor).
+assert.deepEqual((["I", "V", "vi", "IV", "bVII", "iv"] as DegreeId[]).map((d) => degreeRoot(7, d)), [7, 2, 4, 0, 5, 0]);
+
+// Vibe: scores stay in 0..1, the genre's ten loops are all classic, the brighter ones (data/progressions.json)
+// score brighter on average than the darker ones, and a loop that ends on V is more restless than one ending on I.
+const asLoop = (degrees: string[], type: "5" | "maj" = "maj") => degrees.map((degree) => ({ degree: degree as DegreeId, type: degree === "vi" || degree === "ii" || degree === "iii" ? ("min" as const) : type }));
+const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+for (const p of progressions) {
+  for (const type of ["5", "maj"] as const) {
+    const loop = asLoop(p.degrees, type);
+    for (const v of [brightness(loop), restlessness(loop), classicness(loop)]) assert.ok(v >= 0 && v <= 1, `${p.id}: score ${v} out of range`);
+    assert.equal(classicness(loop), 1, `${p.id} isn't classic`);
+  }
+}
+const scoreOf = (min: number, max: number) => avg(progressions.filter((p) => p.brightness >= min && p.brightness <= max).map((p) => brightness(asLoop(p.degrees))));
+assert.ok(scoreOf(5, 5) > scoreOf(4, 4) && scoreOf(4, 4) > scoreOf(2, 3), "brightness doesn't follow data/progressions.json");
+assert.ok(restlessness(asLoop(["I", "IV", "V"])) > restlessness(asLoop(["V", "IV", "I"])), "ending on V should be more restless than on I");
+assert.ok(classicness(asLoop(["I", "bVII", "bIII"])) < 1);
 
 console.log(
   `verify-lab: ${voicings} voicings checked (${Object.entries(perTuning)

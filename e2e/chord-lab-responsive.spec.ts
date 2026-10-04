@@ -52,4 +52,20 @@ test.describe("chord lab: every screen", () => {
       expect(small).toBe(0);
     }
   });
+
+  test("the Builder fits with a full loop, an open chord editor and the meters", async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+    const tool = '[data-tool="builder"]';
+    for (let i = 0; i < 4; i++) await page.locator(tool).getByRole("button", { name: /^Add I, / }).click();
+    await page.locator(`${tool} [data-loop] li button`).nth(3).click();
+    await page.getByRole("radiogroup", { name: "Chord sound" }).getByRole("radio", { name: "FULL CHORDS" }).click();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    expect(await layoutProblems(page, tool)).toEqual([]);
+    // Eight chords in the loop wrap inside the card.
+    const box = (await page.locator(tool).boundingBox())!;
+    for (const r of await page.locator(`${tool} [data-loop] li`).evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })))) {
+      expect(r.left).toBeGreaterThanOrEqual(box.x - 0.5);
+      expect(r.right).toBeLessThanOrEqual(box.x + box.width + 0.5);
+    }
+  });
 });
