@@ -1,5 +1,5 @@
 import { expect, gotoAndSettle, horizontalOverflow, projectWidth, test } from "./fixtures";
-import { layoutProblems as problems } from "./helpers";
+import { layoutProblems as problems, pageZoom } from "./helpers";
 
 // The responsive gate for the song builder (docs/song-builder-prd.md B12). Runs in every project: Chromium
 // and WebKit, 320–1920px, light and dark. Each phase that adds builder UI extends it. Hard rules, measured:
@@ -78,7 +78,7 @@ test.describe("song builder: every screen", () => {
     expect(await problems(page, "[data-transport]")).toEqual([]);
     // One row: every control's middle on one line, and the bar no taller than its controls need.
     const box = (await page.locator("[data-transport]").boundingBox())!;
-    expect(box.height).toBeLessThanOrEqual(72);
+    expect(box.height).toBeLessThanOrEqual(72 * (await pageZoom(page)));
     expect(box.x).toBe(0);
     expect(Math.round(box.width)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
   });

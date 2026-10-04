@@ -90,3 +90,14 @@ export async function layoutProblems(page: Page, root: string): Promise<string[]
     return out;
   });
 }
+
+/**
+ * The page's zoom (lib/stage.ts): 1, or more on the Generator and the Chord Lab in windows 1600px and wider. Sizes
+ * measured on screen grow by it, and WebKit can round a zoomed box by a pixel.
+ */
+export async function pageZoom(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const el = document.querySelector("[data-zoom]");
+    return el ? Number(getComputedStyle(el).zoom) || 1 : 1;
+  });
+}

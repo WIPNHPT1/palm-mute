@@ -1,0 +1,84 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { type StageKind, newStringsState, paintOscilloscope, paintStrings, readStageColors } from "@/lib/stagePaint";
+
+const FPS = 30;
+
+/**
+ * A faint moving background behind a whole page (owner's picks: oscilloscope for the Song Generator, strings for
+ * the Chord Lab). One canvas, fixed under the top bar and behind everything (cards stay solid, so text never sits
+ * on moving pixels). 30 frames a second, paused while the tab is hidden, one still frame for reduced motion, and
+ * not drawn on phones. It follows the theme, and reacts while music is playing.
+ */
+export function StageBackground({ kind, playing }: { kind: StageKind; playing: boolean }) {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const live = useRef(playing);
+  live.current = playing;
+  useEffect(() => setHost(document.body), []);
+
+  useEffect(() => {
+    const cv = canvas.current;
+    if (!cv) return;
+    const ctx = cv.getContext("2d");
+    if (!ctx) return;
+    let colors = readStageColors();
+    const strings = newStringsState();
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const wide = matchMedia("(min-width: 834px)");
+    let raf = 0;
+    let last = 0;
+    const t0 = performance.now();
+    const size = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round(cv.clientWidth * dpr);
+      const h = Math.round(cv.clientHeight * dpr);
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
+      }
+      return dpr;
+    };
+    const draw = (t: number) => {
+      const s = size();
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (kind === "osc") paintOscilloscope(ctx, cv.width, cv.height, t, live.current, colors, s);
+      else paintStrings(ctx, cv.width, cv.height, t, live.current, colors, strings, s);
+    };
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (document.hidden || now - last < 1000 / FPS) return;
+      last = now;
+      draw((now - t0) / 1000);
+    };
+    const start = () => {
+      cancelAnimationFrame(raf);
+      if (!wide.matches) return ctx.clearRect(0, 0, cv.width, cv.height);
+      if (reduced.matches) return draw(12); // one still frame
+      raf = requestAnimationFrame(tick);
+    };
+    // The theme switch toggles a class on <html>: re-read the colours.
+    const themes = new MutationObserver(() => {
+      colors = readStageColors();
+      if (reduced.matches && wide.matches) draw(12);
+    });
+    themes.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    const onResize = () => reduced.matches && wide.matches && draw(12);
+    window.addEventListener("resize", onResize);
+    reduced.addEventListener("change", start);
+    wide.addEventListener("change", start);
+    start();
+    return () => {
+      cancelAnimationFrame(raf);
+      themes.disconnect();
+      window.removeEventListener("resize", onResize);
+      reduced.removeEventListener("change", start);
+      wide.removeEventListener("change", start);
+    };
+  }, [kind, host]);
+
+  if (!host) return null;
+  return createPortal(<canvas ref={canvas} className="stage-bg" data-stage-bg={kind} aria-hidden="true" />, host);
+}

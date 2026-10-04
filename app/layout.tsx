@@ -6,6 +6,9 @@ import { Nav } from "@/components/Nav";
 import { GeneratorProvider } from "@/context/GeneratorContext";
 import { SITE_URL, pageMetadata } from "@/lib/site";
 import { GUIDE_SCRIPT } from "@/lib/guide";
+import { ZOOM_SCRIPT } from "@/lib/stage";
+import { ZoomShell } from "@/components/ZoomShell";
+import { PageWipe } from "@/components/PageWipe";
 import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -58,15 +61,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: GUIDE_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: ZOOM_SCRIPT }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
       </head>
       <body className="flex min-h-screen flex-col">
         <GeneratorProvider>
-          <Nav />
-          <AudioNotice />
-          {/* Full width: the home page runs edge to edge; Generator and Chords cap themselves at 1440px. */}
-          <main className="flex w-full flex-1 flex-col">{children}</main>
-          <Footer />
+          <ZoomShell>
+            <Nav />
+            <AudioNotice />
+            {/* Full width: the home page runs edge to edge; Generator and Chords cap themselves at --page-max. */}
+            <main className="flex w-full flex-1 flex-col">{children}</main>
+            <Footer />
+          </ZoomShell>
+          <PageWipe />
         </GeneratorProvider>
       </body>
     </html>
