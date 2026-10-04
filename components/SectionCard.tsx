@@ -43,6 +43,7 @@ export function SectionCard({
   options,
   optionsSummary,
   nowBar,
+  takes,
   className = "",
 }: {
   section: RenderedSection;
@@ -75,6 +76,8 @@ export function SectionCard({
   optionsSummary?: string;
   /** The tab bar sounding now (the transport's cursor), if this section is playing. */
   nowBar?: number | null;
+  /** The section's recent takes: which one is showing (0-based) of how many, and how to step between them. */
+  takes?: { take: number; count: number; onSelect: (take: number) => void };
   className?: string;
 }) {
   const tabletUp = useTabletUp();
@@ -115,6 +118,32 @@ export function SectionCard({
         </div>
         <div className="order-last -ml-[12px] flex w-full items-center tablet:order-none tablet:ml-auto tablet:w-auto tablet:-mr-[8px]">
           <PlayButton playing={playing} onClick={onTogglePlay} label={section.label} iconSize={13} />
+          {takes && takes.count > 1 && (
+            <div className="flex items-center rounded-mid border border-line font-mono text-[12px] text-text-muted" role="group" aria-label={`${section.label} takes`}>
+              <button
+                type="button"
+                onClick={() => takes.onSelect(takes.take - 1)}
+                disabled={locked || takes.take === 0}
+                aria-label={`Previous take of ${section.label}`}
+                className="h-[44px] w-[44px] enabled:hover:text-text-primary disabled:opacity-40"
+              >
+                ‹
+              </button>
+              <span className="min-w-[56px] text-center tabular-nums" data-take>
+                <span className="tablet:hidden">{`${takes.take + 1}/${takes.count}`}</span>
+                <span className="hidden tablet:inline">{`take ${takes.take + 1} of ${takes.count}`}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => takes.onSelect(takes.take + 1)}
+                disabled={locked || takes.take === takes.count - 1}
+                aria-label={`Next take of ${section.label}`}
+                className="h-[44px] w-[44px] enabled:hover:text-text-primary disabled:opacity-40"
+              >
+                ›
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={onRegenerate}

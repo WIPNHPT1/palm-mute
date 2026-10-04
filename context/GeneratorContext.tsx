@@ -27,6 +27,7 @@ import { type SongPlan, LENGTH } from "@/lib/songLength";
 import { songParts, songPlan } from "@/lib/song";
 import { type Difficulty, DEFAULT_DIFFICULTY } from "@/lib/playability";
 import { type PresetId, PRESETS, presetOptions } from "@/lib/presets";
+import { type SharedSong, encodeSong } from "@/lib/share";
 import { TITLES, titleBag } from "@/lib/titleGenerator";
 import { type Fixed, bestSectionTake, bestSong } from "@/lib/critic";
 import type { SongThread } from "@/lib/generator";
@@ -49,7 +50,20 @@ type SectionState = {
   thread?: SongThread;
   /** The card's Options (rhythm, playing style, voicing, structure, drums). Empty = the take decides. */
   options: SectionOptions;
+  /** The section's recent takes (seeds), oldest first, at most TAKES_KEPT; `take` is the one showing. */
+  takes: number[];
+  take: number;
 };
+
+/** How many takes each section remembers (‹ › on its card). */
+export const TAKES_KEPT = 8;
+/** A section's takes after a new one: appended, the oldest dropped past TAKES_KEPT. */
+const withTake = (s: SectionState, seed: number): Pick<SectionState, "seed" | "takes" | "take"> => {
+  const takes = [...s.takes, seed].slice(-TAKES_KEPT);
+  return { seed, takes, take: takes.length - 1 };
+};
+/** A fresh history, starting from this take. */
+const freshTakes = (seed: number): Pick<SectionState, "seed" | "takes" | "take"> => ({ seed, takes: [seed], take: 0 });
 
 /** A melody or solo sent from the Chords page ("Use in my song"). */
 export type LeadHandoff = { part: LeadPart; style: LeadStyle; bars: number; seed: number };
@@ -91,6 +105,8 @@ type Action =
   | { type: "generate"; seeds: Partial<Record<SectionId, number>>; songSeed: number; originality: OriginalityStatus; title: string }
   | { type: "setLength"; seconds: number }
   | { type: "setDifficulty"; difficulty: Difficulty }
+  | { type: "selectTake"; id: SectionId; take: number }
+  | { type: "loadShared"; song: SharedSong }
   | { type: "applyPreset"; preset: PresetId | null }
   | { type: "setOptions"; id: SectionId; options: SectionOptions }
   | { type: "setLead"; id: SectionId; lead: { style: LeadStyle; bars: number } | null }
@@ -111,7 +127,7 @@ function initialState(): GeneratorState {
   for (const id of SECTION_IDS) {
     const locked = getTemplate(id).lockedByDefault;
     const lead = id === "solo" ? defaultLeadStyle("solo") : null;
-    sections[id] = { locked, seed: seeds[id], frozen: locked ? { ...DEFAULTS, seed: seeds[id], lead } : null, lead, options: {} };
+    sections[id] = { locked, ...freshTakes(seeds[id]), frozen: locked ? { ...DEFAULTS, seed: seeds[id], lead } : null, lead, options: {} };
   }
   return rethread({
     ...DEFAULTS,
@@ -125,6 +141,27 @@ function initialState(): GeneratorState {
     originalityStatus: "pass",
     playing: null,
   });
+}
+
+/** What a share link carries: the setup and each section's take, options, lead and lock. */
+function sharedSong(state: GeneratorState): SharedSong {
+  const sections = {} as SharedSong["sections"];
+  for (const id of SECTION_IDS) {
+    const s = state.sections[id];
+    sections[id] = { seed: s.seed, lead: s.lead, options: s.options, ...(s.thread ? { thread: s.thread } : {}), locked: s.locked, frozen: s.locked ? s.frozen : null };
+  }
+  return {
+    key: state.key,
+    feel: state.feel,
+    midTempoBpm: state.midTempoBpm,
+    progressionId: state.progressionId,
+    lengthSec: state.lengthSec,
+    difficulty: state.difficulty,
+    preset: state.preset,
+    songSeed: state.songSeed,
+    title: state.title,
+    sections,
+  };
 }
 
 /** Every section's inputs as the page renders them. */
@@ -169,7 +206,8 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       const sections = { ...state.sections };
       for (const id of SECTION_IDS) {
         if (sections[id].locked) continue;
-        sections[id] = { ...sections[id], seed: action.seeds[id] ?? sections[id].seed, lead: ownLead(sections[id].lead) };
+        // A new build starts each section's takes afresh.
+        sections[id] = { ...sections[id], ...freshTakes(action.seeds[id] ?? sections[id].seed), lead: ownLead(sections[id].lead) };
       }
       return rethread({ ...state, sections, songSeed: action.songSeed, originalityStatus: action.originality, title: action.title });
     }
@@ -219,7 +257,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       const next = {
         ...state,
         progressionId: action.progressionId ?? state.progressionId,
-        sections: { ...state.sections, [action.id]: { ...s, seed: action.seed, lead: ownLead(s.lead) } },
+        sections: { ...state.sections, [action.id]: { ...s, ...withTake(s, action.seed), lead: ownLead(s.lead) } },
       };
       // Only the Solo's own ↻ re-reads its thread: regenerating another section never changes the Solo.
       return action.id === "solo" ? rethread(next) : next;
@@ -258,7 +296,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         sections[id] = {
           ...s,
           lead,
-          seed: action.lead.seed,
+          ...freshTakes(action.lead.seed),
           frozen: s.locked && s.frozen ? { ...s.frozen, key: action.key, progressionId: action.progressionId, seed: action.lead.seed, lead } : s.frozen,
         };
       }
@@ -268,7 +306,38 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       // "Back to chords": the Intro returns to power chords.
       const s = state.sections.intro;
       if (s.locked) return state;
-      return { ...state, sections: { ...state.sections, intro: { ...s, lead: null, seed: 0 } } };
+      return { ...state, sections: { ...state.sections, intro: { ...s, lead: null, ...freshTakes(0) } } };
+    }
+    case "selectTake": {
+      // ‹ › on a card: back or forward through its recent takes.
+      const s = state.sections[action.id];
+      if (s.locked || action.take < 0 || action.take >= s.takes.length) return state;
+      const next = { ...state, sections: { ...state.sections, [action.id]: { ...s, take: action.take, seed: s.takes[action.take] } } };
+      return action.id === "solo" ? rethread(next) : next;
+    }
+    case "loadShared": {
+      // A shared link: the whole song as it was sent (lib/share.ts has checked every field).
+      const shared = action.song;
+      const sections = {} as Record<SectionId, SectionState>;
+      for (const id of SECTION_IDS) {
+        const x = shared.sections[id];
+        sections[id] = { locked: x.locked, frozen: x.frozen, lead: x.lead, options: x.options, ...(x.thread ? { thread: x.thread } : {}), ...freshTakes(x.seed) };
+      }
+      const next: GeneratorState = {
+        ...state,
+        key: shared.key,
+        feel: shared.feel,
+        midTempoBpm: shared.midTempoBpm,
+        progressionId: shared.progressionId,
+        lengthSec: shared.lengthSec,
+        difficulty: shared.difficulty,
+        preset: shared.preset,
+        songSeed: shared.songSeed,
+        title: shared.title,
+        sections,
+      };
+      // A Solo without a thread in the link (an old take) re-reads the song's.
+      return shared.sections.solo.thread ? next : rethread(next);
     }
     case "setPlaying":
       return { ...state, playing: action.target };
@@ -286,6 +355,12 @@ type GeneratorContextValue = {
   bpm: number;
   setLength: (seconds: number) => void;
   setDifficulty: (difficulty: Difficulty) => void;
+  /** ‹ › on a card: show another of its recent takes. */
+  selectTake: (id: SectionId, take: number) => void;
+  /** Open a shared song (from a "#song=…" link). */
+  loadShared: (song: SharedSong) => void;
+  /** The song as a link fragment, "song=…" (lib/share.ts). */
+  shareFragment: () => string;
   /** Start from a style preset (or null: your own). Locked sections stay as they are. */
   applyPreset: (preset: PresetId | null) => void;
   /** A section card's Options (only that section changes). */
@@ -574,6 +649,9 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       bpm,
       setLength: (seconds) => dispatch({ type: "setLength", seconds }),
       setDifficulty: (difficulty) => dispatch({ type: "setDifficulty", difficulty }),
+      selectTake: (id, take) => dispatch({ type: "selectTake", id, take }),
+      loadShared: (song) => dispatch({ type: "loadShared", song }),
+      shareFragment: () => encodeSong(sharedSong(state)),
       applyPreset: (preset) => dispatch({ type: "applyPreset", preset }),
       setOptions: (id, options) => dispatch({ type: "setOptions", id, options }),
       setLead: (id, lead) => dispatch({ type: "setLead", id, lead }),
