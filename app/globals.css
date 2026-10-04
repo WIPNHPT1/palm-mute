@@ -9,10 +9,17 @@
   body {
     @apply bg-paper font-ui text-text-primary antialiased;
   }
+  /* Keyboard focus (signature): a gap in the card colour, then the accent, then a soft halo; it lands with a small spring. */
   button:focus-visible,
   a:focus-visible,
-  input:focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-accent;
+  input:focus-visible,
+  summary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--color-surface)), 0 0 0 4px rgb(var(--color-accent)), 0 0 0 9px rgb(var(--color-accent) / 0.16);
+    animation: sig-ring 420ms var(--sig-spring);
+  }
+  @keyframes sig-ring {
+    from { box-shadow: 0 0 0 2px rgb(var(--color-surface)), 0 0 0 2px rgb(var(--color-accent)), 0 0 0 2px rgb(var(--color-accent) / 0); }
   }
 }
 
@@ -148,6 +155,243 @@
   .shutter-band.is-link:is(:hover, :has(a:focus-visible)) .shutter-arrow { transform: translateX(10px); }
 }
 
+
+/* ---- Signature finish (owner's pick of level C, docs/mockups/premium-components.html) ----
+   Depth, edge detail and motion for the site's components. No colour, size or layout changes: every colour is a
+   token (or a translucent tint of one) and every effect is a shadow, gradient or pseudo-element, so nothing moves. */
+@layer components {
+  /* primary button: lit top edge, bottom edge, layered shadow, a light sheen on hover, the icon nudges forward */
+  .sig-btn {
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 1px 0 var(--sig-hi-btn), inset 0 -1px 0 var(--sig-lo-btn), 0 1px 2px rgb(0 0 0 / 0.14), 0 12px 22px -12px rgb(var(--color-accent));
+    transition: transform 160ms var(--sig-out), filter 160ms, box-shadow 160ms var(--sig-out);
+  }
+  .sig-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .sig-btn:active { transform: translateY(0) scale(0.985); filter: none; }
+  .sig-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.3) 50%, transparent 62%);
+    transform: translateX(-130%);
+    transition: transform 720ms var(--sig-out);
+    pointer-events: none;
+  }
+  .sig-btn:hover::after { transform: translateX(130%); }
+  .sig-btn svg { transition: transform 200ms var(--sig-spring); }
+  .sig-btn:hover svg { transform: translateX(3px); }
+
+  /* secondary button: lit edge, lifts on hover, an accent underline draws in */
+  .sig-btn-2 {
+    position: relative;
+    border: 1px solid rgb(var(--color-line));
+    border-radius: 6px;
+    background: rgb(var(--color-paper));
+    box-shadow: inset 0 1px 0 var(--sig-hi), 0 1px 1px rgb(23 19 16 / 0.05);
+    transition: transform 160ms var(--sig-out), border-color 160ms;
+  }
+  .sig-btn-2:not(:disabled):hover { transform: translateY(-1px); border-color: rgb(var(--color-text-faintest)); }
+  .sig-btn-2:not(:disabled):active { transform: none; }
+  .sig-btn-2::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 6px;
+    height: 2px;
+    background: rgb(var(--color-accent));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 260ms var(--sig-out);
+    pointer-events: none;
+  }
+  .sig-btn-2:not(:disabled):hover::before, .sig-btn-2:not(:disabled):focus-visible::before { transform: scaleX(1); }
+  .sig-btn-2[aria-pressed="true"]::before { transform: scaleX(1); }
+
+  /* key pill: the chosen key pops with a spring, shows a red tick and sits on a soft shadow */
+  .sig-pill { position: relative; font-variant-numeric: tabular-nums; transition: transform 140ms var(--sig-out), border-color 140ms, box-shadow 140ms; }
+  .sig-pill:hover:not([aria-checked="true"]) { border-color: rgb(var(--color-text-faintest)); background: rgb(var(--color-surface)); }
+  .sig-pill[aria-checked="true"] {
+    box-shadow: inset 0 1px 0 rgb(var(--color-text-on-dark) / 0.14), 0 6px 12px -8px rgb(0 0 0 / 0.6);
+    animation: sig-pop 320ms var(--sig-spring);
+  }
+  .sig-pill[aria-checked="true"]::after { content: ""; position: absolute; top: 3px; left: 50%; width: 14px; height: 2px; margin-left: -7px; border-radius: 1px; background: rgb(var(--color-accent-on-ink)); }
+  @keyframes sig-pop { from { transform: scale(1.1); } }
+
+  /* segmented control: a recessed track and one ink thumb that slides (and overshoots a little) to the choice */
+  .sig-seg { position: relative; box-shadow: var(--sig-inset); }
+  .sig-seg > button { position: relative; z-index: 1; font-variant-numeric: tabular-nums; }
+  .sig-seg > button[aria-checked="false"]:hover { color: rgb(var(--color-text-primary)); }
+  .sig-thumb {
+    position: absolute;
+    z-index: 0;
+    left: 0;
+    top: 0;
+    width: var(--tw, 0);
+    height: var(--th, 0);
+    transform: translate(var(--tx, 0), var(--ty, 0));
+    border-radius: 5px;
+    background: rgb(var(--color-ink));
+    box-shadow: inset 0 1px 0 rgb(var(--color-text-on-dark) / 0.16), 0 8px 14px -8px rgb(0 0 0 / 0.6);
+    transition: transform 280ms var(--sig-spring), width 280ms var(--sig-out), height 280ms var(--sig-out);
+    pointer-events: none;
+  }
+  .dark .sig-thumb { box-shadow: inset 0 0 0 1px rgb(var(--color-line-strong)), inset 0 1px 0 rgb(var(--color-text-on-dark) / 0.16), 0 8px 14px -8px rgb(0 0 0 / 0.6); }
+  .sig-thumb::after { content: ""; position: absolute; bottom: 4px; left: 50%; width: 16px; height: 2px; margin-left: -8px; border-radius: 1px; background: rgb(var(--color-accent-on-ink)); }
+
+  /* tool card: a red notch on the top edge, an ink number tab, tape-deck ruler ticks under the heading, fine paper grain */
+  .sig-card { position: relative; box-shadow: inset 0 1px 0 var(--sig-hi), var(--sig-sh-1); }
+  .sig-card::before { content: ""; position: absolute; left: 16px; top: -1.5px; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: rgb(var(--color-accent)); z-index: 1; }
+  .sig-card::after,
+  .sig-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--sig-grain);
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .dark .sig-card::after,
+  .dark .sig-surface::after { mix-blend-mode: screen; }
+  .sig-card-hd { position: relative; padding-bottom: 14px; }
+  .sig-card-hd::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, rgb(var(--color-line-strong)) 0 1px, transparent 1px 8px);
+    -webkit-mask-image: linear-gradient(90deg, #000 60%, transparent);
+    mask-image: linear-gradient(90deg, #000 60%, transparent);
+  }
+  @media (min-width: 834px) { .sig-card-hd::after { left: 20px; right: 20px; } .sig-card::before { left: 20px; } }
+  .sig-num { padding: 1px 7px; border-radius: 4px; background: rgb(var(--color-ink)); color: rgb(var(--color-text-on-dark)); font-variant-numeric: tabular-nums; }
+  .dark .sig-num { box-shadow: inset 0 0 0 1px rgb(var(--color-line-strong)); }
+  /* the same finish without the notch, for the smaller setup cards */
+  .sig-surface { position: relative; box-shadow: inset 0 1px 0 var(--sig-hi), var(--sig-sh-1); }
+
+  /* chord chips: a hairline edge; the chord sounding fills a bar across itself over its bar, with a faint red glow rising */
+  .sig-chip { position: relative; overflow: hidden; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 1px rgb(var(--color-text-on-dark) / 0.09), inset 0 1px 0 rgb(var(--color-text-on-dark) / 0.1); transition: transform 160ms var(--sig-out); }
+  button.sig-chip:hover { transform: translateY(-1px); }
+  .sig-chip[aria-current="true"] { background-image: linear-gradient(to top, rgb(var(--color-accent) / 0.26), transparent 70%); }
+  .sig-chip[aria-current="true"]::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; background: rgb(var(--color-accent-on-ink)); animation: sig-bar var(--bar, 1600ms) linear forwards; }
+  @keyframes sig-bar { from { width: 0; } to { width: 100%; } }
+
+  /* play button: a ring around it; while it plays a red arc sweeps round once a bar */
+  .sig-play { position: relative; box-shadow: inset 0 1px 0 var(--sig-hi); transition: transform 140ms var(--sig-out), background 160ms, color 160ms; }
+  .sig-play:active { transform: scale(0.92); }
+  .sig-play[aria-pressed="true"] { background: rgb(var(--color-accent) / 0.1); }
+  .sig-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+  .sig-ring circle { fill: none; stroke-width: 2; }
+  .sig-ring-track { stroke: rgb(var(--color-line-strong)); }
+  .sig-ring-prog { stroke: rgb(var(--color-accent)); stroke-linecap: round; stroke-dasharray: 119.4; stroke-dashoffset: 119.4; }
+  .sig-play[aria-pressed="true"] .sig-ring-prog { animation: sig-arc var(--bar, 1600ms) linear infinite; }
+  @keyframes sig-arc { to { stroke-dashoffset: 0; } }
+
+  /* vibe meter: a recessed segmented track, a glossy fill that eases to its value, a value tag riding its end */
+  .sig-meter { position: relative; margin-top: 18px; height: 12px; padding: 1px; border: 1px solid rgb(var(--color-line)); border-radius: 3px; background: rgb(var(--color-paper)); box-shadow: var(--sig-inset); }
+  .sig-meter > i {
+    display: block;
+    height: 100%;
+    width: var(--v);
+    border-radius: 1px;
+    background-color: rgb(var(--color-accent));
+    background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.3), transparent 55%);
+    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px);
+    mask-image: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px);
+    transition: width 700ms var(--sig-out);
+  }
+  .sig-meter-val {
+    position: absolute;
+    top: -20px;
+    left: clamp(0px, calc(var(--v) - 14px), calc(100% - 30px));
+    min-width: 30px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgb(var(--color-ink));
+    color: rgb(var(--color-text-on-dark));
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: left 700ms var(--sig-out);
+  }
+  .sig-meter-val::after { content: ""; position: absolute; left: 50%; bottom: -3px; width: 6px; height: 6px; margin-left: -3px; background: inherit; transform: rotate(45deg); }
+  .dark .sig-meter-val { box-shadow: inset 0 0 0 1px rgb(var(--color-line-strong)); }
+
+  /* the chosen segment where a sliding thumb isn't used (the five feels, the practice speed): a lit edge and a soft drop */
+  .sig-on { position: relative; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 8px 14px -8px rgb(0 0 0 / 0.6); }
+
+  /* tool strip: a lit edge; the tool you are in gets a red underline; an arrow slips in on hover */
+  .sig-strip-link { position: relative; box-shadow: inset 0 1px 0 rgb(var(--color-text-on-dark) / 0.07); transition: background 160ms; }
+  .sig-strip-link[aria-current="true"] { box-shadow: inset 0 -2px 0 rgb(var(--color-accent-on-ink)); }
+  .sig-strip-arrow { position: absolute; right: 10px; top: 9px; color: rgb(var(--color-accent-on-ink)); opacity: 0; transform: translateY(-4px); transition: opacity 160ms, transform 200ms var(--sig-out); }
+  .sig-strip-link:hover .sig-strip-arrow { opacity: 1; transform: none; }
+
+  /* notice: a soft shadow, an icon, and it drops in with a spring while the icon gives one small nod */
+  .sig-notice { box-shadow: var(--sig-sh-1); animation: sig-drop 520ms var(--sig-spring) both; }
+  .sig-notice-ic { width: 18px; height: 18px; flex: none; color: rgb(var(--color-accent)); animation: sig-nod 700ms var(--sig-spring) 200ms both; }
+  @keyframes sig-drop { from { opacity: 0; transform: translateY(-14px); } }
+  @keyframes sig-nod { 0% { rotate: 0deg; } 40% { rotate: -14deg; } 100% { rotate: 0deg; } }
+
+  /* text field: an underline field; a red line grows from the left on focus; a check or cross draws in */
+  .sig-field { position: relative; }
+  .sig-input {
+    min-height: 44px;
+    width: 100%;
+    padding: 0 36px 0 2px;
+    border: 0;
+    border-bottom: 2px solid rgb(var(--color-line-strong));
+    border-radius: 0;
+    background: transparent;
+    color: rgb(var(--color-text-primary));
+    font-family: var(--font-space-mono), monospace;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    caret-color: rgb(var(--color-accent));
+    transition: border-color 160ms;
+  }
+  .sig-input[aria-invalid="true"] { border-bottom-color: rgb(var(--color-accent)); }
+  /* the growing line is this field's focus mark */
+  .sig-input:focus-visible { box-shadow: none; animation: none; }
+  .sig-field::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgb(var(--color-accent)); transform: scaleX(0); transform-origin: left; transition: transform 320ms var(--sig-out); pointer-events: none; }
+  .sig-field:focus-within::after { transform: scaleX(1); }
+  .sig-field-st { position: absolute; right: 8px; top: 50%; width: 18px; height: 18px; margin-top: -9px; opacity: 0; transition: opacity 160ms; pointer-events: none; }
+  .sig-field[data-state="ok"] .sig-field-st, .sig-field[data-state="bad"] .sig-field-st { opacity: 1; }
+  .sig-field[data-state="ok"] .sig-field-st { color: rgb(var(--color-success)); }
+  .sig-field[data-state="bad"] .sig-field-st { color: rgb(var(--color-accent)); }
+  .sig-field-st path { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset 360ms var(--sig-out); }
+  .sig-field[data-state="ok"] .sig-field-st path, .sig-field[data-state="bad"] .sig-field-st path { stroke-dashoffset: 0; }
+
+  /* page title: a ruler scale after the kicker, a faint accent offset behind the title like a print misregistration,
+     and a status dot that breathes */
+  .sig-kicker { display: flex; align-items: center; gap: 10px; }
+  .sig-kicker::after {
+    content: "";
+    flex: 0 0 120px;
+    height: 6px;
+    background: repeating-linear-gradient(90deg, rgb(var(--color-line-strong)) 0 1px, transparent 1px 8px);
+  }
+  .sig-title { letter-spacing: -0.02em; text-shadow: 1.5px 1.5px 0 rgb(var(--color-accent) / 0.38); }
+  .sig-beat { box-shadow: 0 0 0 3px rgb(var(--color-success) / 0.22); animation: sig-beat 2.4s ease-in-out infinite; }
+  @keyframes sig-beat { 50% { box-shadow: 0 0 0 6px rgb(var(--color-success) / 0.06); } }
+
+  /* motion: cards rise into place on load (opacity and a short slide, no scale, so sizes never change) */
+  .sig-rise { animation: sig-rise 520ms var(--sig-spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes sig-rise { from { opacity: 0; transform: translateY(16px); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sig-btn, .sig-btn::after, .sig-btn-2, .sig-btn-2::before, .sig-pill, .sig-seg > button, .sig-thumb { transition-duration: 0.01ms !important; }
+  .sig-notice, .sig-notice-ic, .sig-chip[aria-current="true"]::after, .sig-ring-prog, .sig-beat, .sig-pill[aria-checked="true"], .sig-rise, button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
+}
+
 /* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----
    Count In's "How it works" posters in miniature: ink, red, outlined and brass cards with big outlined
    step numbers. Hidden per page by a class on <html> (lib/guide.ts), so a hidden guide never flashes. */
@@ -191,6 +435,33 @@
     mask: radial-gradient(circle at 100% 100%, #000, transparent 70%);
     pointer-events: none;
   }
+  /* signature: a fine inner frame and crop marks like a printed poster; hover straightens and lifts it with a spring */
+  .guide-poster {
+    outline: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+    outline-offset: -8px;
+    transition: rotate 380ms var(--sig-spring), transform 380ms var(--sig-spring), box-shadow 380ms var(--sig-out);
+  }
+  .guide-poster::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    z-index: 1;
+    pointer-events: none;
+    --m: color-mix(in srgb, var(--fg) 55%, transparent);
+    background:
+      linear-gradient(var(--m), var(--m)) left top / 9px 1.5px no-repeat,
+      linear-gradient(var(--m), var(--m)) left top / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) right top / 9px 1.5px no-repeat,
+      linear-gradient(var(--m), var(--m)) right top / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) left bottom / 9px 1.5px no-repeat,
+      linear-gradient(var(--m), var(--m)) left bottom / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) right bottom / 9px 1.5px no-repeat,
+      linear-gradient(var(--m), var(--m)) right bottom / 1.5px 9px no-repeat;
+  }
+  .guide-poster:hover { rotate: 0deg; transform: translateY(-4px); box-shadow: 0 4px 8px rgb(var(--color-ink) / 0.08), 0 40px 70px -30px rgb(var(--color-ink) / 0.5); }
+  .dark .guide-poster:hover { box-shadow: 0 4px 8px rgb(0 0 0 / 0.5), 0 40px 70px -30px rgb(0 0 0 / 0.9); }
+  .guide-no { transition: -webkit-text-stroke-width 300ms, opacity 300ms; }
+  .guide-poster:hover .guide-no { -webkit-text-stroke-width: 2.5px; opacity: 1; }
   .guide-tag { @apply font-mono text-[12px] tracking-[0.14em]; opacity: 0.85; }
   .guide-no {
     @apply font-display;

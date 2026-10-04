@@ -39,7 +39,7 @@ export function MidiExportCard({ song, bpm, keyName, progressionId, title }: { s
   };
   const tracks = LANES.filter((l) => l.id !== "drums" || drums).length;
   return (
-    <div data-export="midi" className="flex min-w-0 flex-col gap-[12px] rounded-outer border border-line bg-surface px-[16px] py-[14px] shadow-card tablet:px-[18px] tablet:py-[16px]">
+    <div data-export="midi" className="flex min-w-0 flex-col gap-[12px] sig-surface rounded-outer border border-line bg-surface px-[16px] py-[14px] tablet:px-[18px] tablet:py-[16px]">
       <h3 className="m-0 font-display text-[17px] leading-[1.3]">MIDI arrangement</h3>
       <p className="m-0 max-w-[62ch] font-mono text-[12px] leading-[1.6] text-text-muted">
         One .mid file with a track per part, section markers, tempo and key. Drop it into your DAW and every part is already in its own range. The guitars play
@@ -105,7 +105,7 @@ export function MidiExportCard({ song, bpm, keyName, progressionId, title }: { s
         <button
           type="button"
           onClick={save}
-          className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent shadow-button transition-transform active:scale-[0.98]"
+          className="ml-auto flex min-h-[48px] items-center justify-center gap-[9px] rounded-outer sig-btn bg-accent px-[20px] py-[12px] font-display text-[12.5px] text-text-on-accent"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
             <path d="M12 4v12M6 11l6 6 6-6M5 20h14" />

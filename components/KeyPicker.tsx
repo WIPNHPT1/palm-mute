@@ -21,7 +21,7 @@ export function KeyPicker({ value, onChange }: { value: NoteName; onChange: (key
             tabIndex={rovingTabIndex(selected, true, i)}
             aria-label={flat ? `${k} / ${flat}` : k}
             onClick={() => onChange(k)}
-            className={`flex h-[44px] w-[44px] shrink-0 flex-col items-center justify-center rounded-mid border font-mono ${
+            className={`sig-pill flex h-[44px] w-[44px] shrink-0 flex-col items-center justify-center rounded-mid border font-mono ${
               selected ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-paper hover:border-text-faintest"
             } ${flat ? `text-[12px] leading-[1.1] ${selected ? "font-bold" : "text-text-muted"}` : `text-[14px] ${selected ? "font-bold" : "text-text-muted"}`}`}
           >

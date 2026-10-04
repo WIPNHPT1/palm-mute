@@ -314,7 +314,7 @@ export function Dictionary() {
                 setEasy(false);
                 setNoBarre(false);
               }}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-bold text-text-primary"
+              className="min-h-[44px] sig-btn-2 px-[12px] font-bold text-text-primary"
             >
               SHOW ALL
             </button>
@@ -333,7 +333,7 @@ export function Dictionary() {
               type="button"
               disabled={shown.length < 2}
               onClick={() => setPicked(shapeText(shown[(index - 1 + shown.length) % shown.length].frets))}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-mono text-[12px] font-bold disabled:text-text-disabled"
+              className="min-h-[44px] sig-btn-2 px-[12px] font-mono text-[12px] font-bold disabled:text-text-disabled"
             >
               ‹ PREV
             </button>
@@ -341,7 +341,7 @@ export function Dictionary() {
               type="button"
               disabled={shown.length < 2}
               onClick={() => setPicked(shapeText(shown[(index + 1) % shown.length].frets))}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-mono text-[12px] font-bold disabled:text-text-disabled"
+              className="min-h-[44px] sig-btn-2 px-[12px] font-mono text-[12px] font-bold disabled:text-text-disabled"
             >
               NEXT ›
             </button>
@@ -351,7 +351,7 @@ export function Dictionary() {
               type="button"
               aria-pressed={playing === `strum:${picked}`}
               onClick={() => toggle(`strum:${picked}`, strumBars(notesOf(current)))}
-              className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent shadow-button"
+              className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid sig-btn bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent"
             >
               {playing === `strum:${picked}` ? <StopIcon size={11} /> : <PlayIcon size={11} filled />}
               {playing === `strum:${picked}` ? "STOP" : "STRUM IT"}

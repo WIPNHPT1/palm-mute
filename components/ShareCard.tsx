@@ -28,7 +28,7 @@ export function ShareCard({ link }: { link: string }) {
     setStatus(ok ? "Link copied." : "Couldn't copy: the link is selected, copy it from there.");
   };
   return (
-    <div data-export="share" className="flex min-w-0 flex-col gap-[12px] rounded-outer border border-line bg-surface px-[16px] py-[14px] shadow-card tablet:col-span-2 tablet:px-[18px] tablet:py-[16px]">
+    <div data-export="share" className="flex min-w-0 flex-col gap-[12px] sig-surface rounded-outer border border-line bg-surface px-[16px] py-[14px] tablet:col-span-2 tablet:px-[18px] tablet:py-[16px]">
       <h3 className="m-0 font-display text-[17px] leading-[1.3]">Share the song</h3>
       <p className="m-0 max-w-[62ch] font-mono text-[12px] leading-[1.6] text-text-muted">
         The link holds the whole song: key, feel, chords, length, every part&apos;s take and options, and what&apos;s locked. Whoever opens it hears exactly this. Nothing

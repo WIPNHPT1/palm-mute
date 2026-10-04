@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
 import { useLab } from "@/components/lab/LabContext";
+import { Meter } from "@/components/lab/Meter";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import { chordName, easiestVoicing, shapeNotes } from "@/lib/lab/chords";
 import { degreeRoot } from "@/lib/lab/keys";
@@ -13,20 +14,6 @@ import { pitchClassOf } from "@/lib/musicTheory";
 
 const START = "I-V-vi-IV";
 const words = (v: number, lo: string, hi: string) => (v < 0.35 ? `${lo} than most` : v > 0.65 ? `${hi} than most` : "in the middle");
-
-function Meter({ label, value, text }: { label: string; value: number; text: string }) {
-  const pct = Math.round(value * 100);
-  return (
-    <div className="flex flex-col gap-[4px] font-mono text-[12px] text-text-muted">
-      <span>
-        {label} · {text}
-      </span>
-      <div role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-[8px] overflow-hidden rounded-[4px] border border-line bg-paper">
-        <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 function Star() {
   return (
@@ -151,7 +138,7 @@ export function MoodMap() {
               <li
                 key={i}
                 aria-current={playing === playId(current.id) && bar === i ? "true" : undefined}
-                className={`flex min-w-[58px] flex-col items-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${playing === playId(current.id) && bar === i ? "shadow-[inset_0_-4px_0_0_rgb(var(--color-accent-on-ink))]" : ""}`}
+                className={`sig-chip flex min-w-[58px] flex-col items-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark`}
               >
                 <span className="text-[12px] text-chip-tab">{d}</span>
                 <b className="text-[13px]">{chordName(degreeRoot(keyPc, d), c.type)}</b>
@@ -159,13 +146,13 @@ export function MoodMap() {
             );
           })}
         </ul>
-        <Meter label="Dark to bright" value={current.bright} text={words(current.bright, "darker", "brighter")} />
-        <Meter label="Settled to restless" value={current.restless} text={words(current.restless, "more settled", "more restless")} />
+        <Meter label="Dark to bright" head={`Dark to bright · ${words(current.bright, "darker", "brighter")}`} value={current.bright} />
+        <Meter label="Settled to restless" head={`Settled to restless · ${words(current.restless, "more settled", "more restless")}`} value={current.restless} />
         <button
           type="button"
           aria-pressed={playing === playId(current.id)}
           onClick={() => toggle(playId(current.id), bars(current), true)}
-          className="inline-flex min-h-[44px] items-center justify-center gap-[8px] rounded-mid bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent shadow-button"
+          className="inline-flex min-h-[44px] items-center justify-center gap-[8px] rounded-mid sig-btn bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent"
         >
           {playing === playId(current.id) ? <StopIcon size={11} /> : <PlayIcon size={11} filled />}
           {playing === playId(current.id) ? "STOP" : `HEAR IT IN ${key}`}

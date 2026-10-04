@@ -75,6 +75,12 @@ for (const { path, chips: hasChips, setup } of PAGES) {
           return [0, 1, 2].map((i) => top[i] * a + bottom[i] * (1 - a));
         };
         function background(el: Element): number[] {
+          // A chosen segment's ink is the sliding thumb behind it (a sibling), not the button's own background.
+          const thumb = el.closest('[role="radio"][aria-checked="true"]')?.parentElement?.querySelector(":scope > .sig-thumb");
+          if (thumb) {
+            const c = parse(getComputedStyle(thumb).backgroundColor);
+            if (c.length) return c.slice(0, 3);
+          }
           const layers: number[][] = [];
           for (let e: Element | null = el; e; e = e.parentElement) {
             const c = parse(getComputedStyle(e).backgroundColor);

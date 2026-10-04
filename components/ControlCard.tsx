@@ -23,7 +23,7 @@ export function ControlCard({
   id?: string;
 }) {
   return (
-    <div id={id} data-control={label} className={`flex scroll-mt-[96px] flex-col justify-start gap-[9px] rounded-outer border border-line bg-surface px-[16px] py-[14px] tablet:px-[18px] ${className}`}>
+    <div id={id} data-control={label} className={`flex scroll-mt-[96px] flex-col justify-start gap-[9px] sig-surface rounded-outer border border-line bg-surface px-[16px] py-[14px] tablet:px-[18px] ${className}`}>
       <div className="flex flex-wrap items-baseline gap-x-[8px] gap-y-[2px] font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">
         {step !== undefined && <span className="font-bold text-accent">{step}</span>}
         <span>{label}</span>

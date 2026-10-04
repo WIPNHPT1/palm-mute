@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PlayButton } from "@/components/PlayButton";
 import { useLab } from "@/components/lab/LabContext";
 import { Neck } from "@/components/lab/Neck";
+import { FieldStatus } from "@/components/lab/FieldStatus";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import {
   type Frets,
@@ -79,6 +80,7 @@ export function NameIt() {
       <div className="flex flex-wrap items-end gap-[10px] max-tablet:order-4">
         <label className="flex min-w-0 flex-[1_1_220px] flex-col gap-[6px]">
           <GroupLabel>Shape, low string first</GroupLabel>
+          <div className="sig-field" data-state={bad ? "bad" : text.trim() && notes.length >= 2 ? "ok" : ""}>
           <input
             value={text}
             onChange={(e) => typed(e.target.value)}
@@ -87,8 +89,10 @@ export function NameIt() {
             spellCheck={false}
             aria-invalid={bad}
             aria-describedby="name-it-help"
-            className="min-h-[44px] w-full rounded-mid border border-line bg-paper px-[12px] font-mono text-[14px] text-text-primary placeholder:text-text-faint aria-[invalid=true]:border-accent"
+            className="sig-input placeholder:text-text-faint"
           />
+            <FieldStatus state={bad ? "bad" : "ok"} />
+          </div>
         </label>
         <button
           type="button"
@@ -96,7 +100,7 @@ export function NameIt() {
             setBad(false);
             setFrets(EMPTY);
           }}
-          className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold"
+          className="min-h-[44px] sig-btn-2 px-[14px] font-mono text-[12px] font-bold"
         >
           CLEAR
         </button>
@@ -148,7 +152,7 @@ export function NameIt() {
                 setBad(false);
                 setFrets(near.voicing.frets);
               }}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[12px] font-bold text-text-primary hover:border-accent"
+              className="min-h-[44px] sig-btn-2 px-[12px] font-bold text-text-primary hover:border-accent"
             >
               USE {shapeText(near.voicing.frets)}
             </button>
@@ -182,7 +186,7 @@ export function NameIt() {
                 setChord(best.root, best.type, id);
                 document.getElementById("dictionary")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
-              className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold hover:border-accent"
+              className="min-h-[44px] sig-btn-2 px-[14px] font-mono text-[12px] font-bold hover:border-accent"
             >
               LOOK UP {best.name.toUpperCase()} IN THE DICTIONARY
             </button>

@@ -10,7 +10,7 @@ export function GenerateButton({ onClick, label = "GENERATE" }: { onClick: () =>
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer bg-accent px-[24px] py-[14px] font-display text-[12.5px] text-text-on-accent shadow-button transition-transform active:scale-[0.98] tablet:ml-auto tablet:w-auto tablet:shrink-0 tablet:py-[12px]"
+      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer sig-btn bg-accent px-[24px] py-[14px] font-display text-[12.5px] text-text-on-accent tablet:ml-auto tablet:w-auto tablet:shrink-0 tablet:py-[12px]"
     >
       <PlayIcon size={11} className="text-text-on-accent" />
       {label}
@@ -25,7 +25,7 @@ export function PlaySongButton({ playing, onClick }: { playing: boolean; onClick
       type="button"
       onClick={onClick}
       aria-pressed={playing}
-      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer border-[1.5px] border-ink bg-surface px-[20px] py-[12px] font-display text-[12.5px] text-text-primary transition-transform active:scale-[0.98] dark:border-line-strong tablet:w-auto"
+      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer sig-btn-2 border-[1.5px] border-ink bg-surface px-[20px] py-[12px] font-display text-[12.5px] text-text-primary dark:border-line-strong tablet:w-auto"
     >
       {playing ? <StopIcon size={11} className="text-accent" /> : <PlayIcon size={11} filled={false} />}
       {playing ? "STOP SONG" : "PLAY SONG"}
@@ -39,7 +39,7 @@ export function RebuildButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer border-[1.5px] border-ink bg-surface px-[20px] py-[12px] font-display text-[12.5px] text-text-primary transition-transform active:scale-[0.98] dark:border-line-strong tablet:w-auto"
+      className="flex min-h-[48px] w-full items-center justify-center gap-[9px] rounded-outer sig-btn-2 border-[1.5px] border-ink bg-surface px-[20px] py-[12px] font-display text-[12.5px] text-text-primary dark:border-line-strong tablet:w-auto"
     >
       <RegenerateIcon size={13} className="text-accent" />
       BUILD AGAIN

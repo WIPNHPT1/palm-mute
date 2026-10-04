@@ -5,6 +5,7 @@ import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { useLab } from "@/components/lab/LabContext";
+import { Meter } from "@/components/lab/Meter";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import { type ChordTypeId, chordName, chordType, easiestVoicing, shapeNotes } from "@/lib/lab/chords";
 import { type DegreeId, DEGREES, degreeRoot, getDegree, nextMoves, typesFor } from "@/lib/lab/keys";
@@ -21,21 +22,6 @@ const SOUNDS: { value: Sound; label: string }[] = [
   { value: "power", label: "POWER CHORDS" },
   { value: "full", label: "FULL CHORDS" },
 ];
-
-function Meter({ label, value, words }: { label: string; value: number; words: string }) {
-  const pct = Math.round(value * 100);
-  return (
-    <div className="flex min-w-0 flex-col gap-[4px] font-mono text-[12px] text-text-muted">
-      <span>
-        {label} · {pct}%
-      </span>
-      <div role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-[8px] overflow-hidden rounded-[4px] border border-line bg-paper">
-        <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
-      </div>
-      <span>{words}</span>
-    </div>
-  );
-}
 
 /**
  * 03 Progression builder (docs/chord-lab-prd.md §5.4): tap chords from the key (and the borrowed ones
@@ -109,7 +95,7 @@ export function Builder() {
                 aria-current={playing === LOOP_ID && bar === i ? "true" : undefined}
                 aria-label={`Chord ${i + 1}: ${c.degree}, ${nameOf(c)}`}
                 onClick={() => setSelected(selected === i ? null : i)}
-                className={`flex min-h-[52px] min-w-[58px] flex-col items-center justify-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${selected === i ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""} ${playing === LOOP_ID && bar === i ? "shadow-[inset_0_-4px_0_0_rgb(var(--color-accent-on-ink))]" : ""}`}
+                className={`sig-chip flex min-h-[52px] min-w-[58px] flex-col items-center justify-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${selected === i ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""}`}
               >
                 <span className={`text-[12px] ${getDegree(c.degree).borrowed ? "text-brass" : "text-chip-tab"}`}>{c.degree}</span>
                 <b className="text-[13px]">{nameOf(c)}</b>
@@ -184,7 +170,7 @@ export function Builder() {
           disabled={!loop.length}
           aria-pressed={playing === LOOP_ID}
           onClick={() => toggle(LOOP_ID, bars(), true)}
-          className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent shadow-button disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-[8px] rounded-mid sig-btn bg-accent px-[14px] font-display text-[12.5px] text-text-on-accent disabled:opacity-50"
         >
           {playing === LOOP_ID ? <StopIcon size={11} /> : <PlayIcon size={11} filled />}
           {playing === LOOP_ID ? "STOP" : "PLAY THE LOOP"}
@@ -197,14 +183,14 @@ export function Builder() {
             sendToFinder(loop.map(nameOf).join(" "));
             document.getElementById("key-finder")?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
-          className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold hover:border-accent disabled:text-text-disabled"
+          className="min-h-[44px] sig-btn-2 px-[14px] font-mono text-[12px] font-bold hover:border-accent disabled:text-text-disabled"
         >
           FIND THIS LOOP&apos;S KEY
         </button>
-        <button type="button" onClick={() => edit([], null)} disabled={!loop.length} className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold disabled:text-text-disabled">
+        <button type="button" onClick={() => edit([], null)} disabled={!loop.length} className="min-h-[44px] sig-btn-2 px-[14px] font-mono text-[12px] font-bold disabled:text-text-disabled">
           CLEAR
         </button>
-        <button type="button" onClick={() => edit(START_LOOP, null)} className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold">
+        <button type="button" onClick={() => edit(START_LOOP, null)} className="min-h-[44px] sig-btn-2 px-[14px] font-mono text-[12px] font-bold">
           START OVER
         </button>
       </div>
@@ -220,7 +206,7 @@ export function Builder() {
                   disabled={full}
                   onClick={() => add(d)}
                   aria-label={`Add ${d} next, ${chordName(degreeRoot(keyPc, d), fresh(d))}`}
-                  className="flex min-h-[44px] min-w-[44px] items-center gap-[6px] rounded-mid border border-line bg-paper px-[12px] font-mono text-[12px] font-bold text-text-secondary hover:border-accent disabled:text-text-disabled"
+                  className="flex min-h-[44px] min-w-[44px] items-center gap-[6px] sig-btn-2 px-[12px] font-mono text-[12px] font-bold text-text-secondary hover:border-accent disabled:text-text-disabled"
                 >
                   {d}
                   <span className="font-normal text-text-faint">{chordName(degreeRoot(keyPc, d), fresh(d))}</span>
