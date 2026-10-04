@@ -1,0 +1,37 @@
+{
+  "_note": "Chord Lab progression builder (docs/chord-lab-prd.md L11–L14). `degrees`: the builder's palette in a major key, semitones above the key and the chord's natural quality; borrowed chords come from the parallel minor (pop-punk's favourites: bVII, bVI, bIII and the minor iv). vii (diminished) is left out: the Lab has no diminished chord. `moves`: how often each chord goes to each next chord in pop-punk loops (weights, not probabilities), from the app's ten progressions plus common genre moves; the top three are the builder's 'what next?'. `brightness` (0 dark to 1 bright) and `pull` (how much a loop ending on it wants to go on, 0 settled to 1 restless) score the builder's vibe meters and the mood map.",
+  "degrees": [
+    { "id": "I", "offset": 0, "quality": "maj", "borrowed": false },
+    { "id": "ii", "offset": 2, "quality": "min", "borrowed": false },
+    { "id": "iii", "offset": 4, "quality": "min", "borrowed": false },
+    { "id": "IV", "offset": 5, "quality": "maj", "borrowed": false },
+    { "id": "V", "offset": 7, "quality": "maj", "borrowed": false },
+    { "id": "vi", "offset": 9, "quality": "min", "borrowed": false },
+    { "id": "bIII", "offset": 3, "quality": "maj", "borrowed": true },
+    { "id": "iv", "offset": 5, "quality": "min", "borrowed": true },
+    { "id": "bVI", "offset": 8, "quality": "maj", "borrowed": true },
+    { "id": "bVII", "offset": 10, "quality": "maj", "borrowed": true }
+  ],
+  "moves": {
+    "I": { "V": 6, "IV": 5, "vi": 4, "bVII": 2, "iii": 1, "ii": 1 },
+    "ii": { "V": 5, "IV": 3, "I": 2, "vi": 1 },
+    "iii": { "vi": 4, "IV": 4, "I": 1, "ii": 1 },
+    "IV": { "I": 5, "V": 5, "vi": 3, "iv": 2, "ii": 1 },
+    "V": { "vi": 6, "I": 5, "IV": 4, "ii": 1 },
+    "vi": { "IV": 6, "V": 4, "I": 3, "iii": 1, "ii": 1 },
+    "bIII": { "IV": 4, "bVII": 3, "I": 2, "bVI": 1 },
+    "iv": { "I": 6, "V": 2, "bVII": 1 },
+    "bVI": { "bVII": 5, "I": 3, "IV": 2, "bIII": 1 },
+    "bVII": { "IV": 5, "I": 5, "V": 1, "bVI": 1 }
+  },
+  "brightness": {
+    "degree": { "I": 1, "IV": 0.95, "V": 0.9, "ii": 0.35, "iii": 0.3, "vi": 0.25, "bVII": 0.6, "bVI": 0.4, "bIII": 0.45, "iv": 0.1 },
+    "type": { "maj": 1, "min": 0.15, "7": 0.8, "maj7": 0.85, "m7": 0.25, "add9": 0.95, "sus2": 0.7, "sus4": 0.65, "5": 0.6, "oct": 0.6 },
+    "_rule": "A chord with a 3rd: half its degree, half its type. A chord without one (5, oct, sus2, sus4): its degree only, so a power chord on vi still reads darker than one on I."
+  },
+  "pull": {
+    "degree": { "I": 0.1, "IV": 0.5, "vi": 0.6, "iii": 0.65, "ii": 0.7, "V": 0.9, "bVII": 0.6, "bVI": 0.7, "bIII": 0.6, "iv": 0.75 },
+    "type": { "7": 0.1, "sus4": 0.1, "sus2": 0.05 },
+    "neverHome": 0.1
+  }
+}

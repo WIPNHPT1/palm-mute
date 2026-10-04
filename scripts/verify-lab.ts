@@ -11,6 +11,7 @@ import {
   TUNING_IDS,
   chordName,
   chordPitchClasses,
+  easiestVoicing,
   keysFor,
   nameShape,
   parseShape,
@@ -20,7 +21,11 @@ import {
   stretchOk,
   voicingsFor,
 } from "@/lib/lab/chords";
+import movesJson from "@/data/chord-moves.json";
+import { type DegreeId, DEGREES, DEGREE_IDS, degreeRoot, findKeys, nextMoves, parseChord, shapeFor, splitChords, transpose, typesFor } from "@/lib/lab/keys";
+import { MAP, MOOD_LOOPS, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
 import { LAB_BPM, arpeggioBars, loopBars, strumBars } from "@/lib/lab/sound";
+import { PITCH_CLASSES, progressions } from "@/lib/musicTheory";
 
 let voicings = 0;
 const perTuning: Record<string, number> = {};
@@ -116,8 +121,107 @@ assert.equal(strumBars([43, 47, 50]).length, 1);
 assert.deepEqual(arpeggioBars([50, 43, 47])[0].cells.slice(0, 3).map((c) => c!.notes[0]), [43, 47, 50]);
 assert.equal(loopBars([[43], [50], [52]]).length, 3);
 
+// Builder data: every degree has moves, every move goes to a real degree, and the three suggestions are the top three.
+for (const d of DEGREE_IDS) {
+  const moves = (movesJson.moves as Record<string, Record<string, number>>)[d];
+  assert.ok(moves, `no moves from ${d}`);
+  for (const [to, w] of Object.entries(moves)) assert.ok(DEGREE_IDS.includes(to as DegreeId) && w > 0, `${d} -> ${to}`);
+  assert.equal(nextMoves(d).length, 3, `${d}: three suggestions`);
+  assert.ok(typesFor(d)[0] === DEGREES.find((x) => x.id === d)!.quality, `${d}: natural quality first`);
+  for (const k of Object.keys(movesJson.brightness.degree)) assert.ok(DEGREE_IDS.includes(k as DegreeId), `brightness for unknown degree ${k}`);
+}
+// The degrees in a key: I of G is G, V is D, bVII is F, iv is C (minor).
+assert.deepEqual((["I", "V", "vi", "IV", "bVII", "iv"] as DegreeId[]).map((d) => degreeRoot(7, d)), [7, 2, 4, 0, 5, 0]);
+
+// Vibe: scores stay in 0..1, the genre's ten loops are all classic, the brighter ones (data/progressions.json)
+// score brighter on average than the darker ones, and a loop that ends on V is more restless than one ending on I.
+const asLoop = (degrees: string[], type: "5" | "maj" = "maj") => degrees.map((degree) => ({ degree: degree as DegreeId, type: degree === "vi" || degree === "ii" || degree === "iii" ? ("min" as const) : type }));
+const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+for (const p of progressions) {
+  for (const type of ["5", "maj"] as const) {
+    const loop = asLoop(p.degrees, type);
+    for (const v of [brightness(loop), restlessness(loop), classicness(loop)]) assert.ok(v >= 0 && v <= 1, `${p.id}: score ${v} out of range`);
+    assert.equal(classicness(loop), 1, `${p.id} isn't classic`);
+  }
+}
+const scoreOf = (min: number, max: number) => avg(progressions.filter((p) => p.brightness >= min && p.brightness <= max).map((p) => brightness(asLoop(p.degrees))));
+assert.ok(scoreOf(5, 5) > scoreOf(4, 4) && scoreOf(4, 4) > scoreOf(2, 3), "brightness doesn't follow data/progressions.json");
+assert.ok(restlessness(asLoop(["I", "IV", "V"])) > restlessness(asLoop(["V", "IV", "I"])), "ending on V should be more restless than on I");
+assert.ok(classicness(asLoop(["I", "bVII", "bIII"])) < 1);
+
+// Key finder: every one of the app's ten progressions, in all twelve keys, as full chords and as power chords,
+// is found in its own key, first.
+const OFFSET = { I: 0, ii: 2, iii: 4, IV: 5, V: 7, vi: 9, vii: 11 } as const;
+const QUALITY = { I: "", ii: "m", iii: "m", IV: "", V: "", vi: "m", vii: "" } as const;
+let keyChecks = 0;
+for (const kind of ["full", "power"] as const) {
+  for (const p of progressions) {
+    for (let k = 0; k < 12; k++) {
+      const chords = p.degrees.map((d) => parseChord(PITCH_CLASSES[(k + OFFSET[d]) % 12] + (kind === "power" ? "5" : QUALITY[d]))!);
+      assert.equal(findKeys(chords)[0].key, k, `${kind} ${p.id} in ${PITCH_CLASSES[k]}`);
+      keyChecks++;
+    }
+  }
+}
+// Reading chord names.
+assert.deepEqual(splitChords("G D, Em | C"), ["G", "D", "Em", "C"]);
+assert.deepEqual(["F#m7", "Bbadd9", "Dsus4", "Gsus", "E5", "Cmaj7", "Am"].map((t) => parseChord(t)?.type), ["m7", "add9", "sus4", "sus4", "5", "maj7", "min"]);
+assert.equal(parseChord("Bbadd9")!.root, 10);
+assert.equal(parseChord("H"), null);
+assert.equal(parseChord("Gxyz"), null);
+// Borrowed chords are flagged, not rejected: F in G major is the bVII.
+const inG = findKeys(["G", "F", "C", "G"].map((t) => parseChord(t)!), 12).find((f) => f.key === 7)!;
+assert.deepEqual(inG.numerals.map((n) => n.numeral), ["I", "bVII", "IV", "I"]);
+assert.equal(inG.numerals[1].borrowed, true);
+
+// Transposing up and back is the identity, and capo + tuning maths agree with the shapes: in every tuning,
+// with every capo, the shape to play sounds as the chord asked for.
+for (const tuning of TUNING_IDS) {
+  for (let root = 0; root < 12; root++) {
+    for (const type of ["maj", "min", "5", "7", "sus4"] as const) {
+      const c = { text: chordName(root, type), root, type };
+      for (let semi = -11; semi <= 11; semi++) assert.deepEqual(transpose(transpose(c, semi), -semi), c, `${c.text} ${semi}`);
+      for (let capo = 0; capo <= 7; capo++) {
+        const shape = shapeFor(c, capo);
+        const v = easiestVoicing(shape.root, shape.type, tuning);
+        assert.ok(v, `${tuning} ${shape.text}: no shape`);
+        const sounds = new Set(shapeNotes(v.frets, tuning).filter((n): n is number => n !== null).map((n) => (n + capo) % 12));
+        assert.ok([...sounds].every((p) => chordPitchClasses(root, type).includes(p)), `${tuning} capo ${capo}: shape ${shape.text} doesn't sound ${c.text}`);
+        assert.equal(Math.min(...shapeNotes(v.frets, tuning).filter((n): n is number => n !== null)) + capo >= 0, true);
+      }
+    }
+  }
+}
+
+// Mood map: every loop is unique and made of real degrees, the ten of the app are all on it, every dot sits
+// inside the plot, no two dots print their names on top of each other, every corner of the map has loops, and
+// a dot never strays far from its true place (the nudge that keeps names apart is bounded).
+const points = moodPoints();
+assert.equal(new Set(MOOD_LOOPS.map((l) => l.id)).size, MOOD_LOOPS.length, "duplicate loops on the map");
+assert.equal(points.filter((p) => p.own).length, progressions.length);
+let farthest = 0;
+for (const p of points) {
+  assert.ok(p.degrees.length >= 3 && p.degrees.length <= 5 && p.degrees.every((d) => DEGREE_IDS.includes(d)), `${p.id}: bad loop`);
+  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - 3 && p.y <= MAP.y1 + 3, `${p.id}: off the plot (${p.x}, ${p.y})`);
+  assert.ok(p.bright >= 0 && p.bright <= 1 && p.restless >= 0 && p.restless <= 1, `${p.id}: score out of range`);
+  const v = vibeOf(naturalLoop(p.degrees));
+  const home = placeScores(v.brightness, v.restlessness);
+  farthest = Math.max(farthest, Math.hypot(home.x - p.x, home.y - p.y));
+}
+assert.ok(farthest <= 30, `a dot was nudged ${farthest.toFixed(0)}% from its place`);
+for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
+  assert.equal(labelsClash(points[i], points[j]), false, `${points[i].id} and ${points[j].id} overlap`);
+}
+for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === q), `nothing in ${q}`);
+// Tapping empty space finds the nearest loop; a loop's own place finds itself.
+for (const p of points) assert.equal(nearestPoint(points, p.x, p.y).id, p.id);
+// The darkest loop is a minor-heavy one, the brightest has no minor chord.
+const byBright = [...points].sort((a, b) => a.bright - b.bright);
+assert.ok(byBright[0].degrees.some((d) => ["vi", "iii", "ii", "iv"].includes(d)), `darkest is ${byBright[0].id}`);
+assert.ok(byBright.at(-1)!.degrees.every((d) => !["vi", "iii", "ii", "iv"].includes(d)), `brightest is ${byBright.at(-1)!.id}`);
+
 console.log(
   `verify-lab: ${voicings} voicings checked (${Object.entries(perTuning)
     .map(([t, n]) => `${t} ${n}`)
-    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back.`,
+    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
 );
