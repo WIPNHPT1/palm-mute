@@ -1,5 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, lightOnly, onlyAtWidths, test } from "./fixtures";
+import { designUnit } from "./helpers";
 
 // Count In's guitar strings: with SOUND on, each string you swipe across rings its open note, in the
 // order you cross them, louder the faster you go. Sound is off until you turn it on.
@@ -33,7 +34,7 @@ test.describe("count in strings", () => {
     await expect(toggle).toHaveAttribute("aria-checked", "false");
     await expect(toggle).toContainText("SOUND OFF");
     const box = (await toggle.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(43.5 * (await designUnit(page))); // 44px in design pixels (90% from 1440px)
 
     await swipe(page, "down", 12);
     expect(await plucks(page)).toEqual([]);

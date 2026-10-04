@@ -1,4 +1,5 @@
 import { expect, gotoAndSettle, lightOnly, onlyAtWidths, test } from "./fixtures";
+import { designUnit } from "./helpers";
 
 // When sound can't start (no Web Audio, or it stays suspended), pressing play used to do nothing at all. One
 // notice for the whole site now says so and how to fix the usual phone cause; it clears the next time sound starts.
@@ -33,7 +34,7 @@ test.describe("sound that can't start says so", () => {
     await expect(strum).toBeVisible();
     await expect(page.getByRole("button", { name: "Stop G 320003 strummed" })).toHaveCount(0);
     expect((await notice(page).boundingBox())!.y).toBeGreaterThanOrEqual(64);
-    expect((await notice(page).getByRole("button", { name: "DISMISS" }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await notice(page).getByRole("button", { name: "DISMISS" }).boundingBox())!.height).toBeGreaterThanOrEqual(43.5 * (await designUnit(page))); // 44px in design pixels (90% from 1440px)
     await notice(page).getByRole("button", { name: "DISMISS" }).click();
     await expect(notice(page)).toHaveCount(0);
     // Another try that fails shows it again.

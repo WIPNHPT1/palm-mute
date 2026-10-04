@@ -1,5 +1,5 @@
 import { expect, gotoAndSettle, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
-import { feel, lastPlayback } from "./helpers";
+import { feel, lastPlayback, designUnit } from "./helpers";
 
 // Five feels (DECISIONS.md): Fast Punk, Half-Time, Mid-Tempo, Pop Strum and Ballad.
 
@@ -17,7 +17,8 @@ for (const path of ["/generator/"]) {
     } else {
       expect(new Set(boxes.map((b) => b.top)).size, "one row").toBe(1);
     }
-    for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(44);
+    const u = await designUnit(page);
+    for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(43.5 * u); // 44px in design pixels (90% from 1440px)
 
     // Every feel says its one tempo; Mid-Tempo has no slider (owner, 2026-10-04).
     for (const [f, bpm] of [[/FAST PUNK/, 180], [/HALF-TIME/, 90], [/MID-TEMPO/, 140], [/POP STRUM/, 150], [/BALLAD/, 80]] as const) await expect(feel(page, f)).toContainText(`${bpm} BPM`);

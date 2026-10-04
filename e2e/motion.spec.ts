@@ -3,24 +3,26 @@ import { expect, gotoAndSettle, lightOnly, onlyAtWidths, test } from "./fixtures
 // Guards for the Count In page's motion costs (see the "smoother motion" PR): the effects look the same,
 // but nothing may bring back continuous repaints, full-screen blending or live blur.
 test.describe("count in motion stays cheap", () => {
-  test("no full-screen blend or live blur; the spotlight moves by transform", async ({ page }, info) => {
+  test("no full-screen blend or live blur; the light leak moves by transform and opacity only", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     await gotoAndSettle(page, "/");
     const styles = await page.evaluate(() => {
       const cs = (sel: string) => getComputedStyle(document.querySelector(sel)!);
       return {
         grainBlend: cs(".ci-grain").mixBlendMode,
-        beamsBlend: cs(".ci-beams").mixBlendMode,
-        beamFilter: cs(".ci-beams i").filter,
+        leakBlend: cs(".ci-leak i").mixBlendMode,
+        leakFilter: cs(".ci-leak i").filter,
         halftoneMask: cs(".ci-halftone").maskImage || cs(".ci-halftone").webkitMaskImage,
-        spotTransform: cs(".ci-spot").transform,
+        leakAnimations: [...document.querySelectorAll(".ci-leak i")].map((el) => getComputedStyle(el).animationName),
+        leakWillChange: cs(".ci-leak i").willChange,
       };
     });
     expect(styles.grainBlend).toBe("normal");
-    expect(styles.beamsBlend).toBe("normal");
-    expect(styles.beamFilter).toBe("none");
+    expect(styles.leakBlend).toBe("normal");
+    expect(styles.leakFilter).toBe("none");
     expect(styles.halftoneMask).toBe("none");
-    expect(styles.spotTransform).not.toBe("none");
+    expect(styles.leakAnimations).toEqual(["ci-leak-a", "ci-leak-b", "ci-leak-c"]);
+    expect(styles.leakWillChange).toBe("transform, opacity");
   });
 
   test("sitting on the hero doesn't repaint continuously (Chromium trace)", async ({ page, browser, browserName }, info) => {

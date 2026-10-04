@@ -1,4 +1,5 @@
 import { expect, gotoAndSettle, horizontalOverflow, test } from "./fixtures";
+import { designUnit } from "./helpers";
 
 // "How to use" posters under the Generator and Chord Lab titles (owner's pick: Count In poster style).
 const GUIDES = [
@@ -37,7 +38,7 @@ test("hiding a guide is remembered per page, applies before paint, and can be un
   await expect(guide.locator("ol")).toBeHidden();
   const show = guide.getByRole("button", { name: /HOW TO USE/ });
   await expect(show).toBeVisible();
-  expect((await show.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect((await show.boundingBox())!.height).toBeGreaterThanOrEqual(43.5 * (await designUnit(page))); // 44px in design pixels (90% from 1440px)
 
   // Reload: the class is on <html> before React runs, so the posters never render visibly.
   await page.reload();
