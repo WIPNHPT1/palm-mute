@@ -109,6 +109,23 @@ test.describe("chord lab: every screen", () => {
           expect(overlap, `${a.text} and ${b.text} overlap`).toBe(false);
         }
     }
+    // No dot sits on a corner label (the labels are Tense, Anthem, Brooding and Feel-good).
+    const onLabel = await page.locator(`${tool} [data-plot]`).evaluate((plot) => {
+      const labels = [...plot.querySelectorAll(":scope > span[aria-hidden]")].filter((s) => (s.textContent ?? "").trim()).map((s) => {
+        const r = document.createRange();
+        r.selectNodeContents(s);
+        const b = r.getBoundingClientRect();
+        return { text: s.textContent, b };
+      });
+      const hits: string[] = [];
+      for (const d of plot.querySelectorAll("[data-loop-id] i")) {
+        const a = d.getBoundingClientRect();
+        for (const l of labels) if (a.left < l.b.right && l.b.left < a.right && a.top < l.b.bottom && l.b.top < a.bottom) hits.push(`${d.parentElement!.getAttribute("data-loop-id")} on ${l.text}`);
+      }
+      return { labels: labels.length, hits };
+    });
+    expect(onLabel.labels).toBe(4);
+    expect(onLabel.hits).toEqual([]);
     // The plot is square on phones and 4:3 from tablet up; the panel sits beside it from 1280px, under it below.
     const plot = (await page.locator(`${tool} [data-plot]`).boundingBox())!;
     const panel = (await page.locator(`${tool} [data-mood-panel]`).boundingBox())!;

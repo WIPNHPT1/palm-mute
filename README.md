@@ -23,11 +23,11 @@
 |---|---|
 | **Tuning** | E standard for the generated songs; the Chord Lab also does E♭ standard, Drop D and Drop C♯ |
 | **Keys** | All 12, with sharps and flats named properly (A#/Bb) |
-| **Progressions** | The 10 that pop-punk actually runs on (I-V-vi-IV, vi-IV-I-V, I-IV-V, I-V-IV-V, vi-V-IV, IV-I-V-vi, I-vi-IV-V, I-IV-vi-V, V-vi-IV-I, I-V-IV); the Chord Lab plots them and 16 more by mood |
+| **Progressions** | The 10 that pop-punk actually runs on (I-V-vi-IV, vi-IV-I-V, I-IV-V, I-V-IV-V, vi-V-IV, IV-I-V-vi, I-vi-IV-V, I-IV-vi-V, V-vi-IV-I, I-V-IV); the Chord Lab plots them and 12 more by mood |
 | **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (140 BPM), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
 | **Song sections** | Intro · Verse · Chorus · Solo · Breakdown, each lockable and regenerable on its own |
 | **Chord shapes** | 2-note, 3-note (octave), inverted, open-string and octave-riff power chords, frets 0–12 |
-| **Chord Lab** | A guitarist's chord toolbox, separate from the generator: a dictionary of every playable shape of 10 chord types (1,658 shapes across 4 tunings, left- or right-handed), the chord on a 15-fret neck, name-that-chord from a tapped shape, a progression builder with "what next?" and vibe meters, a key finder and transposer with a capo, and a mood map |
+| **Chord Lab** | A guitarist's chord toolbox, separate from the generator: a dictionary of the shapes players actually use for 10 chord types (4,612 shapes across 4 tunings, from the nut up the neck, left- or right-handed), the chord on a 15-fret neck, name-that-chord from a tapped shape, a progression builder with "what next?" and vibe meters, a key finder and transposer with a capo, and a mood map |
 | **Leads** | Intro melodies (Hook, Octaves, Harmony) and solos (Chill, Classic, Shred), frets 0–12 and 0–15 |
 | **Techniques** | Palm mutes, let-ring, accents, pushes, dead strums, stops · bends, hammer-ons, pull-offs, slides, vibrato |
 | **Tabs** | Real bars of 8 eighth notes, 2 bars per line, never scroll sideways, readable at 320px |

@@ -14,6 +14,7 @@ import {
   easiestVoicing,
   keysFor,
   nameShape,
+  noteName,
   parseShape,
   playsChord,
   shapeNotes,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/lab/chords";
 import movesJson from "@/data/chord-moves.json";
 import { type DegreeId, DEGREES, DEGREE_IDS, degreeRoot, findKeys, nextMoves, parseChord, shapeFor, splitChords, transpose, typesFor } from "@/lib/lab/keys";
-import { MAP, MOOD_LOOPS, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
+import { CORNERS, MAP, MOOD_LOOPS, cornerClash, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
 import { LAB_BPM, arpeggioBars, loopBars, strumBars } from "@/lib/lab/sound";
 import { PITCH_CLASSES, progressions } from "@/lib/musicTheory";
 
@@ -36,8 +37,11 @@ for (const tuning of TUNING_IDS) {
     for (const type of CHORD_TYPE_IDS) {
       const name = chordName(root, type);
       const list = voicingsFor(root, type, tuning);
-      assert.ok(list.length >= 1, `${tuning} ${name}: no voicing`);
-      if (tuning === "e-standard") assert.ok(list.length >= 2, `E standard ${name}: only ${list.length} voicing`);
+      // The Dictionary keeps its promise: a real choice of shapes up the neck for every chord (at least 4 in the two
+      // tunings that keep E standard's string intervals, at least 3 in the drop tunings), never an endless list.
+      const floor = tuning === "e-standard" || tuning === "eb-standard" ? 4 : 3;
+      assert.ok(list.length >= floor && list.length <= 12, `${tuning} ${name}: ${list.length} voicings (want ${floor} to 12)`);
+      assert.ok(list.some((v) => v.low <= 4) && list.some((v) => v.low >= 8), `${tuning} ${name}: shapes don't reach from the nut up the neck`);
       const seen = new Set<string>();
       for (const v of list) {
         const id = `${tuning} ${name} ${shapeText(v.frets)}`;
@@ -163,6 +167,45 @@ for (const kind of ["full", "power"] as const) {
     }
   }
 }
+// Round trip: every name the Lab writes for any shape (the best one, the alternatives, slash chords) reads
+// back as the same chord, so a name from Name that chord can be pasted into the Key finder.
+let roundTrips = 0;
+for (const tuning of TUNING_IDS) {
+  for (let root = 0; root < 12; root++) {
+    for (const type of CHORD_TYPE_IDS) {
+      for (const v of voicingsFor(root, type, tuning)) {
+        for (const n of nameShape(v.frets, tuning)) {
+          const back = parseChord(n.name);
+          assert.ok(back, `${n.name} (${shapeText(v.frets)}) isn't readable`);
+          assert.equal(back.root, n.root, `${n.name}: root`);
+          assert.equal(back.type, n.type, `${n.name}: type`);
+          assert.equal(back.bass, n.bass === n.root ? undefined : n.bass, `${n.name}: bass`);
+          assert.equal(back.note, undefined, `${n.name}: should need no 'read as' note`);
+          roundTrips++;
+        }
+      }
+    }
+  }
+}
+// Names the Lab has no type for are read as the nearest one, and say so.
+const readAs = (t: string) => { const c = parseChord(t)!; return `${chordName(c.root, c.type)}${c.bass !== undefined ? `/${noteName(c.bass)}` : ""}|${c.note ?? ""}`; };
+assert.equal(readAs("G/B"), "G/B|");
+assert.equal(readAs("Fsus4/C"), "Fsus4/C|");
+assert.equal(readAs("G6"), "G|Read G6 as G");
+assert.equal(readAs("Am6"), "Am|Read Am6 as Am");
+assert.equal(readAs("G9"), "G7|Read G9 as G7");
+assert.equal(readAs("Gmaj9"), "Gmaj7|Read Gmaj9 as Gmaj7");
+assert.equal(readAs("Gm9"), "Gm7|Read Gm9 as Gm7");
+assert.equal(readAs("Gdim"), "Gm|Read Gdim as Gm");
+assert.equal(readAs("G°"), "Gm|Read G° as Gm");
+assert.equal(readAs("Em7b5"), "Em|Read Em7b5 as Em");
+assert.equal(readAs("Gaug"), "G|Read Gaug as G");
+assert.equal(readAs("G+"), "G|Read G+ as G");
+assert.equal(readAs("A7sus4"), "Asus4|Read A7sus4 as Asus4");
+assert.equal(parseChord("G/"), null);
+assert.equal(parseChord("G/H"), null);
+assert.equal(parseChord("G/B/D"), null);
+assert.deepEqual(splitChords("G octave C5/G"), ["G octave", "C5/G"]);
 // Reading chord names.
 assert.deepEqual(splitChords("G D, Em | C"), ["G", "D", "Em", "C"]);
 assert.deepEqual(["F#m7", "Bbadd9", "Dsus4", "Gsus", "E5", "Cmaj7", "Am"].map((t) => parseChord(t)?.type), ["m7", "add9", "sus4", "sus4", "5", "maj7", "min"]);
@@ -202,7 +245,7 @@ assert.equal(points.filter((p) => p.own).length, progressions.length);
 let farthest = 0;
 for (const p of points) {
   assert.ok(p.degrees.length >= 3 && p.degrees.length <= 5 && p.degrees.every((d) => DEGREE_IDS.includes(d)), `${p.id}: bad loop`);
-  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - 3 && p.y <= MAP.y1 + 3, `${p.id}: off the plot (${p.x}, ${p.y})`);
+  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - MAP.nudge && p.y <= MAP.y1 + MAP.nudge, `${p.id}: off the plot (${p.x}, ${p.y})`);
   assert.ok(p.bright >= 0 && p.bright <= 1 && p.restless >= 0 && p.restless <= 1, `${p.id}: score out of range`);
   const v = vibeOf(naturalLoop(p.degrees));
   const home = placeScores(v.brightness, v.restlessness);
@@ -212,6 +255,14 @@ assert.ok(farthest <= 30, `a dot was nudged ${farthest.toFixed(0)}% from its pla
 for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
   assert.equal(labelsClash(points[i], points[j]), false, `${points[i].id} and ${points[j].id} overlap`);
 }
+for (const p of points) assert.equal(cornerClash(p), false, `${p.id} sits on a corner label`);
+assert.equal(CORNERS.length, 4);
+// "Middle of the map" is honest: only loops with both scores in the middle band are called that.
+for (const p of points) {
+  const middle = quadrantOf(p.bright, p.restless) === "Middle of the map";
+  assert.equal(middle, p.bright > 0.35 && p.bright < 0.65 && p.restless > 0.35 && p.restless < 0.65, `${p.id}: quadrant ${quadrantOf(p.bright, p.restless)}`);
+}
+assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === "Middle of the map"), "nothing in the middle");
 for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === q), `nothing in ${q}`);
 // Tapping empty space finds the nearest loop; a loop's own place finds itself.
 for (const p of points) assert.equal(nearestPoint(points, p.x, p.y).id, p.id);
@@ -223,5 +274,5 @@ assert.ok(byBright.at(-1)!.degrees.every((d) => !["vi", "iii", "ii", "iv"].inclu
 console.log(
   `verify-lab: ${voicings} voicings checked (${Object.entries(perTuning)
     .map(([t, n]) => `${t} ${n}`)
-    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
+    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${roundTrips} names (slash chords too) read back as the same chord; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
 );

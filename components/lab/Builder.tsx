@@ -9,6 +9,7 @@ import { GroupLabel } from "@/components/lab/ToolCard";
 import { type ChordTypeId, chordName, chordType, easiestVoicing, shapeNotes } from "@/lib/lab/chords";
 import { type DegreeId, DEGREES, degreeRoot, getDegree, nextMoves, typesFor } from "@/lib/lab/keys";
 import { type LoopChord, START_LOOP, brightnessWords, classicWords, restlessnessWords, vibeOf } from "@/lib/lab/mood";
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { loopBars } from "@/lib/lab/sound";
 import { pitchClassOf } from "@/lib/musicTheory";
 
@@ -42,7 +43,7 @@ function Meter({ label, value, words }: { label: string; value: number; words: s
  * likeliest next chords and three vibe meters. The loop plays as its easiest shapes in the Lab's tuning.
  */
 export function Builder() {
-  const { key, tuning, toggle, stop, playing, sendToFinder, loop, setLoop } = useLab();
+  const { key, tuning, toggle, stop, playing, bar, sendToFinder, loop, setLoop } = useLab();
   const keyPc = pitchClassOf(key);
   const [selected, setSelected] = useState<number | null>(null);
   const [sound, setSound] = useState<Sound>("power");
@@ -105,9 +106,10 @@ export function Builder() {
               <button
                 type="button"
                 aria-pressed={selected === i}
+                aria-current={playing === LOOP_ID && bar === i ? "true" : undefined}
                 aria-label={`Chord ${i + 1}: ${c.degree}, ${nameOf(c)}`}
                 onClick={() => setSelected(selected === i ? null : i)}
-                className={`flex min-h-[52px] min-w-[58px] flex-col items-center justify-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${selected === i ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""}`}
+                className={`flex min-h-[52px] min-w-[58px] flex-col items-center justify-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${selected === i ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""} ${playing === LOOP_ID && bar === i ? "shadow-[inset_0_-4px_0_0_rgb(var(--color-accent-on-ink))]" : ""}`}
               >
                 <span className={`text-[12px] ${getDegree(c.degree).borrowed ? "text-brass" : "text-chip-tab"}`}>{c.degree}</span>
                 <b className="text-[13px]">{nameOf(c)}</b>
@@ -123,13 +125,14 @@ export function Builder() {
           <GroupLabel>
             Chord {selected + 1}: {sel.degree} ({nameOf(sel)})
           </GroupLabel>
-          <div role="radiogroup" aria-label="Chord type" className="flex flex-wrap gap-[4px]">
-            {typesFor(sel.degree).map((t) => (
+          <div role="radiogroup" aria-label="Chord type" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
+            {typesFor(sel.degree).map((t, i) => (
               <button
                 key={t}
                 type="button"
                 role="radio"
                 aria-checked={sel.type === t}
+                tabIndex={rovingTabIndex(sel.type === t, typesFor(sel.degree).includes(sel.type), i)}
                 onClick={() => edit(loop.map((c, i) => (i === selected ? { ...c, type: t } : c)))}
                 className={`min-h-[44px] min-w-[44px] rounded-mid border px-[12px] font-mono text-[12px] font-bold ${
                   sel.type === t ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-surface text-text-secondary hover:border-text-faintest"

@@ -1,17 +1,13 @@
 {
-  "_note": "Chord Lab mood map (docs/chord-lab-prd.md L19): loops to plot besides the app's ten progressions (data/progressions.json). Each is a list of degrees from data/chord-moves.json (bIII, iv, bVI, bVII are borrowed from the parallel minor); the map places it by lib/lab/mood.ts (brightness and restlessness), so there are no hand-set coordinates to drift.",
+  "_note": "Chord Lab mood map (docs/chord-lab-prd.md L19): loops to plot besides the app's ten progressions (data/progressions.json). Each is a list of degrees from data/chord-moves.json (bIII, iv, bVI, bVII are borrowed from the parallel minor); the map places it by lib/lab/mood.ts (brightness and restlessness), so there are no hand-set coordinates to drift. The map shows as many as fit with every name legible and no dot far from its true place (docs/chord-lab-prd.md L19 asked for about 20: with names that must never overlap and room kept for the four corner labels, twelve fit); scripts/verify-lab.ts enforces both.",
   "loops": [
-    ["I", "V", "vi", "iii", "IV"],
     ["I", "bVII", "IV"],
     ["I", "bVII", "IV", "I"],
-    ["vi", "IV", "V"],
-    ["I", "iii", "IV", "V"],
     ["I", "vi", "ii", "V"],
     ["IV", "V", "vi"],
     ["I", "IV", "bVII", "IV"],
     ["I", "bVI", "bVII", "I"],
     ["I", "iv", "I", "V"],
-    ["I", "bIII", "IV", "I"],
     ["vi", "iii", "IV", "V"],
     ["ii", "V", "I", "vi"],
     ["I", "vi", "iii", "IV"],

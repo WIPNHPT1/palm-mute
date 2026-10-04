@@ -101,17 +101,30 @@ export default function GeneratorPage() {
     shareFragment,
   } = useGenerator();
 
-  // A shared link ("#song=…"): open that song once, then tidy the address bar.
+  // A link ("#song=…"): open that song. A link that is the visitor's own (the address bar follows their song, below,
+  // so a reload or Back returns to it) opens quietly; one that came from elsewhere says it's a shared song.
   const [shared, setShared] = useState<"loaded" | "invalid" | null>(null);
   useEffect(() => {
-    if (!location.hash.includes("song=")) return;
-    const song = decodeSong(location.hash);
-    if (song) {
-      loadShared(song);
-      setShared("loaded");
-      setSetupOpen(false);
-    } else setShared("invalid");
-    history.replaceState(null, "", location.pathname + location.search);
+    const open = (quietly: boolean) => {
+      if (!location.hash.includes("song=")) return;
+      const song = decodeSong(location.hash);
+      if (song) {
+        loadShared(song);
+        setShared(quietly ? null : "loaded");
+        setSetupOpen(false);
+      } else {
+        setShared("invalid");
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+    };
+    // The page opening: a reload, or Back to the page, is the visitor's own song; a link followed from elsewhere is a shared one.
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    open(nav?.type === "reload" || nav?.type === "back_forward");
+    // A link pasted into the open page only changes its address's hash: that's a link from elsewhere too. (The page's
+    // own updates use replaceState, which doesn't fire this.)
+    const onHash = () => open(false);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
     // Only when the page opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -140,6 +153,15 @@ export default function GeneratorPage() {
 
   // The setup is open until BUILD SONG, then folds to a one-line summary (EDIT SETUP opens it again).
   const [setupOpen, setSetupOpen] = useState(true);
+  // Once a song is built (or opened from a link) its link follows it in the address bar, so a reload or Back brings
+  // it back. Nothing is stored: the song is in the link. A fresh visit with no link behaves as it always did.
+  useEffect(() => {
+    if (setupOpen) return;
+    const t = setTimeout(() => {
+      history.replaceState(null, "", `${location.pathname}${location.search}#${shareFragment()}`);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [setupOpen, shareFragment]);
   const songRef = useRef<HTMLElement>(null);
   const reducedMotion = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -221,7 +243,6 @@ export default function GeneratorPage() {
               {progressions.map((p, i) => (
                 <ProgressionRow
                   key={p.id}
-                  variant="panel"
                   progression={p}
                   chords={libraryVoicings(state.key, p.id)}
                   variantIndex={i}

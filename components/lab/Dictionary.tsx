@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { PlayButton } from "@/components/PlayButton";
 import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
 import { SegmentedControl } from "@/components/SegmentedControl";
@@ -31,6 +30,7 @@ import {
   shapeText,
   voicingsFor,
 } from "@/lib/lab/chords";
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { arpeggioBars, strumBars } from "@/lib/lab/sound";
 import { PITCH_CLASSES, enharmonicOf, keyDisplayName, pitchClassOf } from "@/lib/musicTheory";
 
@@ -84,17 +84,32 @@ export function RoleLegend() {
   );
 }
 
-function ArpIcon({ playing }: { playing: boolean }) {
-  return playing ? (
-    <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
-      <rect x="2" y="2" width="10" height="10" rx="1.5" fill="currentColor" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+function NotesIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
       <circle cx="3" cy="12" r="2" />
       <circle cx="8" cy="8" r="2" />
       <circle cx="13" cy="4" r="2" />
     </svg>
+  );
+}
+
+/** A voicing card's play button: its icon and what it does in words (STRUM all at once, PICK note by note). */
+function VoicingPlay({ label, text, playing, onClick, icon }: { label: string; text: string; playing: boolean; onClick: () => void; icon?: "notes" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={playing}
+      aria-label={`${playing ? "Stop" : "Play"} ${label}`}
+      data-playing={playing}
+      className={`flex min-h-[44px] min-w-[44px] flex-[1_1_52px] items-center justify-center gap-[4px] rounded-mid px-[4px] font-mono text-[12px] font-bold ${
+        playing ? "bg-accent/10 text-accent" : "text-text-muted hover:text-text-primary"
+      }`}
+    >
+      {playing ? <StopIcon size={11} /> : icon === "notes" ? <NotesIcon /> : <PlayIcon size={11} filled={false} />}
+      {text}
+    </button>
   );
 }
 
@@ -111,7 +126,7 @@ function Difficulty({ value }: { value: number }) {
 /** Root picker: twelve note chips (sharps with their flat names). */
 function RootChips({ value, onChange }: { value: number; onChange: (root: number) => void }) {
   return (
-    <div role="radiogroup" aria-label="Root" className="flex flex-wrap gap-[4px]">
+    <div role="radiogroup" aria-label="Root" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
       {PITCH_CLASSES.map((n, i) => {
         const flat = enharmonicOf(n);
         return (
@@ -120,6 +135,7 @@ function RootChips({ value, onChange }: { value: number; onChange: (root: number
             type="button"
             role="radio"
             aria-checked={i === value}
+            tabIndex={rovingTabIndex(i === value, true, i)}
             aria-label={keyDisplayName(n)}
             onClick={() => onChange(i)}
             className={`flex min-h-[44px] min-w-[44px] items-center justify-center gap-[4px] rounded-mid border px-[10px] font-mono text-[12px] font-bold ${
@@ -137,13 +153,14 @@ function RootChips({ value, onChange }: { value: number; onChange: (root: number
 
 function TypeChips({ value, onChange }: { value: ChordTypeId; onChange: (t: ChordTypeId) => void }) {
   return (
-    <div role="radiogroup" aria-label="Chord type" className="flex flex-wrap gap-[4px]">
-      {CHORD_TYPES.map((t) => (
+    <div role="radiogroup" aria-label="Chord type" onKeyDown={onRovingKeyDown} className="flex flex-wrap gap-[4px]">
+      {CHORD_TYPES.map((t, i) => (
         <button
           key={t.id}
           type="button"
           role="radio"
           aria-checked={t.id === value}
+          tabIndex={rovingTabIndex(t.id === value, true, i)}
           onClick={() => onChange(t.id)}
           className={`min-h-[44px] min-w-[44px] rounded-mid border px-[12px] font-mono text-[12px] font-bold ${
             t.id === value ? "border-ink bg-ink text-accent-on-ink" : "border-line bg-paper text-text-secondary hover:border-text-faintest"
@@ -173,7 +190,7 @@ function Toggle({ pressed, onClick, children }: { pressed: boolean; onClick: () 
 
 /**
  * 01 Dictionary (docs/chord-lab-prd.md §5.1, with the Fretboard explorer §5.3 inside it): pick a root and a
- * type, see every playable voicing as a chord box with its notes, difficulty and two ways to hear it, then
+ * type, see the voicings players actually use (up to a dozen, from the nut up the neck) as a chord box with its notes, difficulty and two ways to hear it, then
  * the chord everywhere on the neck with the picked voicing filled in.
  */
 export function Dictionary() {
@@ -278,17 +295,9 @@ export function Dictionary() {
                   </span>
                   <Difficulty value={v.difficulty} />
                 </button>
-                <div className="mt-auto flex justify-center gap-[4px] border-t border-line">
-                  <PlayButton playing={playing === `strum:${id}`} onClick={() => toggle(`strum:${id}`, strumBars(notesOf(v)))} label={`${name} ${id} strummed`} />
-                  <button
-                    type="button"
-                    aria-pressed={playing === `arp:${id}`}
-                    aria-label={`${playing === `arp:${id}` ? "Stop" : "Play"} ${name} ${id} note by note`}
-                    onClick={() => toggle(`arp:${id}`, arpeggioBars(notesOf(v)))}
-                    className={`flex h-[44px] w-[44px] items-center justify-center rounded-mid ${playing === `arp:${id}` ? "text-accent" : "text-text-muted hover:text-text-primary"}`}
-                  >
-                    <ArpIcon playing={playing === `arp:${id}`} />
-                  </button>
+                <div className="mt-auto flex flex-wrap gap-[4px] border-t border-line p-[4px]">
+                  <VoicingPlay label={`${name} ${id} strummed`} text="STRUM" playing={playing === `strum:${id}`} onClick={() => toggle(`strum:${id}`, strumBars(notesOf(v)))} />
+                  <VoicingPlay label={`${name} ${id} note by note`} text="PICK" icon="notes" playing={playing === `arp:${id}`} onClick={() => toggle(`arp:${id}`, arpeggioBars(notesOf(v)))} />
                 </div>
               </li>
             );
@@ -350,7 +359,7 @@ export function Dictionary() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-[8px]">
-          <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">Scale of {keyDisplayName(key)}</span>
+          <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">Scale of {keyDisplayName(key)} (from the setup)</span>
           <SegmentedControl<Scale> label="Scale" options={SCALES} value={scale} onChange={setScale} stretch className="w-full tablet:w-[340px]" />
         </div>
         <Neck

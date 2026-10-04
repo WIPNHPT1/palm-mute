@@ -21,7 +21,7 @@ import { type PresetId, PRESET_IDS } from "@/lib/presets";
 import { LENGTH } from "@/lib/songLength";
 import { TITLES } from "@/lib/titleGenerator";
 
-type Lead = { style: LeadStyle; bars: number; sent?: boolean };
+type Lead = { style: LeadStyle; bars: number };
 
 /** What a link carries for one section. */
 export type SharedSection = {
@@ -108,7 +108,8 @@ function lead(x: unknown, id: SectionId): Lead | null {
   const style = oneOf(x.style, (part === "solo" ? SOLO_STYLES : INTRO_STYLES) as readonly string[]) as LeadStyle | undefined;
   const bars = oneOf(String(x.bars), RULES.lengths[part].map(String));
   if (!style || !bars) return null;
-  return { style, bars: Number(bars), ...(x.sent === true ? { sent: true } : {}) };
+  // (Links made while the Chords page could send a melody carry a "sent" flag: it is ignored.)
+  return { style, bars: Number(bars) };
 }
 
 function options(x: unknown, id: SectionId): SectionOptions {

@@ -1,8 +1,10 @@
 "use client";
 
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
+
 export type SegmentOption<T extends string> = { value: T; label: string; sub?: string };
 
-/** Shared by the Chords page's Sort control and the lead panel's Style and Length controls. */
+/** Shared by the Lab's and the Generator's single-choice controls (tuning, handed, scale, feel…). */
 export function SegmentedControl<T extends string>({
   label,
   options,
@@ -26,9 +28,10 @@ export function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
+      onKeyDown={onRovingKeyDown}
       className={`flex gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] ${threePerRowOnPhones ? "flex-wrap tablet:flex-nowrap" : ""} ${className}`}
     >
-      {options.map((o) => {
+      {options.map((o, i) => {
         const active = o.value === value;
         return (
           <button
@@ -36,6 +39,7 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={rovingTabIndex(active, options.some((x) => x.value === value), i)}
             onClick={() => onChange(o.value)}
             className={`min-h-[44px] flex-1 rounded-[5px] px-[4px] py-[5px] text-center font-mono ${
               stretch ? "tablet:px-[8px]" : "tablet:flex-none tablet:px-[14px]"

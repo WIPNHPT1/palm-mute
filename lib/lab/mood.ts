@@ -77,7 +77,25 @@ export type MoodLoop = { id: string; degrees: DegreeId[]; own: boolean };
 export type MoodPoint = MoodLoop & { bright: number; restless: number; x: number; y: number };
 
 /** Plot space, in percent of the map: scores land between these margins. */
-export const MAP = { x0: 8, x1: 92, y0: 8, y1: 92, rowGap: 6, labelChar: 0.973, labelPad: 1.9, dotReach: 3, labelOffset: 4.7, margin: 1 };
+export const MAP = { x0: 8, x1: 92, y0: 18, y1: 82, rowGap: 6, labelChar: 0.973, labelPad: 1.9, dotReach: 3, labelOffset: 4.7, margin: 1, nudge: 2 };
+
+/**
+ * The four corner labels (Tense, Anthem, Brooding, Feel-good), as boxes on the map in percent, sized for the
+ * smallest map (a square plot of about 224px on a 320px phone, where the 12px labels are about 40% wide and 13%
+ * tall): no dot or name may sit on one.
+ */
+export const CORNERS = [
+  { name: "Tense", x0: 0, x1: 40, y0: 0, y1: 13 },
+  { name: "Anthem", x0: 60, x1: 100, y0: 0, y1: 13 },
+  { name: "Brooding", x0: 0, x1: 40, y0: 87, y1: 100 },
+  { name: "Feel-good", x0: 60, x1: 100, y0: 87, y1: 100 },
+] as const;
+
+/** True if a dot (with its name) would sit on a corner label. */
+export function cornerClash(p: { id: string; x: number; y: number }): boolean {
+  const [l, r] = reach(p.id, p.x);
+  return CORNERS.some((c) => l < c.x1 + MAP.margin && c.x0 < r + MAP.margin && p.y - MAP.rowGap / 2 < c.y1 && p.y + MAP.rowGap / 2 > c.y0);
+}
 
 /** A dot's name goes beside it: to the left on the right third of the map (so it stays inside), else to the right. */
 export const labelSide = (x: number): "left" | "right" => (x > MAP.x0 + (MAP.x1 - MAP.x0) * 0.66 ? "left" : "right");
@@ -138,7 +156,7 @@ export function moodPoints(loops: MoodLoop[] = MOOD_LOOPS): MoodPoint[] {
     const v = vibeOf(naturalLoop(loop.degrees));
     const { x, y } = placeScores(v.brightness, v.restlessness);
     const m = onMap(v.brightness, v.restlessness);
-    const clash = (xx: number, yy: number) => placed.some((q) => labelsClash({ id: loop.id, x: xx, y: yy }, q));
+    const clash = (xx: number, yy: number) => cornerClash({ id: loop.id, x: xx, y: yy }) || placed.some((q) => labelsClash({ id: loop.id, x: xx, y: yy }, q));
     // The nearest free spot: straight up or down first, then a little to the side.
     let spot = { x, y };
     search: for (let k = 0; k <= 40; k++) {
@@ -147,7 +165,7 @@ export function moodPoints(loops: MoodLoop[] = MOOD_LOOPS): MoodPoint[] {
           const cx = x + dx;
           if (cx < MAP.x0 - 2 || cx > MAP.x1 + 2) continue;
           const cy = y + dy;
-          if (cy < MAP.y0 - 3 || cy > MAP.y1 + 3 || clash(cx, cy)) continue;
+          if (cy < MAP.y0 - MAP.nudge || cy > MAP.y1 + MAP.nudge || clash(cx, cy)) continue;
           spot = { x: cx, y: cy };
           break search;
         }
@@ -164,5 +182,15 @@ export function nearestPoint(points: MoodPoint[], x: number, y: number): MoodPoi
   return points.reduce((best, p) => (Math.hypot(p.x - x, p.y - y) < Math.hypot(best.x - x, best.y - y) ? p : best));
 }
 
-export type Quadrant = "Tense" | "Anthem" | "Brooding" | "Feel-good";
-export const quadrantOf = (bright: number, restless: number): Quadrant => (restless >= 0.5 ? (bright >= 0.5 ? "Anthem" : "Tense") : bright >= 0.5 ? "Feel-good" : "Brooding");
+export type Quadrant = "Tense" | "Anthem" | "Brooding" | "Feel-good" | "Middle of the map";
+/** The corner a loop sits in, or "Middle of the map" when both its scores are in the middle band (0.35 to 0.65). */
+export const quadrantOf = (bright: number, restless: number): Quadrant =>
+  bright > 0.35 && bright < 0.65 && restless > 0.35 && restless < 0.65
+    ? "Middle of the map"
+    : restless >= 0.5
+      ? bright >= 0.5
+        ? "Anthem"
+        : "Tense"
+      : bright >= 0.5
+        ? "Feel-good"
+        : "Brooding";

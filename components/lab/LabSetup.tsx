@@ -18,7 +18,12 @@ export function LabSetup() {
   const { key, setKey, tuning, setTuning, left, setLeft } = useLab();
   return (
     <div data-lab-setup className="flex flex-col gap-[12px] tablet:flex-row tablet:flex-wrap desktop:flex-nowrap">
-      <ControlCard label="Key" picked={keyDisplayName(key)} className="tablet:basis-full desktop:basis-auto">
+      <ControlCard
+        label="Key"
+        picked={keyDisplayName(key)}
+        hint="Used by the Builder, Key finder, scale and Mood map. Pick the Dictionary's chord below."
+        className="tablet:basis-full desktop:basis-auto"
+      >
         <KeyPicker value={key} onChange={setKey} />
       </ControlCard>
       <ControlCard label="Tuning" picked={getTuning(tuning).label} className="tablet:flex-1">

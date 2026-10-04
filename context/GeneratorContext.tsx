@@ -40,8 +40,8 @@ type SectionState = {
    * they stay frozen across key/feel changes too (open decision: "frozen once locked").
    */
   frozen: SectionInputs | null;
-  /** A lead part (style and length): always for the Solo; for the Intro once the Chords page sends a melody. */
-  lead: { style: LeadStyle; bars: number; sent?: boolean } | null;
+  /** A lead part (style and length): always for the Solo. */
+  lead: { style: LeadStyle; bars: number } | null;
   /**
    * The Solo's song thread (R15, R16), taken when the Solo is written (GENERATE, its ↻, a new progression),
    * so regenerating another section never changes the Solo.
@@ -165,14 +165,14 @@ export function inputsFor(state: GeneratorState, id: SectionId): SectionInputs {
   if (s.locked && s.frozen) return s.frozen;
   const inputs: SectionInputs = { key: state.key, feel: state.feel, progressionId: state.progressionId, seed: s.seed, lead: s.lead, options: s.options, difficulty: state.difficulty };
   // A Generator-written Solo knows the song (R15, R16): it quotes the Intro and plays over the Chorus's chords.
-  if (id === "solo" && !s.lead?.sent && s.thread) return { ...inputs, thread: s.thread };
+  if (id === "solo" && s.thread) return { ...inputs, thread: s.thread };
   return inputs;
 }
 
-/** The Solo re-reads its song thread (when it's written, or the song's chords change); a sent or locked Solo doesn't. */
+/** The Solo re-reads its song thread (when it's written, or the song's chords change); a locked Solo doesn't. */
 function rethread(state: GeneratorState): GeneratorState {
   const solo = state.sections.solo;
-  if (solo.locked || solo.lead?.sent) return state;
+  if (solo.locked) return state;
   return { ...state, sections: { ...state.sections, solo: { ...solo, thread: threadFor(state) } } };
 }
 
@@ -182,8 +182,6 @@ function threadFor(state: GeneratorState) {
   return songThread(renderSection("intro", inputsFor(state, "intro")), renderSection("chorus", chorus), chorus.progressionId);
 }
 
-/** A section's lead after the Generator writes a new take of it: its own now, no longer the Chords page's. */
-const ownLead = (lead: SectionState["lead"]) => (lead?.sent ? { style: lead.style, bars: lead.bars } : lead);
 
 function reducer(state: GeneratorState, action: Action): GeneratorState {
   switch (action.type) {
@@ -196,7 +194,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       for (const id of SECTION_IDS) {
         if (sections[id].locked) continue;
         // A new build starts each section's takes afresh.
-        sections[id] = { ...sections[id], ...freshTakes(action.seeds[id] ?? sections[id].seed), lead: ownLead(sections[id].lead) };
+        sections[id] = { ...sections[id], ...freshTakes(action.seeds[id] ?? sections[id].seed) };
       }
       return rethread({ ...state, sections, songSeed: action.songSeed, originalityStatus: action.originality, title: action.title });
     }
@@ -245,7 +243,7 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       const next = {
         ...state,
         progressionId: action.progressionId ?? state.progressionId,
-        sections: { ...state.sections, [action.id]: { ...s, ...withTake(s, action.seed), lead: ownLead(s.lead) } },
+        sections: { ...state.sections, [action.id]: { ...s, ...withTake(s, action.seed) } },
       };
       // Only the Solo's own ↻ re-reads its thread: regenerating another section never changes the Solo.
       return action.id === "solo" ? rethread(next) : next;
@@ -342,7 +340,7 @@ type GeneratorContextValue = {
   setProgression: (progressionId: string) => void;
   updateLocked: (id: SectionId) => void;
   clearIntroLead: () => void;
-  /** Plays bars the caller built (the Chords page's melody and solo previews). */
+  /** Plays bars the caller built (the grooves' previews). */
   playCustom: (id: string, bars: PlaybackBar[], loop: boolean) => void;
   /** A Rhythm Lane card's play button: switches to that feel and plays its strum, or stops it. */
   playStrum: (feel: FeelId) => void;
@@ -433,7 +431,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   // --- Audio -----------------------------------------------------------------
   // Playback always renders from what's on screen, so it follows key, feel, progression, regenerate
   // and lock changes: whenever the bars for the playing target change, playback restarts with them.
-  // Custom targets (Chords page previews) keep the bars they were started with.
+  // Custom targets (groove previews) keep the bars they were started with.
   const customBars = useRef<PlaybackBar[]>([]);
   /** The running-order part Play song starts from (the strip can start it anywhere). */
   const songFrom = useRef(0);

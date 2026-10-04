@@ -1,5 +1,6 @@
 "use client";
 
+import { onRovingKeyDown, rovingTabIndex } from "@/lib/hooks/rovingRadio";
 import { useEffect, useRef } from "react";
 import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
@@ -121,13 +122,14 @@ export function Transport({
             {pct}
           </button>
           <span className="hidden font-mono text-[12px] tracking-[0.08em] text-text-on-dark-faint desktop:inline">SPEED</span>
-          <div role="radiogroup" aria-label="Practice speed" className="hidden gap-[2px] rounded-[7px] border border-ink-soft p-[3px] tablet:flex">
-            {SPEEDS.map((sp) => (
+          <div role="radiogroup" aria-label="Practice speed" onKeyDown={onRovingKeyDown} className="hidden gap-[2px] rounded-[7px] border border-ink-soft p-[3px] tablet:flex">
+            {SPEEDS.map((sp, i) => (
               <button
                 key={sp}
                 type="button"
                 role="radio"
                 aria-checked={practice.speed === sp}
+                tabIndex={rovingTabIndex(practice.speed === sp, SPEEDS.includes(practice.speed), i)}
                 onClick={() => onSpeed(sp)}
                 className={`min-h-[44px] min-w-[44px] rounded-[5px] px-[6px] font-mono text-[12px] tabular-nums ${practice.speed === sp ? "bg-text-on-dark font-bold text-ink" : "text-text-on-dark-muted hover:text-text-on-dark"}`}
               >

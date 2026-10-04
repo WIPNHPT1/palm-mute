@@ -254,8 +254,9 @@ function build(frets: Frets, root: number, type: ChordTypeId, shape: string, fin
 const cache = new Map<string, Voicing[]>();
 
 /**
- * Every playable voicing of a chord in a tuning, up the neck from the nut: curated open shapes first (with
- * their usual fingering), then each moveable template at every fret where it plays the chord.
+ * The voicings the Dictionary lists for a chord in a tuning, up the neck from the nut: curated open shapes first (with
+ * their usual fingering), then each moveable template at every fret where it plays the chord, then the grips a
+ * search of the neck finds (see searchVoicings), at most MAX_VOICINGS in all.
  */
 export function voicingsFor(root: number, type: ChordTypeId, tuning: TuningId): Voicing[] {
   const id = `${pc(root)}|${type}|${tuning}`;
@@ -279,9 +280,72 @@ export function voicingsFor(root: number, type: ChordTypeId, tuning: TuningId): 
       if (v) out.set(key, v);
     }
   }
+  // Then search for the other grips guitarists use: any playable shape in a four-fret window, kept only if it
+  // names back to this chord, a few per stretch of neck so the list reaches all the way up.
+  for (const v of searchVoicings(root, type, tuning, out)) out.set(shapeText(v.frets), v);
   const list = [...out.values()].sort((a, b) => a.low - b.low || Number(b.open) - Number(a.open) || played(b.frets).length - played(a.frets).length || a.difficulty - b.difficulty);
   cache.set(id, list);
   return list;
+}
+
+/** Most voicings of one chord the Dictionary lists. */
+const MAX_VOICINGS = 12;
+/** The search keeps at most this many new grips in each stretch of four frets, so the list spreads up the neck. */
+const PER_STRETCH = 2;
+
+/**
+ * Grips found by searching the neck: for each four-fret window, every way to play a chord tone (or leave it)
+ * on each string, no gaps except an octave's, root in the bass. Each must pass the same checks as the curated
+ * shapes and name back to this chord. Easiest, fullest first, a few per stretch of neck, up to MAX_VOICINGS in all.
+ */
+function searchVoicings(root: number, type: ChordTypeId, tuning: TuningId, have: Map<string, Voicing>): Voicing[] {
+  const room = MAX_VOICINGS - have.size;
+  if (room <= 0) return [];
+  const pcs = new Set(chordPitchClasses(root, type));
+  const open = getTuning(tuning).strings.map((st) => st.midi);
+  const minNotes = type === "5" || type === "oct" ? 2 : 3;
+  const found = new Map<string, Voicing>();
+  const pick: Frets = Array(STRING_COUNT).fill(null);
+  for (let start = 0; start <= MAX_FRET - 3; start++) {
+    const options = open.map((m) => {
+      const o: (number | null)[] = [null];
+      if (start <= 3 && pcs.has(m % 12)) o.push(0);
+      for (let f = Math.max(1, start); f <= start + 3; f++) if (pcs.has((m + f) % 12)) o.push(f);
+      return o;
+    });
+    const walk = (s: number) => {
+      if (s === STRING_COUNT) {
+        const frets = [...pick];
+        const id = shapeText(frets);
+        if (have.has(id) || found.has(id) || played(frets).length < minNotes) return;
+        // No gaps inside the shape, except the one an octave leaves between its strings.
+        if (type !== "oct" && innerMutes(frets).length) return;
+        if (!playsChord(frets, tuning, root, type)) return;
+        const v = build(frets, root, type, "grip");
+        if (!v || nameShape(frets, tuning)[0]?.name !== chordName(root, type)) return;
+        found.set(id, v);
+        return;
+      }
+      for (const f of options[s]) {
+        pick[s] = f;
+        walk(s + 1);
+      }
+    };
+    walk(0);
+  }
+  const taken = new Map<number, number>();
+  const chosen: Voicing[] = [];
+  const ranked = [...found.values()].sort((a, b) => played(b.frets).length - played(a.frets).length || a.difficulty - b.difficulty || a.low - b.low);
+  for (const v of ranked) {
+    const stretch = Math.floor(v.low / 4);
+    // The nut's own stretch is counted with the first four frets.
+    const n = taken.get(stretch) ?? 0;
+    if (n >= PER_STRETCH) continue;
+    taken.set(stretch, n + 1);
+    chosen.push(v);
+    if (chosen.length >= room) break;
+  }
+  return chosen;
 }
 
 export type Position = "all" | "open" | "low" | "mid" | "high";

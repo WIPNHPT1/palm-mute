@@ -1,5 +1,5 @@
 import { type Page } from "@playwright/test";
-import { expect, gotoAndSettle, lightOnly, onlyAtWidths, test } from "./fixtures";
+import { expect, gotoAndSettle, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
 import { lastPlayback } from "./helpers";
 
 // The Chord Lab (docs/chord-lab-prd.md): its setup and the Dictionary with its neck.
@@ -25,6 +25,15 @@ test.describe("chord lab: setup and dictionary", () => {
     // Nothing from the Generator: no feel control, no send-to-song.
     await expect(page.getByRole("radiogroup", { name: "Feel" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /USE IN MY SONG/ })).toHaveCount(0);
+  });
+
+  test("the Key card says what the key is for", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(page.locator('[data-control="Key"]')).toContainText("Used by the Builder, Key finder, scale and Mood map. Pick the Dictionary's chord below.");
+    await radio(page, "Key", "D").click();
+    await expect(dictionary(page).locator("[data-chord-info]")).toContainText("G (major)"); // the Dictionary's chord is its own
+    await expect(dictionary(page)).toContainText("Scale of D (from the setup)");
   });
 
   test("G major opens on the open G, and every shape is a G chord up the neck", async ({ page }, info) => {
@@ -68,6 +77,19 @@ test.describe("chord lab: setup and dictionary", () => {
     await expect(page.getByRole("button", { name: "Play G 320003 strummed" })).toBeVisible();
   });
 
+  test("each shape's play buttons say STRUM and PICK, and switch to stop while playing", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    const card = dictionary(page).locator('[data-voicing="320003"]');
+    await expect(card.getByRole("button", { name: "Play G 320003 strummed" })).toContainText("STRUM");
+    await expect(card.getByRole("button", { name: "Play G 320003 note by note" })).toContainText("PICK");
+    await card.getByRole("button", { name: "Play G 320003 note by note" }).click();
+    await expect(card.getByRole("button", { name: "Stop G 320003 note by note" })).toContainText("PICK");
+    await expect(card.getByRole("button", { name: "Play G 320003 strummed" })).toContainText("STRUM");
+    await card.getByRole("button", { name: "Stop G 320003 note by note" }).click();
+    await expect.poll(() => lastPlayback(page)).toBeNull();
+  });
+
   test("a tuning changes the shapes and the sound; it stops what was playing", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
@@ -101,9 +123,9 @@ test.describe("chord lab: setup and dictionary", () => {
     for (const text of await dictionary(page).locator("[data-voicing]").allInnerTexts()) expect(text).toMatch(/frets? 1\d/);
     // Nothing left: say so, with a way back.
     await radio(page, "Position", "OPEN").click();
-    await radio(page, "Root", "A#/Bb").click();
+    await radio(page, "Root", "C#/Db").click();
     await radio(page, "Chord type", "MAJ7").click();
-    await expect(dictionary(page)).toContainText("No A#maj7 shapes match these filters");
+    await expect(dictionary(page)).toContainText("No C#maj7 shapes match these filters"); // no open C#maj7 grip
     await dictionary(page).getByRole("button", { name: "SHOW ALL" }).click();
     expect((await voicingIds(page)).length).toBeGreaterThan(0);
   });
@@ -166,6 +188,31 @@ test.describe("chord lab: name that chord", () => {
     await expect(nameIt(page).getByRole("list", { name: "Keys C belongs to" })).toContainText("C major: I");
     await tap(2, 2); // tap again to take it off
     await expect(nameIt(page).getByRole("textbox", { name: /Shape/ })).toHaveValue("x3x010");
+  });
+
+  test("on a phone the answer stays on screen while you tap the tall neck", async ({ page }, info) => {
+    onlyAtWidths(info, [320, 390]);
+    lightOnly(info);
+    // A short phone as well as a tall one.
+    for (const height of [568, 844]) {
+      await page.setViewportSize({ width: projectWidth(info), height });
+      await page.goto("/chords/#name-it");
+      await page.waitForLoadState("networkidle");
+      await nameIt(page).getByRole("button", { name: "CLEAR" }).click();
+      const neck = nameIt(page).locator('svg[data-neck="vertical"]');
+      await neck.scrollIntoViewIfNeeded();
+      // Shapes the tool names as you add strings: a C chord, string by string (the fret 15 tap is the furthest down).
+      for (const [s, f] of [[1, 3], [2, 2], [3, 0], [4, 1], [5, 0], [2, 15]] as const) {
+        const rect = nameIt(page).locator(`rect[data-tap="${s}:${f}"]`).filter({ visible: true }).first();
+        await rect.click(); // a real tap: it fails if anything covers the target
+        const box = (await named(page).boundingBox())!;
+        const view = page.viewportSize()!;
+        expect(box.y, `chord name below the top bar after tapping ${s}:${f} at ${height}px`).toBeGreaterThanOrEqual(60);
+        expect(box.y + box.height, `chord name inside the screen after tapping ${s}:${f} at ${height}px`).toBeLessThanOrEqual(view.height);
+        if (s === 5) await expect(named(page)).toHaveText("C");
+      }
+      await expect(page.locator("[data-chord-name]")).toHaveCount(1);
+    }
   });
 
   test("typing a shape names it: inversions, sus and add9, power chords, and non-chords", async ({ page }, info) => {
@@ -344,6 +391,25 @@ test.describe("chord lab: key finder and transposer", () => {
     await expect(fits(page)).not.toHaveCount(0);
   });
 
+  test("slash chords and names the Lab has no type for are read (and the page says how)", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await typeChords(page, "G/B D Em C");
+    await expect(fits(page).first()).toContainText("G major (relative E minor): I (G/B) · V · vi · IV");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "Gdim C");
+    await expect(finder(page)).toContainText("Read Gdim as Gm.");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "C G9 Am6 F");
+    await expect(finder(page)).toContainText("Read G9 as G7. Read Am6 as Am.");
+    await expect(fits(page).first()).toContainText("C major");
+    // What Name that chord writes goes straight in.
+    await typeChords(page, "C/E G octave");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "G H");
+    await expect(finder(page)).toContainText("Couldn't read: H");
+  });
+
   test("unreadable chords are named; fewer than two chords asks for more", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
@@ -411,14 +477,27 @@ test.describe("chord lab: mood map", () => {
     await gotoAndSettle(page, "/chords/");
   });
 
-  test("26 loops on the map, the app's ten among them, every one a tappable dot and a chip", async ({ page }, info) => {
+  test("22 loops on the map, the app's ten among them, every one a tappable dot and a chip", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
-    await expect(mood(page).locator("[data-loop-id]")).toHaveCount(26);
-    await expect(mood(page).locator("[data-chip]")).toHaveCount(26);
+    await expect(mood(page).locator("[data-loop-id]")).toHaveCount(22);
+    await expect(mood(page).locator("[data-chip]")).toHaveCount(22);
     for (const id of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "vi-V-IV", "V-vi-IV-I"]) await expect(dot(page, id)).toBeVisible();
     await expect(mood(page).locator("[data-picked]")).toHaveText("I-V-vi-IV");
     for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) await expect(mood(page).locator("[data-plot]")).toContainText(q);
+  });
+
+  test("the map says what a tap does, and a loop in the middle is called the middle, not a corner", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(mood(page)).toContainText("Tap a dot to hear it. Tap empty space to hear the nearest.");
+    // I-V-vi-IV sits mid-way on both scores: its panel and its dot say so (it used to read "Feel-good" with both meters "in the middle").
+    await expect(mood(page).locator("[data-mood-panel]")).toContainText("Middle of the map");
+    await expect(dot(page, "I-V-vi-IV")).toHaveAccessibleName(/Middle of the map/);
+    await expect(mood(page).getByRole("meter", { name: "Dark to bright" })).toBeVisible();
+    await mood(page).locator('[data-chip="I-IV-V"]').click();
+    await expect(mood(page).locator("[data-mood-panel]")).not.toContainText("Middle of the map");
+    await expect(dot(page, "I-IV-V")).toHaveAccessibleName(/(Anthem|Feel-good|Tense|Brooding)/);
   });
 
   test("tapping a dot, a chip or empty space picks the loop and plays it in your key", async ({ page }, info) => {
@@ -475,5 +554,114 @@ test.describe("chord lab: mood map", () => {
     await tapDot(page, "I-V-vi-IV");
     const pb = (await lastPlayback(page))!;
     expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([7, 2, 4, 0]); // G D Em C: roots in the bass
+  });
+});
+
+// Keyboard: one Tab stop per radio group, arrow keys inside it
+test.describe("chord lab: keyboard", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("Tab reaches the first Dictionary shape in at most 20 stops (each group is one stop)", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    // Counting Tab presses needs a browser that Tabs to buttons: Safari doesn't unless its setting is on, and
+    // WebKit on macOS follows it. The per-group check below (one radio in the Tab order) runs in both.
+    if (info.project.name.startsWith("chromium")) {
+      let stops = 0;
+      for (; stops < 60; stops++) {
+        await page.keyboard.press("Tab");
+        if (await page.evaluate(() => !!document.activeElement?.closest("[data-voicing]"))) break;
+      }
+      expect(stops + 1).toBeLessThanOrEqual(20);
+    }
+    // Every radio group on the page has exactly one radio in the Tab order.
+    const groups = await page.locator('[role="radiogroup"]').evaluateAll((els) => els.filter((e) => e.getClientRects().length).map((e) => ({ label: e.getAttribute("aria-label") ?? e.getAttribute("aria-labelledby"), tabbable: [...e.querySelectorAll('[role="radio"]')].filter((r) => (r as HTMLElement).tabIndex === 0).length })));
+    expect(groups.length).toBeGreaterThan(5);
+    for (const g of groups) expect(g.tabbable, `${g.label}`).toBe(1);
+  });
+
+  test("arrow keys move inside a radio group and select; Home and End go to the ends; Shift+Tab leaves it", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    const roots = page.getByRole("radiogroup", { name: "Root" }).getByRole("radio");
+    await roots.nth(7).focus(); // G
+    await expect(roots.nth(7)).toHaveAttribute("aria-checked", "true");
+    await page.keyboard.press("ArrowRight");
+    await expect(roots.nth(8)).toBeFocused();
+    await expect(roots.nth(8)).toHaveAttribute("aria-checked", "true"); // selection follows focus
+    await expect(dictionary(page).locator("[data-chord-info]")).toContainText("G#");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowLeft");
+    await expect(roots.nth(6)).toBeFocused();
+    await page.keyboard.press("End");
+    await expect(roots.nth(11)).toBeFocused();
+    await page.keyboard.press("ArrowDown"); // wraps
+    await expect(roots.nth(0)).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(roots.nth(0)).toBeFocused();
+    await page.keyboard.press("ArrowUp"); // wraps backwards
+    await expect(roots.nth(11)).toBeFocused();
+    // One Shift+Tab leaves the group (the previous group's single stop, not another root).
+    await page.keyboard.press("Shift+Tab");
+    expect(await page.evaluate(() => document.activeElement?.closest('[role="radiogroup"]')?.getAttribute("aria-label"))).not.toBe("Root");
+    // The Lab's other groups too: a tuning change by keyboard stops what was playing and re-names the shapes.
+    const tunings = page.getByRole("radiogroup", { name: "Tuning" }).getByRole("radio");
+    await tunings.nth(0).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(tunings.nth(1)).toHaveAttribute("aria-checked", "true");
+    await expect(tunings.nth(0)).toHaveAttribute("aria-checked", "false");
+  });
+});
+
+// Show what's playing
+test.describe("chord lab: what's sounding is shown", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+  const current = (page: Page, root: string) => page.locator(`${root} [aria-current="true"]`);
+
+  test("the Builder marks the chord that's playing, moves on with the loop, and clears on stop and on edit", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    const at = async () => (await current(page, '[data-tool="builder"] [data-loop]').getAttribute("aria-label")) ?? "";
+    const first = await at();
+    expect(first).toMatch(/^Chord 1:/);
+    // At 150 BPM a bar is 1.6s: within 4s it has moved on, and always exactly one chord is marked.
+    await expect.poll(at, { timeout: 4000, intervals: [200] }).not.toBe(first);
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    // Stop clears it.
+    await builder(page).getByRole("button", { name: "STOP", exact: true }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    // Editing while it plays stops it and clears the mark.
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    await builder(page).getByRole("button", { name: "Add I, G5", exact: true }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    // A new tuning clears it too.
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    await radio(page, "Tuning", "DROP D").click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+  });
+
+  test("the Key finder and the Mood map mark the sounding chord too", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await finder(page).getByRole("button", { name: "HEAR IT" }).click();
+    await expect(current(page, '[data-tool="key-finder"] [data-sounds]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="key-finder"] [data-shapes]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="key-finder"] [data-sounds]')).toHaveText("G");
+    await finder(page).getByRole("button", { name: "STOP" }).click();
+    await expect(current(page, '[data-tool="key-finder"]')).toHaveCount(0);
+    await mood(page).getByRole("button", { name: /^HEAR IT IN G$/ }).click();
+    await expect(current(page, '[data-tool="mood-map"] [data-mood-panel]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="mood-map"] [data-mood-panel]')).toContainText("G");
+    await mood(page).getByRole("button", { name: /^STOP$/ }).click();
+    await expect(current(page, '[data-tool="mood-map"]')).toHaveCount(0);
   });
 });

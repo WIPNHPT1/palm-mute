@@ -94,4 +94,25 @@ test.describe("generator", () => {
     await expect(feel(page, /FAST PUNK/)).toContainText("180 BPM");
     await expect(feel(page, /HALF-TIME/)).toContainText("90 BPM");
   });
+
+  test("keyboard: the Key group is one Tab stop and the arrows change the key", async ({ page }, info) => {
+    lightOnly(info);
+    const keys = page.getByRole("radiogroup", { name: "Key" }).getByRole("radio");
+    // Only the checked key is in the Tab order.
+    expect(await keys.evaluateAll((els) => els.filter((e) => (e as HTMLElement).tabIndex === 0).length)).toBe(1);
+    await page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { checked: true }).focus();
+    const before = await page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { checked: true }).getAttribute("aria-label");
+    await page.keyboard.press("ArrowRight");
+    const after = page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { checked: true });
+    await expect(after).toBeFocused();
+    expect(await after.getAttribute("aria-label")).not.toBe(before);
+    // Feel too: ArrowRight picks the next feel and the song's tempo follows.
+    const feels = page.getByRole("radiogroup", { name: "Feel" }).getByRole("radio");
+    await feels.nth(0).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(feels.nth(1)).toHaveAttribute("aria-checked", "true");
+    // Shift+Tab leaves the Feel group in one press.
+    await page.keyboard.press("Shift+Tab");
+    expect(await page.evaluate(() => document.activeElement?.closest('[role="radiogroup"]')?.getAttribute("aria-label"))).not.toBe("Feel");
+  });
 });
