@@ -132,7 +132,6 @@
 .ci-strings-sound svg { width: 16px; height: 16px; }
 .ci-strings-sound:hover { color: var(--t-primary); }
 .ci-strings-sound[data-on="true"] { color: var(--accent); }
-.ci-strings-sound:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- INTRO with marker highlights ---------- */
 .ci-intro { padding: clamp(70px, 10vw, 160px) 0; }
@@ -264,6 +263,71 @@
 .ci-mag.line { border: 2px solid var(--t-primary); color: var(--t-primary); }
 .ci-mag.line:hover { background: var(--t-primary); color: var(--paper); }
 .ci-mag svg { width: 14px; }
+
+/* ---------- Signature finish (the site-wide .sig-* layer in app/globals.css, carried onto this page) ----------
+   Same rules as the rest of the site: no colour, size or layout changes, only shadows, gradients and
+   pseudo-elements. The page keeps its own buttons and posters; they gain the lit edges, sheen, crop marks,
+   ruler and print misregistration the other pages' components got. */
+.ci { --ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent), 0 0 0 9px rgb(var(--accent-rgb) / .16); }
+
+/* solid buttons: lit top edge, bottom edge, a light sheen on hover, the icon nudges forward */
+.ci-btn, .ci-flip-btn, .ci-mag.solid { position: relative; overflow: hidden; }
+.ci-btn { box-shadow: inset 0 1px 0 var(--sig-hi-btn), inset 0 -1px 0 var(--sig-lo-btn), 0 8px 22px -8px rgb(var(--accent-rgb) / .7); }
+.ci-btn:hover { box-shadow: inset 0 1px 0 var(--sig-hi-btn), inset 0 -1px 0 var(--sig-lo-btn), 0 14px 30px -10px rgb(var(--accent-rgb) / .8); }
+.ci-flip-btn { box-shadow: inset 0 1px 0 var(--sig-hi-btn), 0 4px 0 var(--accent-deep); }
+.ci-flip-btn:active:not(:disabled) { box-shadow: inset 0 1px 0 var(--sig-hi-btn), 0 0 0 var(--accent-deep); }
+.ci-mag.solid { box-shadow: inset 0 1px 0 var(--sig-hi-btn), inset 0 -1px 0 var(--sig-lo-btn), 0 16px 40px -14px rgb(var(--accent-rgb) / .8); }
+.ci-btn::after, .ci-flip-btn::after, .ci-mag.solid::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / .3) 50%, transparent 62%); transform: translateX(-130%); transition: transform 720ms var(--sig-out); }
+.ci-btn:hover::after, .ci-flip-btn:hover:not(:disabled)::after, .ci-mag.solid:hover::after { transform: translateX(130%); }
+.ci-btn svg, .ci-mag.solid svg { transition: transform 200ms var(--sig-spring); }
+.ci-btn:hover svg, .ci-mag.solid:hover svg { transform: translateX(3px); }
+.ci-flip-btn svg { transition: transform 420ms var(--sig-spring); }
+.ci-flip-btn:hover:not(:disabled) svg { transform: rotate(180deg); }
+
+/* text link: an accent underline draws in (the secondary button's mark) */
+.ci-link { position: relative; }
+.ci-link::before { content: ""; position: absolute; left: 4px; right: 4px; bottom: 8px; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 260ms var(--sig-out); pointer-events: none; }
+.ci-link:hover::before, .ci-link:focus-visible::before { transform: scaleX(1); }
+
+/* keyboard focus: these buttons carry their own shadows, which would hide the site's two-tone ring, so it
+   is layered on top of them here */
+.ci-btn:focus-visible { box-shadow: var(--ring), 0 8px 22px -8px rgb(var(--accent-rgb) / .7); }
+.ci-flip-btn:focus-visible { box-shadow: var(--ring), 0 4px 0 var(--accent-deep); }
+.ci-mag.solid:focus-visible { box-shadow: var(--ring), 0 16px 40px -14px rgb(var(--accent-rgb) / .8); }
+.ci-mag.line:focus-visible { box-shadow: var(--ring); }
+
+/* posters: a fine inner frame and crop marks like a printed poster (as the Generator's guide posters);
+   with a mouse, hover straightens and lifts it with a spring. translate, not transform, so it never fights the reveal */
+.ci-poster { outline: 1px solid color-mix(in srgb, currentColor 15%, transparent); outline-offset: -8px; }
+.ci-poster::before { content: ""; position: absolute; inset: 3px; z-index: 1; pointer-events: none; --m: color-mix(in srgb, currentColor 55%, transparent);
+  background:
+    linear-gradient(var(--m), var(--m)) left top / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) left top / 1.5px 9px no-repeat,
+    linear-gradient(var(--m), var(--m)) right top / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) right top / 1.5px 9px no-repeat,
+    linear-gradient(var(--m), var(--m)) left bottom / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) left bottom / 1.5px 9px no-repeat,
+    linear-gradient(var(--m), var(--m)) right bottom / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) right bottom / 1.5px 9px no-repeat; }
+.ci.is-fine .ci-poster { transition: opacity .9s var(--ease-out), transform 1.1s var(--ease-out), rotate 380ms var(--sig-spring), translate 380ms var(--sig-spring), box-shadow 380ms var(--sig-out); }
+.ci.is-fine .ci-poster.in:hover { rotate: 0deg; translate: 0 -4px; box-shadow: 0 4px 8px rgb(var(--color-ink) / .08), 0 40px 70px -30px rgb(var(--color-ink) / .5); }
+.dark .ci.is-fine .ci-poster.in:hover { box-shadow: 0 4px 8px rgb(0 0 0 / .5), 0 40px 70px -30px rgb(0 0 0 / .9); }
+.ci-big-no { transition: -webkit-text-stroke-width 300ms, opacity 300ms; }
+.ci.is-fine .ci-poster:hover .ci-big-no { -webkit-text-stroke-width: 2.5px; opacity: 1; }
+
+/* title board: the tool cards' red notch on its top edge */
+.ci-board { position: relative; }
+.ci-board::before { content: ""; position: absolute; left: clamp(14px, 3.4vw, 48px); top: 0; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--accent); }
+
+/* kickers: the page title's ruler scale after the label */
+.ci-tn-label { display: flex; align-items: center; gap: 10px; }
+.ci-tn-label::after { content: ""; flex: 0 0 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+
+/* headings: the page title's faint accent offset, like a print misregistration (solid ink lines only:
+   on outlined or red lines it would fill or vanish) */
+.ci-tn-grid h2, .ci-encore h2, .ci-lead h2, .ci-stamp-grid h2 { text-shadow: 1.5px 1.5px 0 rgb(var(--accent-rgb) / .38); }
+.ci-lead h2 span { text-shadow: none; }
+.ci-kin-wide .ci-kl:is(:nth-child(1), :nth-child(3)), .ci-kin-narrow .ci-kl:is(:nth-child(1), :nth-child(4)) { text-shadow: .02em .02em 0 rgb(var(--accent-rgb) / .38); }
+
+/* the live dot: the header status dot's soft halo under its blink */
+.ci-live i { box-shadow: 0 0 0 3px rgb(var(--success-rgb) / .22); }
 
 @media (prefers-reduced-motion: reduce) {
   /* transition: none, not a tiny duration: shortening the default "all 0s" would create a transition on
