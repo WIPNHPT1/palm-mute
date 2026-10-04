@@ -31,6 +31,16 @@ declare global {
 
 
 
+// Sound that can't start (no Web Audio, or the context stays suspended after a tap: a browser or phone setting)
+// is reported once through here, so one notice on every page can say so instead of play doing nothing.
+const blockedListeners = new Set<(blocked: boolean) => void>();
+/** Calls `listener(true)` when a play couldn't start sound, `listener(false)` on the next one that did. Returns an unsubscribe. */
+export function onSoundBlocked(listener: (blocked: boolean) => void): () => void {
+  blockedListeners.add(listener);
+  return () => void blockedListeners.delete(listener);
+}
+const setBlocked = (blocked: boolean) => blockedListeners.forEach((l) => l(blocked));
+
 let tone: ToneModule | null = null;
 let voices: {
   guitar: import("tone").PolySynth;
@@ -119,6 +129,11 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
   try {
     const T = await ensureTone();
     if (mine !== generation) return false; // stopped (or replaced) while audio was starting
+    // A tap should have woken the audio context; if it's still not running nothing would be heard.
+    if (T.getContext().state !== "running") {
+      setBlocked(true);
+      return false;
+    }
     const v = voices!;
     stopInternal(T);
 
@@ -181,9 +196,11 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
       transport.scheduleOnce((time) => T.getDraw().schedule(onEnd, time), `${req.bars.length + lead}m`);
     }
     transport.start("+0.05");
+    setBlocked(false);
     return true;
   } catch {
-    // Autoplay restrictions or unsupported AudioContext: fail silently (interaction-spec §5).
+    // Autoplay restrictions or unsupported AudioContext: the page says so (components/AudioNotice.tsx).
+    if (mine === generation) setBlocked(true);
     return false;
   }
 }

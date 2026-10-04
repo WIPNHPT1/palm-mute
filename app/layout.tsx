@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Space_Grotesk, Space_Mono } from "next/font/google";
+import { AudioNotice } from "@/components/AudioNotice";
 import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
 import { GeneratorProvider } from "@/context/GeneratorContext";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col">
         <GeneratorProvider>
           <Nav />
+          <AudioNotice />
           {/* Full width: the home page runs edge to edge; Generator and Chords cap themselves at 1440px. */}
           <main className="flex w-full flex-1 flex-col">{children}</main>
           <Footer />
