@@ -2,6 +2,7 @@
 import feelsJson from "@/data/feels.json";
 import rhythmJson from "@/data/rhythm-patterns.json";
 import recipesJson from "@/data/section-recipes.json";
+import difficultyJson from "@/data/difficulty.json";
 import engineSettings from "@/data/engine-settings.json";
 import playabilityJson from "@/data/playability.json";
 import templatesJson from "@/data/song-section-templates.json";
@@ -29,7 +30,7 @@ import {
 import { type Lead, type LeadPart, type LeadStyle, type Quote, defaultLeadStyle, generateLead, leadTabBars, styleLabel } from "@/lib/melody";
 import type { DrumPattern } from "@/lib/playback";
 import { type RiffSpec, riffFits, writeRiff } from "@/lib/riffs";
-import { type Rating, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, picksOf, rateSection, rhythmGaps } from "@/lib/playability";
+import { type Difficulty, type Rating, DEFAULT_DIFFICULTY, changeSpeed, changesIn, downRunCap, eighthMs, moveDifficulty, picksOf, rateSection, rhythmGaps } from "@/lib/playability";
 import { type ChordSectionId, type SectionId, type VariationId, sectionDegrees, sectionEnergy } from "@/lib/songPlan";
 import { type SectionStyle, type ShapeTag, type Voicing, registerTarget, voicePaths } from "@/lib/voicings";
 
@@ -151,7 +152,21 @@ export type SectionInputs = {
   thread?: SongThread;
   /** The section card's Options (docs/song-builder-prd.md §6): unset fields keep the take's own. */
   options?: SectionOptions;
+  /** The Difficulty control: what the Generator may write (data/difficulty.json). Default Intermediate. */
+  difficulty?: Difficulty;
 };
+
+export type DifficultyLevel = { label: string; maxCells: number; riffs: boolean; shapes: "two" | null; soloStyles: string[] };
+export const DIFFICULTY = difficultyJson.levels as Record<Difficulty, DifficultyLevel>;
+export const DIFFICULTIES = Object.keys(DIFFICULTY) as Difficulty[];
+
+/** Why a groove is out of reach at this level, or null if it's fine. */
+function levelBars(v: Variant, feel: FeelId, level: DifficultyLevel): string | null {
+  if (v.riff && !level.riffs) return "Intermediate and up";
+  const r = v.rhythms[feel] ?? v.rhythms.all ?? Object.values(v.rhythms)[0];
+  const cells = v.riff ? v.riff.grid : Math.max(...(r?.bars ?? []).map((b) => b.length));
+  return cells > level.maxCells ? "Intermediate and up (sixteenth notes)" : null;
+}
 
 /**
  * A section card's Options. Every field is optional: unset means the take decides (the seed, the critic, the
@@ -361,9 +376,13 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   // Variants a song can use: a pedal riff needs its chords' roots on open strings, and a riff has to be
   // playable at this tempo in this key (lib/riffs.ts).
   const bpmFor = playbackBpm(feel, MID_TEMPO.max);
-  const variants = recipe.variants.filter(
+  const level = DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY];
+  const playable = recipe.variants.filter(
     (v) => !v.riff || (riffFits(v.riff, keyPc, degrees) && writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpmFor) !== null),
   );
+  // The Difficulty control keeps grooves within the level (if nothing would be left, the level's limit gives way).
+  const withinLevel = playable.filter((v) => !levelBars(v, feel, level));
+  const variants = withinLevel.length ? withinLevel : playable;
   const options = inputs.options ?? {};
   // The card's Rhythm option picks a groove by name; otherwise the seed does.
   const variant = (options.groove && variants.find((v) => v.name === options.groove)) || variants[inputs.seed % variants.length];
@@ -388,7 +407,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
   const roots = chords.map((c) => pitchClassOf(c.root));
   const style: SectionStyle = {
     target: registerTarget(keyPc, recipe.register),
-    shapes: shapesFor(variant.shapes, options.shape),
+    shapes: shapesFor(variant.shapes, options.shape ?? level.shapes ?? undefined),
     openStrings: recipe.openStrings,
     fastMuted: muted && feel === "fast-punk",
     prefer: recipe.prefer,
@@ -465,7 +484,7 @@ export function renderSection(id: SectionId, inputs: SectionInputs, variation?: 
     };
   });
   setRingLengths(bars);
-  alternateLongRuns(bars, bpm);
+  alternateLongRuns(bars, bpm, inputs.difficulty);
 
   const voicings: { chord: ResolvedChord; voicing: Voicing }[] = [];
   chords.forEach((chord, i) => {
@@ -553,8 +572,8 @@ function rateBars(bars: SectionBar[], voicings: Voicing[], bpm: number, fastMute
  * (chord strums on the offbeats become upstrokes). Octave riffs skip a string, so they stay downpicked.
  * Only the audio's pick direction changes; the tab shows the same notes.
  */
-function alternateLongRuns(bars: SectionBar[], bpm: number) {
-  const cap = downRunCap();
+function alternateLongRuns(bars: SectionBar[], bpm: number, difficulty?: Difficulty) {
+  const cap = downRunCap(difficulty);
   if (cap === null || 1000 / eighthMs(bpm) < playabilityJson.picking.fastRate) return;
   // Runs as lib/playability.ts counts them: down picks no more than an eighth apart.
   const picks = picksOf(bars);
@@ -703,7 +722,11 @@ function candidatesFor(notes: Fretted[]): Voicing {
 /** The Solo, or an Intro melody sent from the Chords page: a lead line over the section's progression. */
 function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): RenderedSection {
   const part: LeadPart = id === "solo" ? "solo" : "intro";
-  const { style, bars: length } = inputs.lead ?? defaultLeadStyle(part);
+  const chosen = inputs.lead ?? defaultLeadStyle(part);
+  // A solo style the level doesn't allow (shred for a Beginner) plays as Classic; a solo sent from the Chords page
+  // always plays exactly as previewed.
+  const allowed = part !== "solo" || !!inputs.lead?.sent || DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY].soloStyles.includes(chosen.style);
+  const { style, bars: length } = allowed ? chosen : { ...chosen, style: "classic" as LeadStyle };
   // A solo the Generator writes knows the song (R15, R16); one sent from the Chords page plays as previewed.
   const thread = part === "solo" && !inputs.lead?.sent ? inputs.thread : undefined;
   const lead = generateLead({ key: inputs.key, progressionId: inputs.progressionId, part, style, bars: length, seed: inputs.seed, ...(thread ?? {}) });
@@ -776,15 +799,16 @@ export function grooveChoices(id: SectionId, inputs: SectionInputs): GrooveChoic
   return recipe.variants.map((v) => {
     const rhythm = v.rhythms[feel] ?? v.rhythms.all ?? Object.values(v.rhythms)[0];
     const sizes = (["two", "three"] as const).filter((size) => v.shapes.some((id) => (size === "two" ? ["E2", "A2", "D2"] : ["E3", "A3", "D3"]).includes(id)));
+    const level = levelBars(v, feel, DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY]);
     if (v.riff) {
       const pattern = Array.from({ length: v.riff.grid }, (_, c) => (c % (v.riff!.grid / 8) === 0 ? "D" : ".")).join("");
       if (!riffFits(v.riff, keyPc, degrees))
         return { name: v.name, pattern, accents: [0], available: false, reason: v.requires === "openRoots" ? "Needs chords rooted on open strings" : "Doesn't fit these chords", sizes: [] };
       if (writeRiff(v.riff, keyPc, degrees, registerTarget(keyPc, "low"), bpm) === null)
         return { name: v.name, pattern, accents: [0], available: false, reason: `Too fast to play at ${bpm} BPM in ${inputs.key}`, sizes: [] };
-      return { name: v.name, pattern, accents: [0], available: true, sizes: [] };
+      return { name: v.name, pattern, accents: [0], available: !level, ...(level ? { reason: level } : {}), sizes: [] };
     }
-    return { name: v.name, pattern: rhythm!.bars[0], accents: rhythm!.accents ?? [], available: true, sizes };
+    return { name: v.name, pattern: rhythm!.bars[0], accents: rhythm!.accents ?? [], available: !level, ...(level ? { reason: level } : {}), sizes };
   });
 }
 

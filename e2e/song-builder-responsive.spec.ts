@@ -39,7 +39,7 @@ test.describe("song builder: every screen", () => {
     expect(await problems(page, "[data-setup]")).toEqual([]);
     // Every setup card stays inside the page.
     const cards = await page.locator("[data-setup] [data-control]").evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })));
-    expect(cards).toHaveLength(4);
+    expect(cards).toHaveLength(5); // the style preset, then the four steps
     for (const c of cards) expect(c.left >= 0 && c.right <= (await page.evaluate(() => innerWidth)) + 0.5).toBe(true);
     // Key and Feel side by side from 1440px; stacked below.
     const [keyBox, feelBox] = await Promise.all(["Key", "Feel"].map((l) => page.locator(`[data-setup] [data-control="${l}"]`).boundingBox()));

@@ -18,7 +18,9 @@ import { SectionOptionsPanel } from "@/components/SectionOptionsPanel";
 import { SetupSummary } from "@/components/SetupSummary";
 import { SongHeader } from "@/components/SongHeader";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
-import { SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
+import { DIFFICULTIES, DIFFICULTY, SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
+import { type PresetId, PRESETS, PRESET_IDS } from "@/lib/presets";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { styleLabel } from "@/lib/melody";
 import { sectionBars } from "@/lib/playback";
 import { keyDisplayName, progressions } from "@/lib/musicTheory";
@@ -35,6 +37,13 @@ const GUIDE: GuideStep[] = [
 
 /** The setup's cards, in step order (the summary's buttons reopen the setup at one of them). */
 const STEPS = ["setup-key", "setup-feel", "setup-chords", "setup-length"] as const;
+
+/** What each Difficulty level means for the tabs (data/difficulty.json, data/playability.json). */
+const DIFFICULTY_NOTES = {
+  beginner: "Eighth notes and 2-note shapes, no riffs, shorter downpicked runs.",
+  intermediate: "Gallops and riffs; downpicked runs up to 16.",
+  advanced: "Everything, including long downpicked runs.",
+} as const;
 
 /** "Fast Punk" from "FAST PUNK". */
 const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s-])\w/g, (m) => m.toUpperCase());
@@ -65,6 +74,8 @@ export default function GeneratorPage() {
     setFeel,
     setMidTempoBpm,
     setLength,
+    setDifficulty,
+    applyPreset,
     setOptions,
     setLead,
     playCustom,
@@ -135,6 +146,20 @@ export default function GeneratorPage() {
 
       {setupOpen ? (
         <section aria-label="Set up your song" data-setup className="flex flex-col gap-[14px] tablet:gap-[12px]">
+          {/* An optional starting point (docs/song-builder-prd.md B11): it sets the steps below, which stay editable. */}
+          <ControlCard label="Start from a style" picked={state.preset ? PRESETS[state.preset].label : "Your own"} hint="Optional · sets the steps below">
+            <SegmentedControl
+              label="Style preset"
+              options={[{ value: "own", label: "YOUR OWN" }, ...PRESET_IDS.map((id) => ({ value: id, label: PRESETS[id].label.toUpperCase() }))]}
+              value={state.preset ?? "own"}
+              onChange={(v) => applyPreset(v === "own" ? null : (v as PresetId))}
+              stretch
+              className="flex-wrap tablet:flex-nowrap"
+            />
+            <p className="m-0 font-mono text-[12px] leading-[1.6] text-text-muted" data-preset-description>
+              {state.preset ? PRESETS[state.preset].description : "Pick everything yourself, or start from a style and change what you like."}
+            </p>
+          </ControlCard>
           <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:items-stretch tablet:gap-[12px]">
             {/* Key gets its own row until Key and the five-feel control fit side by side (1440px). */}
             <ControlCard id={STEPS[0]} step={1} label="Key" picked={keyDisplayName(state.key)} className="tablet:basis-full min-[1440px]:basis-auto">
@@ -169,6 +194,21 @@ export default function GeneratorPage() {
               <div className="min-w-0 flex-1">
                 <LengthControl seconds={state.lengthSec} plan={plan} bpm={bpm} materialBars={materialBars} onChange={setLength} />
               </div>
+              <div className="flex flex-col gap-[6px] tablet:w-[320px]">
+                <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-faint">Difficulty</span>
+                <SegmentedControl
+                  label="Difficulty"
+                  options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY[d].label.toUpperCase() }))}
+                  value={state.difficulty}
+                  onChange={setDifficulty}
+                  stretch
+                />
+                <span className="font-mono text-[12px] leading-[1.5] text-text-faint" data-difficulty-note>
+                  {DIFFICULTY_NOTES[state.difficulty]}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end">
               <GenerateButton onClick={build} label="BUILD SONG" />
             </div>
           </ControlCard>
@@ -180,6 +220,7 @@ export default function GeneratorPage() {
             { step: 1, label: "Feel", value: `${feelLabel} · ${bpm}` },
             { step: 2, label: "Chords", value: state.progressionId },
             { step: 3, label: "Length", value: formatLength(state.lengthSec) },
+            { step: 3, label: "Level", value: DIFFICULTY[state.difficulty].label },
           ]}
           onEdit={editSetup}
         />
@@ -248,6 +289,7 @@ export default function GeneratorPage() {
                     timesRange={timesRange(id)}
                     materialBars={materialBars(id)}
                     previewing={previewing(id)}
+                    soloStyles={DIFFICULTY[state.difficulty].soloStyles}
                     onChange={(options) => setOptions(id, options)}
                     onLead={(lead) => setLead(id, lead)}
                     onPreview={(groove) => previewGroove(id, groove)}

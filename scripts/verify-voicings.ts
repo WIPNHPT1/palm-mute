@@ -22,7 +22,7 @@ import {
 import { PITCH_CLASSES, type NoteName, pitchClassOf, progressions, degreeOffsets } from "@/lib/musicTheory";
 import { sectionBars, songBarParts, songBars } from "@/lib/playback";
 import { FORM_IDS, formSlots, sectionDegrees } from "@/lib/songPlan";
-import { grooveChoices, plannedDegrees } from "@/lib/generator";
+import { DIFFICULTIES, grooveChoices, plannedDegrees } from "@/lib/generator";
 import { SETTINGS, type Voicing, checkVoicing } from "@/lib/voicings";
 import { type MuteSource, PLAYABILITY, downRunCap, labelPitchClasses, longestDownRun, mutePlan, pitchClassesOf } from "@/lib/playability";
 import { fastestChange, riffFastest } from "@/lib/generator";
@@ -162,7 +162,7 @@ function checkChordSection(s: RenderedSection, inputs: SectionInputs, where: str
   fastestByFeel[s.feel] = Math.max(fastestByFeel[s.feel] ?? 0, fastest);
   // R3: chord strums downpick no longer than the default difficulty's cap (octave riffs are always downpicked
   // and count toward the rating instead).
-  const cap = downRunCap();
+  const cap = downRunCap(inputs.difficulty);
   const chordsOnly = s.bars.map((bar) => ({ ...bar, cells: bar.cells.map((ev) => (ev && ev.notes.length === 2 && voicingOf(ev.notes)?.tags.includes("octaveRiff") ? { ...ev, up: true } : ev)) }));
   if (cap !== null) assert.ok(longestDownRun(chordsOnly, bpm) <= cap, `${where}: ${longestDownRun(chordsOnly, bpm)} chord downstrokes in a row (cap ${cap})`);
   runByFeel[s.feel] = Math.max(runByFeel[s.feel] ?? 0, longestDownRun(s.bars, bpm));
@@ -374,6 +374,43 @@ for (const key of optionKeys)
         }
       }
 console.log(`Options: ${optionRenders} renders (every groove × playing style × voicing, ${optionKeys.length} keys × ${optionProgs.length} progressions × ${FEELS.length} feels) pass every check above.`);
+
+// The Difficulty control (data/difficulty.json): a Beginner's song has eighth notes only, no riffs and 2-note
+// shapes, with downpicked runs under the Beginner cap; every level passes every check above; and the levels
+// measurably change the songs (their difficulty ratings), sampled across keys, progressions and every feel.
+const levelRatings: Record<string, number[]> = { beginner: [], intermediate: [], advanced: [] };
+const levelUses: Record<string, { sixteenths: number; riffs: number; threeNote: number }> = Object.fromEntries(DIFFICULTIES.map((d) => [d, { sixteenths: 0, riffs: 0, threeNote: 0 }]));
+for (const key of ["E", "G", "A#"] as NoteName[])
+  for (const progressionId of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V"])
+    for (const feel of FEELS)
+      for (const difficulty of DIFFICULTIES)
+        for (let seed = 0; seed < 12; seed++)
+          for (const id of SECTION_IDS) {
+            if (id === "solo") continue;
+            const inputs: SectionInputs = { key, feel, progressionId, seed, difficulty };
+            const where: string = `${key} ${progressionId} ${feel} ${id} seed ${seed} ${difficulty}`;
+            const s = renderSection(id, inputs);
+            checkLayout(s, where);
+            if (s.riff) checkRiffSection(s, inputs, where);
+            else checkChordSection(s, inputs, where);
+            levelRatings[difficulty].push(s.playability!.rating.score);
+            if (s.bars.some((b) => b.cells.length === 16)) levelUses[difficulty].sixteenths++;
+            if (s.riff) levelUses[difficulty].riffs++;
+            if (s.voicings.some((v) => v.voicing.notes.length === 3)) levelUses[difficulty].threeNote++;
+            if (difficulty === "beginner") {
+              assert.ok(!s.riff, `${where}: a riff`);
+              assert.ok(s.bars.every((b) => b.cells.length === 8), `${where}: sixteenth notes`);
+              assert.ok(s.voicings.every((v) => v.voicing.notes.length === 2), `${where}: a 3-note shape`);
+              const cap = downRunCap("beginner")!;
+              assert.ok(longestDownRun(s.bars.map((b) => ({ ...b, cells: b.cells.map((ev) => (ev && ev.notes.length === 2 && Math.abs(midiOf(ev.notes[0]) - midiOf(ev.notes[1])) === 12 ? { ...ev, up: true } : ev)) })), s.playability!.bpm) <= cap, `${where}: downpicked run over ${cap}`);
+            }
+          }
+const meanRating = (d: string) => levelRatings[d].reduce((a, b) => a + b, 0) / levelRatings[d].length;
+assert.ok(meanRating("beginner") < meanRating("intermediate"), `Beginner songs aren't easier (${meanRating("beginner").toFixed(2)} vs ${meanRating("intermediate").toFixed(2)})`);
+assert.ok(meanRating("intermediate") <= meanRating("advanced") + 1e-9, "Advanced songs are easier than Intermediate");
+for (const k of ["sixteenths", "riffs", "threeNote"] as const) assert.ok(levelUses.intermediate[k] > 0 && levelUses.beginner[k] === 0, `the levels don't differ in ${k}`);
+const uses = (d: string) => `${levelUses[d].sixteenths} with sixteenths, ${levelUses[d].riffs} riffs, ${levelUses[d].threeNote} with 3-note shapes`;
+console.log(`Difficulty (${levelRatings.beginner.length} sections per level): Beginner rated ${meanRating("beginner").toFixed(2)} (${uses("beginner")}; runs ≤ ${downRunCap("beginner")}), Intermediate ${meanRating("intermediate").toFixed(2)} (${uses("intermediate")}), Advanced ${meanRating("advanced").toFixed(2)} (${uses("advanced")}; no run cap).`);
 
 // Library voicings (chips + progression playback) are valid too.
 for (const key of PITCH_CLASSES)
