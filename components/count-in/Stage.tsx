@@ -113,7 +113,7 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
             <Link className="ci-btn" href="/generator/">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l14 9-14 9z" /></svg>START WRITING
             </Link>
-            <Link className="ci-link" href="/chords/">Browse the chord library <span aria-hidden="true">→</span></Link>
+            <Link className="ci-link" href="/chords/">Open the Chord Lab <span aria-hidden="true">→</span></Link>
           </div>
         </div>
       </div>

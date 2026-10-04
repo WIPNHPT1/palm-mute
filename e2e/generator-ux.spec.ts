@@ -195,12 +195,12 @@ test.describe("generator UX", () => {
     await page.getByRole("button", { name: "Play I-V-vi-IV" }).click();
     expect(await lastPlayback(page)).not.toBeNull();
     await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Chords/ }).click();
+    await page.locator("#site-menu").getByRole("link", { name: /Chord Lab/ }).click();
     await expect(page).toHaveURL(/\/chords\/$/);
     await expect.poll(() => lastPlayback(page)).toBeNull();
     await expect(page.locator('[data-playing="true"]')).toHaveCount(0);
-    // And from Chords to the home page.
-    await page.getByRole("button", { name: "Play vi-IV-I-V" }).click();
+    // And from the Chord Lab to the home page.
+    await page.getByRole("button", { name: /^Play G .* strummed$/ }).first().click();
     expect(await lastPlayback(page)).not.toBeNull();
     await openMenu(page);
     await page.locator("#site-menu").getByRole("link", { name: /Count In/ }).click();

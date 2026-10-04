@@ -2,11 +2,12 @@ import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { feel } from "./helpers";
 
-// Generator and Chords, with their extra states showing: Mid-Tempo picked, a locked section's update
-// action, and the Chords page panel.
-const PAGES: { path: string; setup: (page: Page) => Promise<void> }[] = [
+// Generator and Chord Lab, with their extra states showing: Mid-Tempo picked and a locked section's update
+// action; a drop tuning, left-handed diagrams and a 7th chord in the Lab.
+const PAGES: { path: string; chips: boolean; setup: (page: Page) => Promise<void> }[] = [
   {
     path: "/generator/",
+    chips: true,
     setup: async (page) => {
       await feel(page, /MID-TEMPO/).click();
       await page.getByRole("radiogroup", { name: "Key" }).getByRole("radio", { name: "C", exact: true }).click();
@@ -14,15 +15,16 @@ const PAGES: { path: string; setup: (page: Page) => Promise<void> }[] = [
   },
   {
     path: "/chords/",
+    chips: false,
     setup: async (page) => {
-      await feel(page, /MID-TEMPO/).click();
-      await page.getByRole("button", { name: "I-V-vi-IV: show options" }).click();
-      await page.getByRole("button", { name: "USE IN MY SONG" }).click();
+      await page.getByRole("radiogroup", { name: "Tuning" }).getByRole("radio", { name: "DROP D" }).click();
+      await page.getByRole("radiogroup", { name: "Handed" }).getByRole("radio", { name: "LEFT" }).click();
+      await page.getByRole("radiogroup", { name: "Chord type" }).getByRole("radio", { name: "7", exact: true }).click();
     },
   },
 ];
 
-for (const { path, setup } of PAGES) {
+for (const { path, chips: hasChips, setup } of PAGES) {
   test.describe(`accessibility ${path}`, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
@@ -117,6 +119,7 @@ for (const { path, setup } of PAGES) {
         expect(spoken).not.toMatch(/--|\|/);
       }
       const chips = page.locator("main [data-chip]");
+      if (!hasChips) return;
       expect(await chips.count()).toBeGreaterThan(0);
       for (const label of await chips.evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")!))) {
         expect(label).toMatch(/^(I|ii|iii|IV|V|vi|vii) chord, [A-G]#?5: [A-G]#? on the .+ string, .+, and [A-G]#? on the .+ string, .+$/);

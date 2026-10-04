@@ -1,115 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { ControlCard } from "@/components/ControlCard";
-import { FeelToggle } from "@/components/FeelToggle";
-import { KeyPicker } from "@/components/KeyPicker";
 import { type GuideStep, PageGuide } from "@/components/PageGuide";
-import { OriginalityBadge } from "@/components/OriginalityBadge";
 import { PageHeader } from "@/components/PageHeader";
-import { ProgressionPanel } from "@/components/ProgressionPanel";
-import { ProgressionRow } from "@/components/ProgressionRow";
-import { SegmentedControl } from "@/components/SegmentedControl";
-import { useGenerator } from "@/context/GeneratorContext";
-import { libraryVoicings } from "@/lib/generator";
-import { type SortMode, progressions, sortProgressions } from "@/lib/musicTheory";
+import { Dictionary } from "@/components/lab/Dictionary";
+import { LabProvider } from "@/components/lab/LabContext";
+import { LabSetup } from "@/components/lab/LabSetup";
+import { type LabTool, ToolCard, ToolStrip } from "@/components/lab/ToolCard";
 
-const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "most-common", label: "MOST COMMON" },
-  { value: "brightest", label: "BRIGHTEST" },
-  { value: "darkest", label: "DARKEST" },
-  { value: "simplest", label: "SIMPLEST" },
-  { value: "home-start", label: "HOME START" },
-  { value: "minor-start", label: "MINOR START" },
-];
-
-// Cards take the even grid slots; the open panel slots in right after its card (one column), or after
-// its row (two columns, desktop). Literal class names so Tailwind can see them.
-// Up to 10 cards: card slots 0–18, panel slots up to 19 (Tailwind's named order classes stop at 12).
-const ORDER = ["order-none", "order-1", "order-2", "order-3", "order-4", "order-5", "order-6", "order-7", "order-8", "order-9", "order-10", "order-11", "order-12", "order-[13]", "order-[14]", "order-[15]", "order-[16]", "order-[17]", "order-[18]", "order-[19]"];
-const DESKTOP_ORDER = ["desktop:order-none", "desktop:order-1", "desktop:order-2", "desktop:order-3", "desktop:order-4", "desktop:order-5", "desktop:order-6", "desktop:order-7", "desktop:order-8", "desktop:order-9", "desktop:order-10", "desktop:order-11", "desktop:order-12", "desktop:order-[13]", "desktop:order-[14]", "desktop:order-[15]", "desktop:order-[16]", "desktop:order-[17]", "desktop:order-[18]", "desktop:order-[19]"];
-const PANEL_ID = "progression-panel";
+// The Chord Lab (docs/chord-lab-prd.md): a guitarist's chord toolbox, independent of the Generator. Its tools
+// stack as full-width cards under one setup (the owner's layout C), with a strip to jump between them.
+const TOOLS: LabTool[] = [{ id: "dictionary", n: 1, title: "Dictionary", hint: "every chord, every position, on the neck" }];
 
 const GUIDE: GuideStep[] = [
-  { title: "Pick a key", body: <>Every card shows its chords in your <b>key</b>, numbered I, V, vi, IV.</> },
-  { title: "Listen", body: <><b>▷</b> plays a progression. <b>Sort</b> by most common, brightest, simplest and more.</> },
-  { title: "Write a lead", body: <><b>Open a card</b> for an intro melody or a guitar solo: style, length, <b>Generate</b>.</> },
-  { title: "Use it", body: <><b>USE IN MY SONG</b> sends the key, the chorus and your lead to the Generator.</> },
+  { title: "Look it up", body: <>Pick a <b>chord</b> and see every way to play it, on a box and on the <b>neck</b>.</> },
+  { title: "Name it", body: <>Tap a shape you know onto the neck; it says <b>what chord</b> it is and which keys it lives in.</> },
+  { title: "Build a loop", body: <>Tap chords from your key into a <b>loop</b>; it suggests <b>what comes next</b>.</> },
+  { title: "Move it", body: <>Find the <b>key</b>, then shift it: another key, a <b>capo</b> or a drop <b>tuning</b>.</> },
 ];
 
-export default function ChordsPage() {
-  // Key and feel live in the shared context, so they carry over to/from the Generator.
-  const { state, setKey, setFeel, togglePlay } = useGenerator();
-  const [sort, setSort] = useState<SortMode>("most-common");
-  const [openId, setOpenId] = useState<string | null>(null);
-  const sorted = sortProgressions(progressions, sort);
-  const openIndex = sorted.findIndex((p) => p.id === openId);
-  const open = openIndex >= 0 ? sorted[openIndex] : null;
-
-  const close = () => {
-    const id = openId;
-    setOpenId(null);
-    // Return focus to the card that opened the panel.
-    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-progression="${id}"] > button`)?.focus());
-  };
-
+export default function ChordLabPage() {
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
-      <PageHeader kicker="POWER CHORD LIBRARY" title="CHORDS" aside={<OriginalityBadge />} />
-      <PageGuide page="chords" label="How to use the Chords page" steps={GUIDE} signature="10 PROGRESSIONS · 12 KEYS · INTROS + SOLOS" />
-
-      <div className="flex flex-col gap-[14px] tablet:flex-row tablet:flex-wrap tablet:gap-[12px] desktop:items-stretch">
-        {/* Key always gets its own row from tablet up: with five feels, Key + Feel + Sort never fit in one. */}
-        <ControlCard label="Key" className="tablet:basis-full">
-          <KeyPicker value={state.key} onChange={setKey} />
-        </ControlCard>
-        <ControlCard label="Feel" className="tablet:min-w-fit tablet:flex-1">
-          <FeelToggle feel={state.feel} onFeelChange={setFeel} />
-        </ControlCard>
-        {/* Feel and Sort share a row when both fit without squeezing (min-w-fit); otherwise Sort wraps under Feel and both fill their rows. */}
-        <ControlCard label="Sort" className="min-w-fit tablet:flex-1">
-          <SegmentedControl label="Sort" options={SORT_OPTIONS} value={sort} onChange={setSort} stretch threePerRowOnPhones />
-        </ControlCard>
+    <LabProvider>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:px-[56px] desktop:pb-[40px] desktop:pt-[32px]">
+        <PageHeader kicker="SONGWRITING TOOLS" title="CHORD LAB" />
+        <PageGuide page="chords" label="How to use the Chord Lab" steps={GUIDE} signature="10 CHORD TYPES · 4 TUNINGS · EVERY POSITION" />
+        <LabSetup />
+        <ToolStrip tools={TOOLS} />
+        <div className="flex flex-col gap-[14px] tablet:gap-[18px]">
+          <ToolCard tool={TOOLS[0]}>
+            <Dictionary />
+          </ToolCard>
+        </div>
       </div>
-
-      <p className="max-w-[900px] font-mono text-[12px] leading-[1.6] text-text-muted">
-        The numerals count up the key&apos;s major scale: <b className="text-text-primary">I</b> is home, <b className="text-text-primary">IV</b> and{" "}
-        <b className="text-text-primary">V</b> pull away from it, and <b className="text-text-primary">vi</b> is its sad-sounding minor. Brightest puts
-        I, IV and V first; Darkest leans on vi; Simplest starts with three-chord loops; Home start and Minor start put the loops that open on I or vi first. Pick a card to hear it, write an intro melody or a solo over it, and use it in your song.
-      </p>
-
-      <div className={`grid grid-cols-1 gap-[10px] tablet:gap-[12px] desktop:grid-cols-2 ${open ? "" : "desktop:flex-grow desktop:auto-rows-fr"}`}>
-        {sorted.map((p, i) => (
-          <ProgressionRow
-            key={p.id}
-            variant="card"
-            progression={p}
-            chords={libraryVoicings(state.key, p.id)}
-            variantIndex={progressions.indexOf(p)}
-            // The curated "most common" progression stays pinned as the recommended pick in every sort.
-            highlighted={p.tag === "most-common"}
-            badge={p.tag === "most-common" ? "Most common" : undefined}
-            expanded={p.id === openId}
-            controls={p.id === openId ? PANEL_ID : undefined}
-            selectLabel={`${p.id}: show options`}
-            onSelect={() => setOpenId(p.id === openId ? null : p.id)}
-            playing={state.playing === `progression:${p.id}`}
-            onTogglePlay={() => togglePlay(`progression:${p.id}`)}
-            className={`${ORDER[2 * i]} ${DESKTOP_ORDER[2 * i]}`}
-          />
-        ))}
-        {open && (
-          <ProgressionPanel
-            id={PANEL_ID}
-            progression={open}
-            keyName={state.key}
-            playing={state.playing === `progression:${open.id}`}
-            onTogglePlay={() => togglePlay(`progression:${open.id}`)}
-            onClose={close}
-            className={`${ORDER[2 * openIndex + 1]} ${DESKTOP_ORDER[2 * (openIndex | 1) + 1] ?? "desktop:order-last"}`}
-          />
-        )}
-      </div>
-    </div>
+    </LabProvider>
   );
 }

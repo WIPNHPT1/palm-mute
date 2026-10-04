@@ -1,5 +1,5 @@
 import { type Page } from "@playwright/test";
-import { expect, lightOnly, onlyAtWidths, openMenu, test } from "./fixtures";
+import { expect, lightOnly, onlyAtWidths, test } from "./fixtures";
 import { lastPlayback } from "./helpers";
 
 const section = (page: Page, label: string) => page.locator(`section[aria-label="${label}"]`);
@@ -93,18 +93,5 @@ test.describe("generator", () => {
     // Fast Punk and Half-Time show their fixed readouts too.
     await expect(feel(page, /FAST PUNK/)).toContainText("180 BPM");
     await expect(feel(page, /HALF-TIME/)).toContainText("90 BPM");
-  });
-
-  test("the key is kept between the Generator and Chords", async ({ page }) => {
-    await key(page, "F# / Gb").click();
-    await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Chords/ }).click();
-    await expect(page).toHaveURL(/\/chords\/$/);
-    await expect(key(page, "F# / Gb")).toHaveAttribute("aria-checked", "true");
-    await key(page, "C").click();
-    await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Generator/ }).click();
-    await expect(page).toHaveURL(/\/generator\/$/);
-    await expect(key(page, "C")).toHaveAttribute("aria-checked", "true");
   });
 });

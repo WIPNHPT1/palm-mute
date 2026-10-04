@@ -3,7 +3,7 @@ import { feel, lastPlayback } from "./helpers";
 
 // Five feels (DECISIONS.md): Fast Punk, Half-Time, Mid-Tempo, Pop Strum and Ballad.
 
-for (const path of ["/generator/", "/chords/"]) {
+for (const path of ["/generator/"]) {
   test(`${path}: five feels, each at its own fixed tempo; one row from tablet up, a list on phones`, async ({ page }, info) => {
     await gotoAndSettle(page, path);
     const radios = page.getByRole("radiogroup", { name: "Feel" }).getByRole("radio");

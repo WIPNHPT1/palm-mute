@@ -26,12 +26,12 @@ test.describe("menu", () => {
 
   test("closes when navigating", async ({ page }) => {
     await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Chords/ }).click();
+    await page.locator("#site-menu").getByRole("link", { name: /Chord Lab/ }).click();
     await expect(page).toHaveURL(/\/chords\/$/);
     await expect(page.locator("#site-menu")).toHaveAttribute("data-open", "false");
     // Picking the page you're already on closes it too.
     await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Chords/ }).click();
+    await page.locator("#site-menu").getByRole("link", { name: /Chord Lab/ }).click();
     await expect(page.locator("#site-menu")).toHaveAttribute("data-open", "false");
   });
 

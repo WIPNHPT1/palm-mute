@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/site";
 
 const DESCRIPTION =
-  "The ten chord progressions behind pop-punk, in all 12 keys, with power-chord shapes to play. Write an intro melody or a guitar solo over any of them and send it to your song.";
+  "A guitarist's chord toolbox: every chord a pop-punk player needs in every position, name any shape you tap, build a loop, find its key and move it to a capo or a drop tuning.";
 
-export const metadata: Metadata = pageMetadata({ title: "Chords", shareTitle: "Pop-punk chord progressions · Palm/Mute", description: DESCRIPTION, path: "/chords/" });
+export const metadata: Metadata = pageMetadata({ title: "Chord Lab", shareTitle: "Chord Lab: look up, name and move chords · Palm/Mute", description: DESCRIPTION, path: "/chords/" });
 
 export default function ChordsLayout({ children }: { children: React.ReactNode }) {
   return children;

@@ -1,0 +1,601 @@
+<title>Palm/Mute Chord Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: the Song Generator's shell (nav, page header, guide posters, control cards, full-width cards) holding
+     the Chord Lab's five tools as stacked full-width cards, with a jump strip (the owner's option C).
+     Tokens: tailwind.config.js palettes (light for everyone, dark on the DARK switch, as on the site). */
+  :root {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --brass:#B8862E;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --ink-soft:#2A241C; --ink-mid:#362B1F; --success:#3F8F4F;
+    --text-primary:#171310; --text-secondary:#4E4738; --text-muted:#6B6152; --text-faint:#72675A; --text-faintest:#766B5B;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#FFF9EF; --chip-bg:#171310; --chip-tab:#C9BFA9;
+    --shadow-card:0 1px 2px rgba(23,19,16,.04), 0 10px 20px -14px rgba(23,19,16,.18);
+    --shadow-hi:0 1px 2px rgba(23,19,16,.04), 0 14px 24px -14px #C23A2644;
+    --shadow-btn:0 8px 20px -8px #C23A2699;
+    --fret:#DCD3BE; --wood:#FBF6EA; --soft-accent:#C23A2618;
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --ink-soft:#2A241C; --ink-mid:#6B5A45; --success:#52A862;
+    --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B; --text-faintest:#928573;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#140F0C; --chip-bg:#0B0908; --chip-tab:#C9BFA9;
+    --shadow-card:0 1px 2px rgba(0,0,0,.3), 0 10px 20px -14px rgba(0,0,0,.6);
+    --shadow-hi:0 1px 2px rgba(0,0,0,.3), 0 14px 24px -14px #E85A4266;
+    --shadow-btn:0 8px 20px -8px #E85A4280;
+    --fret:#463B30; --wood:#1A1512; --soft-accent:#E85A4224;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --ink-soft:#2A241C; --ink-mid:#6B5A45; --success:#52A862;
+    --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B; --text-faintest:#928573;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#140F0C; --chip-bg:#0B0908; --chip-tab:#C9BFA9;
+    --shadow-card:0 1px 2px rgba(0,0,0,.3), 0 10px 20px -14px rgba(0,0,0,.6);
+    --shadow-hi:0 1px 2px rgba(0,0,0,.3), 0 14px 24px -14px #E85A4266;
+    --shadow-btn:0 8px 20px -8px #E85A4280;
+    --fret:#463B30; --wood:#1A1512; --soft-accent:#E85A4224;
+    color-scheme: dark;
+  } }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button, input { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  svg { display: block; }
+
+  /* Nav */
+  .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--ink); color: var(--on-dark); }
+  .nav-in { max-width: 1440px; margin: 0 auto; height: 64px; padding: 0 20px; display: flex; align-items: center; gap: 12px; }
+  @media (min-width: 834px) { .nav-in { height: 76px; padding: 0 32px; } }
+  @media (min-width: 1280px) { .nav-in { padding: 0 56px; } }
+  .wordmark { display: inline-flex; align-items: center; font-family: var(--f-display); font-size: 17px; margin-right: auto; white-space: nowrap; }
+  .wordmark svg { width: .6em; height: .9em; margin: 0 .04em; color: var(--accent-on-ink); }
+  .opt { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--ink-soft); border-radius: 7px; }
+  .opt button { min-height: 40px; min-width: 44px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: var(--on-dark-muted); font-family: var(--f-mono); font-size: 12px; letter-spacing: .04em; cursor: pointer; }
+  .opt button[aria-pressed="true"] { background: var(--accent-on-ink); color: #140F0C; font-weight: 700; }
+  .opt .long { display: none; } @media (min-width: 834px) { .opt .long { display: inline; } .opt .short { display: none; } }
+  .darksw { display: flex; align-items: center; gap: 8px; min-height: 44px; border: 0; background: transparent; color: var(--on-dark-faint); font-family: var(--f-mono); font-size: 12px; cursor: pointer; }
+  .darksw .t { position: relative; width: 30px; height: 16px; border-radius: 8px; background: var(--ink-soft); }
+  .darksw .k { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--on-dark); transition: left .2s; }
+  .darksw[aria-checked="true"] .t { background: var(--accent); } .darksw[aria-checked="true"] .k { left: 16px; }
+  @media (max-width: 520px) { .darksw span.l { display: none; } .nav-in { gap: 6px; padding: 0 12px; } .opt button { min-width: 40px; padding: 0 6px; } .wordmark { font-size: 15px; } }
+
+  main { max-width: 1440px; margin: 0 auto; padding-block: 22px 48px; padding-inline: 20px; display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 834px) { main { padding-inline: 32px; gap: 18px; padding-block: 28px 56px; } }
+  @media (min-width: 1280px) { main { padding-inline: 56px; gap: 20px; padding-block: 32px 64px; } }
+  .ph { display: flex; flex-direction: column; gap: 8px; }
+  @media (min-width: 834px) { .ph { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
+  .kicker { margin: 0 0 7px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .13em; color: var(--accent); }
+  h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 25px; line-height: 1.05; letter-spacing: -.01em; }
+  @media (min-width: 834px) { h1 { font-size: 30px; } } @media (min-width: 1280px) { h1 { font-size: 34px; } }
+  .badge { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid var(--line-strong); border-radius: 20px; padding: 7px 14px 7px 10px; font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); }
+  .badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+  .mono { font-family: var(--f-mono); }
+
+  /* Guide posters (the site's Setlist posters) */
+  .posters { list-style: none; margin: 0; padding: 8px 0 4px; display: grid; gap: clamp(12px, 1.6vw, 22px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 1279px) { .posters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .posters { grid-template-columns: minmax(0, 1fr); } }
+  .poster { --fg: currentColor; position: relative; overflow: hidden; border-radius: 12px; padding: 16px 18px 18px; min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; box-shadow: 0 2px 4px rgb(23 19 16 / .05), 0 30px 60px -30px rgb(23 19 16 / .35); }
+  .poster .tag { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; opacity: .85; }
+  .poster .no { position: absolute; top: 10px; right: 16px; font-family: var(--f-display); font-size: 60px; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px var(--fg); opacity: .8; }
+  .poster h2 { margin: 0 0 6px; font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(18px, 1.5vw, 22px); line-height: 1.02; }
+  .poster p { margin: 0; font-size: 15px; line-height: 1.45; } .poster b { font-weight: 700; }
+  .p-ink { --fg: var(--on-dark); background: var(--ink); color: var(--on-dark); rotate: -1.2deg; } .p-ink p { color: var(--on-dark-muted); }
+  .p-red { --fg: var(--on-accent); background: var(--accent); color: var(--on-accent); rotate: .9deg; }
+  .p-out { --fg: var(--text-primary); background: var(--surface); border: 1.5px solid var(--text-primary); rotate: -.6deg; } .p-out p { color: var(--text-secondary); }
+  .p-brass { --fg: #171310; background: var(--brass); color: #171310; rotate: 1deg; }
+  .sig { display: flex; align-items: center; gap: 14px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .12em; color: var(--text-faint); }
+  .sig::before { content: ""; width: 40px; height: 2px; background: var(--accent); }
+
+  /* Control cards */
+  .cc { display: flex; flex-direction: column; gap: 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; min-width: 0; }
+  .cc-l { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+  .cc-l b { text-transform: none; letter-spacing: 0; color: var(--text-primary); }
+  .setup { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 1280px) { .setup { grid-template-columns: auto minmax(0, 1fr) auto; } }
+  .keys { display: flex; flex-wrap: wrap; gap: 5px; }
+  .key { width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); font-family: var(--f-mono); font-size: 14px; color: var(--text-muted); cursor: pointer; }
+  .key.acc { font-size: 12px; line-height: 1.1; }
+  .key[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: var(--accent-on-ink); font-weight: 700; }
+  .seg { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); }
+  .seg button { flex: 1 1 auto; min-height: 44px; min-width: 44px; padding: 4px 10px; border: 0; border-radius: 5px; background: transparent; font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); cursor: pointer; }
+  .seg button small { display: block; font-size: 12px; color: var(--text-faint); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-dark); font-weight: 700; }
+  .seg button[aria-pressed="true"] small { color: var(--chip-tab); font-weight: 400; }
+
+  /* Tool cards (the Generator's section cards) */
+  .tool { border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-card); min-width: 0; scroll-margin-top: 90px; }
+  .tool-hd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 12px 16px 0; }
+  .tool-hd .num { font-family: var(--f-mono); font-size: 15px; font-weight: 700; color: var(--text-faint); }
+  .tool-hd h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 17px; }
+  .tool-hd .hint { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .tool-bd { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .glabel { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); font-family: var(--f-mono); font-size: 12px; font-weight: 700; color: var(--text-primary); cursor: pointer; }
+  .btn { min-width: 44px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.red { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-btn); font-family: var(--f-display); font-weight: 400; font-size: 12.5px; }
+  .play { width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); display: grid; place-items: center; cursor: pointer; }
+  .play:hover { color: var(--accent); }
+
+  /* Chord type + root chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { min-height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); font-family: var(--f-mono); font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-secondary); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--accent-on-ink); border-color: var(--ink); }
+  .chip small { font-size: 12px; font-weight: 400; color: var(--text-faint); margin-left: 4px; }
+
+  /* Voicing cards */
+  .voicings { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(150px, calc(50% - 5px)), 1fr)); }
+  .vc { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 34px 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); text-align: center; cursor: pointer; }
+  .vc[aria-pressed="true"] { border: 1.5px solid var(--accent); box-shadow: var(--shadow-hi); background: var(--surface); }
+  .vc b { font-family: var(--f-mono); font-size: 13px; }
+  .vc .meta { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .vc .play { position: absolute; top: 0; right: 0; }
+  .diff { display: inline-flex; gap: 2px; } .diff i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); } .diff i.on { background: var(--brass); }
+
+  /* Neck */
+  .neck-wrap { overflow: hidden; }
+  .neck { width: 100%; height: auto; }
+  .neck .fretline { stroke: var(--fret); } .neck .nut { stroke: var(--text-primary); } .neck .str { stroke: var(--text-muted); }
+  .neck .inlay { fill: var(--line-strong); } .neck .fretno { font-family: var(--f-mono); fill: var(--text-faint); text-anchor: middle; }
+  .neck.v { max-width: 360px; margin: 0 auto; }
+  .neck .sname { font-family: var(--f-mono); fill: var(--text-faint); text-anchor: middle; dominant-baseline: central; }
+  .neck .dot text { font-family: var(--f-mono); font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .neck .tap { fill: transparent; cursor: pointer; } .neck .tap:hover { fill: var(--soft-accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+  /* Name it */
+  .named { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .named .big { font-family: var(--f-display); font-size: 34px; line-height: 1; }
+  .named .alt { font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); }
+  .keychips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .keychips span { padding: 2px 7px; border: 1px solid var(--line); border-radius: 4px; font-family: var(--f-mono); font-size: 12px; color: var(--text-secondary); }
+  .keychips span b { color: var(--accent); }
+
+  /* Builder */
+  .loop { display: flex; flex-wrap: wrap; gap: 6px; min-height: 64px; padding: 8px; border: 1.5px dashed var(--line-strong); border-radius: 8px; }
+  .lchip { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 58px; min-height: 52px; padding: 4px 8px; border-radius: 6px; background: var(--chip-bg); color: var(--on-dark); font-family: var(--f-mono); cursor: pointer; border: 0; }
+  .lchip small { font-size: 12px; color: var(--chip-tab); } .lchip b { font-size: 13px; }
+  .lchip.borrowed small { color: var(--brass); }
+  .meters { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .meter { display: flex; flex-direction: column; gap: 4px; font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); }
+  .meter .bar { height: 8px; border-radius: 4px; background: var(--paper); border: 1px solid var(--line); overflow: hidden; } .meter .bar i { display: block; height: 100%; background: var(--accent); }
+  .next { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* Key finder */
+  .field { min-height: 44px; min-width: 0; flex: 1 1 240px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); font-family: var(--f-mono); font-size: 14px; }
+  .results { display: grid; gap: 8px; }
+  .res { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+  .res.best { border: 1.5px solid var(--accent); background: var(--surface); }
+  .res .k { font-family: var(--f-display); font-size: 17px; } .res .n { font-family: var(--f-mono); font-size: 12px; color: var(--text-secondary); }
+  .res .n em { font-style: normal; color: var(--brass); }
+
+  /* Mood map: an HTML plot (text stays 12px at any width) beside a panel; stacked below 1024px */
+  .mood { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 1024px) { .mood { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+  .mapbox { container-type: inline-size; display: grid; grid-template-columns: 18px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px; }
+  .yaxis { writing-mode: vertical-rl; rotate: 180deg; display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .xaxis { grid-column: 2; display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .plot { position: relative; aspect-ratio: 4 / 3; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); overflow: hidden; }
+  @container (max-width: 520px) { .plot { aspect-ratio: 1 / 1; } }
+  .quad { position: absolute; width: 50%; height: 50%; padding: 10px 12px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faintest); pointer-events: none; }
+  .quad.tl { left: 0; top: 0; } .quad.tr { right: 0; top: 0; text-align: right; } .quad.bl { left: 0; bottom: 0; display: flex; align-items: flex-end; } .quad.br { right: 0; bottom: 0; display: flex; align-items: flex-end; justify-content: flex-end; }
+  .quad.tl, .quad.br { background: color-mix(in srgb, var(--line) 22%, transparent); }
+  .mid-x, .mid-y { position: absolute; background: var(--line-strong); } .mid-x { left: 0; right: 0; top: 50%; height: 1px; } .mid-y { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .mpt { position: absolute; translate: -22px -22px; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; z-index: 1; }
+  .mpt i { width: 14px; height: 14px; border-radius: 50%; background: var(--text-muted); border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--text-muted); }
+  .mpt:hover i { background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .mpt.on { z-index: 2; } .mpt.on i { width: 18px; height: 18px; background: var(--accent); box-shadow: 0 0 0 4px var(--soft-accent); }
+  .mpt span { position: absolute; top: 50%; translate: 0 -50%; left: 36px; white-space: nowrap; font-family: var(--f-mono); font-size: 12px; color: var(--text-secondary); pointer-events: none; }
+  .mpt.lft span { left: auto; right: 36px; }
+  .mpt.on span { color: var(--text-primary); font-weight: 700; background: var(--surface); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--accent); }
+  @container (max-width: 640px) { .mpt:not(.on) span { display: none; } }
+  .mstar { position: absolute; translate: -10px -10px; width: 20px; height: 20px; color: var(--brass); pointer-events: none; z-index: 1; }
+  .mpanel { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--surface); }
+  :root[data-theme="dark"] .mpanel { border-color: var(--line-strong); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mpanel { border-color: var(--line-strong); } }
+  .mpanel .big { font-family: var(--f-display); font-size: 26px; line-height: 1; }
+  .mpanel .chords { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mlist { display: flex; flex-wrap: wrap; gap: 4px; }
+  .mlist .chip { font-weight: 400; } .mlist .chip[aria-pressed="true"] { font-weight: 700; }
+
+  /* Layout A: tabs */
+  .tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .tabs button { flex: 1 1 auto; min-height: 48px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; font-family: var(--f-mono); font-size: 12px; letter-spacing: .05em; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text-primary); font-weight: 700; }
+  /* Layout B: workbench */
+  .bench { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 1280px) { .bench { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } .bench-left { position: sticky; top: 92px; } }
+  .bench-card { border: 1.5px solid var(--ink); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-card); }
+  :root[data-theme="dark"] .bench-card { border-color: var(--line-strong); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bench-card { border-color: var(--line-strong); } }
+  .bench-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 14px 16px; }
+  .bench-top .name { font-family: var(--f-display); font-size: 40px; line-height: 1; }
+  .bench-top .sub { font-family: var(--f-mono); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  /* Layout C: long page with a strip */
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 4px; padding: 6px; border-radius: 8px; background: var(--ink); }
+  .strip a { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 5px 10px; border-radius: 5px; background: var(--ink-soft); color: var(--on-dark-muted); font-family: var(--f-mono); font-size: 12px; text-decoration: none; }
+  .strip a b { color: var(--on-dark); } .strip a:hover { background: var(--ink-mid); }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .note { font-family: var(--f-mono); font-size: 12px; line-height: 1.6; color: var(--text-muted); max-width: 900px; margin: 0; }
+</style>
+
+<header class="nav">
+  <div class="nav-in">
+    <span class="wordmark" role="img" aria-label="Palm/Mute">PALM<svg viewBox="0 0 12 20" aria-hidden="true"><path d="M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z" fill="currentColor"/></svg>MUTE</span>
+    <button class="darksw" role="switch" aria-checked="false" id="dark"><span class="t"><span class="k"></span></span><span class="l">DARK</span></button>
+  </div>
+</header>
+
+<main>
+  <div class="ph">
+    <div><p class="kicker">SONGWRITING TOOLS</p><h1>CHORD LAB</h1></div>
+    <div class="badge"><i></i>MOCK-UP · FIVE STACKED TOOLS</div>
+  </div>
+
+  <section aria-label="How to use the Chord Lab" style="display:flex;flex-direction:column;gap:8px">
+    <ol class="posters">
+      <li class="poster p-ink"><span class="tag">STEP 01</span><span class="no" aria-hidden="true">01</span><div><h2>Look it up</h2><p>Pick a <b>chord</b> and see every way to play it, on a box and on the <b>neck</b>.</p></div></li>
+      <li class="poster p-red"><span class="tag">STEP 02</span><span class="no" aria-hidden="true">02</span><div><h2>Name it</h2><p>Tap a shape you know onto the neck; it says <b>what chord</b> it is and which keys it lives in.</p></div></li>
+      <li class="poster p-out"><span class="tag">STEP 03</span><span class="no" aria-hidden="true">03</span><div><h2>Build a loop</h2><p>Tap chords from your key into a <b>loop</b>; it suggests <b>what comes next</b>.</p></div></li>
+      <li class="poster p-brass"><span class="tag">STEP 04</span><span class="no" aria-hidden="true">04</span><div><h2>Move it</h2><p>Find the <b>key</b>, then shift it: another key, a <b>capo</b> or a drop <b>tuning</b>.</p></div></li>
+    </ol>
+    <span class="sig">LOOK IT UP · NAME IT · BUILD · MOVE IT</span>
+  </section>
+
+  <!-- Lab setup: shared by every tool -->
+  <section class="setup" aria-label="Lab setup">
+    <div class="cc"><span class="cc-l">KEY <b id="keyName">G</b></span><div class="keys" role="radiogroup" aria-label="Key" id="keys"></div></div>
+    <div class="cc"><span class="cc-l">TUNING <b id="tunName">E standard</b></span><div class="seg" role="group" aria-label="Tuning" id="tunings"></div></div>
+    <div class="cc"><span class="cc-l">HANDED</span><div class="seg" role="group" aria-label="Handed" id="handed"><button aria-pressed="true" data-h="r">RIGHT</button><button aria-pressed="false" data-h="l">LEFT</button></div></div>
+  </section>
+
+  <div id="layout"></div>
+  
+</main>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  // ---------- Theory ----------
+  const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const FLAT = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb" };
+  const KEY_ORDER = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const TUNINGS = { std: { label: "E standard", short: "E STD", open: [40, 45, 50, 55, 59, 64] }, eb: { label: "E♭ standard", short: "E♭ STD", open: [39, 44, 49, 54, 58, 63] }, dropd: { label: "Drop D", short: "DROP D", open: [38, 45, 50, 55, 59, 64] }, dropcs: { label: "Drop C♯", short: "DROP C♯", open: [37, 44, 49, 54, 58, 63] } };
+  const STRING_NAMES = { std: ["E", "A", "D", "G", "B", "e"], eb: ["E♭", "A♭", "D♭", "G♭", "B♭", "e♭"], dropd: ["D", "A", "D", "G", "B", "e"], dropcs: ["C♯", "G♯", "C♯", "F♯", "A♯", "d♯"] };
+  const TYPES = [
+    { id: "5", sym: "5", iv: [0, 7], sounds: "Power chord: no 3rd, so neither happy nor sad. The genre's engine." },
+    { id: "oct", sym: " oct", iv: [0], sounds: "Just the root, doubled. Riffs and intros." },
+    { id: "maj", sym: "", iv: [0, 4, 7], sounds: "Bright and settled." },
+    { id: "min", sym: "m", iv: [0, 3, 7], sounds: "Darker, the sad side of the key." },
+    { id: "sus2", sym: "sus2", iv: [0, 2, 7], sounds: "Open and floating; chorus shimmer." },
+    { id: "sus4", sym: "sus4", iv: [0, 5, 7], sounds: "Hanging, wants to fall back to the major." },
+    { id: "add9", sym: "add9", iv: [0, 4, 7, 2], sounds: "Major with a sparkle on top. Emo-era favourite." },
+    { id: "7", sym: "7", iv: [0, 4, 7, 10], sounds: "Bluesy pull to the next chord." },
+    { id: "maj7", sym: "maj7", iv: [0, 4, 7, 11], sounds: "Soft and dreamy." },
+    { id: "m7", sym: "m7", iv: [0, 3, 7, 10], sounds: "Mellow minor." },
+  ];
+  const ROLE = (iv) => (iv === 0 ? "R" : iv === 3 || iv === 4 ? "3" : iv === 7 ? "5" : iv === 2 ? "9" : iv === 5 ? "4" : iv === 10 || iv === 11 ? "7" : "?");
+  const ROLE_COLOR = { R: "var(--accent)", 3: "var(--brass)", 5: "var(--text-primary)", 9: "var(--success)", 4: "var(--success)", 7: "var(--text-muted)" };
+  const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+  const DEG = [{ n: "I", q: "maj", o: 0 }, { n: "ii", q: "min", o: 2 }, { n: "iii", q: "min", o: 4 }, { n: "IV", q: "maj", o: 5 }, { n: "V", q: "maj", o: 7 }, { n: "vi", q: "min", o: 9 }];
+  const BORROWED = [{ n: "♭VII", q: "maj", o: 10 }, { n: "♭VI", q: "maj", o: 8 }, { n: "♭III", q: "maj", o: 3 }, { n: "iv", q: "min", o: 5 }];
+  const chordName = (pc, type) => NOTES[pc] + TYPES.find((t) => t.id === type).sym;
+
+  // ---------- State ----------
+  const S = { key: 7, tuning: "std", left: false, layout: "C", root: 7, type: "maj", vi: 0, tab: "dict", taps: [3, 2, 0, 0, 0, 3], loop: [0, 4, 5, 3].map((d, i) => ({ deg: [DEG[0], DEG[4], DEG[5], DEG[3]][i], type: "5" })), finder: "G D Em C", transpose: 0, capo: 0, picked: "I-V-vi-IV" };
+
+  // ---------- Voicings: a small shape solver (root on the lowest string played, no gaps, stretch ≤ 4) ----------
+  function voicings(root, typeId, tuning) {
+    const t = TYPES.find((x) => x.id === typeId), pcs = new Set(t.iv.map((i) => (root + i) % 12));
+    const open = TUNINGS[tuning].open, out = new Map();
+    const need = typeId === "oct" ? 2 : typeId === "5" ? 2 : 3;
+    for (let start = 0; start <= 12; start++) {
+      // Options per string: muted, open (if in the chord), or a fret in [start, start+3] that's a chord tone.
+      const opts = open.map((o) => { const r = [null]; if (pcs.has(o % 12)) r.push(0); for (let f = Math.max(1, start); f <= start + 3; f++) if (pcs.has((o + f) % 12)) r.push(f); return r; });
+      const pick = Array(6).fill(null);
+      const rec = (s) => {
+        if (s === 6) return judge([...pick]);
+        for (const f of opts[s]) { pick[s] = f; rec(s + 1); }
+      };
+      const judge = (frets) => {
+        const idx = frets.map((f, i) => (f === null ? -1 : i)).filter((i) => i >= 0);
+        if (idx.length < need) return;
+        if (idx[idx.length - 1] - idx[0] + 1 !== idx.length) return; // no muted string between played ones
+        const low = idx[0]; if ((open[low] + frets[low]) % 12 !== root) return; // root on the bottom
+        const notes = idx.map((i) => open[i] + frets[i]), got = new Set(notes.map((n) => n % 12));
+        for (const p of pcs) if (!got.has(p)) return;
+        if (typeId === "5" && idx.length > 3) return; if (typeId === "oct" && (idx.length !== 2 || notes[1] - notes[0] !== 12)) return;
+        const fretted = idx.map((i) => frets[i]).filter((f) => f > 0); const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+        if (span > 3) return;
+        const key = frets.map((f) => (f === null ? "x" : f)).join("-"); if (out.has(key)) return;
+        const lowF = fretted.length ? Math.min(...fretted) : 0, barre = fretted.filter((f) => f === lowF).length >= 3 && lowF > 0;
+        const diff = Math.min(5, 1 + (barre ? 2 : 0) + (span >= 3 ? 1 : 0) + (fretted.length >= 4 ? 1 : 0) + (lowF >= 9 ? 1 : 0));
+        out.set(key, { frets, notes, low: lowF, diff, strings: idx.length, barre, open: frets.some((f) => f === 0) });
+      };
+      rec(0);
+    }
+    // Prefer fuller, easier shapes; then lay them out up the neck.
+    return [...out.values()].sort((a, b) => b.strings - a.strings || a.diff - b.diff).slice(0, 9).sort((a, b) => a.low - b.low || a.diff - b.diff);
+  }
+
+  // ---------- Naming a shape ----------
+  function nameShape(frets, tuning) {
+    const open = TUNINGS[tuning].open;
+    const notes = frets.map((f, i) => (f === null ? null : open[i] + f)).filter((n) => n !== null);
+    if (notes.length < 2) return { names: [], text: notes.length ? "One note: " + NOTES[notes[0] % 12] : "Tap some frets" };
+    const pcs = new Set(notes.map((n) => n % 12)), bass = Math.min(...notes) % 12, found = [];
+    for (let r = 0; r < 12; r++) for (const t of TYPES) {
+      const want = new Set(t.iv.map((i) => (r + i) % 12));
+      if (t.id === "oct") continue;
+      const same = want.size === pcs.size && [...want].every((p) => pcs.has(p));
+      const no5 = ["7", "maj7", "m7"].includes(t.id) && pcs.size === want.size - 1 && [...pcs].every((p) => want.has(p)) && !pcs.has((r + 7) % 12);
+      if (same || no5) found.push({ r, t: t.id, score: (r === bass ? 0 : 1) + (no5 ? 0.5 : 0) + ["5", "maj", "min"].includes(t.id) * -0.2 });
+    }
+    if (pcs.size === 1 && notes.length === 2) return { names: [{ r: bass, t: "oct", name: NOTES[bass] + " octave" }], text: "" };
+    found.sort((a, b) => a.score - b.score);
+    return { names: found.map((f) => ({ ...f, name: chordName(f.r, f.t) + (f.r === bass ? "" : "/" + NOTES[bass]) })), text: found.length ? "" : "Not a chord we know: " + [...pcs].map((p) => NOTES[p]).join(" ") };
+  }
+
+  /** The major keys a chord fits, with its numeral in each. */
+  function keysFor(root, type) {
+    const out = [];
+    for (let k = 0; k < 12; k++) {
+      const o = (root - k + 12) % 12, d = DEG.find((x) => x.o === o);
+      if (!d) continue;
+      const q = ["maj", "add9", "sus2", "sus4", "maj7"].includes(type) ? "maj" : ["min", "m7"].includes(type) ? "min" : type === "7" ? "dom" : "any";
+      if (q === "any" || q === d.q || (q === "dom" && d.n === "V")) out.push({ k, n: q === "dom" ? "V7" : d.n });
+    }
+    return out;
+  }
+
+  // ---------- Key finder ----------
+  function parseChords(text) {
+    return text.trim().split(/[\s,|]+/).filter(Boolean).map((tok) => {
+      const m = /^([A-Ga-g])([#b♯♭]?)(.*)$/.exec(tok); if (!m) return null;
+      let pc = NOTES.indexOf(m[1].toUpperCase()); if (m[2] === "#" || m[2] === "♯") pc++; if (m[2] === "b" || m[2] === "♭") pc--; pc = (pc + 12) % 12;
+      const rest = m[3]; const t = rest === "m" ? "min" : rest === "5" ? "5" : rest === "" ? "maj" : rest === "m7" ? "m7" : rest === "7" ? "7" : rest === "maj7" ? "maj7" : rest.startsWith("sus2") ? "sus2" : rest.startsWith("sus") ? "sus4" : rest === "add9" ? "add9" : null;
+      return t ? { pc, t, tok } : null;
+    });
+  }
+  function findKeys(chords) {
+    const ok = chords.filter(Boolean); if (!ok.length) return [];
+    return [...Array(12).keys()].map((k) => {
+      let hits = 0; const ns = ok.map((c) => {
+        const o = (c.pc - k + 12) % 12, d = DEG.find((x) => x.o === o), b = BORROWED.find((x) => x.o === o);
+        const qual = ["min", "m7"].includes(c.t) ? "min" : ["5", "oct"].includes(c.t) ? "any" : "maj";
+        if (d && (qual === "any" || qual === d.q || (c.t === "7" && d.n === "V"))) { hits++; return d.n; }
+        if (b && (qual === "any" || qual === b.q)) { hits += 0.5; return "<em>" + b.n + "</em>"; }
+        return "<em>?</em>";
+      });
+      const first = (ok[0].pc - k + 12) % 12 === 0 || (ok[ok.length - 1].pc - k + 12) % 12 === 0 ? 0.4 : 0;
+      return { k, score: hits + first, ns };
+    }).sort((a, b) => b.score - a.score).slice(0, 3);
+  }
+
+  // ---------- Drawing ----------
+  function box(v, name, w = 92) {
+    const g = w / 6.4, x0 = g * 0.9, top = 26, fh = g * 1.15, fr = v.frets.filter((f) => f !== null && f > 0), base = fr.length && Math.max(...fr) > 4 ? Math.min(...fr) : 1;
+    const order = S.left ? [5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5];
+    let s = `<svg viewBox="-12 0 ${w + 12} ${top + fh * 4 + 6}" width="${w + 12}" role="img" aria-label="${esc(name)}: ${v.frets.map((f, i) => STRING_NAMES[S.tuning][i] + " " + (f === null ? "muted" : f === 0 ? "open" : "fret " + f)).join(", ")}">`;
+    for (let i = 0; i < 6; i++) s += `<line x1="${x0 + i * g}" y1="${top}" x2="${x0 + i * g}" y2="${top + fh * 4}" stroke="currentColor" stroke-opacity=".55"/>`;
+    for (let j = 0; j <= 4; j++) s += `<line x1="${x0}" y1="${top + j * fh}" x2="${x0 + 5 * g}" y2="${top + j * fh}" stroke="currentColor" stroke-opacity=".55" stroke-width="${j === 0 && base === 1 ? 3 : 1}"/>`;
+    if (base > 1) s += `<text x="${x0 - 6}" y="${top + fh * 0.62}" font-size="12" text-anchor="end" fill="currentColor" font-family="Space Mono">${base}</text>`;
+    order.forEach((si, col) => {
+      const f = v.frets[si], cx = x0 + col * g;
+      if (f === null) s += `<text x="${cx}" y="${top - 7}" font-size="12" text-anchor="middle" fill="currentColor" font-family="Space Mono">×</text>`;
+      else if (f === 0) s += `<circle cx="${cx}" cy="${top - 10}" r="3.2" fill="none" stroke="currentColor"/>`;
+      else { const role = ROLE(((S.tuning && TUNINGS[S.tuning].open[si] + f) - S.root + 120) % 12); s += `<circle cx="${cx}" cy="${top + (f - base + 0.5) * fh}" r="${g * 0.36}" fill="${role === "R" ? "var(--accent)" : "var(--text-primary)"}"/>`; }
+    });
+    return s + "</svg>";
+  }
+  // The neck runs across the card from tablet up; on phones it stands upright (low string on the left, like a
+  // chord box), so labels stay readable and every fret is a full-size tap target.
+  const PHONE = matchMedia("(max-width: 639px)");
+  function neck({ frets = 15, chord = null, shape = null, taps = null, scale = false } = {}) {
+    const V = PHONE.matches, open = TUNINGS[S.tuning].open;
+    const g = V ? { W: 300, a0: 58, al: 44, c0: 46, cs: 44, r: 13, rs: 15, fs: 15 } : { W: 760, a0: 50, al: (760 - 50 - 12) / frets, c0: 20, cs: 32, r: 11, rs: 13, fs: 14 };
+    const H = V ? g.a0 + frets * g.al + 16 : 222;
+    const along = (f) => g.a0 + f * g.al, mid = (f) => (f === 0 ? g.a0 - (V ? 22 : 17) : g.a0 + (f - 0.5) * g.al);
+    const across = (si) => (V ? g.c0 + si * g.cs : g.c0 + (5 - si) * g.cs);
+    const P = (a, c) => { let x = V ? c : a; const y = V ? a : c; if (S.left) x = g.W - x; return [x, y]; };
+    const at = (a, c) => { const [x, y] = P(a, c); return `x="${x}" y="${y}"`; };
+    const line = (a1, c1, a2, c2, cls, w) => { const [x1, y1] = P(a1, c1), [x2, y2] = P(a2, c2); return `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${w}"/>`; };
+    const circ = (a, c, r, extra) => { const [x, y] = P(a, c); return `<circle cx="${x}" cy="${y}" r="${r}" ${extra}/>`; };
+    const between = (k) => (across(k) + across(k + 1)) / 2, end = along(frets);
+    let s = `<svg class="neck ${V ? "v" : ""}" viewBox="0 0 ${g.W} ${H}" role="img" aria-label="Neck">`;
+    for (const f of [3, 5, 7, 9, 15]) if (f <= frets) s += circ(mid(f), between(2), 5, 'class="inlay"');
+    if (frets >= 12) s += circ(mid(12), between(1), 5, 'class="inlay"') + circ(mid(12), between(3), 5, 'class="inlay"');
+    for (let f = 0; f <= frets; f++) {
+      s += line(along(f), across(0), along(f), across(5), f === 0 ? "nut" : "fretline", f === 0 ? 4 : 1.5);
+      if (f > 0 && [3, 5, 7, 9, 12, 15].includes(f)) s += `<text class="fretno" ${at(mid(f), V ? (S.left ? across(5) + 26 : across(0) - 26) : across(0) + 22)} font-size="${g.fs}" dominant-baseline="central">${f}</text>`;
+    }
+    for (let si = 0; si < 6; si++) { s += line(g.a0, across(si), end, across(si), "str", 1 + (5 - si) * 0.25); s += `<text class="sname" ${at(V ? 14 : 12, across(si))} font-size="${g.fs}">${STRING_NAMES[S.tuning][si]}</text>`; }
+    const t = chord && TYPES.find((x) => x.id === chord.type);
+    for (let si = 0; si < 6; si++) for (let f = 0; f <= frets; f++) {
+      const pc = (open[si] + f) % 12, a = mid(f), c = across(si), [cx, cy] = P(a, c);
+      if (taps) {
+        const along_ = f === 0 ? (V ? 44 : 32) : g.al, w = V ? g.cs : along_, h = V ? along_ : g.cs;
+        s += `<rect class="tap" data-s="${si}" data-f="${f}" x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}"/>`;
+        if (taps[si] === f) s += `<g class="dot" pointer-events="none"><circle cx="${cx}" cy="${cy}" r="${g.r + 1}" fill="var(--accent)"/><text x="${cx}" y="${cy}" font-size="${g.fs}" fill="var(--on-accent)">${NOTES[pc].replace("#", "♯")}</text></g>`;
+        continue;
+      }
+      if (scale && MAJOR.includes((pc - S.key + 12) % 12) && !(t && t.iv.some((i) => (chord.root + i) % 12 === pc))) s += `<circle cx="${cx}" cy="${cy}" r="${V ? 4 : 3}" fill="var(--line-strong)"/>`;
+      if (t && t.iv.some((i) => (chord.root + i) % 12 === pc)) {
+        const role = ROLE((pc - chord.root + 12) % 12), inShape = shape && shape.frets[si] === f;
+        s += `<g class="dot"><circle cx="${cx}" cy="${cy}" r="${inShape ? g.rs : g.r}" fill="${inShape ? ROLE_COLOR[role] : "var(--surface)"}" stroke="${ROLE_COLOR[role]}" stroke-width="2"/><text x="${cx}" y="${cy}" font-size="${g.fs}" fill="${inShape ? "var(--on-accent)" : "var(--text-primary)"}">${role}</text></g>`;
+      }
+    }
+    if (taps) for (let si = 0; si < 6; si++) if (taps[si] === null) s += `<text ${at(mid(0), across(si))} font-family="Space Mono" font-size="${g.fs + 2}" text-anchor="middle" dominant-baseline="central" fill="var(--text-faint)">×</text>`;
+    return s + "</svg>";
+  }
+  const icon = (n) => n === "play" ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4.5v15l12.5-7.5z"/></svg>` : "";
+  const diffDots = (d) => `<span class="diff" aria-label="Difficulty ${d} of 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= d ? "on" : ""}"></i>`).join("")}</span>`;
+
+  // ---------- Tools ----------
+  const TOOLS = [
+    { id: "dict", n: 1, title: "Dictionary", hint: "every chord, every position, on the neck" },
+    { id: "name", n: 2, title: "Name that chord", hint: "tap a shape, get its name" },
+    { id: "build", n: 3, title: "Progression builder", hint: "tap chords into a loop" },
+    { id: "key", n: 4, title: "Key finder & transposer", hint: "chords → key; move them" },
+    { id: "mood", n: 5, title: "Mood map", hint: "dark ↔ bright, settled ↔ restless" },
+  ];
+  const BODY = {
+    dict() {
+      const vs = voicings(S.root, S.type, S.tuning); S.vi = Math.min(S.vi, vs.length - 1); const t = TYPES.find((x) => x.id === S.type);
+      return `<div class="glabel">Root</div><div class="chips">${NOTES.map((n, i) => `<button class="chip" data-root="${i}" aria-pressed="${i === S.root}">${n}${FLAT[n] ? `<small>${FLAT[n]}</small>` : ""}</button>`).join("")}</div>
+        <div class="glabel">Type</div><div class="chips">${TYPES.map((x) => `<button class="chip" data-type="${x.id}" aria-pressed="${x.id === S.type}">${x.id === "maj" ? "MAJOR" : x.id === "min" ? "MINOR" : x.id.toUpperCase()}</button>`).join("")}</div>
+        <p class="note"><b>${chordName(S.root, S.type)}</b>: ${t.iv.map((i) => NOTES[(S.root + i) % 12]).join(" · ")}. ${t.sounds}</p>
+        <div class="voicings">${vs.map((v, i) => `<button class="vc" data-vi="${i}" aria-pressed="${i === S.vi}">${box(v, chordName(S.root, S.type))}<b>${chordName(S.root, S.type)}</b><span class="meta">${v.open ? "open" : v.barre ? "barre " + v.low : "frets " + v.low + "–" + (v.low + 3)} · ${v.strings} strings</span>${diffDots(v.diff)}<span class="play" aria-label="Hear it">${icon("play")}</span></button>`).join("") || `<p class="note">No playable shape in this tuning.</p>`}</div>
+        <div class="glabel">On the neck</div>${BODY.neck()}`;
+    },
+    neck() {
+      const vs = voicings(S.root, S.type, S.tuning), v = vs[S.vi];
+      return `<div class="row"><b class="mono">${chordName(S.root, S.type)}</b><span class="note">every ${chordName(S.root, S.type)} note on the neck, filled in: position ${S.vi + 1} of ${vs.length}</span><button class="btn" data-step="-1">‹ PREV</button><button class="btn" data-step="1">NEXT ›</button><button class="btn" data-scale aria-pressed="${!!S.scale}">${S.scale ? "HIDE" : "SHOW"} THE SCALE</button></div>
+        <div class="neck-wrap">${neck({ chord: { root: S.root, type: S.type }, shape: v, scale: S.scale })}</div>
+        <div class="legend"><span style="--c:var(--accent)">Root</span><span style="--c:var(--brass)">3rd</span><span style="--c:var(--text-primary)">5th</span><span style="--c:var(--success)">2nd / 4th / 9th</span><span style="--c:var(--text-muted)">7th</span></div>`;
+    },
+    name() {
+      const r = nameShape(S.taps, S.tuning), best = r.names[0];
+      const keys = best && best.t !== "oct" ? keysFor(best.r, best.t) : [];
+      return `<p class="note">Tap a fret on each string (tap it again to mute the string). It names the chord as you go.</p>
+        <div class="neck-wrap">${neck({ frets: 12, taps: S.taps })}</div>
+        <div class="named"><span class="big">${best ? esc(best.name) : "—"}</span><span class="alt">${r.text || (r.names.length > 1 ? "also: " + r.names.slice(1, 4).map((n) => esc(n.name)).join(", ") : "")}</span></div>
+        ${keys.length ? `<div class="glabel">In these keys</div><div class="keychips">${keys.map((k) => `<span>${NOTES[k.k]} major: <b>${k.n}</b></span>`).join("")}</div>` : ""}
+        <div class="row"><button class="btn" data-clear>CLEAR</button><button class="btn" data-sample="g">TRY 3-2-0-0-0-3</button><button class="btn" data-sample="cadd9">TRY x-3-2-0-3-3</button></div>`;
+    },
+    build() {
+      const pal = [...DEG.map((d) => ({ ...d, b: false })), ...BORROWED.map((d) => ({ ...d, b: true }))];
+      const last = S.loop[S.loop.length - 1]?.deg.n ?? "I";
+      const NEXT = { I: ["V", "vi", "IV"], ii: ["V", "IV", "I"], iii: ["vi", "IV", "I"], IV: ["I", "V", "vi"], V: ["vi", "IV", "I"], vi: ["IV", "V", "I"], "♭VII": ["IV", "I", "V"], "♭VI": ["♭VII", "I", "IV"], "♭III": ["IV", "♭VII", "I"], iv: ["I", "V", "IV"] };
+      const majors = S.loop.filter((c) => c.deg.q === "maj").length, bright = S.loop.length ? majors / S.loop.length : 0;
+      const restless = S.loop.length ? (S.loop[S.loop.length - 1].deg.n === "I" ? 0.15 : S.loop[S.loop.length - 1].deg.n === "V" ? 0.9 : 0.6) : 0;
+      const sig = S.loop.map((c) => c.deg.n).join("-"), classic = ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "I-vi-IV-V", "IV-I-V-vi", "I-IV-vi-V", "V-vi-IV-I"].includes(sig) ? 1 : S.loop.every((c) => ["I", "IV", "V", "vi"].includes(c.deg.n)) ? 0.6 : 0.3;
+      const name = (d, t) => chordName((S.key + d.o) % 12, d.q === "min" && t === "5" ? "5" : t === "5" ? "5" : d.q);
+      return `<div class="glabel">Your key: ${NOTES[S.key]} major. Tap to add (borrowed chords in brass)</div>
+        <div class="chips">${pal.map((d, i) => `<button class="chip" data-add="${i}" style="${d.b ? "color:var(--brass)" : ""}">${d.n}<small>${chordName((S.key + d.o) % 12, d.q)}</small></button>`).join("")}</div>
+        <div class="glabel">Loop · tap a chord to remove it</div>
+        <div class="loop">${S.loop.map((c, i) => `<button class="lchip ${BORROWED.includes(c.deg) ? "borrowed" : ""}" data-rm="${i}"><small>${c.deg.n}</small><b>${name(c.deg, c.type)}</b></button>`).join("") || `<span class="note">Empty: tap chords above.</span>`}</div>
+        <div class="row"><button class="btn red">${icon("play")} PLAY THE LOOP</button><div class="seg" role="group" aria-label="Chord sound" style="flex:0 1 auto">${["5", "FULL"].map((x, i) => `<button aria-pressed="${(S.full ? 1 : 0) === i}" data-full="${i}">${x === "5" ? "POWER CHORDS" : "FULL CHORDS"}</button>`).join("")}</div></div>
+        <div class="glabel">What next? (after ${esc(last)})</div><div class="next">${(NEXT[last] || []).map((n) => { const d = [...DEG, ...BORROWED].find((x) => x.n === n); return `<button class="chip" data-addn="${n}">${n}<small>${chordName((S.key + d.o) % 12, d.q)}</small></button>`; }).join("")}</div>
+        <div class="meters">
+          <div class="meter">Dark ↔ bright · ${Math.round(bright * 100)}%<span class="bar"><i style="width:${bright * 100}%"></i></span>${bright > 0.6 ? "Mostly major chords." : "Leans on the minor chords."}</div>
+          <div class="meter">Settled ↔ restless · ${Math.round(restless * 100)}%<span class="bar"><i style="width:${restless * 100}%"></i></span>${restless > 0.5 ? "Ends away from home: it wants to go round again." : "Ends at home."}</div>
+          <div class="meter">How classic · ${Math.round(classic * 100)}%<span class="bar"><i style="width:${classic * 100}%"></i></span>${classic === 1 ? "One of the genre's own loops." : "Your own twist."}</div>
+        </div>`;
+    },
+    key() {
+      const chords = parseChords(S.finder), res = findKeys(chords);
+      const shift = (pc) => (pc + S.transpose + 12) % 12, sound = (pc) => (pc + S.transpose + S.capo) % 12;
+      return `<div class="row"><label class="glabel" for="finder">Chords</label><input id="finder" class="field" value="${esc(S.finder)}" placeholder="G D Em C" autocomplete="off"></div>
+        ${chords.some((c) => !c) ? `<p class="note">Couldn't read: ${chords.map((c, i) => (c ? null : esc(S.finder.trim().split(/[\\s,|]+/)[i]))).filter(Boolean).join(", ")}</p>` : ""}
+        <div class="results">${res.map((r, i) => `<div class="res ${i === 0 ? "best" : ""}"><span class="k">${NOTES[r.k]}</span><span class="n">${i === 0 ? "Best fit · " : ""}${r.ns.join(" · ")}</span></div>`).join("") || `<p class="note">Type some chords.</p>`}</div>
+        <div class="glabel">Transpose</div>
+        <div class="row"><button class="btn" data-tr="-1">− 1</button><span class="mono" style="min-width:110px;text-align:center">${S.transpose >= 0 ? "+" : ""}${S.transpose} semitone${Math.abs(S.transpose) === 1 ? "" : "s"}</span><button class="btn" data-tr="1">+ 1</button>
+          <span class="glabel" style="margin-left:8px">Capo</span><button class="btn" data-capo="-1">−</button><span class="mono">${S.capo ? "fret " + S.capo : "none"}</span><button class="btn" data-capo="1">+</button></div>
+        <div class="results"><div class="res"><span class="k">Play</span><span class="n">${chords.filter(Boolean).map((c) => chordName((shift(c.pc) - S.capo + 12) % 12, c.t)).join(" · ")}</span></div>
+          <div class="res"><span class="k">Hear</span><span class="n">${chords.filter(Boolean).map((c) => chordName(sound((c.pc - S.capo + 12) % 12), c.t)).join(" · ")}${S.capo ? ` (capo ${S.capo})` : ""} · in ${TUNINGS[S.tuning].label}</span></div></div>`;
+    },
+    mood() {
+      const P = [["I-V-vi-IV", [0, 7, 9, 5]], ["vi-IV-I-V", [9, 5, 0, 7]], ["I-IV-V", [0, 5, 7]], ["I-V-IV-V", [0, 7, 5, 7]], ["vi-V-IV", [9, 7, 5]], ["IV-I-V-vi", [5, 0, 7, 9]], ["I-vi-IV-V", [0, 9, 5, 7]], ["I-IV-vi-V", [0, 5, 9, 7]], ["V-vi-IV-I", [7, 9, 5, 0]], ["I-V-IV", [0, 7, 5]], ["I-♭VII-IV", [0, 10, 5]], ["vi-IV-V-iii", [9, 5, 7, 4]], ["I-iii-IV-iv", [0, 4, 5, 5]], ["ii-V-I", [2, 7, 0]]];
+      const minor = (o) => [2, 4, 9].includes(o);
+      const REST = { 0: 0.12, 5: 0.45, 9: 0.62, 4: 0.7, 7: 0.86, 10: 0.5, 2: 0.75 };
+      const pts = P.map(([id, os]) => {
+        const bright = os.filter((o) => !minor(o)).length / os.length + (id.includes("iv") ? -0.25 : 0) + (os[0] === 9 ? -0.18 : 0) + (os[0] === 2 ? -0.1 : 0);
+        const restless = REST[os[os.length - 1]] + (new Set(os).size - 3) * 0.05 + (os[0] === 0 ? -0.04 : 0.04);
+        return { id, os, b: Math.max(0, Math.min(1, bright)), r: Math.max(0, Math.min(1, restless)) };
+      });
+      // Plot space: 8–92% both ways; nudge points that would print labels on top of each other.
+      const placed = [];
+      for (const p of pts) {
+        p.x = 8 + p.b * 84; p.y = 92 - p.r * 84;
+        while (placed.some((q) => Math.abs(q.x - p.x) < 24 && Math.abs(q.y - p.y) < 5.5)) p.y -= 5.5;
+        placed.push(p);
+      }
+      const p = pts.find((x) => x.id === S.picked) || pts[0];
+      const words = (v, lo, hi) => (v < 0.35 ? lo : v > 0.65 ? hi : "in between");
+      // The builder's loop as a ★ (same scoring as its meters).
+      const lb = S.loop.length ? S.loop.filter((c) => c.deg.q === "maj").length / S.loop.length : 0.5, last = S.loop[S.loop.length - 1]?.deg.n;
+      const lr = last === "I" ? 0.15 : last === "V" ? 0.9 : 0.6;
+      return `<div class="mood">
+        <div class="mapbox">
+          <div class="yaxis" aria-hidden="true"><span>settled</span><span>restless ↑</span></div>
+          <div class="plot" role="group" aria-label="Mood map: tap a loop to pick it">
+            <span class="quad tl">Tense</span><span class="quad tr">Anthem</span><span class="quad bl">Brooding</span><span class="quad br">Feel-good</span>
+            <span class="mid-x"></span><span class="mid-y"></span>
+            ${pts.map((q) => `<button class="mpt ${q.id === p.id ? "on" : ""} ${q.x > 66 ? "lft" : ""}" style="left:${q.x}%;top:${q.y}%" data-pick="${q.id}" aria-pressed="${q.id === p.id}" aria-label="${q.id}"><i></i><span>${q.id}</span></button>`).join("")}
+            <svg class="mstar" viewBox="-12 -12 24 24" style="left:${8 + lb * 84}%;top:${92 - lr * 84}%" aria-label="Your loop"><path fill="currentColor" d="M0-11 3-3 11-3 4 2 7 10 0 5-7 10-4 2-11-3-3-3z"/></svg>
+          </div>
+          <div class="xaxis" aria-hidden="true"><span>← darker</span><span>brighter →</span></div>
+        </div>
+        <div class="mpanel">
+          <span class="glabel">Picked loop</span>
+          <span class="big">${esc(p.id)}</span>
+          <div class="chords">${p.os.map((o, i) => `<span class="lchip"><small>${p.id.split("-")[i]}</small><b>${chordName((S.key + o) % 12, minor(o) ? "min" : "maj")}</b></span>`).join("")}</div>
+          <div class="meter">Dark ↔ bright · ${words(p.b, "dark", "bright")}<span class="bar"><i style="width:${p.b * 100}%"></i></span></div>
+          <div class="meter">Settled ↔ restless · ${words(p.r, "settled", "restless")}<span class="bar"><i style="width:${p.r * 100}%"></i></span></div>
+          <button class="btn red">${icon("play")} HEAR IT IN ${NOTES[S.key]}</button>
+          <span class="note">★ is your loop from the builder.</span>
+          <span class="glabel">All loops</span>
+          <div class="mlist">${pts.map((q) => `<button class="chip" data-pick="${q.id}" aria-pressed="${q.id === p.id}">${q.id}</button>`).join("")}</div>
+        </div>
+      </div>`;
+    },
+  };
+  const card = (t) => `<article class="tool" id="tool-${t.id}" aria-labelledby="h-${t.id}"><div class="tool-hd"><span class="num">${String(t.n).padStart(2, "0")}</span><h2 id="h-${t.id}">${t.title}</h2><span class="hint">${t.hint}</span></div><div class="tool-bd">${BODY[t.id]()}</div></article>`;
+
+  // ---------- Layouts ----------
+  function render() {
+    $("#layout").innerHTML = `<nav class="strip" aria-label="Tools">${TOOLS.map((t) => `<a href="#tool-${t.id}"><b>${String(t.n).padStart(2, "0")} ${t.title}</b>${t.hint}</a>`).join("")}</nav><div class="stack">${TOOLS.map(card).join("")}</div>`;
+  }
+
+  // ---------- Setup controls ----------
+  $("#keys").innerHTML = KEY_ORDER.map((k) => `<button class="key ${FLAT[k] ? "acc" : ""}" role="radio" data-key="${NOTES.indexOf(k)}" aria-checked="${NOTES.indexOf(k) === S.key}">${FLAT[k] ? `<span>${k}</span><span>${FLAT[k]}</span>` : k}</button>`).join("");
+  $("#tunings").innerHTML = Object.entries(TUNINGS).map(([id, t]) => `<button data-tun="${id}" aria-pressed="${id === S.tuning}">${t.short}</button>`).join("");
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button, [data-pick], rect.tap");
+    if (!b) return;
+    const d = b.dataset;
+    if (d.key) { S.key = +d.key; $$("#keys .key").forEach((x) => x.setAttribute("aria-checked", String(x === b))); $("#keyName").textContent = NOTES[S.key]; }
+    else if (d.tun) { S.tuning = d.tun; $$("#tunings button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); $("#tunName").textContent = TUNINGS[S.tuning].label; S.vi = 0; }
+    else if (d.h) { S.left = d.h === "l"; $$("#handed button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }
+    else if (d.root) { S.root = +d.root; S.vi = 0; }
+    else if (d.type) { S.type = d.type; S.vi = 0; }
+    else if (d.vi) S.vi = +d.vi;
+    else if (d.step) { const n = voicings(S.root, S.type, S.tuning).length; S.vi = (S.vi + +d.step + n) % n; }
+    else if (d.scale !== undefined) S.scale = !S.scale;
+    else if (d.tab) S.tab = d.tab;
+    else if (d.s !== undefined) { const si = +d.s, f = +d.f; S.taps[si] = S.taps[si] === f ? null : f; }
+    else if (d.clear !== undefined) S.taps = [null, null, null, null, null, null];
+    else if (d.sample) S.taps = d.sample === "g" ? [3, 2, 0, 0, 0, 3] : [null, 3, 2, 0, 3, 3];
+    else if (d.add) { const pal = [...DEG, ...BORROWED]; if (S.loop.length < 8) S.loop.push({ deg: pal[+d.add], type: "5" }); }
+    else if (d.addn) { const c = [...DEG, ...BORROWED].find((x) => x.n === d.addn); if (S.loop.length < 8) S.loop.push({ deg: c, type: "5" }); }
+    else if (d.rm) S.loop.splice(+d.rm, 1);
+    else if (d.full) S.full = d.full === "1";
+    else if (d.tr) S.transpose = Math.max(-11, Math.min(11, S.transpose + +d.tr));
+    else if (d.capo) S.capo = Math.max(0, Math.min(7, S.capo + +d.capo));
+    else if (d.pick) S.picked = d.pick;
+    else if (b.id === "dark") { const on = b.getAttribute("aria-checked") !== "true"; b.setAttribute("aria-checked", String(on)); document.documentElement.setAttribute("data-theme", on ? "dark" : "light"); return; }
+    else return;
+    render();
+  });
+  document.addEventListener("input", (e) => {
+    if (e.target.id !== "finder") return;
+    S.finder = e.target.value; const pos = e.target.selectionStart; render(); const f = $("#finder"); f.focus(); f.setSelectionRange(pos, pos);
+  });
+  PHONE.addEventListener("change", render);
+  if (matchMedia("(prefers-color-scheme: dark)").matches) $("#dark").setAttribute("aria-checked", "true");
+  render();
+})();
+</script>
