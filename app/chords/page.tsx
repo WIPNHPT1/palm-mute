@@ -6,6 +6,7 @@ import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { KeyFinder } from "@/components/lab/KeyFinder";
 import { LabProvider } from "@/components/lab/LabContext";
+import { MoodMap } from "@/components/lab/MoodMap";
 import { LabSetup } from "@/components/lab/LabSetup";
 import { NameIt } from "@/components/lab/NameIt";
 import { type LabTool, ToolCard, ToolStrip } from "@/components/lab/ToolCard";
@@ -17,6 +18,7 @@ const TOOLS: LabTool[] = [
   { id: "name-it", n: 2, title: "Name that chord", hint: "tap a shape, get its name" },
   { id: "builder", n: 3, title: "Progression builder", hint: "tap chords into a loop" },
   { id: "key-finder", n: 4, title: "Key finder & transposer", hint: "chords to key; move them" },
+  { id: "mood-map", n: 5, title: "Mood map", hint: "dark to bright, settled to restless" },
 ];
 
 const GUIDE: GuideStep[] = [
@@ -46,6 +48,9 @@ export default function ChordLabPage() {
           </ToolCard>
           <ToolCard tool={TOOLS[3]}>
             <KeyFinder />
+          </ToolCard>
+          <ToolCard tool={TOOLS[4]}>
+            <MoodMap />
           </ToolCard>
         </div>
       </div>

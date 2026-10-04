@@ -84,4 +84,37 @@ test.describe("chord lab: every screen", () => {
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     expect(await layoutProblems(page, tool)).toEqual([]);
   });
+
+  test("the Mood map fits: dots are tap targets, no names overlap or spill, the picked loop is always labelled", async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+    const tool = '[data-tool="mood-map"]';
+    for (const id of ["I-V-vi-IV", "I-bVII-IV-I", "vi-iii-IV-V"]) {
+      await page.locator(`${tool} [data-chip="${id}"]`).click();
+      expect(await horizontalOverflow(page), id).toBeLessThanOrEqual(0);
+      expect(await layoutProblems(page, tool), id).toEqual([]);
+      const plot = (await page.locator(`${tool} [data-plot]`).boundingBox())!;
+      // Every visible dot name stays inside the plot and clear of the others.
+      const names = await page.locator(`${tool} [data-loop-id] span`).evaluateAll((els) =>
+        els.filter((e) => e.getClientRects().length).map((e) => { const r = e.getBoundingClientRect(); return { text: e.textContent, left: r.left, right: r.right, top: r.top, bottom: r.bottom }; }),
+      );
+      expect(names.some((n) => n.text === id), `${id} is labelled`).toBe(true);
+      for (const n of names) {
+        expect(n.left, `${n.text} spills left`).toBeGreaterThanOrEqual(plot.x - 1);
+        expect(n.right, `${n.text} spills right`).toBeLessThanOrEqual(plot.x + plot.width + 1);
+      }
+      for (let i = 0; i < names.length; i++)
+        for (let j = i + 1; j < names.length; j++) {
+          const a = names[i], b = names[j];
+          const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          expect(overlap, `${a.text} and ${b.text} overlap`).toBe(false);
+        }
+    }
+    // The plot is square on phones and 4:3 from tablet up; the panel sits beside it from 1280px, under it below.
+    const plot = (await page.locator(`${tool} [data-plot]`).boundingBox())!;
+    const panel = (await page.locator(`${tool} [data-mood-panel]`).boundingBox())!;
+    const w = projectWidth(test.info());
+    expect(Math.abs(plot.width / plot.height - (w < 834 ? 1 : 4 / 3))).toBeLessThan(0.02);
+    if (w >= 1280) expect(panel.x).toBeGreaterThan(plot.x + plot.width - 1);
+    else expect(panel.y).toBeGreaterThan(plot.y + plot.height - 1);
+  });
 });

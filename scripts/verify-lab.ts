@@ -23,7 +23,7 @@ import {
 } from "@/lib/lab/chords";
 import movesJson from "@/data/chord-moves.json";
 import { type DegreeId, DEGREES, DEGREE_IDS, degreeRoot, findKeys, nextMoves, parseChord, shapeFor, splitChords, transpose, typesFor } from "@/lib/lab/keys";
-import { brightness, classicness, restlessness } from "@/lib/lab/mood";
+import { MAP, MOOD_LOOPS, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
 import { LAB_BPM, arpeggioBars, loopBars, strumBars } from "@/lib/lab/sound";
 import { PITCH_CLASSES, progressions } from "@/lib/musicTheory";
 
@@ -193,8 +193,35 @@ for (const tuning of TUNING_IDS) {
   }
 }
 
+// Mood map: every loop is unique and made of real degrees, the ten of the app are all on it, every dot sits
+// inside the plot, no two dots print their names on top of each other, every corner of the map has loops, and
+// a dot never strays far from its true place (the nudge that keeps names apart is bounded).
+const points = moodPoints();
+assert.equal(new Set(MOOD_LOOPS.map((l) => l.id)).size, MOOD_LOOPS.length, "duplicate loops on the map");
+assert.equal(points.filter((p) => p.own).length, progressions.length);
+let farthest = 0;
+for (const p of points) {
+  assert.ok(p.degrees.length >= 3 && p.degrees.length <= 5 && p.degrees.every((d) => DEGREE_IDS.includes(d)), `${p.id}: bad loop`);
+  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - 3 && p.y <= MAP.y1 + 3, `${p.id}: off the plot (${p.x}, ${p.y})`);
+  assert.ok(p.bright >= 0 && p.bright <= 1 && p.restless >= 0 && p.restless <= 1, `${p.id}: score out of range`);
+  const v = vibeOf(naturalLoop(p.degrees));
+  const home = placeScores(v.brightness, v.restlessness);
+  farthest = Math.max(farthest, Math.hypot(home.x - p.x, home.y - p.y));
+}
+assert.ok(farthest <= 30, `a dot was nudged ${farthest.toFixed(0)}% from its place`);
+for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
+  assert.equal(labelsClash(points[i], points[j]), false, `${points[i].id} and ${points[j].id} overlap`);
+}
+for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === q), `nothing in ${q}`);
+// Tapping empty space finds the nearest loop; a loop's own place finds itself.
+for (const p of points) assert.equal(nearestPoint(points, p.x, p.y).id, p.id);
+// The darkest loop is a minor-heavy one, the brightest has no minor chord.
+const byBright = [...points].sort((a, b) => a.bright - b.bright);
+assert.ok(byBright[0].degrees.some((d) => ["vi", "iii", "ii", "iv"].includes(d)), `darkest is ${byBright[0].id}`);
+assert.ok(byBright.at(-1)!.degrees.every((d) => !["vi", "iii", "ii", "iv"].includes(d)), `brightest is ${byBright.at(-1)!.id}`);
+
 console.log(
   `verify-lab: ${voicings} voicings checked (${Object.entries(perTuning)
     .map(([t, n]) => `${t} ${n}`)
-    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning.`,
+    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
 );
