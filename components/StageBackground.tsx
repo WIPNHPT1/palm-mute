@@ -2,17 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { type StageKind, newStringsState, paintOscilloscope, paintStrings, readStageColors } from "@/lib/stagePaint";
+import { paintOscilloscope, readStageColors } from "@/lib/stagePaint";
 
 const FPS = 30;
 
 /**
- * A faint moving background behind a whole page (owner's picks: oscilloscope for the Song Generator, strings for
+ * A faint moving background behind a whole page (owner's pick: the oscilloscope, behind both the Song Generator and
  * the Chord Lab). One canvas, fixed under the top bar and behind everything (cards stay solid, so text never sits
  * on moving pixels). 30 frames a second, paused while the tab is hidden, one still frame for reduced motion, and
  * not drawn on phones. It follows the theme, and reacts while music is playing.
  */
-export function StageBackground({ kind, playing }: { kind: StageKind; playing: boolean }) {
+export function StageBackground({ playing }: { playing: boolean }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const live = useRef(playing);
@@ -25,7 +25,6 @@ export function StageBackground({ kind, playing }: { kind: StageKind; playing: b
     const ctx = cv.getContext("2d");
     if (!ctx) return;
     let colors = readStageColors();
-    const strings = newStringsState();
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const wide = matchMedia("(min-width: 834px)");
     let raf = 0;
@@ -44,8 +43,7 @@ export function StageBackground({ kind, playing }: { kind: StageKind; playing: b
     const draw = (t: number) => {
       const s = size();
       ctx.clearRect(0, 0, cv.width, cv.height);
-      if (kind === "osc") paintOscilloscope(ctx, cv.width, cv.height, t, live.current, colors, s);
-      else paintStrings(ctx, cv.width, cv.height, t, live.current, colors, strings, s);
+      paintOscilloscope(ctx, cv.width, cv.height, t, live.current, colors, s);
     };
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
@@ -77,8 +75,8 @@ export function StageBackground({ kind, playing }: { kind: StageKind; playing: b
       reduced.removeEventListener("change", start);
       wide.removeEventListener("change", start);
     };
-  }, [kind, host]);
+  }, [host]);
 
   if (!host) return null;
-  return createPortal(<canvas ref={canvas} className="stage-bg" data-stage-bg={kind} aria-hidden="true" />, host);
+  return createPortal(<canvas ref={canvas} className="stage-bg" data-stage-bg="osc" aria-hidden="true" />, host);
 }

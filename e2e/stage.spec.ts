@@ -1,32 +1,22 @@
 import { expect, gotoAndSettle, lightOnly, onlyAtWidths, openMenu, projectWidth, test } from "./fixtures";
 
 // The stage pack (docs/mockups/stage-options.html, owner's picks 2026-10-05): the Generator and the Chord Lab zoom
-// with the screen from 1600px and get fretboard rails in the gutters and a moving background; a strings menu button;
-// split-flap card titles; a shutter wipe between pages.
+// with the screen from 1600px and share one moving background (the oscilloscope, gutters included; the fretboard
+// rails were dropped); a strings menu button; split-flap card titles; a shutter wipe between pages.
 
-test.describe("stage: zoom, rails and background", () => {
-  for (const [path, kind] of [["/generator/", "osc"], ["/chords/", "strings"]] as const) {
-    test(`${path}: zooms from 1600px, rails in the gutters, the ${kind} background behind the page`, async ({ page }, info) => {
+test.describe("stage: zoom and background", () => {
+  for (const path of ["/generator/", "/chords/"]) {
+    test(`${path}: zooms from 1600px, the scope background behind the page and its gutters, no fretboard rails`, async ({ page }, info) => {
       lightOnly(info);
       await gotoAndSettle(page, path);
       const w = projectWidth(info);
       const zoom = await page.evaluate(() => getComputedStyle(document.querySelector("[data-zoom]")!).zoom);
       const expected = w < 1600 ? 1 : Math.min(1.4, w / 1600);
       expect(Number(zoom), "page zoom").toBeCloseTo(expected, 2);
-      // Rails only where the gutters are wide (1600px and up), each exactly the gutter, never clickable.
-      const rails = await page.locator("[data-stage-rails] .stage-rail").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { display: getComputedStyle(e).display, x: r.x, w: r.width, pe: getComputedStyle(e).pointerEvents }; }));
-      expect(rails).toHaveLength(2);
-      if (w >= 1600) {
-        const header = (await page.locator("header .mx-auto").first().boundingBox())!;
-        expect(rails[0].display).toBe("block");
-        expect(rails[0].x).toBe(0);
-        expect(rails[0].w).toBeGreaterThan(100);
-        expect(rails[0].w).toBeLessThanOrEqual(header.x + 1); // never under the page
-        expect(rails[1].x).toBeGreaterThanOrEqual(header.x + header.width - 1);
-        expect(rails[0].pe).toBe("none");
-      } else for (const r of rails) expect(r.display).toBe("none");
+      // No fretboard rails in the gutters, at any width.
+      await expect(page.locator("[data-stage-rails], .stage-rail, .stage-board")).toHaveCount(0);
       // The background: drawn from tablet up, under the top bar, behind the page.
-      const bg = page.locator(`canvas[data-stage-bg="${kind}"]`);
+      const bg = page.locator(`canvas[data-stage-bg="osc"]`);
       await expect(bg).toHaveCount(1);
       const bgState = await bg.evaluate((c: HTMLCanvasElement) => ({ display: getComputedStyle(c).display, top: c.getBoundingClientRect().top, z: getComputedStyle(c).zIndex, pe: getComputedStyle(c).pointerEvents }));
       if (w < 834) expect(bgState.display).toBe("none");
@@ -35,6 +25,10 @@ test.describe("stage: zoom, rails and background", () => {
         expect(bgState.pe).toBe("none");
         const bar = (await page.locator("header").boundingBox())!;
         expect(Math.abs(bgState.top - (bar.y + bar.height))).toBeLessThan(2);
+        // Full width, so the gutters show the scope too.
+        const bgBox = (await bg.boundingBox())!;
+        expect(bgBox.x).toBe(0);
+        expect(Math.abs(bgBox.width - (await page.evaluate(() => document.documentElement.clientWidth)))).toBeLessThan(2);
       }
     });
   }
@@ -44,18 +38,7 @@ test.describe("stage: zoom, rails and background", () => {
     lightOnly(info);
     await gotoAndSettle(page, "/");
     expect(await page.locator("[data-zoom]").count()).toBe(0);
-    await expect(page.locator("[data-stage-rails], canvas.stage-bg")).toHaveCount(0);
-  });
-
-  test("the rails' strings shimmer while a song plays", async ({ page }, info) => {
-    onlyAtWidths(info, [1920]);
-    lightOnly(info);
-    await gotoAndSettle(page, "/generator/");
-    await expect(page.locator("[data-stage-rails]")).toHaveAttribute("data-playing", "false");
-    await page.getByRole("button", { name: "PLAY SONG" }).click();
-    await expect(page.locator("[data-stage-rails]")).toHaveAttribute("data-playing", "true");
-    await page.getByRole("button", { name: "STOP SONG" }).click();
-    await expect(page.locator("[data-stage-rails]")).toHaveAttribute("data-playing", "false");
+    await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
   });
 
   test("the background actually draws (and draws a still frame with reduced motion)", async ({ page }, info) => {
