@@ -8,14 +8,12 @@ import { useLab } from "@/components/lab/LabContext";
 import { GroupLabel } from "@/components/lab/ToolCard";
 import { type ChordTypeId, chordName, chordType, easiestVoicing, shapeNotes } from "@/lib/lab/chords";
 import { type DegreeId, DEGREES, degreeRoot, getDegree, nextMoves, typesFor } from "@/lib/lab/keys";
-import { type LoopChord, brightnessWords, classicWords, restlessnessWords, vibeOf } from "@/lib/lab/mood";
+import { type LoopChord, START_LOOP, brightnessWords, classicWords, restlessnessWords, vibeOf } from "@/lib/lab/mood";
 import { loopBars } from "@/lib/lab/sound";
 import { pitchClassOf } from "@/lib/musicTheory";
 
 export const MAX_LOOP = 8;
 const LOOP_ID = "builder:loop";
-/** Where a new loop starts: the genre's most common one, as power chords. */
-export const START_LOOP: LoopChord[] = (["I", "V", "vi", "IV"] as DegreeId[]).map((degree) => ({ degree, type: "5" }));
 
 type Sound = "power" | "full";
 const SOUNDS: { value: Sound; label: string }[] = [
@@ -44,9 +42,8 @@ function Meter({ label, value, words }: { label: string; value: number; words: s
  * likeliest next chords and three vibe meters. The loop plays as its easiest shapes in the Lab's tuning.
  */
 export function Builder() {
-  const { key, tuning, toggle, stop, playing, sendToFinder } = useLab();
+  const { key, tuning, toggle, stop, playing, sendToFinder, loop, setLoop } = useLab();
   const keyPc = pitchClassOf(key);
-  const [loop, setLoop] = useState<LoopChord[]>(START_LOOP);
   const [selected, setSelected] = useState<number | null>(null);
   const [sound, setSound] = useState<Sound>("power");
 

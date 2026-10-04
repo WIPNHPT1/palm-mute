@@ -4,6 +4,7 @@ import { type ReactNode, createContext, useCallback, useContext, useEffect, useM
 import * as audio from "@/lib/audio/engine";
 import type { PlaybackBar } from "@/lib/playback";
 import { type ChordTypeId, type TuningId } from "@/lib/lab/chords";
+import { type LoopChord, START_LOOP } from "@/lib/lab/mood";
 import { LAB_BPM } from "@/lib/lab/sound";
 import type { NoteName } from "@/lib/musicTheory";
 
@@ -24,6 +25,9 @@ type Lab = {
   /** `shape` (e.g. "x32010") asks the Dictionary to open on that voicing; each request counts once. */
   setChord: (root: number, type: ChordTypeId, shape?: string) => void;
   shapeRequest: { shape: string; n: number } | null;
+  /** The Builder's loop: the Mood map shows it as a star. */
+  loop: LoopChord[];
+  setLoop: (loop: LoopChord[]) => void;
   /** The Builder sends its loop to the Key finder as chord names; each request counts once. */
   finderRequest: { text: string; n: number } | null;
   sendToFinder: (text: string) => void;
@@ -42,6 +46,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const [left, setLeft] = useState(false);
   const [chord, setChordState] = useState<{ root: number; type: ChordTypeId }>({ root: 7, type: "maj" });
   const [shapeRequest, setShapeRequest] = useState<{ shape: string; n: number } | null>(null);
+  const [loop, setLoop] = useState<LoopChord[]>(START_LOOP);
   const [finderRequest, setFinderRequest] = useState<{ text: string; n: number } | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
 
@@ -73,8 +78,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const sendToFinder = useCallback((text: string) => setFinderRequest((r) => ({ text, n: (r?.n ?? 0) + 1 })), []);
 
   const value = useMemo<Lab>(
-    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, finderRequest, sendToFinder, playing, toggle, stop }),
-    [key, tuning, left, chord, setChord, shapeRequest, finderRequest, sendToFinder, playing, toggle, stop],
+    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, loop, setLoop, finderRequest, sendToFinder, playing, toggle, stop }),
+    [key, tuning, left, chord, setChord, shapeRequest, loop, finderRequest, sendToFinder, playing, toggle, stop],
   );
   return <LabContext.Provider value={value}>{children}</LabContext.Provider>;
 }

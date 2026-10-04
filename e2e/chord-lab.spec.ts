@@ -395,3 +395,85 @@ test.describe("chord lab: key finder and transposer", () => {
     await expect(fits(page).filter({ hasText: "G major" })).toContainText("bVII (borrowed)");
   });
 });
+
+// 05 Mood map
+const mood = (page: Page) => page.locator('[data-tool="mood-map"]');
+const dot = (page: Page, id: string) => mood(page).locator(`[data-loop-id="${id}"]`);
+/** A tap on a dot's centre (on phones the plot picks the nearest loop; elsewhere the dot is a button). */
+const tapDot = async (page: Page, id: string) => {
+  await dot(page, id).scrollIntoViewIfNeeded();
+  const box = (await dot(page, id).boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+};
+
+test.describe("chord lab: mood map", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("26 loops on the map, the app's ten among them, every one a tappable dot and a chip", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(mood(page).locator("[data-loop-id]")).toHaveCount(26);
+    await expect(mood(page).locator("[data-chip]")).toHaveCount(26);
+    for (const id of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "vi-V-IV", "V-vi-IV-I"]) await expect(dot(page, id)).toBeVisible();
+    await expect(mood(page).locator("[data-picked]")).toHaveText("I-V-vi-IV");
+    for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) await expect(mood(page).locator("[data-plot]")).toContainText(q);
+  });
+
+  test("tapping a dot, a chip or empty space picks the loop and plays it in your key", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await tapDot(page, "vi-IV-I-V");
+    await expect(mood(page).locator("[data-picked]")).toHaveText("vi-IV-I-V");
+    await expect(mood(page).locator("[data-mood-panel]")).toContainText("Em"); // vi of G, as a minor chord
+    let pb = (await lastPlayback(page))!;
+    expect(pb.bpm).toBe(150);
+    expect(pb.loop).toBe(true);
+    // Em C G D: the bass of each bar.
+    expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([4, 0, 7, 2]);
+    await mood(page).locator('[data-chip="I-IV-V"]').click();
+    await expect(mood(page).locator("[data-picked]")).toHaveText("I-IV-V");
+    pb = (await lastPlayback(page))!;
+    expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([7, 0, 2]);
+    // Space beside a dot picks the nearest loop (on phones this is how every tap works).
+    await dot(page, "V-vi-IV-I").scrollIntoViewIfNeeded();
+    const box = (await dot(page, "V-vi-IV-I").boundingBox())!;
+    const plot = (await mood(page).locator("[data-plot]").boundingBox())!;
+    await page.mouse.click(Math.min(box.x + box.width / 2 + 5, plot.x + plot.width - 3), box.y + box.height / 2 + 4);
+    await expect(mood(page).locator("[data-picked]")).toHaveText("V-vi-IV-I");
+    // Tapping the playing loop's button stops it.
+    await mood(page).getByRole("button", { name: /^STOP$/ }).click();
+    await expect.poll(() => lastPlayback(page)).toBeNull();
+  });
+
+  test("the key changes the chords; the star follows the Builder's loop", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await radio(page, "Key", "D").click();
+    await expect(mood(page).locator("[data-mood-panel]")).toContainText("Bm"); // vi of D
+    await expect(mood(page).getByRole("button", { name: "HEAR IT IN D" })).toBeVisible();
+    const star = mood(page).locator("[data-star]");
+    const at = async () => (await star.boundingBox())!;
+    const before = await at();
+    // Make the loop dark and unsettled: the star moves.
+    await builder(page).getByRole("button", { name: "CLEAR" }).click();
+    for (const d of ["vi", "iii", "ii"]) await builder(page).getByRole("list", { name: "Chords in the key" }).getByRole("button", { name: new RegExp(`^Add ${d},`) }).click();
+    const after = await at();
+    expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeGreaterThan(20);
+    expect(after.x).toBeLessThan(before.x); // darker, so further left
+    // An empty loop has no star.
+    await builder(page).getByRole("button", { name: "CLEAR" }).click();
+    await expect(star).toHaveCount(0);
+    await expect(mood(page)).toContainText("it's empty");
+  });
+
+  test("it plays the shapes in the Lab's tuning", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await radio(page, "Tuning", "DROP D").click();
+    await tapDot(page, "I-V-vi-IV");
+    const pb = (await lastPlayback(page))!;
+    expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([7, 2, 4, 0]); // G D Em C: roots in the bass
+  });
+});
