@@ -25,11 +25,6 @@ export function getTuning(id: TuningId): Tuning {
   return TUNINGS.find((t) => t.id === id) ?? TUNINGS[0];
 }
 
-/** How far a tuning sits from E standard on its top five strings (Eb and Drop C#: −1), for capo maths. */
-export function tuningOffset(id: TuningId): number {
-  return getTuning(id).strings[1].midi - TUNINGS[0].strings[1].midi;
-}
-
 // ---------------------------------------------------------------------------
 // Chord types and names
 

@@ -44,7 +44,7 @@ function Meter({ label, value, words }: { label: string; value: number; words: s
  * likeliest next chords and three vibe meters. The loop plays as its easiest shapes in the Lab's tuning.
  */
 export function Builder() {
-  const { key, tuning, toggle, stop, playing } = useLab();
+  const { key, tuning, toggle, stop, playing, sendToFinder } = useLab();
   const keyPc = pitchClassOf(key);
   const [loop, setLoop] = useState<LoopChord[]>(START_LOOP);
   const [selected, setSelected] = useState<number | null>(null);
@@ -190,6 +190,17 @@ export function Builder() {
           {playing === LOOP_ID ? "STOP" : "PLAY THE LOOP"}
         </button>
         <SegmentedControl<Sound> label="Chord sound" options={SOUNDS} value={sound} onChange={setSound} />
+        <button
+          type="button"
+          disabled={!loop.length}
+          onClick={() => {
+            sendToFinder(loop.map(nameOf).join(" "));
+            document.getElementById("key-finder")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold hover:border-accent disabled:text-text-disabled"
+        >
+          FIND THIS LOOP&apos;S KEY
+        </button>
         <button type="button" onClick={() => edit([], null)} disabled={!loop.length} className="min-h-[44px] rounded-mid border border-line bg-paper px-[14px] font-mono text-[12px] font-bold disabled:text-text-disabled">
           CLEAR
         </button>

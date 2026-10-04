@@ -313,3 +313,85 @@ test.describe("chord lab: progression builder", () => {
     await expect(builder(page)).toContainText("It ends at home");
   });
 });
+
+// 04 Key finder & transposer
+const finder = (page: Page) => page.locator('[data-tool="key-finder"]');
+const fits = (page: Page) => finder(page).locator("[data-key-fits] li");
+const typeChords = async (page: Page, chords: string) => finder(page).getByRole("textbox", { name: /Chords/ }).fill(chords);
+const stepper = (page: Page, label: string, dir: "up" | "down") => finder(page).getByRole("button", { name: `${label} ${dir}`, exact: true });
+
+test.describe("chord lab: key finder and transposer", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("G D Em C is found in G major, best first, with a numeral for every chord", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(fits(page).first()).toContainText("Best fit · G major (relative E minor): I · V · vi · IV");
+    await expect(fits(page)).toHaveCount(3);
+    await typeChords(page, "Am F C G");
+    await expect(fits(page).first()).toContainText("C major (relative A minor): vi · IV · I · V");
+    // A chord outside the key is flagged; a borrowed one is named.
+    await typeChords(page, "G F C G");
+    await expect(fits(page).first()).toContainText("C major");
+    await typeChords(page, "G D C F");
+    await expect(finder(page)).toContainText("bVII (borrowed)");
+    // Power chords, 7ths and sus chords are read.
+    await typeChords(page, "A5 E5 F#5 D5");
+    await expect(fits(page).first()).toContainText("A major");
+    await typeChords(page, "F#m7, Bbadd9 Dsus4");
+    await expect(fits(page)).not.toHaveCount(0);
+  });
+
+  test("unreadable chords are named; fewer than two chords asks for more", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await typeChords(page, "G H Em");
+    await expect(finder(page)).toContainText("Couldn't read: H");
+    await expect(fits(page).first()).toContainText("G major"); // the two it could read
+    await typeChords(page, "G");
+    await expect(finder(page)).toContainText("Add at least two chords");
+    await expect(fits(page)).toHaveCount(0);
+  });
+
+  test("transpose, go to a key, and a capo: the sound and the shapes agree", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    const sounds = finder(page).locator("[data-sounds]");
+    const shapes = finder(page).locator("[data-shapes]");
+    await expect(sounds).toHaveText("G · D · Em · C");
+    await stepper(page, "Transpose", "up").click();
+    await stepper(page, "Transpose", "up").click();
+    await expect(sounds).toHaveText("A · E · F#m · D");
+    await expect(finder(page).getByRole("status", { name: "Transpose now" })).toHaveText("+2 semitones");
+    // Capo 2: play G shapes to sound A.
+    await stepper(page, "Capo", "up").click();
+    await stepper(page, "Capo", "up").click();
+    await expect(shapes).toContainText("G · D · Em · C");
+    await expect(shapes).toContainText("With the capo at fret 2");
+    // Go straight to a key.
+    await finder(page).getByRole("radio", { name: "Move to D major" }).click();
+    await expect(sounds).toHaveText("D · A · Bm · G");
+    await expect(finder(page).getByRole("radio", { name: "Move to D major" })).toHaveAttribute("aria-checked", "true");
+    // Playing it: the loop sounds the shapes plus the capo's frets.
+    await finder(page).getByRole("button", { name: "HEAR IT" }).click();
+    const pb = (await lastPlayback(page))!;
+    expect(pb.loop).toBe(true);
+    expect(pb.bars).toHaveLength(4);
+    // D major with the capo at 2: C shapes + 2 frets; the first bar's bass is a D (pitch class 2).
+    expect(pb.bars[0].cells[0]!.notes[0] % 12).toBe(2);
+    expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([2, 9, 11, 7]);
+  });
+
+  test("the Builder sends its loop here", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await builder(page).getByRole("button", { name: "Add bVII, F5", exact: true }).click();
+    await builder(page).getByRole("button", { name: /FIND THIS LOOP/ }).click();
+    await expect(finder(page).getByRole("textbox", { name: /Chords/ })).toHaveValue("G5 D5 E5 C5 F5");
+    // Power chords fit several keys: all five are natural chords of C, and G reads F5 as a borrowed bVII.
+    await expect(fits(page).first()).toContainText("C major");
+    await expect(fits(page).filter({ hasText: "G major" })).toContainText("bVII (borrowed)");
+  });
+});
