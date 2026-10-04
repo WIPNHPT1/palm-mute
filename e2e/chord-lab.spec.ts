@@ -68,6 +68,19 @@ test.describe("chord lab: setup and dictionary", () => {
     await expect(page.getByRole("button", { name: "Play G 320003 strummed" })).toBeVisible();
   });
 
+  test("each shape's play buttons say STRUM and PICK, and switch to stop while playing", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    const card = dictionary(page).locator('[data-voicing="320003"]');
+    await expect(card.getByRole("button", { name: "Play G 320003 strummed" })).toContainText("STRUM");
+    await expect(card.getByRole("button", { name: "Play G 320003 note by note" })).toContainText("PICK");
+    await card.getByRole("button", { name: "Play G 320003 note by note" }).click();
+    await expect(card.getByRole("button", { name: "Stop G 320003 note by note" })).toContainText("PICK");
+    await expect(card.getByRole("button", { name: "Play G 320003 strummed" })).toContainText("STRUM");
+    await card.getByRole("button", { name: "Stop G 320003 note by note" }).click();
+    await expect.poll(() => lastPlayback(page)).toBeNull();
+  });
+
   test("a tuning changes the shapes and the sound; it stops what was playing", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);

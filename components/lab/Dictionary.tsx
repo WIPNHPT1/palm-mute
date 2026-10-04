@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { PlayButton } from "@/components/PlayButton";
 import { PlayIcon } from "@/components/icons/PlayIcon";
 import { StopIcon } from "@/components/icons/StopIcon";
 import { SegmentedControl } from "@/components/SegmentedControl";
@@ -85,17 +84,32 @@ export function RoleLegend() {
   );
 }
 
-function ArpIcon({ playing }: { playing: boolean }) {
-  return playing ? (
-    <svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
-      <rect x="2" y="2" width="10" height="10" rx="1.5" fill="currentColor" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+function NotesIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
       <circle cx="3" cy="12" r="2" />
       <circle cx="8" cy="8" r="2" />
       <circle cx="13" cy="4" r="2" />
     </svg>
+  );
+}
+
+/** A voicing card's play button: its icon and what it does in words (STRUM all at once, PICK note by note). */
+function VoicingPlay({ label, text, playing, onClick, icon }: { label: string; text: string; playing: boolean; onClick: () => void; icon?: "notes" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={playing}
+      aria-label={`${playing ? "Stop" : "Play"} ${label}`}
+      data-playing={playing}
+      className={`flex min-h-[44px] min-w-[44px] flex-[1_1_52px] items-center justify-center gap-[4px] rounded-mid px-[4px] font-mono text-[12px] font-bold ${
+        playing ? "bg-accent/10 text-accent" : "text-text-muted hover:text-text-primary"
+      }`}
+    >
+      {playing ? <StopIcon size={11} /> : icon === "notes" ? <NotesIcon /> : <PlayIcon size={11} filled={false} />}
+      {text}
+    </button>
   );
 }
 
@@ -281,17 +295,9 @@ export function Dictionary() {
                   </span>
                   <Difficulty value={v.difficulty} />
                 </button>
-                <div className="mt-auto flex justify-center gap-[4px] border-t border-line">
-                  <PlayButton playing={playing === `strum:${id}`} onClick={() => toggle(`strum:${id}`, strumBars(notesOf(v)))} label={`${name} ${id} strummed`} />
-                  <button
-                    type="button"
-                    aria-pressed={playing === `arp:${id}`}
-                    aria-label={`${playing === `arp:${id}` ? "Stop" : "Play"} ${name} ${id} note by note`}
-                    onClick={() => toggle(`arp:${id}`, arpeggioBars(notesOf(v)))}
-                    className={`flex h-[44px] w-[44px] items-center justify-center rounded-mid ${playing === `arp:${id}` ? "text-accent" : "text-text-muted hover:text-text-primary"}`}
-                  >
-                    <ArpIcon playing={playing === `arp:${id}`} />
-                  </button>
+                <div className="mt-auto flex flex-wrap gap-[4px] border-t border-line p-[4px]">
+                  <VoicingPlay label={`${name} ${id} strummed`} text="STRUM" playing={playing === `strum:${id}`} onClick={() => toggle(`strum:${id}`, strumBars(notesOf(v)))} />
+                  <VoicingPlay label={`${name} ${id} note by note`} text="PICK" icon="notes" playing={playing === `arp:${id}`} onClick={() => toggle(`arp:${id}`, arpeggioBars(notesOf(v)))} />
                 </div>
               </li>
             );
