@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { FlapText } from "@/components/FlapText";
 import { onScrollFrame, pinProgress, supportsScrollTimeline } from "@/components/count-in/scroll";
 
 const STEPS = [
@@ -36,7 +37,7 @@ export function Setlist({ reduced }: { reduced: boolean }) {
       <div className="ci-setlist-in">
         <div ref={track} className="ci-track">
           <div className="ci-panel ci-lead" data-reveal>
-            <h2 id="ci-setlist">How it<br /><span>works.</span></h2>
+            <h2 id="ci-setlist"><FlapText text="How it" /><br /><span><FlapText text="works." start={5} /></span></h2>
             <div className="ci-go">
               <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinejoin="round" aria-hidden="true"><path d="M0 12h34M23 2l12 10-12 10" /></svg>
               KEEP SCROLLING

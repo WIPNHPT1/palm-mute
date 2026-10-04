@@ -23,6 +23,25 @@
 .dark .ci { --dot: rgb(var(--color-text-on-dark) / .16); --shadow-lift: 0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); --grain: .09; }
 .ci-wrap { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
 
+/* Big screens (owner's pick, docs/mockups/home-stage-options.html: match the other pages). From 1600px the Song
+   Generator and the Chord Lab zoom their whole shell by --page-zoom on a 1280px page (app/globals.css, lib/stage.ts).
+   Here the hero's height, the pinned setlist and the full-bleed bands are measured from the window, so the zoom goes on
+   what sits inside them instead: the top bar, the menu, the notice and the footer (the shell's other children), every
+   section's column and the setlist's cards. Same zoom, same page width: moving between pages, nothing changes size. */
+@media (min-width: 1600px) {
+  body:has(.ci) { --page-max: 1280px; }
+  body:has(.ci) div:has(> main) > :not(main), .ci .ci-wrap, .ci .ci-panel { zoom: var(--page-zoom); }
+  .ci { --bar-h: calc(76px * var(--page-zoom)); }
+  .ci-wrap { max-width: 1280px; }
+}
+
+/* The Song Generator's oscilloscope behind the quiet sections (Scope.tsx; owner's pick): a canvas under each section's
+   content, from tablet up. The hero, the setlist and the bands keep their own looks. */
+.ci [data-scope] { position: relative; isolation: isolate; }
+.ci-scope { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; display: none; pointer-events: none;
+  -webkit-mask: linear-gradient(transparent, #000 96px, #000 calc(100% - 96px), transparent); mask: linear-gradient(transparent, #000 96px, #000 calc(100% - 96px), transparent); }
+@media (min-width: 834px) { .ci-scope { display: block; } }
+
 /* film grain */
 /* No blend mode (a full-screen blend makes the GPU redraw everything under it each frame): the noise is
    pre-coloured instead. Black specks with alpha ½(1 − noise) match what multiply gave (the old noise's
@@ -150,7 +169,7 @@
   display: flex; flex-direction: column; justify-content: space-between; }
 .ci-lead { width: min(80vw, 520px); padding-left: 0; }
 .ci-lead h2 { font-family: var(--display); font-weight: 400; font-size: clamp(52px, 7.4vw, 124px); line-height: .86; letter-spacing: -.03em; margin: 0; text-transform: uppercase; color: var(--t-primary); }
-.ci-lead h2 span { color: var(--accent); }
+.ci-lead h2 > span:not(.flap) { color: var(--accent); }
 .ci-go { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--t-muted); display: flex; align-items: center; gap: 12px; }
 .ci-go svg { width: 34px; animation: ci-nudge 1.6s ease-in-out infinite; }
 @keyframes ci-nudge { 50% { transform: translateX(8px); } }
@@ -256,6 +275,13 @@
 .ci-encore-bg div:nth-child(2) { animation-direction: reverse; color: var(--accent); }
 @keyframes ci-tape { to { transform: translateX(-50%); } }
 .ci-encore h2 { position: relative; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 4.4vw, 72px); line-height: 1; margin: 0 0 40px; text-transform: uppercase; letter-spacing: -.02em; color: var(--t-primary); }
+/* the count-in (Encore.tsx): each beat's number flashes in red, one beat long, centred on the heading's line (the box
+   sits where the heading does: the section's top padding, the heading's height at the page zoom) */
+.ci-count { position: absolute; left: 0; right: 0; top: clamp(90px, 12vw, 190px); height: calc(clamp(30px, 4.4vw, 72px) * var(--page-zoom, 1));
+  display: grid; place-items: center; pointer-events: none; }
+.ci-count span { font-family: var(--display); font-size: clamp(96px, 10vw, 176px); line-height: 1; color: var(--accent); opacity: 0;
+  animation: ci-count 333ms var(--ease-out) both; }
+@keyframes ci-count { 0% { opacity: 0; transform: scale(1.4); } 18% { opacity: 1; transform: none; } 60% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(.9); } }
 .ci-encore-btns { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
 .ci-mag { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-width: 250px; padding: 24px 34px; border-radius: 999px; font-family: var(--display); font-size: 15px;
   transition: transform .5s var(--ease-out), background .3s, color .3s; will-change: transform; }
@@ -323,7 +349,7 @@
 /* headings: the page title's faint accent offset, like a print misregistration (solid ink lines only:
    on outlined or red lines it would fill or vanish) */
 .ci-tn-grid h2, .ci-encore h2, .ci-lead h2, .ci-stamp-grid h2 { text-shadow: 1.5px 1.5px 0 rgb(var(--accent-rgb) / .38); }
-.ci-lead h2 span { text-shadow: none; }
+.ci-lead h2 > span:not(.flap) { text-shadow: none; }
 .ci-kin-wide .ci-kl:is(:nth-child(1), :nth-child(3)), .ci-kin-narrow .ci-kl:is(:nth-child(1), :nth-child(4)) { text-shadow: .02em .02em 0 rgb(var(--accent-rgb) / .38); }
 
 /* the live dot: the header status dot's soft halo under its blink */
