@@ -28,7 +28,7 @@ export function CountIn() {
       <div className="ci-grain" aria-hidden="true" />
       <VuMeter />
 
-      <Stage reduced={reduced} fine={fine} />
+      <Stage reduced={reduced} />
 
       <section className="ci-intro" aria-label="What Palm/Mute does" data-scope>
         <Scope />

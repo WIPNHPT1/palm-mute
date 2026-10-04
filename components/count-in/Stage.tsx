@@ -12,11 +12,10 @@ import { PUNK_MASTER_BPM } from "@/lib/generator";
  * 6 on phones); its font size is fitted to the widest line so nothing ever runs past the column.
  * Every line is no-wrap, so "POP-PUNK." can't split.
  */
-export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
+export function Stage({ reduced }: { reduced: boolean }) {
   const stage = useRef<HTMLElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const kin = useRef<HTMLHeadingElement>(null);
-  const spot = useRef<HTMLDivElement>(null);
 
   // fit the headline to its column
   useEffect(() => {
@@ -72,19 +71,11 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
     return onScrollFrame(() => el.style.setProperty("--k", reduced ? "0" : clamp01(scrollY / el.offsetHeight).toFixed(3)));
   }, [reduced]);
 
-  // spotlight follows the pointer over the halftone (touch screens get a slow drift instead). Moving the
-  // cover with transform keeps it on the GPU: no repaint per pointer move.
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!fine || !spot.current) return;
-    const r = stage.current!.getBoundingClientRect();
-    spot.current.style.transform = `translate(${e.clientX - r.left - r.width / 2}px, ${e.clientY - r.top - r.height / 2}px)`;
-  };
-
   return (
-    <section ref={stage} className="ci-stage" aria-labelledby="ci-title" onPointerMove={onPointerMove}>
+    <section ref={stage} className="ci-stage" aria-labelledby="ci-title">
       <div className="ci-halftone" aria-hidden="true" />
-      <div ref={spot} className="ci-spot" aria-hidden="true" />
-      <div className="ci-beams" aria-hidden="true"><i /><i /></div>
+      {/* light leak: film light bleeding in at the corners (app/count-in.css) */}
+      <div className="ci-leak" aria-hidden="true"><i /><i /><i /></div>
       <div className="ci-wrap" data-reveal-group>
         <div className="ci-stage-top">
           <span>COUNT IN · ABOUT PALM/MUTE</span>

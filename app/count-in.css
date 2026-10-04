@@ -85,27 +85,26 @@
 
 /* ---------- STAGE (hero) ---------- */
 .ci-stage { position: relative; min-height: calc(100svh - var(--bar-h)); display: flex; flex-direction: column; justify-content: center; overflow: hidden; padding: clamp(40px, 6vw, 80px) 0 0; }
-/* The halftone is a still field of dots. The spotlight is a paper-coloured cover with a soft hole in it
-   (the inverse of the old mask: clear at the centre, half at 40%, solid by 72%), twice the stage's size
-   and moved with transform only, so following the pointer or drifting never repaints the stage. */
+/* The halftone is a still field of dots. */
 .ci-halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.8px); background-size: 9px 9px; }
-.ci-spot { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; pointer-events: none; will-change: transform;
-  background: radial-gradient(circle 34vmax at 50% 50%, transparent 0, rgb(var(--color-paper) / .5) 40%, var(--paper) 72%);
-  /* translate % is of this box (2× the stage): (spot − 50%) / 2. Starts at 72% / 34%. */
-  transform: translate(11%, -8%); }
-.ci:not(.is-fine) .ci-spot { animation: ci-drift 14s ease-in-out infinite alternate; }
-@keyframes ci-drift { 0% { transform: translate(-15%, -10%); } 50% { transform: translate(15%, 2.5%); } 100% { transform: translate(-2.5%, -15%); } }
-/* Light beams: the soft cone shape is a pre-blurred mask, drawn once, so the sweep only rotates a finished
-   layer (no live blur filter, no blend mode: plain opacity gives near-identical colour over paper). */
-.ci-beams { position: absolute; inset: -20% -10% auto; height: 120%; pointer-events: none; opacity: .5; }
-.dark .ci-beams { opacity: .35; }
-.ci-beams i { position: absolute; top: 0; width: 34vw; height: 100%; transform-origin: top center; will-change: transform;
-  background: linear-gradient(to bottom, rgb(var(--accent-rgb) / .35), transparent 70%);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-20%25' y='-5%25' width='140%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='1.3'/%3E%3C/filter%3E%3Cpolygon points='46%2C0 54%2C0 100%2C100 0%2C100' fill='%2523fff' filter='url%28%2523b%29'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-20%25' y='-5%25' width='140%25' height='110%25'%3E%3CfeGaussianBlur stdDeviation='1.3'/%3E%3C/filter%3E%3Cpolygon points='46%2C0 54%2C0 100%2C100 0%2C100' fill='%2523fff' filter='url%28%2523b%29'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; }
-.ci-beams i:nth-child(1) { left: 8%; animation: ci-sweep 9s ease-in-out infinite alternate; }
-.ci-beams i:nth-child(2) { left: 56%; background: linear-gradient(to bottom, rgb(var(--brass-rgb) / .35), transparent 70%); animation: ci-sweep 11s ease-in-out -3s infinite alternate-reverse; }
-@keyframes ci-sweep { from { transform: rotate(-16deg); } to { transform: rotate(14deg); } }
+/* Light leak (owner's pick, docs/mockups/hero-light-options-2.html option 2): warm light bleeds in from the top-left
+   corner like a light leak on film, a faint red answers from the bottom right, and a pale brass glow drifts across
+   the top. Over about half a minute they slowly trade strength. Three soft layers, faded and moved by opacity and
+   transform only (no blur, no blend), so nothing repaints; paused off screen, still for reduced motion.
+   Tints of the tokens: brass on paper (a warm white wouldn't show on cream), the on-dark cream in the dark. */
+.ci { --leak-rgb: var(--color-brass); --leak-a: .42; --leak-k: 1; }
+.dark .ci { --leak-rgb: var(--color-text-on-dark); --leak-a: .3; --leak-k: .55; }
+.ci-leak { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ci-leak i { position: absolute; border-radius: 50%; will-change: transform, opacity; }
+.ci-leak i:nth-child(1) { left: -28vw; top: -30vw; width: 80vw; aspect-ratio: 1; animation: ci-leak-a 28s ease-in-out infinite alternate;
+  background: radial-gradient(closest-side, rgb(var(--leak-rgb) / var(--leak-a)), rgb(var(--brass-rgb) / calc(.2 * var(--leak-k))) 55%, transparent); }
+.ci-leak i:nth-child(2) { right: -34vw; bottom: -38vw; width: 84vw; aspect-ratio: 1; animation: ci-leak-b 28s ease-in-out infinite alternate;
+  background: radial-gradient(closest-side, rgb(var(--accent-rgb) / calc(.16 * var(--leak-k))), rgb(var(--accent-rgb) / calc(.06 * var(--leak-k))) 50%, transparent); }
+.ci-leak i:nth-child(3) { left: 30vw; top: -24vw; width: 50vw; aspect-ratio: 1.6; animation: ci-leak-c 40s ease-in-out infinite alternate;
+  background: radial-gradient(closest-side, rgb(var(--brass-rgb) / calc(.12 * var(--leak-k))), transparent); }
+@keyframes ci-leak-a { from { opacity: 1; transform: translate(0, 0); } to { opacity: .55; transform: translate(4vw, 2vw); } }
+@keyframes ci-leak-b { from { opacity: .45; transform: translate(0, 0); } to { opacity: 1; transform: translate(-4vw, -3vw); } }
+@keyframes ci-leak-c { from { opacity: .3; transform: translate(0, 0); } to { opacity: .9; transform: translate(18vw, 3vw); } }
 .ci-stage-top { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .16em; color: var(--t-muted); margin-bottom: clamp(20px, 3vw, 36px); }
 .ci-live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); }
