@@ -124,15 +124,18 @@ Tab, audio and screen-reader text all come from **one** set of events, so what y
 
 ```text
 $ npm run verify
+Song length: 156 plans (6 tempos × 13 lengths × 8/16-bar solos) within 4 bars; worst miss 4.0 bars.
 All data-layer checks passed.
 Voicing engine: 210000 section renders checked, covering 12 keys × 10 progressions × 5 feels
 × 7 sections × 50 seeds (every section follows the progression), 0 recorded position shifts,
 16 reference tabs.
-Song plan: 2 forms render for every key × progression × feel; Verse 2 adds its push in 30000 of 30000
-songs. Energy arc (mean): … verse 0.26, prechorus 0.54, chorus 0.88 …
+Song plan: 3 forms render for every key × progression × feel; Verse 2 adds its push in 25084 of 30000
+songs (the rest have no chord change to push into). Energy arc (mean): … verse 0.26, prechorus 0.54, chorus 0.88 …
 Playability: 2853300 hits, every one labelled honestly and with a mute plan (…); 4 hall-of-shame tabs
 never reappear. Fastest change (frets/100 ms, limit 4): fast-punk 3.90, … Longest downpicked run: fast-punk 15, …
 Grooves and riffs: 18140 Intro riff renders checked (scale, chord root, octaves, mute plans, speed, audio = tab); …
+Options: 24480 renders (every groove × playing style × voicing, 4 keys × 4 progressions × 5 feels)
+pass every check above.
 All voicing-engine checks passed.
 Song critic: 600 songs × 8 takes (…); kept scores 0.20 to 4.16; best of 8 beats take 1 by 0.54 on average …
 All critic checks passed.
@@ -141,6 +144,9 @@ Lead engine: 72000 leads checked (12 keys × 10 progressions × 2 parts × 3 sty
 Song thread: 2520 solos written for their song (…); the song's motif returns in 2520 of 2520; every solo plays
 the Chorus's chords; the peak lands on the strongest chord in 2205 of 2205 songs where a second-half bar plays it.
 All lead-engine checks passed.
+MIDI: 120 songs (4 keys × 5 feels × 3 lengths × 2 option sets), 628768 notes: every file reads back exactly,
+every note in its lane, guitars and drums = audio.
+All MIDI checks passed.
 ```
 
 What "checked" means:
@@ -148,6 +154,7 @@ What "checked" means:
 - **Every tab** is parsed back from its own text and compared, cell by cell, with what the audio engine plays.
 - **Every lead** stays in the scale, lands at least 75% of strong beats on chord notes, never leaps more than a fifth, steps back after big leaps, and ends on the root or 3rd. It only bends from a scale note to a scale note: in G, A→B passes and B→C# is rejected.
 - **Hand-checked references** at seed 0 must match exactly.
+- **Every MIDI file** is read back through a strict parser: every note where it was written, inside its part's range, and the guitars and drums identical to what you hear.
 
 Then Playwright runs **750+ browser checks** in Chromium and WebKit, from 320px to 1920px, in light and dark: layout, tap targets, contrast, audio = tab, and more.
 

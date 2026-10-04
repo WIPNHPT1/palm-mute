@@ -76,6 +76,7 @@ test.describe("song builder: every screen", () => {
   });
 
   test("full-width section cards and every options tab fit", async ({ page }) => {
+    test.slow(); // every tab of seven panels, measured each time
     await gotoAndSettle(page, "/generator/");
     expect(await problems(page, "[data-sections]")).toEqual([]);
     for (const button of await page.locator("[data-options-button]").all()) await button.click();
@@ -86,5 +87,15 @@ test.describe("song builder: every screen", () => {
       expect(await horizontalOverflow(page), tab).toBeLessThanOrEqual(0);
       expect(await problems(page, "[data-sections]"), tab).toEqual([]);
     }
+  });
+
+  test("the export cards fit", async ({ page }) => {
+    await gotoAndSettle(page, "/generator/");
+    await page.locator("[data-export-section]").scrollIntoViewIfNeeded();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    expect(await problems(page, "[data-export-section]")).toEqual([]);
+    // One column on phones, two from tablet up (they share one row when both fit).
+    const cards = await page.locator("[data-export-section] [data-export]").evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ left: r.left, right: r.right })));
+    for (const c of cards) expect(c.right).toBeLessThanOrEqual((await page.evaluate(() => innerWidth)) + 0.5);
   });
 });
