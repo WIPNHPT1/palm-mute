@@ -37,8 +37,11 @@ for (const tuning of TUNING_IDS) {
     for (const type of CHORD_TYPE_IDS) {
       const name = chordName(root, type);
       const list = voicingsFor(root, type, tuning);
-      assert.ok(list.length >= 1, `${tuning} ${name}: no voicing`);
-      if (tuning === "e-standard") assert.ok(list.length >= 2, `E standard ${name}: only ${list.length} voicing`);
+      // The Dictionary keeps its promise: a real choice of shapes up the neck for every chord (at least 4 in the two
+      // tunings that keep E standard's string intervals, at least 3 in the drop tunings), never an endless list.
+      const floor = tuning === "e-standard" || tuning === "eb-standard" ? 4 : 3;
+      assert.ok(list.length >= floor && list.length <= 12, `${tuning} ${name}: ${list.length} voicings (want ${floor} to 12)`);
+      assert.ok(list.some((v) => v.low <= 4) && list.some((v) => v.low >= 8), `${tuning} ${name}: shapes don't reach from the nut up the neck`);
       const seen = new Set<string>();
       for (const v of list) {
         const id = `${tuning} ${name} ${shapeText(v.frets)}`;

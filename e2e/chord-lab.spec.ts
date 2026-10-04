@@ -101,9 +101,9 @@ test.describe("chord lab: setup and dictionary", () => {
     for (const text of await dictionary(page).locator("[data-voicing]").allInnerTexts()) expect(text).toMatch(/frets? 1\d/);
     // Nothing left: say so, with a way back.
     await radio(page, "Position", "OPEN").click();
-    await radio(page, "Root", "A#/Bb").click();
+    await radio(page, "Root", "C#/Db").click();
     await radio(page, "Chord type", "MAJ7").click();
-    await expect(dictionary(page)).toContainText("No A#maj7 shapes match these filters");
+    await expect(dictionary(page)).toContainText("No C#maj7 shapes match these filters"); // no open C#maj7 grip
     await dictionary(page).getByRole("button", { name: "SHOW ALL" }).click();
     expect((await voicingIds(page)).length).toBeGreaterThan(0);
   });

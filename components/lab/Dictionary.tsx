@@ -173,7 +173,7 @@ function Toggle({ pressed, onClick, children }: { pressed: boolean; onClick: () 
 
 /**
  * 01 Dictionary (docs/chord-lab-prd.md §5.1, with the Fretboard explorer §5.3 inside it): pick a root and a
- * type, see every playable voicing as a chord box with its notes, difficulty and two ways to hear it, then
+ * type, see the voicings players actually use (up to a dozen, from the nut up the neck) as a chord box with its notes, difficulty and two ways to hear it, then
  * the chord everywhere on the neck with the picked voicing filled in.
  */
 export function Dictionary() {
