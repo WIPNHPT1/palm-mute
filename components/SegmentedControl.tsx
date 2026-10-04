@@ -2,7 +2,7 @@
 
 export type SegmentOption<T extends string> = { value: T; label: string; sub?: string };
 
-/** Shared by the Chords page's Sort control and the lead panel's Style and Length controls. */
+/** Shared by the Lab's and the Generator's single-choice controls (tuning, handed, scale, feel…). */
 export function SegmentedControl<T extends string>({
   label,
   options,

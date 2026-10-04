@@ -221,7 +221,6 @@ export default function GeneratorPage() {
               {progressions.map((p, i) => (
                 <ProgressionRow
                   key={p.id}
-                  variant="panel"
                   progression={p}
                   chords={libraryVoicings(state.key, p.id)}
                   variantIndex={i}

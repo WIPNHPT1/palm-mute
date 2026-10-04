@@ -137,11 +137,8 @@ export type SectionInputs = {
   feel: FeelId;
   progressionId: string;
   seed: number;
-  /**
-   * A lead part in this section: the Solo always has one; the Intro when the Chords page sends a melody.
-   * `sent`: it came from the Chords page ("Use in my song"), so it plays exactly as previewed there.
-   */
-  lead?: { style: LeadStyle; bars: number; sent?: boolean } | null;
+  /** A lead part in this section: the Solo always has one. */
+  lead?: { style: LeadStyle; bars: number } | null;
   /** The Solo's song thread (R15, R16): the song's motif to quote, its chords and its strongest chord. */
   thread?: SongThread;
   /** The section card's Options (docs/song-builder-prd.md §6): unset fields keep the take's own. */
@@ -713,16 +710,15 @@ function candidatesFor(notes: Fretted[]): Voicing {
   };
 }
 
-/** The Solo, or an Intro melody sent from the Chords page: a lead line over the section's progression. */
+/** The Solo (or an Intro melody): a lead line over the section's progression. */
 function renderLeadSection(id: SectionId, inputs: SectionInputs, feel: FeelId): RenderedSection {
   const part: LeadPart = id === "solo" ? "solo" : "intro";
   const chosen = inputs.lead ?? defaultLeadStyle(part);
-  // A solo style the level doesn't allow (shred for a Beginner) plays as Classic; a solo sent from the Chords page
-  // always plays exactly as previewed.
-  const allowed = part !== "solo" || !!inputs.lead?.sent || DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY].soloStyles.includes(chosen.style);
+  // A solo style the level doesn't allow (shred for a Beginner) plays as Classic.
+  const allowed = part !== "solo" || DIFFICULTY[inputs.difficulty ?? DEFAULT_DIFFICULTY].soloStyles.includes(chosen.style);
   const { style, bars: length } = allowed ? chosen : { ...chosen, style: "classic" as LeadStyle };
-  // A solo the Generator writes knows the song (R15, R16); one sent from the Chords page plays as previewed.
-  const thread = part === "solo" && !inputs.lead?.sent ? inputs.thread : undefined;
+  // A solo the Generator writes knows the song (R15, R16).
+  const thread = part === "solo" ? inputs.thread : undefined;
   const lead = generateLead({ key: inputs.key, progressionId: inputs.progressionId, part, style, bars: length, seed: inputs.seed, ...(thread ?? {}) });
   const bars: SectionBar[] = lead.chords.map((chord, b) => ({
     chord,

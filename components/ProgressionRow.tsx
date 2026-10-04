@@ -7,10 +7,8 @@ import type { Progression, ResolvedChord } from "@/lib/musicTheory";
 import type { Voicing } from "@/lib/voicings";
 
 /**
- * A progression: waveform glyph, roman-numeral name, chord chips and a play toggle.
- * Horizontal row from tablet up; a vertical mini-card on mobile.
- * `variant="panel"` is a row in the Generator's Chords step (click to build the song on it),
- * `"card"` the Chords page card (click to open its panel).
+ * A progression row in the Generator's Chords step: waveform glyph, roman-numeral name, chord chips and a
+ * play toggle (click the row to build the song on it). Horizontal row from tablet up; a vertical mini-card on mobile.
  *
  * The whole row is one button (stretched under the content), and the play button sits on top of it.
  */
@@ -24,10 +22,7 @@ export function ProgressionRow({
   onSelect,
   selectLabel,
   selected,
-  expanded,
-  controls,
   badge,
-  variant,
   className = "",
 }: {
   progression: Progression;
@@ -40,23 +35,13 @@ export function ProgressionRow({
   onSelect: () => void;
   /** Accessible name of the row button, e.g. "Use I-V-vi-IV for the song". */
   selectLabel: string;
-  /** Panel rows: the song is built on this progression (aria-pressed). */
+  /** The song is built on this progression (aria-pressed). */
   selected?: boolean;
-  /** Chords cards: this card's panel is open (aria-expanded). */
-  expanded?: boolean;
-  /** id of the panel this card opens. */
-  controls?: string;
   /** Small label next to the name, e.g. "MOST COMMON". */
   badge?: string;
-  variant: "panel" | "card";
   className?: string;
 }) {
-  const card = variant === "card";
-  const container = card
-    ? `rounded-outer bg-surface px-[14px] py-[10px] tablet:px-[20px] tablet:py-[12px] tablet:gap-[16px] ${
-        highlighted || expanded ? "border-[1.5px] border-accent shadow-card-highlight" : "border border-line shadow-card hover:border-text-faintest"
-      }`
-    : `rounded-mid border bg-paper px-[12px] py-[8px] tablet:px-[14px] tablet:gap-[12px] ${highlighted ? "border-accent" : "border-line hover:border-text-faintest"}`;
+  const container = `rounded-mid border bg-paper px-[12px] py-[8px] tablet:px-[14px] tablet:gap-[12px] ${highlighted ? "border-accent" : "border-line hover:border-text-faintest"}`;
 
   return (
     <div data-progression={progression.id} className={`relative flex flex-col gap-[8px] tablet:flex-row tablet:items-center ${container} ${className}`}>
@@ -64,15 +49,13 @@ export function ProgressionRow({
         type="button"
         onClick={onSelect}
         aria-label={selectLabel}
-        aria-pressed={expanded === undefined ? !!selected : undefined}
-        aria-expanded={expanded}
-        aria-controls={controls}
+        aria-pressed={!!selected}
         className="absolute inset-0 rounded-[inherit]"
       />
       <div className="pointer-events-none relative flex items-center justify-between tablet:contents">
         <div className="flex items-center gap-[8px] tablet:contents">
-          <Waveform variant={variantIndex} active={highlighted} size={card ? "lg" : "sm"} />
-          <div className={`flex shrink-0 flex-col gap-[2px] ${card ? "tablet:w-[92px]" : "tablet:w-[80px]"}`}>
+          <Waveform variant={variantIndex} active={highlighted} />
+          <div className="flex shrink-0 flex-col gap-[2px] tablet:w-[80px]">
             <div className={`font-mono text-[13px] font-bold ${highlighted ? "text-accent" : "text-text-muted"}`}>{progression.id}</div>
             {badge && <div className="font-mono text-[12px] uppercase tracking-[0.04em] text-accent">{badge}</div>}
           </div>
@@ -81,11 +64,11 @@ export function ProgressionRow({
           playing={playing}
           onClick={onTogglePlay}
           label={progression.id}
-          iconSize={card ? 14 : 12}
+          iconSize={12}
           className="pointer-events-auto relative z-10 -my-[8px] -mr-[12px] tablet:order-last"
         />
       </div>
-      <div className={`pointer-events-none relative flex flex-wrap tablet:flex-grow ${card ? "gap-[6px]" : "gap-[5px]"}`}>
+      <div className="pointer-events-none relative flex flex-wrap gap-[5px] tablet:flex-grow">
         {chords.map(({ chord, voicing }, i) => (
           <ChordChip key={`${chord.name}-${i}`} chord={chord} notes={voicing.notes} degree={progression.degrees[i]} />
         ))}

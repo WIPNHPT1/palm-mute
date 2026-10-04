@@ -10,6 +10,7 @@ Palm/Mute writes pop-punk songs the way a guitarist would, and then **proves** i
 - [3d. The critic: best of eight](#3d-the-critic-best-of-eight)
 - [4. Tabs](#4-tabs)
 - [5. Intro melodies and solos](#5-intro-melodies-and-solos)
+- [5d. The Chord Lab](#5d-the-chord-lab)
 - [6. The proofs](#6-the-proofs)
 - [7. Tuning it](#7-tuning-it)
 
@@ -214,7 +215,7 @@ A solo the Generator writes gets a **song thread** (`songThread` in `lib/generat
 - **The song's own chords (R16).** The solo plays over the Chorus's bar plan (for a 3-chord progression, the Chorus's 4 bars) instead of the progression looped.
 - **Its peak on the strongest chord.** The strongest chord is the one the Chorus voices highest on the neck. The solo's high point moves to the second-half bar that plays it, with the arc's peak going along.
 
-A solo sent from the Chords page ("Use in my song") plays exactly as previewed there, with no thread. Pressing BUILD SONG, BUILD AGAIN or the Solo's ↻ makes it the Generator's own again. The Solo takes its thread when it's written (a build, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
+Pressing BUILD SONG, BUILD AGAIN or the Solo's ↻ writes a fresh solo. The Solo takes its thread when it's written (a build, its own ↻, a new progression), so pressing ↻ on another section never changes it. Across the verify sweep, the motif returns in every solo, and the peak lands on the strongest chord every time a second-half bar plays it.
 
 ## 5a. Difficulty and style presets
 
@@ -261,9 +262,22 @@ The guitars and the drums come from the same data as the sound: the playback bar
 
 Text is measured with the PDF's own font metrics, so nothing overflows. `npm run verify` makes 120 real PDFs (3 keys × 5 feels × 2 lengths × 2 paper sizes × 2 option sets, including a 16-bar solo, an Intro melody, a chorus tag and a key change) and checks the file (every page, the three fonts embedded, the title) and the layout: every operation on its page, all text inside the margins, tab panels never overlapping each other or the footer, every section once and in order, and every bar of every section numbered 1 to n.
 
+## 5d. The Chord Lab
+
+`/chords/` is a guitarist's chord toolbox, **separate from the song generator**: it has its own key, tuning and left-handed switch, and nothing it does goes to or comes from a song. Everything in it plays one feel, Pop Strum at **150 BPM**, through the same synth guitar as the rest of the site. The music maths is pure TypeScript in `lib/lab/` (no React), driven by `data/tunings.json`, `chord-types.json`, `chord-templates.json`, `open-chords.json`, `chord-moves.json` and `mood-map.json`.
+
+- **Tunings:** E standard, E♭ standard, Drop D and Drop C♯. A chord is named by what it *sounds* in the picked tuning, so a tuning changes the frets, never the chord's name.
+- **Dictionary (with the neck):** 10 chord types (power, octave, major, minor, sus2, sus4, add9, 7, maj7, m7). A voicing is a curated open shape or a moveable template slid up the neck, kept only if it plays exactly the chord's notes with the root in the bass, fits four fingers inside a four-fret reach (five for an add9), and mutes every skipped inner string with a fretted neighbour. Each gets fingers, a barre if it needs one, and a difficulty from 1 to 5.
+- **Name that chord:** tap frets on the neck (or type `x32010`) and the shape is named: best name first, alternatives, slash chords for inversions, the major keys it belongs to with its numeral in each, and a "did you mean" for a shape one fret off a chord.
+- **Progression builder:** the key's I ii iii IV V vi plus the borrowed bIII, iv, bVI and bVII, in a loop of up to eight. "What next?" suggests the three likeliest chords from `data/chord-moves.json`; three meters (dark to bright, settled to restless, how classic) come from `lib/lab/mood.ts`.
+- **Key finder & transposer:** type chord names and get the major keys they fit, best first, with borrowed chords flagged; move them by semitones, to a key, or for a capo (the shape to play is the sound minus the capo's frets).
+- **Mood map:** the ten progressions and 16 more plotted by the same scores, spread across the plot and nudged only so their names never overlap.
+
+`scripts/verify-lab.ts` proves it on every build: every voicing in every tuning is exactly its chord (right notes, root in the bass, within reach, fingered, muted), every voicing names back to its own chord, every one of the ten progressions is found in its own key in all twelve keys (as full and as power chords), the capo maths agrees with the shapes in every tuning, and no two names on the mood map overlap.
+
 ## 6. The proofs
 
-`npm run verify` (`scripts/verify-all.mjs` runs the six `scripts/verify-*.ts` suites side by side, about 75 s) runs in CI on every pull request:
+`npm run verify` (`scripts/verify-all.mjs` runs the seven `scripts/verify-*.ts` suites side by side, about 75 s) runs in CI on every pull request:
 
 | Suite | What it covers | Checks |
 |---|---|---|
@@ -273,6 +287,7 @@ Text is measured with the PDF's own font metrics, so nothing overflows. `npm run
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text**; Phase 5: **the solo quotes the song's motif, plays the Chorus's chords and peaks on its strongest chord** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 | MIDI export | Every file reads back exactly through a strict parser; every note inside its lane (guitars at concert pitch); rhythm guitar, lead guitar and drums equal the audio; markers where each part starts; tempo, 4/4, instruments and channels; no drum track when drums are off | 120 songs (4 keys × 5 feels × 3 lengths × 2 option sets) |
 | PDF songbook | Real PDFs: every page, three fonts embedded, the title; every operation on the page, text inside the margins, tab panels never overlapping or in the footer, every section once, every bar numbered 1 to n, deterministic layout | 120 songbooks (3 keys × 5 feels × 2 lengths × 2 paper sizes × 2 option sets) |
+| Chord Lab | Every dictionary voicing in all four tunings is exactly its chord and names back to itself; all ten progressions found in their own key in all 12 keys; transposing up and back is the identity; the capo maths agrees with the shapes; the mood map has no overlapping names | `scripts/verify-lab.ts` |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. `e2e/song-builder-responsive.spec.ts` is the song builder's responsive gate (docs/song-builder-prd.md B12): no sideways scroll, controls ≥ 44px, text ≥ 12px and nothing clipped, in every project, for the setup, the folded summary and the longest song. It also covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 

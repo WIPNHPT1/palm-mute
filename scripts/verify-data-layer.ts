@@ -208,7 +208,7 @@ console.log(`Style presets: ${PRESET_IDS.length} (${PRESET_IDS.map((i) => PRESET
       const sections = Object.fromEntries(
         SECTION_IDS.map((id, i) => {
           const options = id === "solo" ? {} : { groove: recipes[id].variants[i % recipes[id].variants.length].name, ...(id === "verse" ? { noPush: true, sound: "pm" as const } : {}), ...(id === "chorus" ? { keyUp: true, times: 3 } : {}) };
-          const lead = id === "solo" ? { style: "shred" as const, bars: 16 } : id === "intro" && links % 2 ? { style: "hook" as const, bars: 8, sent: true } : null;
+          const lead = id === "solo" ? { style: "shred" as const, bars: 16 } : id === "intro" && links % 2 ? { style: "hook" as const, bars: 8 } : null;
           const locked = id === "breakdown";
           const thread = id === "solo" ? { quote: { rhythm: "n-n-n.n.", intervals: [2, -2, 5], from: "the Intro riff" }, degrees: ["I", "V", "vi", "IV"] as Degree[], peakDegree: "vi" as Degree } : undefined;
           return [id, { seed: (links * 7 + i) % 40, lead, options, ...(thread ? { thread } : {}), locked, frozen: locked ? { key: "D" as const, feel: "half-time" as const, progressionId: "I-IV-V", seed: 11, lead: null, options: { drums: "none" as const }, difficulty: "beginner" as const } : null }];
