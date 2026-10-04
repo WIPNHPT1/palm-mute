@@ -83,7 +83,7 @@ export function Nav() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-ink text-text-on-dark">
+      <header className="sig-topbar sticky top-0 z-50 bg-ink text-text-on-dark">
         <div className="mx-auto flex h-[64px] max-w-[var(--page-max)] items-center justify-between px-[20px] tablet:h-[76px] tablet:px-[32px] desktop:px-[56px]">
           <Link href="/" className="flex min-h-[44px] items-center font-display text-[16px] tracking-[-0.01em] tablet:text-[17px]">
             <Wordmark />

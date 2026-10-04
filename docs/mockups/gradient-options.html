@@ -1,0 +1,382 @@
+<title>Palm/Mute Gradient Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: Palm/Mute's own shell (ink bar, kicker + title). A live "all picks together" stage up top, then one row per
+     place a gradient could go: Current first, then the options as tappable tiles. Every gradient blends the site's own
+     tokens (and tints of them); no new hues. */
+  :root {
+    --ink:#171310; --ink-soft:#2A241C; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --accent-deep:#8A2415;
+    --brass:#B8862E; --success:#3F8F4F; --line:#E4DAC3; --line-strong:#DCD3BE;
+    --text-primary:#171310; --text-secondary:#4E4738; --text-muted:#6B6152; --text-faint:#72675A;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --on-dark-faint:#A89C86; --on-accent:#FFF9EF; --chip-bg:#171310; --chip-tab:#C9BFA9;
+    --shadow-card:0 1px 2px rgba(23,19,16,.04), 0 10px 20px -14px rgba(23,19,16,.18); --shadow-btn:0 8px 20px -8px #C23A2699;
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --ink-soft:#221C17; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --accent-deep:#A8321F;
+    --brass:#C9973C; --success:#52A862; --line:#352D25; --line-strong:#463B30;
+    --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B; --on-accent:#140F0C; --chip-bg:#0B0908;
+    --shadow-card:0 1px 2px rgba(0,0,0,.3), 0 10px 20px -14px rgba(0,0,0,.6); --shadow-btn:0 8px 20px -8px #E85A4280;
+    color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --ink-soft:#221C17; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --accent-deep:#A8321F;
+    --brass:#C9973C; --success:#52A862; --line:#352D25; --line-strong:#463B30;
+    --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B; --on-accent:#140F0C; --chip-bg:#0B0908;
+    --shadow-card:0 1px 2px rgba(0,0,0,.3), 0 10px 20px -14px rgba(0,0,0,.6); --shadow-btn:0 8px 20px -8px #E85A4280;
+    color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  svg { display: block; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } } @media (min-width: 1280px) { .wrap { padding-inline: 56px; } }
+
+  /* page shell */
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--ink); color: var(--on-dark); }
+  .bar .wrap { height: 64px; display: flex; align-items: center; gap: 14px; }
+  .wm { font-family: var(--f-display); font-size: 17px; margin-right: auto; white-space: nowrap; }
+  .wm i { font-style: normal; color: var(--accent-on-ink); }
+  .themebtn { display: flex; align-items: center; gap: 8px; min-height: 44px; border: 0; background: transparent; color: var(--on-dark-faint); font-family: var(--f-mono); font-size: 12px; cursor: pointer; }
+  .themebtn .t { position: relative; width: 30px; height: 16px; border-radius: 8px; background: var(--ink-soft); }
+  .themebtn .k { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--on-dark); transition: left .2s; }
+  .themebtn[aria-checked="true"] .t { background: var(--accent); } .themebtn[aria-checked="true"] .k { left: 16px; }
+
+  main { padding-block: 28px 140px; display: flex; flex-direction: column; gap: 48px; }
+  .kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); white-space: nowrap; }
+  .kicker::after { content: ""; flex: 0 0 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+  h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 28px; line-height: 1.05; text-wrap: balance; }
+  @media (min-width: 834px) { h1 { font-size: 34px; } }
+  .lede { max-width: 66ch; margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-secondary); }
+  .rules { display: grid; gap: 12px; margin-top: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+  .rule { padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .rule b { display: block; margin-bottom: 4px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+  .rule p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-secondary); }
+
+  h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 20px; line-height: 1.1; }
+  .sec-hd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
+  .sec-hd .n { font-family: var(--f-mono); font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: var(--ink); color: var(--on-dark); }
+  .where { margin: 0 0 12px; font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+
+  /* the together stage */
+  .together { display: grid; gap: 16px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 1100px) { .together { grid-template-columns: minmax(0, 1fr) 320px; } }
+  .picklist { padding: 16px; border-radius: 10px; background: var(--ink); color: var(--on-dark-muted); font-family: var(--f-mono); font-size: 12px; line-height: 1.7; }
+  .picklist b { color: var(--on-dark); font-weight: 700; }
+  .picklist ol { margin: 8px 0 12px; padding-left: 0; list-style: none; }
+  .picklist li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--ink-soft); }
+  .picklist li span:last-child { color: var(--on-dark); text-align: right; }
+  .picklist li.on span:last-child { color: var(--accent-on-ink); }
+  .pl-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pl-btns button { min-height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--ink-soft); background: transparent; color: var(--on-dark); font-family: var(--f-mono); font-size: 12px; font-weight: 700; cursor: pointer; }
+  .pl-btns button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .pl-note { min-height: 1.7em; margin: 8px 0 0; color: var(--on-dark-faint); }
+  #copy-text { width: 100%; margin-top: 8px; height: 120px; border-radius: 6px; border: 1px solid var(--ink-soft); background: var(--ink-soft); color: var(--on-dark); font: 12px/1.5 var(--f-mono); }
+
+  /* option rows */
+  .opts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+  .opt { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; transition: border-color .15s; }
+  .opt:hover { border-color: var(--line-strong); }
+  .opt[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+  .opt .demo { position: relative; min-height: 132px; border-radius: 6px; overflow: hidden; background: var(--paper); display: grid; place-items: center; padding: 14px; }
+  .opt .meta { display: flex; flex-direction: column; gap: 3px; padding: 0 2px 2px; }
+  .opt .meta b { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+  .opt .meta b .rec { font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; background: var(--brass); color: var(--ink); }
+  .opt .meta span { font-size: 13px; line-height: 1.45; color: var(--text-muted); }
+  .opt .tick { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: grid; place-items: center; }
+  .opt[aria-checked="true"] .tick { background: var(--accent); border-color: var(--accent); }
+  .opt[aria-checked="true"] .tick::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--on-accent); }
+
+  /* ======== the components, Current look first, then each gradient option keyed by a data attribute ======== */
+
+  /* 1 top bar */
+  .g-bar { width: 100%; height: 52px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; background: var(--ink); color: var(--on-dark); position: relative; overflow: hidden; }
+  .g-bar .wm { font-size: 14px; }
+  .g-bar .burger { display: grid; gap: 4px; } .g-bar .burger i { display: block; width: 20px; height: 1.5px; background: var(--on-dark); }
+  [data-bar="lit"] .g-bar { background: linear-gradient(180deg, var(--ink-soft), var(--ink) 75%); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--on-dark) 10%, transparent); }
+  [data-bar="glow"] .g-bar { background: radial-gradient(90% 160% at 8% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 60%), var(--ink); }
+  [data-bar="edge"] .g-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--brass) 45%, transparent 85%); }
+
+  /* 2 page title */
+  .g-title { width: 100%; }
+  .g-title .kick { display: flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; color: var(--accent); white-space: nowrap; }
+  .g-title .kick::after { content: ""; flex: 0 1 80px; height: 5px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 7px); }
+  .g-title .h { position: relative; display: inline-block; margin-top: 6px; font-family: var(--f-display); font-size: 30px; line-height: 1; color: var(--text-primary); text-shadow: 2px 2px 0 color-mix(in srgb, var(--accent) 38%, transparent); }
+  [data-title="ember"] .g-title .h { background: linear-gradient(90deg, var(--text-primary) 45%, var(--accent-deep) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+  [data-title="under"] .g-title .h::after { content: ""; position: absolute; left: 0; bottom: -9px; width: 110%; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--brass) 55%, transparent); }
+  [data-title="ruler"] .g-title .kick::after { background: linear-gradient(90deg, var(--accent), transparent), repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 7px); background-size: 100% 2px, auto; background-repeat: no-repeat, repeat; background-position: 0 50%, 0 0; }
+
+  /* 3 primary button */
+  .g-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 20px; border-radius: 999px; font-family: var(--f-display); font-size: 13px; color: var(--on-accent); background: var(--accent); box-shadow: var(--shadow-btn); }
+  .g-btn svg { width: 11px; height: 11px; }
+  [data-btn="lit"] .g-btn { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 80%, #fff 20%), var(--accent) 55%, color-mix(in srgb, var(--accent) 88%, #000 12%)); }
+  [data-btn="ember"] .g-btn { background: linear-gradient(135deg, var(--accent) 30%, var(--accent-deep)); }
+  [data-btn="brass"] .g-btn { background: linear-gradient(100deg, var(--accent) 60%, color-mix(in srgb, var(--accent) 70%, var(--brass) 30%)); }
+
+  /* 4 cards */
+  .g-card { width: 100%; padding: 12px 14px 14px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
+  .g-card .hd { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-display); font-size: 14px; }
+  .g-card .hd b { font-family: var(--f-mono); font-size: 11px; padding: 1px 5px; border-radius: 3px; background: var(--ink); color: var(--on-dark); }
+  .g-card .hd span { margin-left: auto; font-family: var(--f-mono); font-size: 11px; color: var(--text-faint); }
+  .g-card .bd { margin-top: 10px; font-family: var(--f-mono); font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  [data-card="falloff"] .g-card { background: linear-gradient(180deg, var(--surface) 30%, color-mix(in srgb, var(--surface) 55%, var(--paper))); }
+  [data-card="wash"] .g-card { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, var(--surface)) 0, var(--surface) 44px); }
+  [data-card="edge"] .g-card { border-color: transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(135deg, var(--accent), var(--line) 38%, var(--line)) border-box; }
+
+  /* 5 chord chips */
+  .g-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .g-chips .chip { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 56px; min-height: 50px; padding: 4px 8px; border-radius: 6px; overflow: hidden; background: var(--chip-bg); color: var(--on-dark); font-family: var(--f-mono); }
+  .g-chips .chip small { font-size: 11px; color: var(--chip-tab); } .g-chips .chip b { font-size: 13px; }
+  .g-chips .chip.on::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); }
+  [data-chips="soft"] .g-chips .chip { background: linear-gradient(180deg, var(--ink-soft), var(--chip-bg)); }
+  [data-chips="glow"] .g-chips .chip.on { background: radial-gradient(90% 80% at 50% 115%, color-mix(in srgb, var(--accent) 60%, transparent), transparent 70%), var(--chip-bg); }
+  [data-chips="sweep"] .g-chips .chip.on::after { background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent-on-ink)); height: 100%; opacity: .28; }
+
+  /* 6 meters */
+  .g-meter { width: 100%; display: grid; gap: 6px; font-family: var(--f-mono); font-size: 11px; color: var(--text-muted); }
+  .g-meter .trk { position: relative; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .g-meter .trk i { position: absolute; inset: 0 auto 0 0; width: calc(var(--v) * 100%); border-radius: 5px; background: var(--accent); }
+  [data-meter="vu"] .g-meter .trk i { background: linear-gradient(90deg, var(--success), var(--brass) 65%, var(--accent)) 0 0 / calc(100% / var(--v)) 100%; }
+  [data-meter="heat"] .g-meter .trk i { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, var(--line)), var(--accent)); }
+  [data-meter="tip"] .g-meter .trk i { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, var(--line)), var(--accent) calc(100% - 14px), var(--accent-on-ink)); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent); }
+
+  /* 7 page background */
+  .g-page { position: absolute; inset: 0; background: var(--paper); }
+  .g-page::before { content: "SONG GENERATOR"; position: absolute; left: 14px; top: 16px; font-family: var(--f-display); font-size: 15px; color: var(--text-primary); }
+  .g-page::after { content: ""; position: absolute; left: 14px; right: 14px; top: 46px; bottom: 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); }
+  [data-page="spot"] .g-page { background: radial-gradient(70% 55% at 18% 0%, color-mix(in srgb, var(--brass) 18%, transparent), transparent 70%), var(--paper); }
+  [data-page="vignette"] .g-page { background: radial-gradient(130% 100% at 50% 20%, transparent 55%, color-mix(in srgb, var(--ink) 10%, transparent)), var(--paper); }
+  [data-page="dusk"] .g-page { background: linear-gradient(180deg, var(--paper) 30%, color-mix(in srgb, var(--accent) 7%, var(--paper))); }
+  [data-page] .g-page::after { opacity: .9; }
+
+  /* 8 rules and dividers */
+  .g-rules { width: 100%; display: grid; gap: 12px; font-family: var(--f-mono); font-size: 11px; color: var(--text-muted); }
+  .g-rules .hr { height: 1px; background: var(--line-strong); }
+  [data-rule="fade"] .g-rules .hr { background: linear-gradient(90deg, transparent, var(--line-strong) 18% 82%, transparent); }
+  [data-rule="lead"] .g-rules .hr { height: 2px; background: linear-gradient(90deg, var(--accent) 0 36px, var(--line-strong) 36px 70%, transparent); }
+  [data-rule="tape"] .g-rules .hr { height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); -webkit-mask: linear-gradient(90deg, #000 60%, transparent); mask: linear-gradient(90deg, #000 60%, transparent); }
+
+  /* 9 ink bands (transport, title board, home stamp band) */
+  .g-band { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 14px 16px; border-radius: 8px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); font-size: 12px; }
+  .g-band .play { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--on-accent); }
+  .g-band .play svg { width: 11px; height: 11px; margin-left: 2px; }
+  .g-band span { color: var(--on-dark-muted); } .g-band b { color: var(--on-dark); }
+  [data-band="sheen"] .g-band { background: linear-gradient(180deg, color-mix(in srgb, var(--on-dark) 7%, var(--ink)), var(--ink) 55%); }
+  [data-band="stage"] .g-band { background: radial-gradient(60% 140% at 50% -40%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), var(--ink); }
+  [data-band="ember"] .g-band { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 14%, var(--ink)), var(--ink) 45%); }
+
+  /* the together stage: a small Generator page wearing every pick */
+  .stage { position: relative; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line); box-shadow: var(--shadow-card); }
+  .stage .g-page { position: absolute; inset: 0; }
+  .stage .g-page::before, .stage .g-page::after { content: none; }
+  .stage-in { position: relative; display: flex; flex-direction: column; gap: 16px; padding: 0 0 18px; }
+  .stage-in .g-bar { border-radius: 0; height: 56px; }
+  .stage-body { display: flex; flex-direction: column; gap: 16px; padding: 0 18px; }
+  .stage-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px; }
+  .stage-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+
+  .foot { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <span class="wm">PALM<i>/</i>MUTE</span>
+    <button type="button" class="themebtn" id="theme" role="switch" aria-checked="false"><span>DARK</span><span class="t"><span class="k"></span></span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <p class="kicker">DESIGN OPTIONS</p>
+    <h1>Where gradients could go</h1>
+    <p class="lede">Nine places on the site where a gradient could add depth without changing a colour or moving anything. Tap one tile per row; the page at the top wears every pick together, in light and dark. When you're happy, copy the picks and paste them back to me.</p>
+    <div class="rules">
+      <div class="rule"><b>Same colours</b><p>Every gradient blends the site's own tokens (ink, paper, surface, red, brass, green) or a tint of one. No new hues.</p></div>
+      <div class="rule"><b>Text stays readable</b><p>Text never sits where a gradient drops it below 4.5:1. Washes stay behind headers and edges, not body text.</p></div>
+      <div class="rule"><b>One loud place</b><p>Pick boldly in one or two rows and keep the rest Current or subtle, so the red still means "this is the action".</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-together">
+    <div class="sec-hd"><h2 id="t-together">All your picks together</h2></div>
+    <p class="where">A Song Generator page at a glance. Changes as you pick below.</p>
+    <div class="together">
+      <div class="stage" id="stage">
+        <div class="g-page"></div>
+        <div class="stage-in">
+          <div class="g-bar"><span class="wm">PALM<i>/</i>MUTE</span><span class="burger"><i></i><i></i><i></i></span></div>
+          <div class="stage-body">
+            <div class="stage-row">
+              <div class="g-title"><div class="kick">SONGWRITING ENGINE</div><div class="h">SONG GENERATOR</div></div>
+              <span class="g-btn"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>GENERATE</span>
+            </div>
+            <div class="g-rules"><div class="hr"></div></div>
+            <div class="stage-grid">
+              <div class="g-card"><div class="hd"><b>03</b>Chorus<span>8 BARS</span></div>
+                <div class="bd">I – V – vi – IV in G</div>
+                <div class="g-chips" style="margin-top:10px"><span class="chip"><small>I</small><b>G5</b></span><span class="chip on"><small>V</small><b>D5</b></span><span class="chip"><small>vi</small><b>E5</b></span><span class="chip"><small>IV</small><b>C5</b></span></div>
+              </div>
+              <div class="g-card"><div class="hd"><b>05</b>Mood<span>THE LOOP</span></div>
+                <div class="bd" style="display:grid;gap:12px">
+                  <div class="g-meter"><span>Dark to bright</span><div class="trk"><i style="--v:.72"></i></div></div>
+                  <div class="g-meter"><span>Settled to restless</span><div class="trk"><i style="--v:.38"></i></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="g-band"><span class="play"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg></span><b>PLAY SONG</b><span>180 BPM · E STANDARD · BAR 3 / 16</span></div>
+          </div>
+        </div>
+      </div>
+      <aside class="picklist" aria-label="Your picks">
+        <b>YOUR PICKS</b>
+        <ol id="picklist"></ol>
+        <div class="pl-btns">
+          <button type="button" class="primary" id="copy">COPY PICKS</button>
+          <button type="button" id="recommend">TRY RECOMMENDED</button>
+          <button type="button" id="reset">ALL CURRENT</button>
+        </div>
+        <p class="pl-note" id="note" aria-live="polite"></p>
+        <textarea id="copy-text" readonly hidden aria-label="Picks to copy"></textarea>
+      </aside>
+    </div>
+  </section>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:44px"></div>
+
+  <p class="foot">Mock-up only. Nothing here changes the site until the picks are built.</p>
+</main>
+
+<script>
+  const PLAY = '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>';
+  const GROUPS = [
+    { id: "bar", name: "Top bar", where: "The ink bar on every page.", demo: () => '<div class="g-bar"><span class="wm">PALM<i>/</i>MUTE</span><span class="burger"><i></i><i></i><i></i></span></div>', options: [
+      { id: "cur", name: "Current", note: "Flat ink." },
+      { id: "lit", name: "Lit from above", note: "Ink-soft fading to ink, with a hairline highlight on the top edge. Reads as a physical panel.", rec: true },
+      { id: "glow", name: "Stage glow", note: "A faint red glow behind the wordmark, like a lamp on the left of the stage." },
+      { id: "edge", name: "Signal edge", note: "A 2px red-to-brass line along the bottom, fading out to the right." } ] },
+    { id: "title", name: "Page title", where: "SONG GENERATOR, CHORD LAB and the other page titles.", demo: () => '<div class="g-title"><div class="kick">SONGWRITING TOOLS</div><div class="h">CHORD LAB</div></div>', options: [
+      { id: "cur", name: "Current", note: "Ink with the red offset shadow." },
+      { id: "ember", name: "Ember fade", note: "The title's last letters warm from ink into deep red." },
+      { id: "under", name: "Red underline", note: "A short red-to-brass bar under the title, fading out.", rec: true },
+      { id: "ruler", name: "Lit ruler", note: "The kicker's ruler gets a red line through it that fades along the ticks." } ] },
+    { id: "btn", name: "Primary button", where: "GENERATE, PLAY THE LOOP, START WRITING.", demo: () => '<span class="g-btn">' + PLAY + 'GENERATE</span>', options: [
+      { id: "cur", name: "Current", note: "Flat red, soft red shadow." },
+      { id: "lit", name: "Domed", note: "Lighter at the top, darker at the bottom: a pressable cap.", rec: true },
+      { id: "ember", name: "Ember", note: "Red into deep red on the diagonal." },
+      { id: "brass", name: "Brass catch", note: "Red with the right end catching a little brass." } ] },
+    { id: "card", name: "Cards", where: "The Generator's section cards and the Chord Lab's tool cards.", demo: () => '<div class="g-card"><div class="hd"><b>03</b>Chorus<span>8 BARS</span></div><div class="bd">I – V – vi – IV in G</div></div>', options: [
+      { id: "cur", name: "Current", note: "Flat surface, hairline border." },
+      { id: "falloff", name: "Paper fall-off", note: "The card fades towards the page colour at the bottom, so it sits on the page." },
+      { id: "wash", name: "Header wash", note: "A faint red wash behind the card's header only.", rec: true },
+      { id: "edge", name: "Lit corner", note: "The border runs red at the top-left corner and fades to the usual hairline." } ] },
+    { id: "chips", name: "Chord chips", where: "The chord chips in section cards, the Builder's loop.", demo: () => '<div class="g-chips"><span class="chip"><small>I</small><b>G5</b></span><span class="chip on"><small>V</small><b>D5</b></span><span class="chip"><small>vi</small><b>E5</b></span></div>', options: [
+      { id: "cur", name: "Current", note: "Flat ink; the sounding chip gets a red bar." },
+      { id: "soft", name: "Soft ink", note: "Every chip lit slightly from the top, like the top bar." },
+      { id: "glow", name: "Sounding glow", note: "The sounding chip glows red from below, like an amp's light.", rec: true },
+      { id: "sweep", name: "Sweep", note: "The sounding chip fills with a red sweep, left to right." } ] },
+    { id: "meter", name: "Meters", where: "The Builder's three vibe meters and any progress bar.", demo: () => '<div class="g-meter"><span>Dark to bright</span><div class="trk"><i style="--v:.72"></i></div></div>', options: [
+      { id: "cur", name: "Current", note: "Solid red fill." },
+      { id: "vu", name: "VU ramp", note: "Green to brass to red, like the home page's VU meter. The colour says how far.", rec: true },
+      { id: "heat", name: "Heat", note: "Pale red warming to full red at the tip." },
+      { id: "tip", name: "Hot tip", note: "Red with a brighter, glowing tip." } ] },
+    { id: "page", name: "Page background", where: "The paper behind the Generator and the Chord Lab.", demo: () => '<div class="g-page"></div>', options: [
+      { id: "cur", name: "Current", note: "Flat paper (with the moving scope on top)." },
+      { id: "spot", name: "Spotlight", note: "A warm brass light over the page title, falling off down the page.", rec: true },
+      { id: "vignette", name: "Vignette", note: "The page's edges darken very slightly, pulling the eye to the middle." },
+      { id: "dusk", name: "Dusk", note: "The paper warms towards red at the bottom of the screen." } ] },
+    { id: "rule", name: "Rules and dividers", where: "Lines between sections, setup and tools.", demo: () => '<div class="g-rules"><span>SETUP</span><div class="hr"></div><span>TOOLS</span></div>', options: [
+      { id: "cur", name: "Current", note: "A solid hairline, edge to edge." },
+      { id: "fade", name: "Fade at the ends", note: "The hairline fades out at both ends.", rec: true },
+      { id: "lead", name: "Red lead-in", note: "A short red start, then the hairline, fading out." },
+      { id: "tape", name: "Tape ticks", note: "Ruler ticks like the kicker's, fading to nothing." } ] },
+    { id: "band", name: "Ink bands", where: "The transport bar, the title board, the home page's stamp band.", demo: () => '<div class="g-band"><span class="play">' + PLAY + '</span><b>PLAY SONG</b><span>180 BPM</span></div>', options: [
+      { id: "cur", name: "Current", note: "Flat ink." },
+      { id: "sheen", name: "Top sheen", note: "A soft light along the top edge, matching a lit top bar." },
+      { id: "stage", name: "Stage light", note: "A red light from above, centred, as if the band is on stage.", rec: true },
+      { id: "ember", name: "Ember side", note: "Warm red at the left end, by the play button, fading out." } ] },
+  ];
+
+  const picks = Object.fromEntries(GROUPS.map((g) => [g.id, "cur"]));
+  try { Object.assign(picks, JSON.parse(localStorage.getItem("pm-gradient-picks") || "{}")); } catch (e) {}
+
+  const groupsEl = document.getElementById("groups");
+  groupsEl.innerHTML = GROUPS.map((g, gi) => `
+    <section aria-labelledby="t-${g.id}">
+      <div class="sec-hd"><span class="n">${String(gi + 1).padStart(2, "0")}</span><h2 id="t-${g.id}">${g.name}</h2></div>
+      <p class="where">${g.where}</p>
+      <div class="opts" role="radiogroup" aria-labelledby="t-${g.id}">
+        ${g.options.map((o) => `
+          <button type="button" class="opt" role="radio" data-group="${g.id}" data-v="${o.id}" aria-checked="false">
+            <div class="demo" data-${g.id}="${o.id}">${g.demo()}</div>
+            <div class="meta"><b>${o.name}${o.rec ? '<span class="rec">RECOMMENDED</span>' : ""}<span class="tick" aria-hidden="true"></span></b><span>${o.note}</span></div>
+          </button>`).join("")}
+      </div>
+    </section>`).join("");
+
+  const stage = document.getElementById("stage");
+  const list = document.getElementById("picklist");
+  const note = document.getElementById("note");
+  const nameOf = (g, v) => g.options.find((o) => o.id === v)?.name ?? "Current";
+
+  function render() {
+    for (const g of GROUPS) {
+      if (!g.options.some((o) => o.id === picks[g.id])) picks[g.id] = "cur";
+      stage.dataset[g.id] = picks[g.id];
+      document.querySelectorAll(`.opt[data-group="${g.id}"]`).forEach((b) => {
+        const on = b.dataset.v === picks[g.id];
+        b.setAttribute("aria-checked", String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+    }
+    list.innerHTML = GROUPS.map((g) => `<li class="${picks[g.id] === "cur" ? "" : "on"}"><span>${g.name}</span><span>${nameOf(g, picks[g.id])}</span></li>`).join("");
+    try { localStorage.setItem("pm-gradient-picks", JSON.stringify(picks)); } catch (e) {}
+  }
+
+  groupsEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".opt");
+    if (!b) return;
+    picks[b.dataset.group] = b.dataset.v;
+    note.textContent = "";
+    render();
+  });
+  // arrow keys move between the tiles of one row, like the site's own radio groups
+  groupsEl.addEventListener("keydown", (e) => {
+    const b = e.target.closest(".opt");
+    if (!b || !["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
+    e.preventDefault();
+    const row = [...b.parentElement.children];
+    const next = row[(row.indexOf(b) + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1) + row.length) % row.length];
+    next.click();
+    next.focus();
+  });
+
+  document.getElementById("recommend").addEventListener("click", () => {
+    for (const g of GROUPS) picks[g.id] = g.options.find((o) => o.rec)?.id ?? "cur";
+    note.textContent = "Recommended picks applied.";
+    render();
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    for (const g of GROUPS) picks[g.id] = "cur";
+    note.textContent = "Back to the current look.";
+    render();
+  });
+  document.getElementById("copy").addEventListener("click", () => {
+    const text = "Palm/Mute gradient picks:\n" + GROUPS.map((g) => `- ${g.name}: ${nameOf(g, picks[g.id])}`).join("\n");
+    const area = document.getElementById("copy-text");
+    const fallback = () => { area.value = text; area.hidden = false; area.focus(); area.select(); note.textContent = "Select-all is done: copy the text below."; };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => { area.hidden = true; note.textContent = "Copied. Paste it into the chat."; }, fallback);
+    else fallback();
+  });
+
+  const themeBtn = document.getElementById("theme");
+  const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const syncTheme = () => themeBtn.setAttribute("aria-checked", String(isDark()));
+  themeBtn.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; syncTheme(); });
+  syncTheme();
+  render();
+</script>

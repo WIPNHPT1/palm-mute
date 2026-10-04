@@ -322,7 +322,7 @@ export function Dictionary() {
         </div>
       )}
 
-      <div className="flex flex-col gap-[10px] border-t border-line pt-[16px]" data-fretboard>
+      <div className="sig-rule flex flex-col gap-[10px] pt-[16px]" data-fretboard>
         <GroupLabel>On the neck</GroupLabel>
         <div className="flex flex-wrap items-center gap-[8px]">
           <span className="font-mono text-[12px] text-text-muted">
