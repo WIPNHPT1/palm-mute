@@ -6,6 +6,8 @@ export type Playback = {
   bars: { feel: string; cells: Cell[]; lead?: Cell[]; drums?: boolean }[];
   bpm: number;
   loop: boolean;
+  /** A bar of count-in clicks first (the transport's COUNT-IN). */
+  countIn?: boolean;
 } | null;
 
 export async function lastPlayback(page: Page): Promise<Playback> {

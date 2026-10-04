@@ -315,7 +315,19 @@ type GeneratorContextValue = {
   activeSection: SectionId | null;
   /** While the song plays: the running-order part sounding now. */
   activePart: number | null;
+  /** Where the music is (the transport's bar count and the card cursor), or null when stopped. */
+  position: Position | null;
+  /** Practice settings for the transport. */
+  practice: Practice;
+  setSpeed: (speed: number) => void;
+  setCountIn: (on: boolean) => void;
+  setLoopPart: (on: boolean) => void;
 };
+
+/** Practice: tempo as a share of the song's (0.5–1), a bar of clicks first, loop the part playing. */
+export type Practice = { speed: number; countIn: boolean; loopPart: boolean };
+/** The song bar sounding (null for a section played on its own), and the bar of that section's tab. */
+export type Position = { songBar: number | null; section: SectionId; bar: number };
 
 const GeneratorContext = createContext<GeneratorContextValue | null>(null);
 
@@ -385,37 +397,63 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   const customBars = useRef<PlaybackBar[]>([]);
   /** The running-order part Play song starts from (the strip can start it anywhere). */
   const songFrom = useRef(0);
+  // Practice (the transport): tempo as a share of the song's, a bar of clicks first, and looping one part.
+  const [practice, setPractice] = useState<Practice>({ speed: 1, countIn: false, loopPart: false });
+  const practiceRef = useRef(practice);
+  practiceRef.current = practice;
   const barsFor = useCallback(
     (target: PlayTarget): PlaybackBar[] => {
       if (target.startsWith("custom:")) return customBars.current;
-      if (target === "song") return songBars(song.slice(songFrom.current));
+      // Looping a part: the song's bars for that part alone, played round and round.
+      if (target === "song") return songBars(practice.loopPart ? song.slice(songFrom.current, songFrom.current + 1) : song.slice(songFrom.current));
       if (target.startsWith("section:")) return sectionBars(rendered[target.slice(8) as SectionId]);
       if (target === "strum") return progressionBars(state.key, state.progressionId, state.feel);
       return progressionBars(state.key, target.slice(12), state.feel);
     },
-    [rendered, song, state.key, state.feel, state.progressionId],
+    [rendered, song, state.key, state.feel, state.progressionId, practice.loopPart],
   );
 
   // A token guards against a slow async start() finishing after the user already hit stop.
   const playToken = useRef(0);
   const bpmRef = useRef(bpm);
-  bpmRef.current = bpm;
+  bpmRef.current = bpm * practice.speed;
 
   // The section card that's sounding right now (red border). A section's own play button lights its
   // card straight away; Play song moves the light card by card with the music.
   const [activeSection, setActiveSection] = useState<SectionId | null>(null);
   const [activePart, setActivePart] = useState<number | null>(null);
+  /** Where the music is: the song bar sounding (from the top), and the card bar under the cursor. */
+  const [position, setPosition] = useState<Position | null>(null);
   const songRef = useRef(song);
   songRef.current = song;
+  const renderedRef = useRef(rendered);
+  renderedRef.current = rendered;
 
-  const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[], loop = target !== "song") => {
+  const start = useCallback(async (target: PlayTarget, bars: PlaybackBar[], loop = target !== "song" || practiceRef.current.loopPart) => {
     const token = ++playToken.current;
     let barParts: number[] = [];
     const from = songFrom.current;
-    if (target === "song") barParts = songBarParts(songRef.current.slice(from)).map((i) => i + from);
+    const parts = songRef.current;
+    if (target === "song") barParts = songBarParts(practiceRef.current.loopPart ? parts.slice(from, from + 1) : parts.slice(from)).map((i) => i + from);
+    // Bars before the part it starts from, so the transport can say "bar 63 of 145".
+    const offset = parts.slice(0, from).reduce((a, p) => a + p.section.bars.length * p.section.repeat * p.times, 0);
+    /** The card bar a sounding bar shows: its material repeats, so it's the bar within one pass of the card's tab. */
+    const tabBar = (section: RenderedSection, local: number) => local % (section.lead ? section.lead.chords.length : section.bars.length);
     const light = (part: number) => {
       setActivePart(part);
-      setActiveSection(songRef.current[part].slot.section);
+      setActiveSection(parts[part].slot.section);
+    };
+    const onSongBar = (i: number) => {
+      if (token !== playToken.current) return;
+      const part = barParts[i];
+      light(part);
+      const first = barParts.indexOf(part);
+      setPosition({ songBar: offset + i, section: parts[part].slot.section, bar: tabBar(parts[part].section, i - first) });
+    };
+    const sectionId = target.startsWith("section:") ? (target.slice(8) as SectionId) : null;
+    const onSectionBar = (i: number) => {
+      if (token !== playToken.current || !sectionId) return;
+      setPosition({ songBar: null, section: sectionId, bar: tabBar(renderedRef.current[sectionId], i) });
     };
     if (target === "song") light(from);
     else {
@@ -426,12 +464,15 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       bars,
       bpm: bpmRef.current,
       loop,
-      onBar: target === "song" ? (i) => token === playToken.current && light(barParts[i]) : undefined,
+      onBar: target === "song" ? onSongBar : sectionId ? onSectionBar : undefined,
+      // A count-in before the song or a section (not before previews and progressions).
+      countIn: practiceRef.current.countIn && (target === "song" || !!sectionId),
       onEnd: () => {
         if (token !== playToken.current) return;
         dispatch({ type: "setPlaying", target: null });
         setActiveSection(null);
         setActivePart(null);
+        setPosition(null);
       },
     });
     if (token !== playToken.current) return;
@@ -439,6 +480,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "setPlaying", target: null });
       setActiveSection(null);
       setActivePart(null);
+      setPosition(null);
     }
   }, []);
 
@@ -447,6 +489,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     audio.stop();
     setActiveSection(null);
     setActivePart(null);
+    setPosition(null);
     dispatch({ type: "setPlaying", target: null });
   }, []);
 
@@ -475,7 +518,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "setFeel", feel });
       dispatch({ type: "setPlaying", target: "strum" });
       // Start at the new feel's tempo straight away (the render that follows would otherwise catch up).
-      bpmRef.current = playbackBpm(feel, state.midTempoBpm);
+      bpmRef.current = playbackBpm(feel, state.midTempoBpm) * practiceRef.current.speed;
       void start("strum", progressionBars(state.key, state.progressionId, feel));
     },
     [state.playing, state.feel, state.midTempoBpm, state.key, state.progressionId, start, stopPlayback],
@@ -502,10 +545,19 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
     void start(playing, JSON.parse(playingBars));
   }, [playing, playingBars, start]);
 
-  // Tempo changes (Mid-Tempo stepper) go straight to the transport, no restart.
+  // Tempo changes (Mid-Tempo stepper, practice speed) go straight to the transport, no restart.
   useEffect(() => {
-    if (playing) audio.setBpm(bpm);
-  }, [bpm, playing]);
+    if (playing) audio.setBpm(bpm * practice.speed);
+  }, [bpm, practice.speed, playing]);
+
+  const setLoopPart = useCallback(
+    (loopPart: boolean) => {
+      // Looping while the song plays: loop the part sounding now.
+      if (loopPart && state.playing === "song" && activePart !== null) songFrom.current = activePart;
+      setPractice((p) => ({ ...p, loopPart }));
+    },
+    [state.playing, activePart],
+  );
 
   // Leaving a page stops the music (there's no stop button anywhere else).
   const pathname = usePathname();
@@ -542,8 +594,13 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       stopPlayback,
       activeSection,
       activePart,
+      position,
+      practice,
+      setSpeed: (speed) => setPractice((p) => ({ ...p, speed })),
+      setCountIn: (countIn) => setPractice((p) => ({ ...p, countIn })),
+      setLoopPart,
     }),
-    [state, rendered, song, plan, bpm, generate, regenerateSection, togglePlay, playSongFrom, stopPlayback, playCustom, playStrum, activeSection, activePart],
+    [state, rendered, song, plan, bpm, position, practice, setLoopPart, generate, regenerateSection, togglePlay, playSongFrom, stopPlayback, playCustom, playStrum, activeSection, activePart],
   );
 
   return <GeneratorContext.Provider value={value}>{children}</GeneratorContext.Provider>;
