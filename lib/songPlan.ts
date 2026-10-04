@@ -62,26 +62,30 @@ export function usesProgression(id: SectionId): boolean {
 // ---------------------------------------------------------------------------
 // Forms (R7)
 
-export type FormId = "short" | "standard";
-export type VariationId = "push" | "double";
-export type FormSlot = { section: SectionId; name: string; variation?: VariationId };
+export type FormId = "short" | "standard" | "extended";
+export type VariationId = "push";
+/** A place in the running order. `times`: how many times in a row it plays its section's material. */
+export type FormSlot = { section: SectionId; name: string; variation?: VariationId; times: number };
+/** A slot as the data declares it: how far it can grow (lib/songLength.ts), and which growth step grows it. */
+export type FormSlotSpec = { section: SectionId; name: string; variation?: VariationId; min: number; max: number; grow?: string };
 
-const FORMS = formsJson.forms as Record<FormId, { label: string; slots: FormSlot[] }>;
+const FORMS = formsJson.forms as Record<FormId, { label: string; slots: FormSlotSpec[] }>;
 export const DEFAULT_FORM = formsJson.default as FormId;
 export const FORM_IDS = Object.keys(FORMS) as FormId[];
 export const VARIATIONS = formsJson.variations as Record<VariationId, { label: string }>;
 
-export function formSlots(form: FormId = DEFAULT_FORM): FormSlot[] {
+/** A form's slots as declared (with their growth ranges). */
+export function formSpec(form: FormId = DEFAULT_FORM): FormSlotSpec[] {
   return FORMS[form].slots;
+}
+
+/** A form at its shortest: every slot at its minimum. */
+export function formSlots(form: FormId = DEFAULT_FORM): FormSlot[] {
+  return FORMS[form].slots.map(({ section, name, variation, min }) => ({ section, name, ...(variation ? { variation } : {}), times: min }));
 }
 
 export function formLabel(form: FormId): string {
   return FORMS[form].label;
-}
-
-/** How many times a variation plays its section back to back. */
-export function timesFor(variation?: VariationId): number {
-  return variation === "double" ? 2 : 1;
 }
 
 // ---------------------------------------------------------------------------

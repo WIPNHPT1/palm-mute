@@ -1,5 +1,5 @@
 // The little 4-bar "waveform" glyph on progression rows (kept as divs, per component-spec §5).
-// Literal class strings so Tailwind can see them; "sm" = Power Chords panel, "lg" = Chords page card.
+// Literal class strings so Tailwind can see them; "sm" = the Generator's Chords step, "lg" = Chords page card.
 const HEIGHTS = {
   sm: [
     ["h-[6px]", "h-[12px]", "h-[16px]", "h-[9px]"],

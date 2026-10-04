@@ -3,7 +3,12 @@
 export type GuidePage = "generator" | "chords";
 
 export const GUIDE_PAGES: GuidePage[] = ["generator", "chords"];
-export const guideStorageKey = (page: GuidePage) => `palm-mute-guide-${page}`;
+/**
+ * Where hiding a guide is remembered. The Generator's guide got new text for the song builder, so it has a
+ * new key: anyone who hid the old guide sees the new one once (docs/song-builder-prd.md B13).
+ */
+const STORAGE_KEYS: Record<GuidePage, string> = { generator: "palm-mute-guide-generator-v2", chords: "palm-mute-guide-chords" };
+export const guideStorageKey = (page: GuidePage) => STORAGE_KEYS[page];
 export const guideHiddenClass = (page: GuidePage) => `guide-hidden-${page}`;
 
 /** Runs in <head>: adds guide-hidden-{page} to <html> for each guide the reader has hidden. */
