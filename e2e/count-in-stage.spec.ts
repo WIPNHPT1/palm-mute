@@ -35,26 +35,32 @@ test("big screens: the same 90% design scale as the other pages, and no zoom any
   expect(await horizontalOverflow(page)).toBe(0);
 });
 
-test("the oscilloscope sits behind the quiet sections only, from tablet up, and draws", async ({ page }, info) => {
+test("the same fixed oscilloscope as the other pages shows through the quiet sections only, from tablet up, and draws", async ({ page }, info) => {
   lightOnly(info);
   await gotoAndSettle(page, "/");
   const w = projectWidth(info);
-  await expect(page.locator("canvas.ci-scope")).toHaveCount(QUIET.length);
-  for (const s of QUIET) await expect(page.locator(`${s} > canvas.ci-scope`)).toHaveCount(1);
-  await expect(page.locator(".ci-stage canvas.ci-scope, .ci-setlist canvas.ci-scope, .ci-stamp-band canvas.ci-scope")).toHaveCount(0);
-  // Not the Generator's whole-page layer: the home page has no fixed stage canvas.
-  await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
+  // One canvas for the whole window, as on the Song Generator and the Chord Lab; no per-section scopes.
+  await expect(page.locator("canvas.stage-bg")).toHaveCount(1);
+  await expect(page.locator("canvas.ci-scope")).toHaveCount(0);
+  for (const s of QUIET) await expect(page.locator(`${s}[data-quiet]`)).toHaveCount(1);
+  // The quiet sections are see-through; the hero and the setlist are solid paper over it.
+  const bgs = await page.evaluate((quiet) => ({
+    quiet: quiet.map((s) => getComputedStyle(document.querySelector(s)!).backgroundColor),
+    solid: [".ci-stage", ".ci-setlist"].map((s) => getComputedStyle(document.querySelector(s)!).backgroundColor),
+  }), QUIET);
+  for (const c of bgs.quiet) expect(c).toBe("rgba(0, 0, 0, 0)");
+  for (const c of bgs.solid) expect(c).not.toBe("rgba(0, 0, 0, 0)");
 
   await scrollToCentre(page, ".ci-intro");
-  await page.waitForTimeout(250);
-  const scope = await page.locator(".ci-intro > canvas.ci-scope").evaluate((c: HTMLCanvasElement) => {
-    const cs = getComputedStyle(c), r = c.getBoundingClientRect(), sec = c.parentElement!.getBoundingClientRect();
+  await page.waitForTimeout(400);
+  const scope = await page.locator("canvas.stage-bg").evaluate((c: HTMLCanvasElement) => {
+    const cs = getComputedStyle(c);
     let ink = 0;
     if (c.width && c.height) {
       const px = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
       for (let i = 3; i < px.length; i += 4 * 97) if (px[i] > 0) ink++;
     }
-    return { display: cs.display, pe: cs.pointerEvents, z: cs.zIndex, fits: Math.abs(r.top - sec.top) < 1 && Math.abs(r.height - sec.height) < 1 && Math.abs(r.width - sec.width) < 1, ink };
+    return { display: cs.display, pe: cs.pointerEvents, position: cs.position, ink };
   });
   if (w < 834) {
     expect(scope.display).toBe("none");
@@ -62,8 +68,7 @@ test("the oscilloscope sits behind the quiet sections only, from tablet up, and 
   }
   expect(scope.display).toBe("block");
   expect(scope.pe).toBe("none");
-  expect(scope.z).toBe("-1"); // under the section's own text
-  expect(scope.fits, "fills its section").toBe(true);
+  expect(scope.position).toBe("fixed");
   expect(scope.ink, "drew a frame").toBeGreaterThan(0);
 });
 
@@ -153,7 +158,7 @@ test("reduced motion: no count, no flips, no moving scope", async ({ page }, inf
   await expect(page.locator(".ci-count")).toHaveText("");
   // The scope draws one still frame: two looks a beat apart are the same picture.
   if (projectWidth(info) >= 834) {
-    const frame = () => page.locator(".ci-encore > canvas.ci-scope").evaluate((c: HTMLCanvasElement) => c.toDataURL());
+    const frame = () => page.locator("canvas.stage-bg").evaluate((c: HTMLCanvasElement) => c.toDataURL());
     const a = await frame();
     await page.waitForTimeout(400);
     expect(await frame()).toBe(a);

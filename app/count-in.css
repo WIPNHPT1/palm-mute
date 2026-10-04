@@ -28,12 +28,11 @@
 /* Big screens: no zoom here or anywhere (the design scale replaced it, DECISIONS.md): from 1440px every size above is
    10% smaller through the design unit, so the home page's column still lines up with the top bar's. */
 
-/* The Song Generator's oscilloscope behind the quiet sections (Scope.tsx; owner's pick): a canvas under each section's
-   content, from tablet up. The hero, the setlist and the bands keep their own looks. */
-.ci [data-scope] { position: relative; isolation: isolate; }
-.ci-scope { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; display: none; pointer-events: none;
-  -webkit-mask: linear-gradient(transparent, #000 96px, #000 calc(100% - 96px), transparent); mask: linear-gradient(transparent, #000 96px, #000 calc(100% - 96px), transparent); }
-@media (min-width: 834px) { .ci-scope { display: block; } }
+/* The same fixed oscilloscope as the Song Generator and the Chord Lab (components/StageBackground.tsx; owner's pick A,
+   docs/mockups/home-scope-options.html): one grid and window-sized traces behind the whole window, from tablet up.
+   The quiet sections (data-quiet: intro, two notes, title board, encore) are see-through windows onto it; the hero and
+   the setlist are solid paper, and the band and the footer are ink, so they keep their own looks. */
+.ci-stage, .ci-setlist { background: var(--paper); }
 
 /* film grain */
 /* No blend mode (a full-screen blend makes the GPU redraw everything under it each frame): the noise is
@@ -169,10 +168,14 @@
 .ci-poster::after { content: ""; position: absolute; right: -30px; bottom: -30px; width: 60%; aspect-ratio: 1; border-radius: 50%;
   background-image: radial-gradient(circle, currentColor 1.4px, transparent 1.9px); background-size: 10px 10px; opacity: .22;
   -webkit-mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); }
-.ci-p1 { background: var(--ink); color: var(--on-dark); rotate: -1.5deg; }
-.ci-p2 { background: var(--accent); color: var(--on-accent); rotate: 1.2deg; }
-.ci-p3 { background: var(--surface); color: var(--t-primary); border: 1.5px solid var(--t-primary); rotate: -.8deg; }
-.ci-big-no { font-family: var(--display); font-size: clamp(110px, 13vw, 210px); line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px currentColor; opacity: .9; }
+.ci-p1 { --fg: var(--on-dark); background: var(--ink); color: var(--on-dark); rotate: -1.5deg; }
+.ci-p2 { --fg: var(--on-accent); background: var(--accent); color: var(--on-accent); rotate: 1.2deg; }
+.ci-p3 { --fg: var(--t-primary); background: var(--surface); color: var(--t-primary); border: 1.5px solid var(--t-primary); rotate: -.8deg; }
+/* the fourth poster (owner's pick C, docs/mockups/how-it-works-four.html): brass, completing the Generator guide's set */
+.ci-p4 { --fg: var(--ink); background: var(--brass); color: var(--ink); rotate: 1deg; }
+/* The outline takes the poster's colour from --fg: with `currentColor` it took the number's own (transparent) colour,
+   so the big numbers never showed. */
+.ci-big-no { font-family: var(--display); font-size: clamp(110px, 13vw, 210px); line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--fg, currentColor); opacity: .9; }
 .ci-panel h3 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 3.2vw, 50px); line-height: 1; margin: 0 0 14px; text-transform: uppercase; }
 .ci-panel p { font-size: clamp(15px, 1.25vw, 18px); line-height: 1.55; margin: 0; max-width: 420px; opacity: .85; }
 .ci-tag { position: absolute; top: clamp(24px, 3vw, 44px); right: clamp(24px, 3vw, 44px); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; opacity: .7; }

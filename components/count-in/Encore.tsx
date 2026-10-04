@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FlapText } from "@/components/FlapText";
-import { Scope } from "@/components/count-in/Scope";
 import { PUNK_MASTER_BPM } from "@/lib/generator";
 
 /** One beat at the punk master tempo (180 BPM: a third of a second). */
@@ -46,8 +45,7 @@ export function Encore({ fine }: { fine: boolean }) {
   const row = (text: string) => <><span>{text}&nbsp;</span><span>{text}&nbsp;</span></>;
 
   return (
-    <section ref={section} className="ci-encore" aria-labelledby="ci-encore" data-count={beat} data-scope>
-      <Scope />
+    <section ref={section} className="ci-encore" aria-labelledby="ci-encore" data-count={beat} data-quiet>
       <div className="ci-encore-bg" aria-hidden="true">
         <div>{row("START WRITING ✦ START WRITING ✦ START WRITING ✦")}</div>
         <div>{row(`E STANDARD ✦ ${PUNK_MASTER_BPM} BPM ✦ E STANDARD ✦ ${PUNK_MASTER_BPM} BPM ✦`)}</div>

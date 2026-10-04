@@ -8,6 +8,7 @@ const STEPS = [
   { title: "Study the formula", body: "We break down the chord degrees, rhythm templates and section lengths behind pop-punk's biggest songs. We study the pattern underneath, never the tabs themselves.", poster: "ci-p1" },
   { title: "Generate your song", body: "Pick a key and a feel. Palm/Mute writes an intro, verse, chorus, solo and breakdown in E standard. A complete song structure, ready to play.", poster: "ci-p2" },
   { title: "Make it yours", body: "Everything is built fresh from chord degrees and rhythm patterns, so the song you get is yours to play, change and finish.", poster: "ci-p3" },
+  { title: "Find your chords", body: "Need more than power chords? The Chord Lab shows the shapes players use up the neck, names a chord you tap, builds loops, finds your key and moves it to a capo or drop tuning.", poster: "ci-p4" },
 ];
 
 /** "How it works" as poster cards. From 834px up, vertical scrolling drives the cards sideways; phones stack them. */

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute Horns Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Six "rock horns" takes on the menu button (today: three strings that cross into a close mark). Each is shown in
+     the real top bar at its real size (tap it to open and close), large beside it, and closed / hovered / open. The
+     bar is ink in both themes, so the icons only ever sit on ink. */
+  :root {
+    --ink:#171310; --ink-soft:#2A241C; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-on-ink:#E5573F; --brass:#B8862E;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --text-primary:#171310; --text-secondary:#4E4738; --text-faint:#72675A;
+    --on-dark:#F6F1E4; --on-dark-faint:#A89C86; --sh-1:0 1px 2px rgba(23,19,16,.06), 0 12px 24px -16px rgba(23,19,16,.32);
+    --spring:cubic-bezier(.34,1.56,.64,1); --out:cubic-bezier(.2,.7,.2,1);
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --ink-soft:#1F1A16; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-faint:#9A8E7B;
+    --sh-1:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8); color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --ink-soft:#1F1A16; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-on-ink:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-faint:#9A8E7B;
+    --sh-1:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8); color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } }
+  .pagebar { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .pagebar .wrap { min-height: 56px; display: flex; align-items: center; gap: 12px; }
+  .pagebar b { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); margin-right: auto; font-weight: 400; }
+  .tog { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; font-family: var(--f-mono); font-size: 12px; cursor: pointer; }
+  main { padding-block: 32px 120px; display: flex; flex-direction: column; gap: 56px; }
+  h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.02; letter-spacing: -.02em; }
+  .lede { max-width: 780px; margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-secondary); }
+
+  .opt { display: grid; gap: 18px; grid-template-columns: 1fr; padding: 20px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--sh-1); }
+  @media (min-width: 900px) { .opt { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+  .opt-h { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .opt-h .no { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .opt-h h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 22px; }
+  .opt-h span:last-child { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .notes { margin: 0; font-size: 15px; line-height: 1.55; color: var(--text-secondary); }
+  .notes p { margin: 0 0 10px; }
+  .notes b { color: var(--text-primary); }
+
+  /* the real top bar, real size: 64px on phones, 76px from tablet up */
+  .topbar { display: flex; align-items: center; justify-content: space-between; height: 76px; padding: 0 20px; border-radius: 10px; background: var(--ink); color: var(--on-dark); }
+  .topbar.phone { height: 64px; max-width: 390px; }
+  .wm { font-family: var(--f-display); font-size: 17px; letter-spacing: -.01em; }
+  .wm { display: inline-flex; align-items: center; }
+  .wm svg { width: .6em; height: .9em; margin: 0 .04em; fill: var(--accent-on-ink); }
+  .mbtn { position: relative; width: 44px; height: 44px; margin-right: -10px; border: 0; border-radius: 8px; background: transparent; color: var(--on-dark); cursor: pointer; }
+  .mbtn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--accent-on-ink); }
+  .bars { display: grid; gap: 12px; }
+  .stage { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); }
+  .cell small { font-family: var(--f-mono); font-size: 12px; letter-spacing: .1em; color: var(--on-dark-faint); }
+  .big { position: relative; width: clamp(64px, 20vw, 112px); aspect-ratio: 1; }
+  .big .ic { width: 100%; height: 100%; }
+
+  /* every icon: a 24-unit drawing in a 24px box, centred in the 44px button */
+  .ic { position: absolute; inset: 0; margin: auto; width: 24px; height: 24px; overflow: visible; }
+  .ic .hand { transform-origin: 50% 80%; transition: transform 360ms var(--spring), opacity 200ms; }
+  .ic .x line { stroke-width: 1.9; stroke-linecap: round; transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform 320ms var(--spring) 80ms; }
+  .ic .x line:nth-child(2) { stroke: var(--accent-on-ink); }
+  [data-open="true"] .ic .hand { transform: rotate(-30deg) scale(.4); opacity: 0; }
+  [data-open="true"] .ic .x line { transform: scale(1); }
+  /* hover: "throw the horns", a quick double shake */
+  .mbtn:hover:not([data-open="true"]) .ic .hand, .cell.hover .ic .hand { animation: throw 520ms var(--out); }
+  @keyframes throw { 0% { transform: rotate(0); } 25% { transform: rotate(-14deg) translateY(-1px); } 50% { transform: rotate(8deg); } 75% { transform: rotate(-6deg); } 100% { transform: rotate(0); } }
+
+  /* 1 outline: line icon, same 1.75 weight as today's strings */
+  .o1 .hand { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  /* 2 solid: a filled silhouette, the thumb cut out of it */
+  .o2 .hand .fill { fill: currentColor; }
+  .o2 .hand .cut { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+  /* 3 meter: index and pinky are the loud bars of a level meter; hover bounces them at 180 BPM */
+  .o3 .hand rect { fill: currentColor; transform-box: fill-box; transform-origin: 50% 100%; }
+  .o3 .hand rect.hot { fill: var(--accent-on-ink); }
+  .o3 .hand line { stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+  .mbtn:hover:not([data-open="true"]) .o3 .hand, .cell.hover .o3 .hand { animation: none; }
+  .mbtn:hover:not([data-open="true"]) .o3 rect, .cell.hover .o3 rect { animation: level 333ms ease-in-out 3 alternate; }
+  .o3 rect:nth-of-type(2) { animation-delay: 80ms !important; } .o3 rect:nth-of-type(3) { animation-delay: 160ms !important; }
+  @keyframes level { to { transform: scaleY(.55); } }
+  /* 4 pick: a guitar pick with horns inside; hover flips the pick */
+  .o4 .pick { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+  .o4 .horn { fill: none; stroke: var(--accent-on-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .mbtn:hover:not([data-open="true"]) .o4 .hand, .cell.hover .o4 .hand { animation: flip 600ms var(--out); }
+  @keyframes flip { 50% { transform: scaleX(-1) rotate(-6deg); } }
+  /* 5 bolts: index and pinky are two lightning bolts, the wordmark's red bolt doubled */
+  .o5 .bolt { fill: var(--accent-on-ink); }
+  .o5 .fist { fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+  .mbtn:hover:not([data-open="true"]) .o5 .bolt, .cell.hover .o5 .bolt { animation: zap 160ms steps(2) 3; }
+  @keyframes zap { 50% { opacity: .35; } }
+  /* 6 stamp: horns in the originality stamp's ring; hover turns the ring */
+  .o6 .ring { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-dasharray: 2.2 1.6; transform-box: fill-box; transform-origin: center; transition: transform 600ms var(--out); }
+  .o6 .horn { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .mbtn:hover:not([data-open="true"]) .o6 .hand, .cell.hover .o6 .hand { animation: none; }
+  .mbtn:hover:not([data-open="true"]) .o6 .ring, .cell.hover .o6 .ring { transform: rotate(90deg); }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="pagebar"><div class="wrap"><b>MENU BUTTON · ROCK HORNS · SIX OPTIONS</b><button class="tog" id="theme" type="button">LIGHT / DARK</button></div></div>
+<main class="wrap">
+  <section>
+    <h1>Rock horns as the menu button</h1>
+    <p class="lede">Six ways to make the menu button a pair of horns. Each one sits in the real top bar at its real size, tablet-and-up and phone. Tap the button to open and close it, or hover to see its move. The large previews show closed, mid-throw and open. Every option turns into the same close mark when the menu opens: a cream stroke crossed by a red one, like today. The button stays a 44px tap target with the label "Menu".</p>
+  </section>
+  <div id="opts"></div>
+</main>
+
+
+<script>
+(() => {
+  // Each drawing is in a 24 x 24 box. The horns: index and pinky up, middle and ring folded, thumb across them.
+  const OPTS = [
+    { n: 1, cls: "o1", name: "Outline horns", sub: "a line icon, today's stroke weight",
+      svg: `<g class="hand">
+        <path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/>
+        <path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/>
+        <path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/>
+        <path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/>
+        <path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></g>`,
+      what: "A clean outline hand at the same 1.75px weight as today's strings. Index and pinky up, the two folded fingers as knuckles, and the thumb across them. On hover it gives a quick double shake.",
+      why: "The safest swap. It sits with the wordmark like a standard UI icon, so the bar stays calm and nobody wonders what the button does." },
+    { n: 2, cls: "o2", name: "Solid horns", sub: "a filled silhouette",
+      svg: `<g class="hand"><g class="fill">
+        <rect x="6.6" y="3.6" width="3.6" height="10" rx="1.8"/><rect x="14.8" y="5.6" width="3.6" height="8" rx="1.8"/>
+        <rect x="9.6" y="10.2" width="5.6" height="4" rx="1.6"/><path d="M6.6 12.6h11.8v3.2a5.4 5.4 0 0 1-5.4 5.4h-1a5.4 5.4 0 0 1-5.4-5.4z"/></g>
+        <path class="cut" d="M7.4 15.9c1.8-1.2 3.9-1.5 6.1-1"/></g>`,
+      what: "The same hand, filled solid in cream, with the thumb cut out as a thin ink line so it still reads at 24px. On hover it gives the same double shake.",
+      why: "Bold, like the Archivo Black wordmark next to it. It has the most punch at small sizes and is the most legible on phones." },
+    { n: 3, cls: "o3", name: "Level-meter horns", sub: "the horns as a VU meter",
+      svg: `<g class="hand">
+        <rect class="hot" x="5" y="3" width="3" height="16" rx="1.2"/><rect x="9.6" y="10" width="3" height="9" rx="1.2"/>
+        <rect x="14.2" y="10" width="3" height="9" rx="1.2"/><rect class="hot" x="18.8" y="5" width="3" height="14" rx="1.2"/>
+        <line x1="5.5" y1="21.4" x2="16" y2="21.4"/></g>`,
+      what: "Four level-meter bars: two tall red ones (index and pinky) and two short cream ones (the folded fingers), with the thumb as a line along the bottom. On hover the bars bounce three times at 180 BPM, like the home page's VU meter.",
+      why: "The most on-brand option. It's horns and a level meter at once and ties into the meter, the strings and the tempo. It's also the most abstract; some people will only see the hand once they've seen it." },
+    { n: 4, cls: "o4", name: "Pick horns", sub: "horns inside a guitar pick",
+      svg: `<g class="hand"><path class="pick" d="M12 21.5c-2.9-2.6-8.6-8.9-8.6-13.4C3.4 4.9 7.2 2.6 12 2.6s8.6 2.3 8.6 5.5c0 4.5-5.7 10.8-8.6 13.4z"/>
+        <g class="horn" transform="translate(12 10.6) scale(.5) translate(-12.5 -12.2)"><path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/><path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/><path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/><path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/><path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></g></g>`,
+      what: "A cream guitar-pick outline with small red horns inside. On hover the pick flips over like it's been flicked.",
+      why: "It reads as a badge, a little logo in its own right, and says guitar before it says menu. It's the most decorative option, and the hand inside is small at phone size." },
+    { n: 5, cls: "o5", name: "Lightning horns", sub: "the wordmark's bolt, sparking off the fingertips",
+      svg: `<g class="hand"><g class="fist" transform="translate(12 13.4) scale(.82) translate(-12.5 -12.2)"><path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/><path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/><path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/><path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/><path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></g>
+        <path class="bolt" d="M8.2 0 5.6 4.2h1.7L6.2 7.4l3-4.4H7.6l1.4-3z"/><path class="bolt" d="M17.6 1.4 15.2 5.2h1.6l-1 2.8 2.8-4h-1.6l1.3-2.6z"/></g>`,
+      what: "Option 1's hand with two small red lightning bolts sparking off the index and pinky tips, the bolt between PALM and MUTE doubled. On hover the bolts crackle three times.",
+      why: "It pairs with the wordmark, so the bar has the bolt at both ends. Loud and playful. The most pop-punk option, and the least standard as a menu icon." },
+    { n: 6, cls: "o6", name: "Stamped horns", sub: "horns in the originality stamp's ring",
+      svg: `<g class="hand"><circle class="ring" cx="12" cy="12" r="10.4"/>
+        <g class="horn" transform="translate(12 12) scale(.62) translate(-12.5 -12.2)"><path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/><path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/><path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/><path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/><path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></g></g>`,
+      what: "Simple horns inside a dashed round ring, the same idea as the home page's \"100% ORIGINAL\" stamp. On hover the ring turns a quarter turn.",
+      why: "Neat and contained. The circle gives it a defined edge in the bar and matches the stamp further down the page. The hand is the smallest of the six." },
+  ];
+  const X = `<g class="x" stroke="currentColor"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></g>`;
+  const icon = (o) => `<svg class="ic ${o.cls}" viewBox="0 0 24 24" aria-hidden="true">${o.svg}${X}</svg>`;
+  const btn = (o) => `<button class="mbtn" type="button" aria-label="Menu" aria-expanded="false" data-open="false">${icon(o)}</button>`;
+  document.getElementById("opts").innerHTML = OPTS.map((o) => `
+    <section class="opt" id="o${o.n}">
+      <div class="opt-h"><span class="no">OPTION ${o.n}</span><h2>${o.name}</h2><span>${o.sub}</span></div>
+      <div class="bars">
+        <div class="topbar"><span class="wm">PALM<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M6.4 0 0 9.2h3.6L2.6 16 10 6.4H6.2z"/></svg>MUTE</span>${btn(o)}</div>
+        <div class="topbar phone"><span class="wm">PALM<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M6.4 0 0 9.2h3.6L2.6 16 10 6.4H6.2z"/></svg>MUTE</span>${btn(o)}</div>
+        <div class="stage">
+          <div class="cell"><div class="big">${icon(o)}</div><small>CLOSED</small></div>
+          <div class="cell hover" data-loop><div class="big">${icon(o)}</div><small>HOVER</small></div>
+          <div class="cell" data-open="true"><div class="big">${icon(o)}</div><small>OPEN</small></div>
+        </div>
+      </div>
+      <div class="notes"><p><b>What it does.</b> ${o.what}</p><p><b>Why.</b> ${o.why}</p></div>
+    </section>`).join("");
+
+  document.querySelectorAll(".mbtn").forEach((b) => b.addEventListener("click", () => {
+    const open = b.dataset.open !== "true";
+    b.dataset.open = String(open); b.setAttribute("aria-expanded", String(open));
+  }));
+  // replay each hover preview every two seconds
+  setInterval(() => document.querySelectorAll("[data-loop]").forEach((c) => {
+    c.classList.remove("hover"); void c.offsetWidth; c.classList.add("hover");
+  }), 2000);
+  const theme = document.getElementById("theme");
+  theme.addEventListener("click", () => {
+    const dark = document.documentElement.dataset.theme !== "dark" && !(document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  });
+})();
+</script>
+</body>
+</html>

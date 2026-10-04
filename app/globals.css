@@ -53,32 +53,23 @@
     18%, 100% { transform: rotateY(360deg); }
   }
 
-  /* ---- Menu button: three strings (owner's pick, docs/mockups/stage-options.html). Hover plucks them, one after
-     another; opening snaps the middle string and crosses the other two into a close mark. ---- */
-  .string-icon { position: absolute; inset: 0; }
-  .string-icon > span {
-    position: absolute;
-    left: 12px;
-    width: 20px;
-    height: 1.75px;
-    border-radius: 2px;
-    background: currentColor;
-    transition: transform 450ms cubic-bezier(0.7, 0, 0.2, 1), opacity 300ms, background 300ms;
+  /* ---- Menu button: rock horns (owner's pick 1, docs/mockups/menu-horns-options.html; replaces the three strings). A line
+     icon at the strings' 1.75 weight. Hover throws the horns (a quick double shake); opening tips the hand away and
+     draws the close mark in, a cream stroke crossed by a red one. ---- */
+  .horns-icon { position: absolute; inset: 0; display: grid; place-items: center; }
+  .horns-hand { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+    transform-box: view-box; transform-origin: 50% 80%; transition: transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms; }
+  .horns-x line { stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; transform-box: fill-box; transform-origin: center; transform: scale(0);
+    transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms; }
+  .horns-x line:nth-child(2) { stroke: rgb(var(--color-accent-on-ink)); }
+  .horns-icon[data-open="true"] .horns-hand { transform: rotate(-30deg) scale(0.4); opacity: 0; }
+  .horns-icon[data-open="true"] .horns-x line { transform: scale(1); }
+  button:hover > .horns-icon:not([data-open="true"]) .horns-hand { animation: horns-throw 520ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  @keyframes horns-throw {
+    25% { transform: rotate(-14deg) translateY(-1px); }
+    50% { transform: rotate(8deg); }
+    75% { transform: rotate(-6deg); }
   }
-  .string-icon > span:nth-child(1) { top: 15px; }
-  .string-icon > span:nth-child(2) { top: 21px; }
-  .string-icon > span:nth-child(3) { top: 27px; }
-  button:hover > .string-icon:not([data-open="true"]) > span { animation: string-pluck 260ms ease-out 3 alternate; }
-  button:hover > .string-icon:not([data-open="true"]) > span:nth-child(2) { animation-delay: 60ms; }
-  button:hover > .string-icon:not([data-open="true"]) > span:nth-child(3) { animation-delay: 120ms; }
-  @keyframes string-pluck {
-    0% { transform: translateY(0) scaleY(1); }
-    50% { transform: translateY(-1.2px) scaleY(1.6); }
-    100% { transform: translateY(1px) scaleY(1); }
-  }
-  .string-icon[data-open="true"] > span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-  .string-icon[data-open="true"] > span:nth-child(2) { transform: scaleX(0); opacity: 0; background: rgb(var(--color-accent-on-ink)); }
-  .string-icon[data-open="true"] > span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
   /* ---- Shutter menu: full-screen bands wipe in from the left, one per page ---- */
   .shutter-menu {
@@ -622,8 +613,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wordmark-bolt svg { animation: none; }
-  .string-icon > span { animation: none !important; }
-  .string-icon > span,
+  .horns-hand { animation: none !important; }
+  .horns-hand,
+  .horns-x line,
   .shutter-menu,
   .shutter-band::before,
   .shutter-band::after,
