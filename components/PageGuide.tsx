@@ -51,7 +51,7 @@ export function PageGuide({ page, label, steps, signature }: { page: GuidePage; 
         </button>
       </div>
       <button type="button" className="guide-toggle guide-show" onClick={() => set(false)} aria-expanded={!hidden}>
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg className="w-[14px] h-[14px]" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <circle cx="8" cy="8" r="6.5" />
           <path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.6v.1" strokeLinecap="round" />
         </svg>

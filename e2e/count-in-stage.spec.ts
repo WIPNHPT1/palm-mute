@@ -2,8 +2,8 @@ import { type Page } from "@playwright/test";
 import { expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
 
 // The home page's share of the stage pack (docs/mockups/home-stage-options.html, owner's picks): the same big-screen
-// zoom as the other pages, the oscilloscope behind the quiet sections, the two big headings flip in, and the encore
-// counts itself in. No rails.
+// design scale as the other pages (90% from 1440px; it replaced the zoom), the oscilloscope behind the quiet
+// sections, the two big headings flip in, and the encore counts itself in. No rails.
 
 const QUIET = [".ci-intro", ".ci-two", ".ci-board-sec", ".ci-encore"];
 
@@ -15,26 +15,20 @@ async function scrollToCentre(page: Page, selector: string) {
   }
 }
 
-test("big screens: the top bar, the columns and the setlist cards grow with the other pages' zoom", async ({ page }, info) => {
+test("big screens: the same 90% design scale as the other pages, and no zoom anywhere", async ({ page }, info) => {
   lightOnly(info);
   await gotoAndSettle(page, "/");
   const w = projectWidth(info);
-  const expected = w < 1600 ? 1 : Math.min(1.4, w / 1600);
-  const zooms = await page.evaluate(() => {
-    const z = (s: string) => Number(getComputedStyle(document.querySelector(s)!).zoom);
-    return { header: z("header"), menu: z("#site-menu"), footer: z("footer"), main: z("main"), stage: z(".ci-stage"), column: z(".ci-intro .ci-wrap"), card: z(".ci-panel") };
-  });
-  for (const k of ["header", "menu", "footer", "column", "card"] as const) expect(zooms[k], k).toBeCloseTo(expected, 2);
-  // The page itself and the full-width sections never zoom (the hero's height and the pinned setlist are measured from the window).
-  expect(zooms.main).toBe(1);
-  expect(zooms.stage).toBe(1);
-  // The home page's column lines up with the top bar's, as on the other pages: 1280px zoomed from 1600px, 1440px below.
+  const u = w >= 1440 ? 0.9 : 1;
+  expect(await page.evaluate(() => [...document.querySelectorAll("*")].some((e) => getComputedStyle(e).zoom !== "1"))).toBe(false);
+  if (w >= 834) expect((await page.locator("header > div").first().boundingBox())!.height).toBeCloseTo(76 * u, 0);
+  // The home page's column lines up with the top bar's, as on the other pages: 1440 design pixels wide at most.
   const header = (await page.locator("header .mx-auto").first().boundingBox())!;
   const column = (await page.locator(".ci-intro .ci-wrap").boundingBox())!;
   expect(Math.abs(column.x - header.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(column.width - header.width)).toBeLessThanOrEqual(1);
-  if (w >= 1600) expect(column.width).toBeCloseTo(Math.min(w, 1280 * expected), 0);
-  // The hero starts right under the (zoomed) top bar, and nothing is wider than the screen.
+  expect(column.width).toBeLessThanOrEqual(1440 * u + 1);
+  // The hero starts right under the top bar, and nothing is wider than the screen.
   const bar = (await page.locator("header").boundingBox())!;
   const stage = (await page.locator(".ci-stage").boundingBox())!;
   expect(Math.abs(stage.y - (bar.y + bar.height))).toBeLessThanOrEqual(1);

@@ -103,7 +103,7 @@ export function Transport({
         </div>
         <div className="flex shrink-0 items-center gap-[6px]">
           <button type="button" onClick={() => onLoopPart(!practice.loopPart)} aria-pressed={practice.loopPart} aria-label="Loop the part" className={`${toggle} ${practice.loopPart ? on : off}`}>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" />
             </svg>
             <span className="hidden tablet:inline">LOOP PART</span>

@@ -6,6 +6,7 @@ export function PlayIcon({ size = 11, filled = true, className }: Props) {
     <svg
       width={size}
       height={size}
+      style={{ width: `calc(${size} * var(--u))`, height: `calc(${size} * var(--u))` }}
       viewBox="0 0 24 24"
       fill={filled ? "currentColor" : "none"}
       stroke={filled ? "none" : "currentColor"}

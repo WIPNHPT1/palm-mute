@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { designUnit } from "@/lib/designUnit";
 import { paintOscilloscope, readStageColors } from "@/lib/stagePaint";
 
 const FPS = 30;
@@ -38,7 +39,7 @@ export function StageBackground({ playing }: { playing: boolean }) {
         cv.width = w;
         cv.height = h;
       }
-      return dpr;
+      return dpr * designUnit(); // grid and line widths are design pixels
     };
     const draw = (t: number) => {
       const s = size();

@@ -86,7 +86,7 @@ export function RoleLegend() {
 
 function NotesIcon() {
   return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
+    <svg className="w-[14px] h-[14px]" viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
       <circle cx="3" cy="12" r="2" />
       <circle cx="8" cy="8" r="2" />
       <circle cx="13" cy="4" r="2" />

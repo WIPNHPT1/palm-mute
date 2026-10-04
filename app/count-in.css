@@ -1,6 +1,8 @@
 /* Count In home page. Ported from the approved mock-up; colors come from the design-token variables
    emitted by tailwind.config.js (--color-*), so light/dark switch with the rest of the site.
-   Every class is prefixed ci- to keep this page's styles out of the other pages' way. */
+   Every class is prefixed ci- to keep this page's styles out of the other pages' way.
+   Pixel sizes here are design pixels: the build rewrites them to the design unit (--u, 10% smaller from a 1440px
+   window; scripts/postcss-design-unit.js). */
 
 
 .ci {
@@ -23,17 +25,8 @@
 .dark .ci { --dot: rgb(var(--color-text-on-dark) / .16); --shadow-lift: 0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); --grain: .09; }
 .ci-wrap { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
 
-/* Big screens (owner's pick, docs/mockups/home-stage-options.html: match the other pages). From 1600px the Song
-   Generator and the Chord Lab zoom their whole shell by --page-zoom on a 1280px page (app/globals.css, lib/stage.ts).
-   Here the hero's height, the pinned setlist and the full-bleed bands are measured from the window, so the zoom goes on
-   what sits inside them instead: the top bar, the menu, the notice and the footer (the shell's other children), every
-   section's column and the setlist's cards. Same zoom, same page width: moving between pages, nothing changes size. */
-@media (min-width: 1600px) {
-  body:has(.ci) { --page-max: 1280px; }
-  body:has(.ci) div:has(> main) > :not(main), .ci .ci-wrap, .ci .ci-panel { zoom: var(--page-zoom); }
-  .ci { --bar-h: calc(76px * var(--page-zoom)); }
-  .ci-wrap { max-width: 1280px; }
-}
+/* Big screens: no zoom here or anywhere (the design scale replaced it, DECISIONS.md): from 1440px every size above is
+   10% smaller through the design unit, so the home page's column still lines up with the top bar's. */
 
 /* The Song Generator's oscilloscope behind the quiet sections (Scope.tsx; owner's pick): a canvas under each section's
    content, from tablet up. The hero, the setlist and the bands keep their own looks. */
@@ -276,8 +269,8 @@
 @keyframes ci-tape { to { transform: translateX(-50%); } }
 .ci-encore h2 { position: relative; font-family: var(--display); font-weight: 400; font-size: clamp(30px, 4.4vw, 72px); line-height: 1; margin: 0 0 40px; text-transform: uppercase; letter-spacing: -.02em; color: var(--t-primary); }
 /* the count-in (Encore.tsx): each beat's number flashes in red, one beat long, centred on the heading's line (the box
-   sits where the heading does: the section's top padding, the heading's height at the page zoom) */
-.ci-count { position: absolute; left: 0; right: 0; top: clamp(90px, 12vw, 190px); height: calc(clamp(30px, 4.4vw, 72px) * var(--page-zoom, 1));
+   sits where the heading does: the section's top padding, the heading's height) */
+.ci-count { position: absolute; left: 0; right: 0; top: clamp(90px, 12vw, 190px); height: clamp(30px, 4.4vw, 72px);
   display: grid; place-items: center; pointer-events: none; }
 .ci-count span { font-family: var(--display); font-size: clamp(96px, 10vw, 176px); line-height: 1; color: var(--accent); opacity: 0;
   animation: ci-count 333ms var(--ease-out) both; }

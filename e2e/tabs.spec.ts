@@ -1,5 +1,5 @@
 import { expect, gotoAndSettle, horizontalOverflow, projectWidth, test } from "./fixtures";
-import { feel, key, pageZoom } from "./helpers";
+import { feel, key, designUnit } from "./helpers";
 
 // Tabs wrap inside the card, never scroll sideways, readable at 320px: 2 bars a line on phones, 4 from tablet
 // up in the full-width cards (docs/song-builder-prd.md B5; a 16th-note bar counts as two).
@@ -28,12 +28,12 @@ test.describe("tabs", () => {
           }),
         );
         expect(tabs).toHaveLength(7);
-        const zoom = await pageZoom(page);
+        const u = await designUnit(page);
         for (const t of tabs) {
           const most = projectWidth(info) < 834 ? 2 : 4;
           expect(t.barsPerLine.every((n) => n >= 1 && n <= most), `${t.section}: bars per line ${t.barsPerLine}`).toBe(true);
           expect(t.inside, `${t.section} tab spills out of its card`).toBe(true);
-          expect(t.scroll, `${t.section} tab scrolls sideways`).toBeLessThanOrEqual(zoom > 1 ? 1 : 0); // zoomed boxes can round by a pixel
+          expect(t.scroll, `${t.section} tab scrolls sideways`).toBeLessThanOrEqual(u !== 1 ? 1 : 0); // scaled boxes can round by a pixel
           // Readable on phones and tablets (single-column or 2-column cards).
           if (projectWidth(info) < 1280) expect(t.fontPx, `${t.section} tab text at ${t.fontPx.toFixed(1)}px`).toBeGreaterThanOrEqual(t.twoDigit ? 7 : 9);
         }

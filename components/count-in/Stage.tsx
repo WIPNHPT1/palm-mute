@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Strings } from "@/components/count-in/Strings";
 import { clamp01, onScrollFrame, supportsScrollTimeline } from "@/components/count-in/scroll";
+import { designUnit } from "@/lib/designUnit";
 import { PUNK_MASTER_BPM } from "@/lib/generator";
 
 /**
@@ -31,16 +32,17 @@ export function Stage({ reduced, fine }: { reduced: boolean; fine: boolean }) {
       kin.current!.style.setProperty("--kin-size", "100px");
       const lines = [...set.querySelectorAll<HTMLElement>(".ci-kl")];
       const widths = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
-      const max = w >= 1280 ? 150 : w >= 834 ? 120 : 80;
-      let size = Math.max(24, Math.min(max, ...widths.map((lw, i) => ((cw - (indents[i] ?? 0)) / lw) * 100)));
+      const u = designUnit(); // the size caps are design pixels
+      const max = (w >= 1280 ? 150 : w >= 834 ? 120 : 80) * u;
+      let size = Math.max(24 * u, Math.min(max, ...widths.map((lw, i) => ((cw - (indents[i] ?? 0)) / lw) * 100)));
       kin.current!.style.setProperty("--kin-size", `${size.toFixed(2)}px`);
       // Text doesn't scale exactly linearly (font hinting on Linux/Windows can add several px), so
       // re-measure at the fitted size and shrink until the widest line really fits.
       let actual = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
       for (let pass = 0; pass < 3; pass++) {
         const worst = Math.min(...actual.map((a, i) => (cw - (indents[i] ?? 0)) / a));
-        if (worst >= 1 || size <= 24) break;
-        size = Math.max(24, size * worst * 0.998);
+        if (worst >= 1 || size <= 24 * u) break;
+        size = Math.max(24 * u, size * worst * 0.998);
         kin.current!.style.setProperty("--kin-size", `${size.toFixed(2)}px`);
         actual = lines.map((l) => (l.firstElementChild as HTMLElement).offsetWidth);
       }

@@ -242,7 +242,7 @@ export function SectionCard({
           >
             OPTIONS
             {optionsSummary && <span className={`hidden font-normal tracking-normal tablet:inline ${open ? "text-text-on-dark-faint" : "text-text-faint"}`}>{optionsSummary}</span>}
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className={open ? "rotate-180" : ""}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className={`h-[14px] w-[14px] ${open ? "rotate-180" : ""}`}>
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
