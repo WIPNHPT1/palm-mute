@@ -31,14 +31,11 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 };
 
-// The top bar is ink in both themes, so the browser chrome matches it.
+// The top bar is ink in both themes, so the browser chrome matches it: the dark theme's ink, the default.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#171310" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B0908" },
-  ],
-  // Light by default; a reader who picks dark gets `color-scheme: dark` from the .dark stylesheet rules.
-  colorScheme: "light",
+  themeColor: "#0B0908",
+  // Dark by default; a reader who picks light gets `color-scheme: light` from the :root stylesheet rules.
+  colorScheme: "dark",
 };
 
 const STRUCTURED_DATA = {
@@ -54,8 +51,9 @@ const STRUCTURED_DATA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // suppressHydrationWarning: THEME_SCRIPT may add the `dark` class before React hydrates.
-    <html lang="en" className={`${archivoBlack.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    // Rendered dark (the default), so there's never a light flash. suppressHydrationWarning: THEME_SCRIPT removes the
+    // `dark` class before React hydrates for a reader who chose light.
+    <html lang="en" className={`dark ${archivoBlack.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: GUIDE_SCRIPT }} />

@@ -6,15 +6,14 @@ import { type Page, type TestInfo, expect, test as base } from "@playwright/test
  */
 export const test = base.extend<{ consoleErrors: string[]; darkChoice: void }>({
   /**
-   * The site opens light for everyone; dark is the reader's choice (DECISIONS.md). "Dark" projects make
-   * that choice up front, as if the reader had flipped the DARK switch, unless a test already stored one.
+   * The site opens dark for everyone; light is the reader's choice (DECISIONS.md). Each project makes its theme's
+   * choice up front, as if the reader had flipped the DARK switch, unless a test already stored one.
    */
   darkChoice: [
     async ({ page }, use, info) => {
-      if (info.project.use.colorScheme === "dark")
-        await page.addInitScript(() => {
-          if (!localStorage.getItem("palm-mute-theme")) localStorage.setItem("palm-mute-theme", "dark");
-        });
+      await page.addInitScript((theme) => {
+        if (!localStorage.getItem("palm-mute-theme")) localStorage.setItem("palm-mute-theme", theme);
+      }, info.project.use.colorScheme === "dark" ? "dark" : "light");
       await use();
     },
     { auto: true },

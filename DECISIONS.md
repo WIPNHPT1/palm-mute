@@ -8,6 +8,7 @@ sessions: use these instead of the kit's recommended defaults (see `CLAUDE.md`).
 | Originality-check badge | Always PASS for v1 (`lib/originalityCheck.ts` stub) | Recommended default |
 | Locked sections across key changes | Frozen once locked — key/feel changes don't touch a locked section | Recommended default |
 | Dark mode | **Build a real dark theme** (overrides the "disable for v1" default) | Repo owner, 2026-09-27 |
+| Default theme (2026-10-06) | **Dark by default** for everyone, whatever the device's appearance setting (owner; replaces "light by default", 2026-09-30). The page is rendered dark, so there's never a light flash; the menu's DARK switch turns it off, and that choice is remembered. A reader who already chose light or dark keeps their choice. Browser chrome follows (`color-scheme: dark`, theme colour the dark ink) | Repo owner, 2026-10-06 |
 | Default theme | **Light for everyone** until the reader picks dark with the menu's DARK switch (remembered). No longer follows the device's appearance setting | Repo owner, 2026-09-30 |
 | Verse lock on load | **Every section starts unlocked**, the Verse included (it was locked only because the mockups showed it as a demo of the lock; overrides `.kit/acceptance-criteria.md` on this point) | Repo owner, 2026-09-30 |
 | Audio approach | Synthesized (Tone.js synths, no sample pack) | Recommended default |
@@ -124,7 +125,7 @@ Set by the `/next-phases` routine on 2026-09-27; listed in each PR so the owner 
 
 - **Dark mode:** the dark palette lives next to the light one in `tailwind.config.js` and is emitted
   as CSS variables (`:root` / `.dark`). The toggle stores an explicit choice in `localStorage`;
-  with no stored choice the site is light (since 2026-09-30; before that it followed the OS). The mockups have no dark
+  with no stored choice the site is dark (since 2026-10-06; light from 2026-09-30, and before that it followed the OS). The mockups have no dark
   designs, so the dark palette is an in-house interpretation of the tape-deck look — worth a
   design pass.
 - **Solo variations:** seed 0 is still the template lick (`5,7,5,7` in A). Regenerating writes a

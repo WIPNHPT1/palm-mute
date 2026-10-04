@@ -1,19 +1,30 @@
 import { expect, onlyAtWidths, openMenu, projectTheme, test } from "./fixtures";
 
 test.describe("dark mode", () => {
-  test("the site opens light, whatever the device's appearance setting", async ({ browser }, info) => {
+  test("the site opens dark, whatever the device's appearance setting", async ({ browser }, info) => {
     onlyAtWidths(info, [1440]);
-    // A fresh visitor with a dark-mode device and no stored choice.
-    for (const colorScheme of ["dark", "light"] as const) {
+    // A fresh visitor with no stored choice, on a light-mode and a dark-mode device.
+    for (const colorScheme of ["light", "dark"] as const) {
       const context = await browser.newContext({ colorScheme, baseURL: info.project.use.baseURL });
       const page = await context.newPage();
       for (const path of ["/", "/generator/", "/chords/"]) {
         await page.goto(path);
-        await expect(page.locator("html"), `${colorScheme} device, ${path}`).not.toHaveClass(/\bdark\b/);
-        expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(246, 241, 228)"); // paper
+        await expect(page.locator("html"), `${colorScheme} device, ${path}`).toHaveClass(/\bdark\b/);
+        expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(21, 17, 14)"); // dark paper
       }
       await context.close();
     }
+  });
+
+  test("a reader who chose light keeps it", async ({ browser }, info) => {
+    onlyAtWidths(info, [1440]);
+    const context = await browser.newContext({ baseURL: info.project.use.baseURL });
+    await context.addInitScript(() => localStorage.setItem("palm-mute-theme", "light"));
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(246, 241, 228)"); // paper
+    await context.close();
   });
 
   test("the toggle switches theme and the choice persists", async ({ page }, info) => {
