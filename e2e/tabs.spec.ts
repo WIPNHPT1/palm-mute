@@ -1,10 +1,11 @@
 import { expect, gotoAndSettle, horizontalOverflow, projectWidth, test } from "./fixtures";
 import { feel, key } from "./helpers";
 
-// Owner decision: tabs wrap 2 bars per line inside the card, never scroll sideways, readable at 320px.
+// Tabs wrap inside the card, never scroll sideways, readable at 320px: 2 bars a line on phones, 4 from tablet
+// up in the full-width cards (docs/song-builder-prd.md B5; a 16th-note bar counts as two).
 test.describe("tabs", () => {
   for (const k of ["A", "D# / Eb"]) {
-    test(`wrap 2 bars per line and fit their cards (key ${k})`, async ({ page }, info) => {
+    test(`wrap 2 or 4 bars per line and fit their cards (key ${k})`, async ({ page }, info) => {
       await gotoAndSettle(page, "/generator/");
       await key(page, k).click();
       for (const f of [/FAST PUNK/, /MID-TEMPO/]) {
@@ -28,7 +29,8 @@ test.describe("tabs", () => {
         );
         expect(tabs).toHaveLength(7);
         for (const t of tabs) {
-          expect(t.barsPerLine.every((n) => n >= 1 && n <= 2), `${t.section}: bars per line ${t.barsPerLine}`).toBe(true);
+          const most = projectWidth(info) < 834 ? 2 : 4;
+          expect(t.barsPerLine.every((n) => n >= 1 && n <= most), `${t.section}: bars per line ${t.barsPerLine}`).toBe(true);
           expect(t.inside, `${t.section} tab spills out of its card`).toBe(true);
           expect(t.scroll, `${t.section} tab scrolls sideways`).toBeLessThanOrEqual(0);
           // Readable on phones and tablets (single-column or 2-column cards).

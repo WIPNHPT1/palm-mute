@@ -12,14 +12,16 @@ import { PageHeader } from "@/components/PageHeader";
 import { ProgressionRow } from "@/components/ProgressionRow";
 import { FormStrip } from "@/components/FormStrip";
 import { SectionCard } from "@/components/SectionCard";
+import { SectionOptionsPanel } from "@/components/SectionOptionsPanel";
 import { SetupSummary } from "@/components/SetupSummary";
 import { SongHeader } from "@/components/SongHeader";
-import { tabChars } from "@/components/TabBlock";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
-import { SECTION_IDS, type SectionId, getFeel, libraryVoicings } from "@/lib/generator";
+import { SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
+import { styleLabel } from "@/lib/melody";
+import { sectionBars } from "@/lib/playback";
 import { keyDisplayName, progressions } from "@/lib/musicTheory";
 import { barSeconds, formatLength } from "@/lib/songLength";
-import { VARIATIONS, formLabel, planNote, usesProgression } from "@/lib/songPlan";
+import { VARIATIONS, formLabel, formSpec, planNote, usesProgression } from "@/lib/songPlan";
 
 // "How to use": the Setlist posters with the song builder's steps (docs/song-builder-prd.md B13).
 const GUIDE: GuideStep[] = [
@@ -61,6 +63,9 @@ export default function GeneratorPage() {
     setFeel,
     setMidTempoBpm,
     setLength,
+    setOptions,
+    setLead,
+    playCustom,
     generate,
     regenerateSection,
     toggleLock,
@@ -95,9 +100,20 @@ export default function GeneratorPage() {
   // One pass of a section's material, in bars (the Verse's 4 bars × 2): what the length plan multiplies.
   const materialBars = useCallback((id: SectionId) => rendered[id].bars.length * rendered[id].repeat, [rendered]);
 
-  // One tab scale for the chord cards: the widest chord tab showing. Lead tabs (the Solo, an Intro
-  // melody) use it too when they fit; a lead line dense with technique marks shrinks only itself.
-  const sharedTabChars = Math.max(...SECTION_IDS.filter((id) => !rendered[id].lead).map((id) => tabChars(rendered[id].tab)));
+  /** How many times each place can play a section in the song's form (the Structure option's range). */
+  const timesRange = (id: SectionId): [number, number] => {
+    const slots = formSpec(plan.form).filter((s) => s.section === id);
+    return slots.length ? [Math.min(...slots.map((s) => s.min)), Math.max(...slots.map((s) => s.max))] : [1, 2];
+  };
+  /** ▷ on a groove: the section with that groove, looped on its own (the song doesn't change). */
+  const previewGroove = (id: SectionId, groove: string) => {
+    const inputs = inputsFor(state, id);
+    playCustom(`groove:${id}:${groove}`, sectionBars(renderSection(id, { ...inputs, options: { ...inputs.options, groove } })), true);
+  };
+  const previewing = (id: SectionId) => {
+    const prefix = `custom:groove:${id}:`;
+    return state.playing?.startsWith(prefix) ? state.playing.slice(prefix.length) : null;
+  };
 
   const feelLabel = titleCase(getFeel(state.feel).label);
   const parts = (() => {
@@ -183,36 +199,61 @@ export default function GeneratorPage() {
 
         <FormStrip parts={parts} activePart={activePart} locked={(slot) => state.sections[slot.section].locked} onPlayFrom={playSongFrom} />
 
-        {/* One card per part (option A, DECISIONS.md): repeats in the running order reuse the card's material. */}
-        <div className="grid grid-cols-1 gap-x-[12px] gap-y-[12px] tablet:grid-cols-2 desktop:grid-cols-4">
-          {SECTION_IDS.map((id, i) => (
-            <SectionCard
-              key={id}
-              section={rendered[id]}
-              index={i}
-              locked={state.sections[id].locked}
-              {...lockInfo(state, id)}
-              active={activeSection === id}
-              progressionId={id === "chorus" ? inputsFor(state, "chorus").progressionId : undefined}
-              plan={planNote(id, inputsFor(state, id).progressionId)}
-              uses={song.flatMap(({ slot }, part) =>
-                slot.section === id
-                  ? [{ name: slot.times > 1 ? `${slot.name} ×${slot.times}` : slot.name, variation: slot.variation && VARIATIONS[slot.variation].label, active: activePart === part }]
-                  : [],
-              )}
-              playing={state.playing === `section:${id}`}
-              onRegenerate={() => regenerateSection(id)}
-              onToggleLock={() => toggleLock(id)}
-              onUpdate={() => updateLocked(id)}
-              onTogglePlay={() => togglePlay(`section:${id}`)}
-              tabChars={sharedTabChars}
-              wideOnTablet={id === "ending"}
-              extraAction={
-                id === "intro" && state.sections.intro.lead && !state.sections.intro.locked ? { label: "Back to power chords", onClick: clearIntroLead } : undefined
-              }
-              className={id === "ending" ? "tablet:col-span-2 desktop:col-span-1" : ""}
-            />
-          ))}
+        {/* One full-width card per section (docs/song-builder-prd.md B5): repeats in the running order reuse its material. */}
+        <div className="flex flex-col gap-[12px]" data-sections>
+          {SECTION_IDS.map((id, i) => {
+            const section = rendered[id];
+            const s = state.sections[id];
+            return (
+              <SectionCard
+                key={id}
+                section={section}
+                index={i}
+                locked={s.locked}
+                {...lockInfo(state, id)}
+                active={activeSection === id}
+                progressionId={id === "chorus" ? inputsFor(state, "chorus").progressionId : undefined}
+                plan={planNote(id, inputsFor(state, id).progressionId)}
+                uses={song.flatMap(({ slot }, part) =>
+                  slot.section === id
+                    ? [
+                        {
+                          name: slot.times > 1 ? `${slot.name} ×${slot.times}` : slot.name,
+                          start: formatLength(parts[part].start),
+                          variation: slot.variation && VARIATIONS[slot.variation].label,
+                          active: activePart === part,
+                        },
+                      ]
+                    : [],
+                )}
+                playing={state.playing === `section:${id}`}
+                onRegenerate={() => regenerateSection(id)}
+                onToggleLock={() => toggleLock(id)}
+                onUpdate={() => updateLocked(id)}
+                onTogglePlay={() => togglePlay(`section:${id}`)}
+                extraAction={id === "intro" && s.lead && !s.locked ? { label: "Back to power chords", onClick: clearIntroLead } : undefined}
+                degrees={id === "solo" || section.lead ? undefined : plannedDegrees(id, inputsFor(state, id).progressionId, section.groove)}
+                optionsSummary={section.lead ? `${styleLabel(id === "solo" ? "solo" : "intro", section.lead.inputs.style)} · ${section.lead.chords.length} bars` : section.groove}
+                options={
+                  <SectionOptionsPanel
+                    id={id}
+                    section={section}
+                    label={section.label}
+                    locked={s.locked}
+                    options={s.options}
+                    lead={s.lead ? { style: s.lead.style, bars: s.lead.bars } : null}
+                    grooves={grooveChoices(id, inputsFor(state, id))}
+                    timesRange={timesRange(id)}
+                    materialBars={materialBars(id)}
+                    previewing={previewing(id)}
+                    onChange={(options) => setOptions(id, options)}
+                    onLead={(lead) => setLead(id, lead)}
+                    onPreview={(groove) => previewGroove(id, groove)}
+                  />
+                }
+              />
+            );
+          })}
         </div>
       </section>
     </div>

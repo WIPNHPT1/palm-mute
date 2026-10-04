@@ -1,7 +1,7 @@
 // Song Engine v2 Phase 3: the song critic and best-of-N (docs/song-engine-v2-prd.md R17–R19). Scores a
 // whole song, then picks the best of several takes from derived seeds. Pure and deterministic, no React.
 import critic from "@/data/critic.json";
-import { type RenderedSection, type SectionInputs, mulberry32, renderSection, nextSeed } from "@/lib/generator";
+import { type RenderedSection, type SectionInputs, type SectionOptions, mulberry32, renderSection, nextSeed } from "@/lib/generator";
 import { PLAYABILITY, songRating } from "@/lib/playability";
 import { type SectionId, SECTION_IDS, formSlots } from "@/lib/songPlan";
 import { SETTINGS } from "@/lib/voicings";
@@ -105,6 +105,7 @@ export function bestSong(
   fixed: Fixed = {},
   avoid?: Partial<Record<SectionId, number>>,
   n = critic.candidates,
+  options: Partial<Record<SectionId, SectionOptions>> = {},
 ): BestSong {
   // The Solo isn't judged by the critic, so it keeps whatever the caller gives it (or seed 0).
   const free = SECTION_IDS.filter((id) => !fixed[id] && id !== "solo");
@@ -114,12 +115,12 @@ export function bestSong(
     const seeds = takeSeeds(songSeed, k);
     if (avoid && free.every((id) => seeds[id] === avoid[id])) continue;
     const inputs = {} as Record<SectionId, SectionInputs>;
-    for (const id of SECTION_IDS) inputs[id] = fixed[id] ?? { ...base, seed: id === "solo" ? 0 : seeds[id], lead: null };
+    for (const id of SECTION_IDS) inputs[id] = fixed[id] ?? { ...base, seed: id === "solo" ? 0 : seeds[id], lead: null, options: options[id] };
     const score = critique(renderSong(inputs));
     scores.push(score.total);
     if (!best || score.total > best.score.total + 1e-9) best = { seeds, score, scores };
   }
-  if (!best) return bestSong(base, songSeed + 1, fixed, avoid, n);
+  if (!best) return bestSong(base, songSeed + 1, fixed, avoid, n, options);
   for (const id of SECTION_IDS) if (fixed[id]) best.seeds[id] = fixed[id]!.seed;
   return { ...best, scores };
 }
