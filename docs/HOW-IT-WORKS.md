@@ -235,9 +235,19 @@ A solo sent from the Chords page ("Use in my song") plays exactly as previewed t
 
 The guitars and the drums come from the same data as the sound: the playback bars (`lib/playback.ts`) and one drum function (`lib/drums.ts`) that the audio engine also uses. The other parts follow each bar's chord (its root, and minor on the key's ii, iii and vi, since power chords don't say), including a Last chorus that goes up a tone. `npm run verify` builds 120 songs (4 keys × 5 feels × 3 lengths × 2 sets of card options), writes each file, reads it back with a strict parser and checks that every note reads back exactly, sits inside its lane (the guitars at concert pitch), and that the guitars and drums equal the audio; the browser tests download the real file and check it against what PLAY SONG plays.
 
+## 5c. PDF songbook
+
+**Take it away → DOWNLOAD PDF** lays the song out as pages of drawing operations in millimetres (`lib/songbook.ts`, pure), then draws them with jsPDF (`lib/pdf.ts`, loaded on demand) with Archivo Black and Space Mono embedded. A4 or US Letter:
+
+1. **Cover:** the wordmark, the title on a split-flap board, the song's facts and its running order (a box per part, sized by its bars).
+2. **Chart:** every chord shape the song uses as a chord box (six strings, four frets from the lowest fretted one, × and ○, the degree underneath), and the form: each part's start time, bars and chords.
+3. **Sections:** each in full, never cut: its heading, groove and frets, where it plays, its chord boxes, and its tab as a songbook (the same tab text as on screen, 4 bars a line, with bar numbers, rhythm stems and repeat marks), plus a legend of the lead techniques a solo uses.
+
+Text is measured with the PDF's own font metrics, so nothing overflows. `npm run verify` makes 120 real PDFs (3 keys × 5 feels × 2 lengths × 2 paper sizes × 2 option sets, including a 16-bar solo, an Intro melody, a chorus tag and a key change) and checks the file (every page, the three fonts embedded, the title) and the layout: every operation on its page, all text inside the margins, tab panels never overlapping each other or the footer, every section once and in order, and every bar of every section numbered 1 to n.
+
 ## 6. The proofs
 
-`npm run verify` (`scripts/verify-all.mjs` runs the five `scripts/verify-*.ts` suites side by side, about 75 s) runs in CI on every pull request:
+`npm run verify` (`scripts/verify-all.mjs` runs the six `scripts/verify-*.ts` suites side by side, about 75 s) runs in CI on every pull request:
 
 | Suite | What it covers | Checks |
 |---|---|---|
@@ -246,6 +256,7 @@ The guitars and the drums come from the same data as the sound: the playback bar
 | Song critic | Best of 8 is deterministic and beats or ties every take; the kept song's Chorus is its peak; locked sections never move; a build never repeats the song on screen; a section's ↻ always changes that section, deterministically | 600 songs × 8 takes (12 keys × 10 progressions × 5 feels, song seed 0), plus lock, repeat and ↻ checks per key and progression |
 | Lead engine | Brief §12: scale, strong beats, thirds, leaps, endings, bends, legato, slides, hand positions, range, motif, peak, determinism, **audio = tab = text**; Phase 5: **the solo quotes the song's motif, plays the Chorus's chords and peaks on its strongest chord** | 72,000 leads (12 keys × 10 progressions × 2 parts × 3 styles × 2 lengths × 50 seeds), the brief's §4 hook rendered exactly, and 9 reference outputs |
 | MIDI export | Every file reads back exactly through a strict parser; every note inside its lane (guitars at concert pitch); rhythm guitar, lead guitar and drums equal the audio; markers where each part starts; tempo, 4/4, instruments and channels; no drum track when drums are off | 120 songs (4 keys × 5 feels × 3 lengths × 2 option sets) |
+| PDF songbook | Real PDFs: every page, three fonts embedded, the title; every operation on the page, text inside the margins, tab panels never overlapping or in the footer, every section once, every bar numbered 1 to n, deterministic layout | 120 songbooks (3 keys × 5 feels × 2 lengths × 2 paper sizes × 2 option sets) |
 
 Then **Playwright** (`e2e/`) runs in Chromium and WebKit at 320, 390, 834, 1440 and 1920px, in light and dark. `e2e/song-builder-responsive.spec.ts` is the song builder's responsive gate (docs/song-builder-prd.md B12): no sideways scroll, controls ≥ 44px, text ≥ 12px and nothing clipped, in every project, for the setup, the folded summary and the longest song. It also covers routes, the menu, dark mode, layout and alignment, tap targets (44px), text size (12px), contrast (4.5:1), screen-reader text, playback matching the tab, share tags and icons.
 
