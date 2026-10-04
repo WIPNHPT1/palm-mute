@@ -24,7 +24,7 @@ import {
 } from "@/lib/lab/chords";
 import movesJson from "@/data/chord-moves.json";
 import { type DegreeId, DEGREES, DEGREE_IDS, degreeRoot, findKeys, nextMoves, parseChord, shapeFor, splitChords, transpose, typesFor } from "@/lib/lab/keys";
-import { MAP, MOOD_LOOPS, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
+import { CORNERS, MAP, MOOD_LOOPS, cornerClash, labelsClash, brightness, classicness, moodPoints, nearestPoint, placeScores, quadrantOf, restlessness, vibeOf, naturalLoop } from "@/lib/lab/mood";
 import { LAB_BPM, arpeggioBars, loopBars, strumBars } from "@/lib/lab/sound";
 import { PITCH_CLASSES, progressions } from "@/lib/musicTheory";
 
@@ -245,7 +245,7 @@ assert.equal(points.filter((p) => p.own).length, progressions.length);
 let farthest = 0;
 for (const p of points) {
   assert.ok(p.degrees.length >= 3 && p.degrees.length <= 5 && p.degrees.every((d) => DEGREE_IDS.includes(d)), `${p.id}: bad loop`);
-  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - 3 && p.y <= MAP.y1 + 3, `${p.id}: off the plot (${p.x}, ${p.y})`);
+  assert.ok(p.x >= MAP.x0 - 2 && p.x <= MAP.x1 + 2 && p.y >= MAP.y0 - MAP.nudge && p.y <= MAP.y1 + MAP.nudge, `${p.id}: off the plot (${p.x}, ${p.y})`);
   assert.ok(p.bright >= 0 && p.bright <= 1 && p.restless >= 0 && p.restless <= 1, `${p.id}: score out of range`);
   const v = vibeOf(naturalLoop(p.degrees));
   const home = placeScores(v.brightness, v.restlessness);
@@ -255,6 +255,14 @@ assert.ok(farthest <= 30, `a dot was nudged ${farthest.toFixed(0)}% from its pla
 for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
   assert.equal(labelsClash(points[i], points[j]), false, `${points[i].id} and ${points[j].id} overlap`);
 }
+for (const p of points) assert.equal(cornerClash(p), false, `${p.id} sits on a corner label`);
+assert.equal(CORNERS.length, 4);
+// "Middle of the map" is honest: only loops with both scores in the middle band are called that.
+for (const p of points) {
+  const middle = quadrantOf(p.bright, p.restless) === "Middle of the map";
+  assert.equal(middle, p.bright > 0.35 && p.bright < 0.65 && p.restless > 0.35 && p.restless < 0.65, `${p.id}: quadrant ${quadrantOf(p.bright, p.restless)}`);
+}
+assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === "Middle of the map"), "nothing in the middle");
 for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) assert.ok(points.some((p) => quadrantOf(p.bright, p.restless) === q), `nothing in ${q}`);
 // Tapping empty space finds the nearest loop; a loop's own place finds itself.
 for (const p of points) assert.equal(nearestPoint(points, p.x, p.y).id, p.id);

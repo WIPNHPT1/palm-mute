@@ -477,14 +477,27 @@ test.describe("chord lab: mood map", () => {
     await gotoAndSettle(page, "/chords/");
   });
 
-  test("26 loops on the map, the app's ten among them, every one a tappable dot and a chip", async ({ page }, info) => {
+  test("22 loops on the map, the app's ten among them, every one a tappable dot and a chip", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
-    await expect(mood(page).locator("[data-loop-id]")).toHaveCount(26);
-    await expect(mood(page).locator("[data-chip]")).toHaveCount(26);
+    await expect(mood(page).locator("[data-loop-id]")).toHaveCount(22);
+    await expect(mood(page).locator("[data-chip]")).toHaveCount(22);
     for (const id of ["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "vi-V-IV", "V-vi-IV-I"]) await expect(dot(page, id)).toBeVisible();
     await expect(mood(page).locator("[data-picked]")).toHaveText("I-V-vi-IV");
     for (const q of ["Tense", "Anthem", "Brooding", "Feel-good"]) await expect(mood(page).locator("[data-plot]")).toContainText(q);
+  });
+
+  test("the map says what a tap does, and a loop in the middle is called the middle, not a corner", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(mood(page)).toContainText("Tap a dot to hear it. Tap empty space to hear the nearest.");
+    // I-V-vi-IV sits mid-way on both scores: its panel and its dot say so (it used to read "Feel-good" with both meters "in the middle").
+    await expect(mood(page).locator("[data-mood-panel]")).toContainText("Middle of the map");
+    await expect(dot(page, "I-V-vi-IV")).toHaveAccessibleName(/Middle of the map/);
+    await expect(mood(page).getByRole("meter", { name: "Dark to bright" })).toBeVisible();
+    await mood(page).locator('[data-chip="I-IV-V"]').click();
+    await expect(mood(page).locator("[data-mood-panel]")).not.toContainText("Middle of the map");
+    await expect(dot(page, "I-IV-V")).toHaveAccessibleName(/(Anthem|Feel-good|Tense|Brooding)/);
   });
 
   test("tapping a dot, a chip or empty space picks the loop and plays it in your key", async ({ page }, info) => {

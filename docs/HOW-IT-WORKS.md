@@ -271,7 +271,7 @@ Text is measured with the PDF's own font metrics, so nothing overflows. `npm run
 - **Name that chord:** tap frets on the neck (or type `x32010`) and the shape is named: best name first, alternatives, slash chords for inversions, the major keys it belongs to with its numeral in each, and a "did you mean" for a shape one fret off a chord.
 - **Progression builder:** the key's I ii iii IV V vi plus the borrowed bIII, iv, bVI and bVII, in a loop of up to eight. "What next?" suggests the three likeliest chords from `data/chord-moves.json`; three meters (dark to bright, settled to restless, how classic) come from `lib/lab/mood.ts`.
 - **Key finder & transposer:** type chord names and get the major keys they fit, best first, with borrowed chords flagged; move them by semitones, to a key, or for a capo (the shape to play is the sound minus the capo's frets).
-- **Mood map:** the ten progressions and 16 more plotted by the same scores, spread across the plot and nudged only so their names never overlap.
+- **Mood map:** the ten progressions and 12 more plotted by the same scores, spread across the plot and nudged only so their names never overlap.
 
 `scripts/verify-lab.ts` proves it on every build: every voicing in every tuning is exactly its chord (right notes, root in the bass, within reach, fingered, muted), every voicing names back to its own chord, every one of the ten progressions is found in its own key in all twelve keys (as full and as power chords), the capo maths agrees with the shapes in every tuning, and no two names on the mood map overlap.
 

@@ -135,6 +135,7 @@ export function MoodMap() {
           <span>← darker</span>
           <span>brighter →</span>
         </div>
+        <p className="col-start-2 font-mono text-[12px] text-text-muted">Tap a dot to hear it. Tap empty space to hear the nearest.</p>
       </div>
 
       <div className="flex flex-col gap-[12px] rounded-outer border-[1.5px] border-ink bg-surface p-[14px] dark:border-line-strong" data-mood-panel>
