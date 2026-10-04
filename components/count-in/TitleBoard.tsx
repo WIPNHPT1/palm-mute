@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Scope } from "@/components/count-in/Scope";
 import { titleBag } from "@/lib/titleGenerator";
 
 const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -64,7 +65,8 @@ export function TitleBoard({ reduced }: { reduced: boolean }) {
   };
 
   return (
-    <section className="ci-board-sec" aria-labelledby="ci-titles">
+    <section className="ci-board-sec" aria-labelledby="ci-titles" data-scope>
+      <Scope />
       <div className="ci-wrap">
         <div className="ci-board" data-reveal>
           <div className="ci-board-top"><span id="ci-titles">STUCK ON A SONG TITLE?</span><span>NOW PLAYING <b>· TRACK 04</b></span></div>
