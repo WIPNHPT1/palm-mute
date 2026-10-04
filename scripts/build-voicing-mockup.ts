@@ -45,7 +45,7 @@ for (const key of PITCH_CLASSES)
 
 const meta = {
   keys: PITCH_CLASSES.map((k) => ({ id: k, label: keyDisplayName(k) })),
-  feels: FEELS.map((f) => ({ id: f, label: FEEL_LABELS[f], bpm: playbackBpm(f, 140) })),
+  feels: FEELS.map((f) => ({ id: f, label: FEEL_LABELS[f], bpm: playbackBpm(f) })),
   progressions: progressions.map((p) => p.id),
 };
 

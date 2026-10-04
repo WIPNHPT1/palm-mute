@@ -11,7 +11,6 @@ import {
   type SectionId,
   type SectionInputs,
   type SectionOptions,
-  MID_TEMPO,
   SECTION_IDS,
   getTemplate,
   nextSeed,
@@ -71,7 +70,6 @@ export type LeadHandoff = { part: LeadPart; style: LeadStyle; bars: number; seed
 export type GeneratorState = {
   key: NoteName;
   feel: FeelId;
-  midTempoBpm: number;
   progressionId: string;
   /**
    * How long the song should run, in seconds (the Length slider, 2:30–5:30). The form and every part's
@@ -101,7 +99,6 @@ export type PlayTarget = `progression:${string}` | `section:${SectionId}` | "str
 type Action =
   | { type: "setKey"; key: NoteName }
   | { type: "setFeel"; feel: FeelId }
-  | { type: "setMidTempoBpm"; bpm: number }
   | { type: "generate"; seeds: Partial<Record<SectionId, number>>; songSeed: number; originality: OriginalityStatus; title: string }
   | { type: "setLength"; seconds: number }
   | { type: "setDifficulty"; difficulty: Difficulty }
@@ -136,7 +133,6 @@ function initialState(): GeneratorState {
     difficulty: DEFAULT_DIFFICULTY,
     preset: null,
     songSeed: 0,
-    midTempoBpm: MID_TEMPO.default,
     sections,
     originalityStatus: "pass",
     playing: null,
@@ -153,7 +149,6 @@ function sharedSong(state: GeneratorState): SharedSong {
   return {
     key: state.key,
     feel: state.feel,
-    midTempoBpm: state.midTempoBpm,
     progressionId: state.progressionId,
     lengthSec: state.lengthSec,
     difficulty: state.difficulty,
@@ -200,8 +195,6 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
       return { ...state, key: action.key };
     case "setFeel":
       return { ...state, feel: action.feel };
-    case "setMidTempoBpm":
-      return { ...state, midTempoBpm: Math.min(MID_TEMPO.max, Math.max(MID_TEMPO.min, action.bpm)) };
     case "generate": {
       const sections = { ...state.sections };
       for (const id of SECTION_IDS) {
@@ -237,7 +230,6 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         ...state,
         preset: action.preset,
         feel: p.feel,
-        midTempoBpm: p.midTempoBpm ?? state.midTempoBpm,
         progressionId: p.progressionId ?? state.progressionId,
         lengthSec: p.lengthSec,
       };
@@ -327,7 +319,6 @@ function reducer(state: GeneratorState, action: Action): GeneratorState {
         ...state,
         key: shared.key,
         feel: shared.feel,
-        midTempoBpm: shared.midTempoBpm,
         progressionId: shared.progressionId,
         lengthSec: shared.lengthSec,
         difficulty: shared.difficulty,
@@ -369,7 +360,6 @@ type GeneratorContextValue = {
   setLead: (id: SectionId, lead: { style: LeadStyle; bars: number } | null) => void;
   setKey: (key: NoteName) => void;
   setFeel: (feel: FeelId) => void;
-  setMidTempoBpm: (bpm: number) => void;
   generate: () => void;
   regenerateSection: (id: SectionId) => void;
   toggleLock: (id: SectionId) => void;
@@ -416,7 +406,7 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   // The length plan (lib/songLength.ts): the form and each part's repeats for the Length slider at this tempo.
-  const bpm = playbackBpm(state.feel, state.midTempoBpm);
+  const bpm = playbackBpm(state.feel);
   const plan = useMemo(() => songPlan(inputsForAll(state), rendered, state.lengthSec, bpm), [state, rendered, bpm]);
 
   // A repeat plays its section's material; a declared variation (Verse 2's push, the Last chorus up a tone)
@@ -593,10 +583,10 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "setFeel", feel });
       dispatch({ type: "setPlaying", target: "strum" });
       // Start at the new feel's tempo straight away (the render that follows would otherwise catch up).
-      bpmRef.current = playbackBpm(feel, state.midTempoBpm) * practiceRef.current.speed;
+      bpmRef.current = playbackBpm(feel) * practiceRef.current.speed;
       void start("strum", progressionBars(state.key, state.progressionId, feel));
     },
-    [state.playing, state.feel, state.midTempoBpm, state.key, state.progressionId, start, stopPlayback],
+    [state.playing, state.feel, state.key, state.progressionId, start, stopPlayback],
   );
 
   const playCustom = useCallback(
@@ -657,7 +647,6 @@ export function GeneratorProvider({ children }: { children: ReactNode }) {
       setLead: (id, lead) => dispatch({ type: "setLead", id, lead }),
       setKey: (key) => dispatch({ type: "setKey", key }),
       setFeel: (feel) => dispatch({ type: "setFeel", feel }),
-      setMidTempoBpm: (bpm) => dispatch({ type: "setMidTempoBpm", bpm }),
       generate,
       regenerateSection,
       toggleLock: (id) => dispatch({ type: "toggleLock", id }),

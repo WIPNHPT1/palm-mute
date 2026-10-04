@@ -4,7 +4,7 @@ import { feel, lastPlayback } from "./helpers";
 // Five feels (DECISIONS.md): Fast Punk, Half-Time, Mid-Tempo, Pop Strum and Ballad.
 
 for (const path of ["/generator/", "/chords/"]) {
-  test(`${path}: five feels; one row from tablet up, a list on phones with Mid-Tempo's tempo in its row`, async ({ page }, info) => {
+  test(`${path}: five feels, each at its own fixed tempo; one row from tablet up, a list on phones`, async ({ page }, info) => {
     await gotoAndSettle(page, path);
     const radios = page.getByRole("radiogroup", { name: "Feel" }).getByRole("radio");
     await expect(radios).toHaveCount(5);
@@ -19,12 +19,10 @@ for (const path of ["/generator/", "/chords/"]) {
     }
     for (const b of boxes) expect(b.height).toBeGreaterThanOrEqual(44);
 
+    // Every feel says its one tempo; Mid-Tempo has no slider (owner, 2026-10-04).
+    for (const [f, bpm] of [[/FAST PUNK/, 180], [/HALF-TIME/, 90], [/MID-TEMPO/, 140], [/POP STRUM/, 150], [/BALLAD/, 80]] as const) await expect(feel(page, f)).toContainText(`${bpm} BPM`);
     await feel(page, /MID-TEMPO/).click();
-    const slider = page.getByLabel("Mid-tempo BPM");
-    await expect(slider).toHaveCount(1);
-    // Phones: inside the Mid-Tempo row, right under its name. Tablet up: under the whole row.
-    const inRow = await slider.evaluate((el) => !!el.closest('[role="radiogroup"]'));
-    expect(inRow).toBe(phone);
+    await expect(page.getByLabel("Mid-tempo BPM")).toHaveCount(0);
   });
 }
 

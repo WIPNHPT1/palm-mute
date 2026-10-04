@@ -7,7 +7,6 @@ export type Preset = {
   label: string;
   description: string;
   feel: FeelId;
-  midTempoBpm?: number;
   progressionId?: string;
   lengthSec: number;
   grooves: Partial<Record<SectionId, string[]>>;

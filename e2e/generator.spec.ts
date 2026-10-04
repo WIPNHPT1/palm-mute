@@ -1,5 +1,6 @@
 import { type Page } from "@playwright/test";
 import { expect, lightOnly, onlyAtWidths, openMenu, test } from "./fixtures";
+import { lastPlayback } from "./helpers";
 
 const section = (page: Page, label: string) => page.locator(`section[aria-label="${label}"]`);
 const tab = (page: Page, label: string) => section(page, label).locator("svg[data-tab]");
@@ -82,21 +83,14 @@ test.describe("generator", () => {
     expect(await sectionText(page, "Breakdown")).toBe(breakdown);
   });
 
-  test("the Mid-Tempo stepper runs 120 to 150", async ({ page }) => {
-    await expect(page.getByLabel("Mid-tempo BPM")).toHaveCount(0);
+  test("Mid-Tempo plays at a fixed 140 BPM, with no tempo control", async ({ page }) => {
     await feel(page, /MID-TEMPO/).click();
-    const slider = page.getByLabel("Mid-tempo BPM");
-    await expect(slider).toHaveValue("140");
-    const down = page.getByRole("button", { name: "Decrease tempo" });
-    const up = page.getByRole("button", { name: "Increase tempo" });
-    for (let i = 0; i < 25; i++) if (await down.isEnabled()) await down.click();
-    await expect(slider).toHaveValue("120");
-    await expect(down).toBeDisabled();
-    await slider.fill("150");
-    await expect(slider).toHaveValue("150");
-    await expect(up).toBeDisabled();
-    await expect(feel(page, /MID-TEMPO/)).toContainText("150 BPM");
-    // Fast Punk and Half-Time show fixed readouts.
+    await expect(feel(page, /MID-TEMPO/)).toContainText("140 BPM");
+    await expect(page.getByLabel("Mid-tempo BPM")).toHaveCount(0);
+    await page.getByRole("button", { name: "PLAY SONG" }).click();
+    expect((await lastPlayback(page))!.bpm).toBe(140);
+    await page.getByRole("button", { name: "STOP SONG" }).click();
+    // Fast Punk and Half-Time show their fixed readouts too.
     await expect(feel(page, /FAST PUNK/)).toContainText("180 BPM");
     await expect(feel(page, /HALF-TIME/)).toContainText("90 BPM");
   });

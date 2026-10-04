@@ -24,7 +24,7 @@
 | **Tuning** | E standard |
 | **Keys** | All 12, with sharps and flats named properly (A#/Bb) |
 | **Progressions** | The 10 that pop-punk actually runs on (I-V-vi-IV, vi-IV-I-V, I-IV-V, I-V-IV-V, vi-V-IV, IV-I-V-vi, I-vi-IV-V, I-IV-vi-V, V-vi-IV-I, I-V-IV), sortable six ways |
-| **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (120–150 BPM, adjustable), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
+| **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (140 BPM), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
 | **Song sections** | Intro · Verse · Chorus · Solo · Breakdown, each lockable and regenerable on its own |
 | **Chord shapes** | 2-note, 3-note (octave), inverted, open-string and octave-riff power chords, frets 0–12 |
 | **Leads** | Intro melodies (Hook, Octaves, Harmony) and solos (Chill, Classic, Shred), frets 0–12 and 0–15 |

@@ -2,8 +2,8 @@ import { type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { feel } from "./helpers";
 
-// Generator and Chords, with their extra states showing: the Mid-Tempo stepper, a locked section's
-// update action, and the Chords page panel.
+// Generator and Chords, with their extra states showing: Mid-Tempo picked, a locked section's update
+// action, and the Chords page panel.
 const PAGES: { path: string; setup: (page: Page) => Promise<void> }[] = [
   {
     path: "/generator/",

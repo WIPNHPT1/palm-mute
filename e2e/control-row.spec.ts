@@ -2,8 +2,8 @@ import { type Page } from "@playwright/test";
 import { expect, gotoAndSettle, test } from "./fixtures";
 import { feel } from "./helpers";
 
-// Picking Mid-Tempo adds a tempo row to the Feel card. It must not move or resize the other control
-// cards, their labels stay on one line, and nothing spills out of its card.
+// Picking a feel must not move or resize the control cards (Mid-Tempo used to add a tempo row; it's a fixed
+// 140 BPM now, DECISIONS.md): their labels stay on one line, and nothing spills out of its card.
 type Box = { label: string; x: number; y: number; w: number; h: number; labelY: number; overflow: string[] };
 
 async function controls(page: Page): Promise<Box[]> {
@@ -22,17 +22,19 @@ async function controls(page: Page): Promise<Box[]> {
 }
 
 for (const path of ["/chords/", "/generator/"]) {
-  test(`${path}: Mid-Tempo doesn't push the other controls around`, async ({ page }) => {
+  test(`${path}: picking Mid-Tempo doesn't push the controls around, and there's no tempo to set`, async ({ page }) => {
     await gotoAndSettle(page, path);
     const before = await controls(page);
     await feel(page, /MID-TEMPO/).click();
-    await expect(page.getByLabel("Mid-tempo BPM")).toBeVisible();
+    await expect(feel(page, /MID-TEMPO/)).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByLabel("Mid-tempo BPM")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /tempo$/ })).toHaveCount(0);
     const after = await controls(page);
 
     for (const card of after) expect(card.overflow, `${card.label} card: controls spill out`).toEqual([]);
     for (const b of before) {
       const a = after.find((c) => c.label === b.label)!;
-      // The Feel card may only grow taller (its new row); nothing else changes place or width.
+      // Nothing changes place or width.
       expect({ x: a.x, w: a.w }, `${b.label} card moved or resized`).toEqual({ x: b.x, w: b.w });
       // (Cards stacked below the Feel card, on phones, naturally move down as it grows.)
       const feelTop = before.find((c) => c.label === "Feel")!.y;
@@ -42,9 +44,6 @@ for (const path of ["/chords/", "/generator/"]) {
     const rows = new Map<number, Box[]>();
     for (const c of after) rows.set(c.y, [...(rows.get(c.y) ?? []), c]);
     for (const row of rows.values()) expect(new Set(row.map((c) => c.labelY)).size, row.map((c) => c.label).join(", ")).toBe(1);
-    // The live tempo is on the Mid-Tempo button (no duplicate readout) and still announced by the slider.
-    await page.getByRole("button", { name: "Increase tempo" }).click();
-    await expect(feel(page, /MID-TEMPO/)).toContainText("141 BPM");
-    await expect(page.getByLabel("Mid-tempo BPM")).toHaveAttribute("aria-valuetext", "141 BPM");
+    await expect(feel(page, /MID-TEMPO/)).toContainText("140 BPM");
   });
 }

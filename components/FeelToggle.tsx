@@ -1,35 +1,19 @@
 "use client";
 
-import { useTabletUp } from "@/lib/hooks/useTabletUp";
-import { type FeelId, MID_TEMPO, feels, patternForFeel } from "@/lib/generator";
+import { type FeelId, feels, patternForFeel } from "@/lib/generator";
 
 /**
- * The five feels. Tablet and desktop: one row of segments, with Mid-Tempo's tempo row underneath.
- * Phones: a list, one row per feel (name and BPM, then its strum), and Mid-Tempo's tempo opens
- * inside its own row (owner's pick, DECISIONS.md). Only one tempo row is ever rendered.
+ * The five feels, each with its own fixed tempo (feels.json; Mid-Tempo's slider was removed, DECISIONS.md).
+ * Tablet and desktop: one row of segments. Phones: a list, one row per feel (name and BPM, then its strum).
  */
-export function FeelToggle({
-  feel,
-  midTempoBpm,
-  onFeelChange,
-  onBpmChange,
-}: {
-  feel: FeelId;
-  midTempoBpm: number;
-  onFeelChange: (feel: FeelId) => void;
-  onBpmChange: (bpm: number) => void;
-}) {
-  const tabletUp = useTabletUp();
-  const tempo = (inRow: boolean) => <TempoRow bpm={midTempoBpm} onChange={onBpmChange} inRow={inRow} />;
-
+export function FeelToggle({ feel, onFeelChange }: { feel: FeelId; onFeelChange: (feel: FeelId) => void }) {
   return (
     <div className="flex flex-col gap-[10px]">
       <div role="radiogroup" aria-label="Feel" className="flex flex-col gap-[2px] rounded-[7px] border border-line bg-paper p-[3px] tablet:flex-row">
         {feels.map((f) => {
           const active = f.id === feel;
           const pattern = patternForFeel(f.id);
-          // Fixed readouts from feels.json; Mid-Tempo shows the live, adjustable tempo.
-          const bpm = typeof f.displayBpm === "number" ? f.displayBpm : midTempoBpm;
+          const bpm = f.displayBpm;
           return (
             <div key={f.id} className={`rounded-[5px] tablet:flex-auto ${active ? "bg-ink text-text-on-dark dark:shadow-[inset_0_0_0_1px_theme(colors.line-strong)]" : ""}`}>
               <button
@@ -50,44 +34,10 @@ export function FeelToggle({
                   </span>
                 </span>
               </button>
-              {active && f.id === "mid-tempo" && !tabletUp && tempo(true)}
             </div>
           );
         })}
       </div>
-      {feel === "mid-tempo" && tabletUp && tempo(false)}
-    </div>
-  );
-}
-
-/**
- * − slider +. Under the segments (tablet up) it takes their width and never adds to it (w-0 +
- * min-w-full), so picking Mid-Tempo can't widen the card. Inside the phone row it drops the TEMPO
- * label (the row already names it and shows the BPM), so all three fit on one line at 320px.
- */
-function TempoRow({ bpm, onChange, inRow }: { bpm: number; onChange: (bpm: number) => void; inRow: boolean }) {
-  const step = `h-[44px] w-[44px] shrink-0 rounded-mid border text-[16px] disabled:opacity-40 ${
-    inRow ? "border-text-on-dark-faint text-text-on-dark" : "border-line bg-paper"
-  }`;
-  return (
-    <div className={`flex items-center gap-[4px] font-mono text-[12px] ${inRow ? "w-full px-[12px] pb-[10px]" : "w-0 min-w-full text-text-muted"}`}>
-      {!inRow && <span className="mr-[4px] uppercase tracking-[0.08em] text-text-faint">Tempo</span>}
-      <button type="button" aria-label="Decrease tempo" onClick={() => onChange(bpm - 1)} disabled={bpm <= MID_TEMPO.min} className={step}>
-        −
-      </button>
-      <input
-        type="range"
-        aria-label="Mid-tempo BPM"
-        min={MID_TEMPO.min}
-        max={MID_TEMPO.max}
-        value={bpm}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-valuetext={`${bpm} BPM`}
-        className={`h-[44px] min-w-0 flex-1 ${inRow ? "accent-accent-on-ink" : "accent-accent"}`}
-      />
-      <button type="button" aria-label="Increase tempo" onClick={() => onChange(bpm + 1)} disabled={bpm >= MID_TEMPO.max} className={step}>
-        +
-      </button>
     </div>
   );
 }

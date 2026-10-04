@@ -10,7 +10,6 @@ import {
   type SongThread,
   DIFFICULTIES,
   FEEL_IDS,
-  MID_TEMPO,
   SECTION_IDS,
   type SectionId,
   recipes,
@@ -38,7 +37,6 @@ export type SharedSection = {
 export type SharedSong = {
   key: NoteName;
   feel: FeelId;
-  midTempoBpm: number;
   progressionId: string;
   lengthSec: number;
   difficulty: Difficulty;
@@ -83,7 +81,6 @@ export function encodeSong(song: SharedSong): string {
     v: VERSION,
     k: song.key,
     f: song.feel,
-    m: song.midTempoBpm,
     p: song.progressionId,
     n: song.lengthSec,
     d: song.difficulty,
@@ -190,7 +187,6 @@ export function decodeSong(hash: string): SharedSong | null {
   return {
     key,
     feel,
-    midTempoBpm: int(data.m, MID_TEMPO.min, MID_TEMPO.max) ?? MID_TEMPO.default,
     progressionId,
     lengthSec: len !== undefined && (len - LENGTH.min) % LENGTH.step === 0 ? len : LENGTH.default,
     difficulty: oneOf(data.d, DIFFICULTIES) ?? "intermediate",

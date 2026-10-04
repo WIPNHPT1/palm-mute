@@ -37,8 +37,13 @@ export function PdfExportCard({ input }: { input: Omit<SongbookInput, "size" | "
       {/* The pages, in miniature (decorative). */}
       <div className="flex gap-[10px] overflow-hidden py-[2px]" aria-hidden="true">
         <div className="flex aspect-[210/297] w-[76px] shrink-0 flex-col gap-[4px] rounded-[3px] bg-ink p-[7px]">
-          <span className="font-display text-[8px] leading-none text-text-on-dark">
-            PALM<span className="text-accent-on-ink">⚡</span>MUTE
+          {/* The wordmark as the printed cover has it: the site's bolt (components/Wordmark.tsx), still. */}
+          <span className="inline-flex items-center whitespace-nowrap font-display text-[8px] leading-none text-text-on-dark">
+            PALM
+            <svg viewBox="0 0 12 20" className="mx-[0.04em] h-[0.9em] w-[0.6em] text-accent-on-ink" aria-hidden="true">
+              <path d="M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z" fill="currentColor" />
+            </svg>
+            MUTE
           </span>
           <span className="mt-[10px] h-[10px] rounded-[2px] bg-board-cell" />
           <span className="h-[3px] w-[60%] rounded-[1px] bg-ink-mid" />

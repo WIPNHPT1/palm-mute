@@ -52,7 +52,7 @@ test.describe("chords UX", () => {
     expect(pb.bars.every((b) => b.feel === "half-time")).toBe(true);
     await page.getByRole("button", { name: "Stop I-V-vi-IV" }).click();
     await feel(page, /MID-TEMPO/).click();
-    await expect(page.getByLabel("Mid-tempo BPM")).toHaveValue("140");
+    await expect(feel(page, /MID-TEMPO/)).toContainText("140 BPM");
     await page.getByRole("link", { name: "Palm/Mute", exact: true }).click();
     await page.getByRole("link", { name: "START WRITING" }).first().click();
     await expect(page).toHaveURL(/\/generator\/$/);
