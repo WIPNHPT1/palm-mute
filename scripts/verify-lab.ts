@@ -14,6 +14,7 @@ import {
   easiestVoicing,
   keysFor,
   nameShape,
+  noteName,
   parseShape,
   playsChord,
   shapeNotes,
@@ -163,6 +164,45 @@ for (const kind of ["full", "power"] as const) {
     }
   }
 }
+// Round trip: every name the Lab writes for any shape (the best one, the alternatives, slash chords) reads
+// back as the same chord, so a name from Name that chord can be pasted into the Key finder.
+let roundTrips = 0;
+for (const tuning of TUNING_IDS) {
+  for (let root = 0; root < 12; root++) {
+    for (const type of CHORD_TYPE_IDS) {
+      for (const v of voicingsFor(root, type, tuning)) {
+        for (const n of nameShape(v.frets, tuning)) {
+          const back = parseChord(n.name);
+          assert.ok(back, `${n.name} (${shapeText(v.frets)}) isn't readable`);
+          assert.equal(back.root, n.root, `${n.name}: root`);
+          assert.equal(back.type, n.type, `${n.name}: type`);
+          assert.equal(back.bass, n.bass === n.root ? undefined : n.bass, `${n.name}: bass`);
+          assert.equal(back.note, undefined, `${n.name}: should need no 'read as' note`);
+          roundTrips++;
+        }
+      }
+    }
+  }
+}
+// Names the Lab has no type for are read as the nearest one, and say so.
+const readAs = (t: string) => { const c = parseChord(t)!; return `${chordName(c.root, c.type)}${c.bass !== undefined ? `/${noteName(c.bass)}` : ""}|${c.note ?? ""}`; };
+assert.equal(readAs("G/B"), "G/B|");
+assert.equal(readAs("Fsus4/C"), "Fsus4/C|");
+assert.equal(readAs("G6"), "G|Read G6 as G");
+assert.equal(readAs("Am6"), "Am|Read Am6 as Am");
+assert.equal(readAs("G9"), "G7|Read G9 as G7");
+assert.equal(readAs("Gmaj9"), "Gmaj7|Read Gmaj9 as Gmaj7");
+assert.equal(readAs("Gm9"), "Gm7|Read Gm9 as Gm7");
+assert.equal(readAs("Gdim"), "Gm|Read Gdim as Gm");
+assert.equal(readAs("G°"), "Gm|Read G° as Gm");
+assert.equal(readAs("Em7b5"), "Em|Read Em7b5 as Em");
+assert.equal(readAs("Gaug"), "G|Read Gaug as G");
+assert.equal(readAs("G+"), "G|Read G+ as G");
+assert.equal(readAs("A7sus4"), "Asus4|Read A7sus4 as Asus4");
+assert.equal(parseChord("G/"), null);
+assert.equal(parseChord("G/H"), null);
+assert.equal(parseChord("G/B/D"), null);
+assert.deepEqual(splitChords("G octave C5/G"), ["G octave", "C5/G"]);
 // Reading chord names.
 assert.deepEqual(splitChords("G D, Em | C"), ["G", "D", "Em", "C"]);
 assert.deepEqual(["F#m7", "Bbadd9", "Dsus4", "Gsus", "E5", "Cmaj7", "Am"].map((t) => parseChord(t)?.type), ["m7", "add9", "sus4", "sus4", "5", "maj7", "min"]);
@@ -223,5 +263,5 @@ assert.ok(byBright.at(-1)!.degrees.every((d) => !["vi", "iii", "ii", "iv"].inclu
 console.log(
   `verify-lab: ${voicings} voicings checked (${Object.entries(perTuning)
     .map(([t, n]) => `${t} ${n}`)
-    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
+    .join(", ")}): exact chord tones, root in the bass, within reach, fingered, muted, named back; ${roundTrips} names (slash chords too) read back as the same chord; ${keyChecks} loops found in their own key; the capo maths agrees with the shapes in every tuning; ${points.length} mood-map loops placed, none overlapping.`,
 );

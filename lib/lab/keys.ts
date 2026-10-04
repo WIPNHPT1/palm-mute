@@ -45,7 +45,15 @@ export function nextMoves(id: DegreeId): DegreeId[] {
 // ---------------------------------------------------------------------------
 // Reading chord names ("G D Em C", "F#m7, Bbadd9")
 
-export type ParsedChord = { text: string; root: number; type: ChordTypeId };
+export type ParsedChord = {
+  text: string;
+  root: number;
+  type: ChordTypeId;
+  /** A slash chord's bass note ("G/B" is a G chord over B), as a pitch class. */
+  bass?: number;
+  /** Set when the name had no type in the Lab and was read as the nearest one ("Read Gdim as Gm"). */
+  note?: string;
+};
 
 const SUFFIX: [RegExp, ChordTypeId][] = [
   [/^(maj7|M7|Δ7?)$/, "maj7"],
@@ -54,25 +62,62 @@ const SUFFIX: [RegExp, ChordTypeId][] = [
   [/^(m|min|-)$/, "min"],
   [/^(maj|M)?$/, "maj"],
   [/^5$/, "5"],
+  [/^(oct|octave)$/, "oct"],
   [/^sus2$/, "sus2"],
   [/^sus4?$/, "sus4"],
   [/^\(?add9\)?$/, "add9"],
 ];
 
-/** One chord name, or null if the Lab can't read it. */
+/** Names the Lab has no type for, read as the nearest one (and said so). */
+const NEAREST: [RegExp, ChordTypeId][] = [
+  [/^6$/, "maj"],
+  [/^(m6|min6)$/, "min"],
+  [/^9$/, "7"],
+  [/^(maj9|M9)$/, "maj7"],
+  [/^(m9|min9)$/, "m7"],
+  [/^(dim|dim7|°|°7|o|o7)$/, "min"],
+  [/^(m7b5|m7♭5|ø|ø7)$/, "min"],
+  [/^(aug|\+|aug7)$/, "maj"],
+  [/^7sus4?$/, "sus4"],
+];
+
+const noteOf = (letter: string, accidental: string): number => {
+  let n = PITCH_CLASSES.indexOf(letter.toUpperCase() as (typeof PITCH_CLASSES)[number]);
+  if (accidental === "#" || accidental === "♯") n++;
+  if (accidental === "b" || accidental === "♭") n--;
+  return pc(n);
+};
+
+/** One chord name (slash chords and the Lab's own "G octave" included), or null if the Lab can't read it. */
 export function parseChord(text: string): ParsedChord | null {
-  const m = /^([A-Ga-g])([#♯b♭]?)(.*)$/.exec(text.trim());
+  const t = text.trim();
+  const [main, bassText, ...extra] = t.split("/");
+  if (extra.length) return null;
+  const m = /^([A-Ga-g])([#♯b♭]?)(.*)$/.exec(main.trim());
   if (!m) return null;
-  let root = PITCH_CLASSES.indexOf(m[1].toUpperCase() as (typeof PITCH_CLASSES)[number]);
-  if (m[2] === "#" || m[2] === "♯") root++;
-  if (m[2] === "b" || m[2] === "♭") root--;
-  const type = SUFFIX.find(([re]) => re.test(m[3]))?.[1];
-  return type ? { text: text.trim(), root: pc(root), type } : null;
+  let bass: number | undefined;
+  if (bassText !== undefined) {
+    const b = /^([A-Ga-g])([#♯b♭]?)$/.exec(bassText.trim());
+    if (!b) return null;
+    bass = noteOf(b[1], b[2]);
+  }
+  const root = noteOf(m[1], m[2]);
+  const rest = m[3].trim();
+  const exact = SUFFIX.find(([re]) => re.test(rest))?.[1];
+  if (exact) return { text: t, root, type: exact, ...(bass !== undefined ? { bass } : {}) };
+  const near = NEAREST.find(([re]) => re.test(rest))?.[1];
+  if (!near) return null;
+  return { text: t, root, type: near, ...(bass !== undefined ? { bass } : {}), note: `Read ${main.trim()} as ${chordName(root, near)}` };
 }
 
-/** Splits typed text into chord names (spaces, commas, bars and dashes between them). */
+/** Splits typed text into chord names (spaces, commas, bars and dashes between them); "G octave" stays one name. */
 export function splitChords(text: string): string[] {
-  return text.split(/[\s,|]+|\s-\s/).map((t) => t.trim()).filter(Boolean);
+  const out: string[] = [];
+  for (const tok of text.split(/[\s,|]+|\s-\s/).map((x) => x.trim()).filter(Boolean)) {
+    if (/^(oct|octave)$/i.test(tok) && out.length) out[out.length - 1] += ` ${tok.toLowerCase()}`;
+    else out.push(tok);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +192,8 @@ export function relativeMinor(key: number): string {
 /** A chord moved by some semitones, named again. */
 export function transpose(chord: ParsedChord, semitones: number): ParsedChord {
   const root = pc(chord.root + semitones);
-  return { text: chordName(root, chord.type), root, type: chord.type };
+  const bass = chord.bass === undefined ? undefined : pc(chord.bass + semitones);
+  return { text: chordName(root, chord.type) + (bass === undefined ? "" : `/${noteName(bass)}`), root, type: chord.type, ...(bass !== undefined ? { bass } : {}) };
 }
 
 /**

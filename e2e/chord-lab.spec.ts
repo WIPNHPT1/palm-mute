@@ -344,6 +344,25 @@ test.describe("chord lab: key finder and transposer", () => {
     await expect(fits(page)).not.toHaveCount(0);
   });
 
+  test("slash chords and names the Lab has no type for are read (and the page says how)", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await typeChords(page, "G/B D Em C");
+    await expect(fits(page).first()).toContainText("G major (relative E minor): I (G/B) · V · vi · IV");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "Gdim C");
+    await expect(finder(page)).toContainText("Read Gdim as Gm.");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "C G9 Am6 F");
+    await expect(finder(page)).toContainText("Read G9 as G7. Read Am6 as Am.");
+    await expect(fits(page).first()).toContainText("C major");
+    // What Name that chord writes goes straight in.
+    await typeChords(page, "C/E G octave");
+    await expect(finder(page)).not.toContainText("Couldn't read");
+    await typeChords(page, "G H");
+    await expect(finder(page)).toContainText("Couldn't read: H");
+  });
+
   test("unreadable chords are named; fewer than two chords asks for more", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);

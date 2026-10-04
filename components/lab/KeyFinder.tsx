@@ -50,6 +50,12 @@ export function KeyFinder() {
   const parsed = tokens.map((t) => ({ token: t, chord: parseChord(t) }));
   const chords = parsed.flatMap((p) => (p.chord ? [p.chord] : []));
   const unread = parsed.filter((p) => !p.chord).map((p) => p.token);
+  // Names the Lab has no type for are read as the nearest one, and the page says so.
+  const mapped = chords.flatMap((c) => (c.note ? [c.note] : []));
+  const help = [
+    mapped.length ? `${mapped.join(". ")}.` : "",
+    unread.length ? `Couldn't read: ${unread.join(", ")}. Try G, G/B, Em, A5, Dsus4, Cadd9, F#m7, Bbmaj7.` : "",
+  ].filter(Boolean);
   const fits = findKeys(chords, 3);
 
   // What it sounds like after moving, and the shapes that make that sound with this capo in this tuning.
@@ -71,7 +77,7 @@ export function KeyFinder() {
     <>
       <div className="flex flex-col gap-[6px]">
         <label htmlFor="key-finder-input">
-          <GroupLabel>Chords (2 to 8): G D Em C, F#m7 Bbadd9, A5 E5</GroupLabel>
+          <GroupLabel>Chords (2 to 8): G D Em C, G/B, F#m7 Bbadd9, A5 E5</GroupLabel>
         </label>
         <input
           id="key-finder-input"
@@ -86,7 +92,7 @@ export function KeyFinder() {
           className="min-h-[44px] w-full max-w-[640px] rounded-mid border border-line bg-paper px-[12px] font-mono text-[14px] text-text-primary"
         />
         <p id="key-finder-help" className="font-mono text-[12px] text-text-faint">
-          {unread.length ? `Couldn't read: ${unread.join(", ")}. Try G, Em, A5, Dsus4, Cadd9, F#m7, Bbmaj7.` : chords.length < 2 ? "Add at least two chords." : tokens.length > 8 ? "Only the first eight are used." : "Names are read as typed: # or b for sharps and flats."}
+          {help.length ? help.join(" ") : chords.length < 2 ? "Add at least two chords." : tokens.length > 8 ? "Only the first eight are used." : "Names are read as typed: # or b for sharps and flats, / for a bass note."}
         </p>
       </div>
 
@@ -105,6 +111,7 @@ export function KeyFinder() {
                       {n.numeral ? (
                         <span className={n.borrowed ? "font-bold underline decoration-brass decoration-2 underline-offset-2" : ""}>
                           {n.numeral}
+                          {n.text.includes("/") ? ` (${n.text})` : ""}
                           {n.borrowed ? " (borrowed)" : ""}
                         </span>
                       ) : (
