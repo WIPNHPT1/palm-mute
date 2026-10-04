@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute Home Scope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Tightening the home page's moving background to match the Song Generator and Chord Lab. Each option is a small,
+     scrollable home page (a 1440px window shrunk to fit), drawn with the real oscilloscope code from lib/stagePaint.ts,
+     at the real 90% design scale. Scroll inside each one. */
+  :root {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-rgb:194 58 38; --brass-rgb:184 134 46; --board:#211B15;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --text-primary:#171310; --text-secondary:#4E4738; --text-muted:#6B6152; --text-faint:#72675A;
+    --on-dark:#F6F1E4; --on-dark-muted:#D9CFB9; --dot:rgb(23 19 16 / .22); --sh-1:0 1px 2px rgba(23,19,16,.06), 0 12px 24px -16px rgba(23,19,16,.32);
+    --scope-line:220 211 190; --scope-faint:118 107 91; --scope-dark:0;
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-rgb:232 90 66; --brass-rgb:201 151 60; --board:#0F0C0A;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B;
+    --dot:rgb(246 241 228 / .16); --sh-1:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8);
+    --scope-line:70 59 48; --scope-faint:146 133 115; --scope-dark:1; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-rgb:232 90 66; --brass-rgb:201 151 60; --board:#0F0C0A;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-muted:#A89C86; --text-faint:#9A8E7B;
+    --dot:rgb(246 241 228 / .16); --sh-1:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8);
+    --scope-line:70 59 48; --scope-faint:146 133 115; --scope-dark:1; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } }
+  .pagebar { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .pagebar .wrap { min-height: 56px; display: flex; align-items: center; gap: 12px; }
+  .pagebar b { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); margin-right: auto; font-weight: 400; }
+  .tog { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; font-family: var(--f-mono); font-size: 12px; cursor: pointer; }
+  main { padding-block: 32px 120px; display: flex; flex-direction: column; gap: 56px; }
+  h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.02; letter-spacing: -.02em; }
+  .lede { max-width: 800px; margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-secondary); }
+  .opt { display: flex; flex-direction: column; gap: 14px; }
+  .opt-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .opt-h .no { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .opt-h h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 22px; }
+  .opt-h span:last-child { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .notes { display: grid; gap: 10px 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 0; }
+  .notes div { font-size: 15px; line-height: 1.55; color: var(--text-secondary); }
+  .notes dt { font-family: var(--f-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-faint); margin-bottom: 2px; }
+  .notes dd { margin: 0; }
+  .pair { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 1000px) { .pair { grid-template-columns: 1fr 1fr; } }
+  .pair figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .pair figcaption { font-family: var(--f-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-faint); }
+
+  /* ---------- the mini page: a 1440px window, shrunk to the box (--k), scrolled inside ---------- */
+  .win { position: relative; height: 520px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--sh-1); container-type: inline-size; overscroll-behavior: contain; }
+  .win .bar { position: sticky; top: 0; z-index: 5; height: calc(68.4 / 1440 * 100cqw); background: var(--ink); display: flex; align-items: center; padding: 0 calc(50.4 / 1440 * 100cqw); }
+  .win .bar span { font-family: var(--f-display); font-size: calc(15.3 / 1440 * 100cqw); color: var(--on-dark); }
+  .win .fixed { position: sticky; top: calc(68.4 / 1440 * 100cqw); z-index: 0; display: block; width: 100%; height: calc(520px - 68.4 / 1440 * 100cqw); margin-bottom: calc(-520px + 68.4 / 1440 * 100cqw); pointer-events: none; }
+  .win section { position: relative; z-index: 1; padding: calc(70 / 1440 * 100cqw) calc(50.4 / 1440 * 100cqw); }
+  .win .col { max-width: calc(1296 / 1440 * 100cqw); margin: 0 auto; }
+  .win h3, .win h4 { margin: 0; font-family: var(--f-display); font-weight: 400; text-transform: uppercase; letter-spacing: -.02em; line-height: .92; }
+  .win p { margin: 0; color: var(--text-secondary); }
+  .s-hero { min-height: calc(560 / 1440 * 100cqw); background: var(--paper); overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+  .s-hero::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.4px); background-size: calc(8.1 / 1440 * 100cqw) calc(8.1 / 1440 * 100cqw); }
+  .s-hero::after { content: ""; position: absolute; left: -20%; top: -40%; width: 70%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .38), transparent); }
+  .s-hero h3 { position: relative; z-index: 1; font-size: calc(118 / 1440 * 100cqw); }
+  .s-hero h3 span:nth-child(2) { color: transparent; -webkit-text-stroke: 1.5px var(--text-primary); display: block; }
+  .s-hero h3 span:nth-child(4) { color: var(--accent); display: block; }
+  .s-hero h3 span { display: block; }
+  .s-intro p { font-weight: 600; font-size: calc(46 / 1440 * 100cqw); line-height: 1.14; letter-spacing: -.025em; color: var(--text-primary); max-width: 90%; }
+  .s-set { background: var(--paper); display: flex; gap: calc(30 / 1440 * 100cqw); overflow: hidden; }
+  .s-set .card { flex: 0 0 calc(420 / 1440 * 100cqw); height: calc(400 / 1440 * 100cqw); border-radius: 12px; padding: calc(30 / 1440 * 100cqw); display: flex; flex-direction: column; justify-content: flex-end; }
+  .s-set .card h4 { font-size: calc(32 / 1440 * 100cqw); }
+  .s-set .lead { background: none; }
+  .s-set .lead h4 { font-size: calc(84 / 1440 * 100cqw); line-height: .86; color: var(--text-primary); }
+  .s-set .lead h4 b { color: var(--accent); font-weight: 400; }
+  .c1 { background: var(--ink); color: var(--on-dark); rotate: -1.5deg; } .c2 { background: var(--accent); color: #FFF9EF; rotate: 1.2deg; }
+  .s-band { background: var(--ink); color: var(--on-dark); padding-block: calc(110 / 1440 * 100cqw);
+    clip-path: polygon(0 4%, 6% 0, 14% 3%, 24% .5%, 34% 3.5%, 44% 0, 54% 2.5%, 64% .5%, 74% 3%, 84% 0, 94% 2.5%, 100% 1%, 100% 96%, 92% 100%, 82% 97%, 70% 99.5%, 58% 97%, 46% 100%, 34% 97.5%, 22% 99.5%, 10% 97%, 0 99%); }
+  .s-band h4 { font-size: calc(66 / 1440 * 100cqw); }
+  .s-two .col { display: grid; grid-template-columns: auto 1fr; gap: calc(50 / 1440 * 100cqw); align-items: center; }
+  .s-two .huge { font-family: var(--f-display); font-size: calc(300 / 1440 * 100cqw); line-height: .8; color: transparent; -webkit-text-stroke: 2px var(--accent); }
+  .s-two h4 { font-size: calc(46 / 1440 * 100cqw); text-transform: none; color: var(--text-primary); margin-bottom: calc(14 / 1440 * 100cqw); }
+  .s-two p { font-size: calc(16 / 1440 * 100cqw); line-height: 1.6; }
+  .s-board .board { background: var(--board); border-radius: 12px; padding: calc(36 / 1440 * 100cqw); color: var(--on-dark); font-family: var(--f-mono); font-weight: 700; font-size: calc(26 / 1440 * 100cqw); letter-spacing: .12em; }
+  .s-encore { text-align: center; padding-block: calc(140 / 1440 * 100cqw); }
+  .s-encore h4 { font-size: calc(56 / 1440 * 100cqw); color: var(--text-primary); }
+  .s-foot { background: var(--ink); color: var(--on-dark-muted); font-family: var(--f-mono); font-size: calc(12 / 1440 * 100cqw); padding-block: calc(40 / 1440 * 100cqw); }
+  /* per-section scope (today): a canvas filling the section, faded at its top and bottom */
+  .sec-scope { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none;
+    -webkit-mask: linear-gradient(transparent, #000 calc(86.4 / 1440 * 100cqw), #000 calc(100% - 86.4 / 1440 * 100cqw), transparent); mask: linear-gradient(transparent, #000 calc(86.4 / 1440 * 100cqw), #000 calc(100% - 86.4 / 1440 * 100cqw), transparent); }
+  .win [data-quiet] { isolation: isolate; }
+  /* option B: soft edges where a quiet section meets a solid one */
+  .soft [data-quiet]::before, .soft [data-quiet]::after { content: ""; position: absolute; left: 0; right: 0; height: calc(86.4 / 1440 * 100cqw); z-index: -1; pointer-events: none; }
+  .soft [data-quiet]::before { top: 0; background: linear-gradient(var(--paper), transparent); }
+  .soft [data-quiet]::after { bottom: 0; background: linear-gradient(transparent, var(--paper)); }
+  /* the Generator page, for comparison */
+  .gen section { padding-top: calc(40 / 1440 * 100cqw); }
+  .gen .card { height: calc(170 / 1440 * 100cqw); border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); margin-bottom: calc(18 / 1440 * 100cqw); }
+  .gen h4 { font-size: calc(30.6 / 1440 * 100cqw); color: var(--text-primary); margin-bottom: calc(24 / 1440 * 100cqw); }
+</style>
+</head>
+<body>
+<div class="pagebar"><div class="wrap"><b>HOME PAGE · MOVING BACKGROUND · MATCH THE OTHER PAGES</b><button class="tog" id="theme" type="button">LIGHT / DARK</button></div></div>
+<main class="wrap">
+  <section>
+    <h1>Tighten the home page's moving background</h1>
+    <p class="lede">The Song Generator and the Chord Lab have one oscilloscope fixed behind the whole window: one grid, waves sized to the window, drawn at the 90% design scale. The home page instead draws a separate scope inside each quiet section (intro, two notes, title board, encore), sized to that section. So the waves are a different size in every section, the grid restarts at each one, and each section fades out at its edges. Today's version and the Generator are first, for comparison. Each preview is a 1440px window shrunk to fit; scroll inside it.</p>
+  </section>
+
+  <section class="opt">
+    <div class="opt-h"><span class="no">REFERENCE</span><h2>Today vs the Generator</h2><span>why it doesn't match</span></div>
+    <div class="pair">
+      <figure><div class="win" data-mode="sections"></div><figcaption>HOME TODAY: A SCOPE PER SECTION</figcaption></figure>
+      <figure><div class="win gen" data-mode="gen"></div><figcaption>SONG GENERATOR: ONE FIXED SCOPE</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="opt">
+    <div class="opt-h"><span class="no">OPTION A</span><h2>One fixed scope, exactly like the other pages</h2><span>recommended</span></div>
+    <div class="win" data-mode="fixed"></div>
+    <dl class="notes">
+      <div><dt>WHAT CHANGES</dt><dd>The four per-section scopes become the same single fixed scope the Generator and Chord Lab use. Same grid, same wave sizes, same 90% scale. The quiet sections are windows onto it. The hero, the setlist and the stamp band keep their own solid backgrounds, so the scope only shows where it shows today.</dd></div>
+      <div><dt>HOW IT FEELS</dt><dd>Moving between pages, the background is literally the same thing. Scrolling the home page, the grid stays put and the content glides over it, as on the Generator. Sections meet the scope with a clean edge.</dd></div>
+      <div><dt>COST</dt><dd>Less than today: one canvas instead of four. It reuses StageBackground, so Scope.tsx goes away.</dd></div>
+    </dl>
+  </section>
+
+  <section class="opt">
+    <div class="opt-h"><span class="no">OPTION B</span><h2>One fixed scope, soft section edges</h2><span>A, keeping today's fades</span></div>
+    <div class="win soft" data-mode="fixed"></div>
+    <dl class="notes">
+      <div><dt>WHAT CHANGES</dt><dd>The same single fixed scope as A. Where a quiet section meets a solid one (the hero, the setlist, the band), the scope fades in and out over the same distance as today's fades.</dd></div>
+      <div><dt>HOW IT FEELS</dt><dd>It matches the other pages, and the home page keeps its gentler hand-offs between sections. It's softer than A, so it reads a little less like one continuous surface.</dd></div>
+      <div><dt>COST</dt><dd>Same as A, plus two fade strips per quiet section. Gradients only, no masks on the canvas.</dd></div>
+    </dl>
+  </section>
+
+  <section class="opt">
+    <div class="opt-h"><span class="no">OPTION C</span><h2>Fixed grid everywhere, waves only at the encore</h2><span>A, with a finale</span></div>
+    <div class="win" data-mode="fixed" data-waves="encore"></div>
+    <dl class="notes">
+      <div><dt>WHAT CHANGES</dt><dd>The same single fixed scope, but on the home page the traces stay hidden until the encore ("Count it in."), where they fade in. The quiet sections above it show just the still grid.</dd></div>
+      <div><dt>HOW IT FEELS</dt><dd>Calmer reading through the page. The traces arriving at the end feel like the music starting, which suits the 1-2-3-4 count-in that's already there.</dd></div>
+      <div><dt>COST</dt><dd>Same as A. Most of the page is a still frame, so it's cheaper while scrolling.</dd></div>
+    </dl>
+  </section>
+
+  <section class="opt">
+    <div class="opt-h"><span class="no">OPTION D</span><h2>One fixed scope, quieter on the home page</h2><span>A, at 60%</span></div>
+    <div class="win" data-mode="fixed" data-strength=".6"></div>
+    <dl class="notes">
+      <div><dt>WHAT CHANGES</dt><dd>Exactly A, with the grid and traces drawn at 60% of the Generator's strength on the home page only.</dd></div>
+      <div><dt>HOW IT FEELS</dt><dd>The home page's huge type and the light leak already carry a lot. A fainter scope sits further back, so the home page reads as a calmer cousin of the tool pages: the same, but quieter.</dd></div>
+      <div><dt>COST</dt><dd>Same as A.</dd></div>
+    </dl>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---- the real oscilloscope (lib/stagePaint.ts, paintOscilloscope), with a strength and a waves switch for the options
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const colors = () => ({ line: css("--scope-line"), faint: css("--scope-faint"), accent: css("--accent-rgb"), dark: css("--scope-dark") === "1" });
+  const rgba = (ch, a) => `rgb(${ch} / ${a})`;
+  function paint(ctx, w, h, t, c, s, k = 1, waves = 1, oy = 0) {
+    const step = 96 * s;
+    ctx.lineWidth = 1 * s;
+    ctx.strokeStyle = rgba(c.line, (c.dark ? 0.5 : 0.6) * k);
+    ctx.beginPath();
+    for (let x = step; x < w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+    for (let y = step - (oy % step); y < h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+    ctx.stroke();
+    if (waves <= 0) return;
+    for (let i = 0; i < 3; i++) {
+      const amp = h * (0.05 + i * 0.03);
+      const kk = ((1.4 + i * 0.8) * Math.PI * 2) / w;
+      const ph = t * (0.35 + i * 0.22);
+      const y0 = h * (0.32 + 0.17 * i);
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 4 * s) {
+        const y = y0 + amp * Math.sin(x * kk + ph) * Math.sin((x / w) * Math.PI) * (1 + 0.25 * Math.sin(x * kk * 3.1 - ph * 1.7));
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.lineWidth = (i === 1 ? 2 : 1.4) * s;
+      ctx.strokeStyle = i === 1 ? rgba(c.accent, (c.dark ? 0.32 : 0.22) * k * waves) : rgba(c.faint, (c.dark ? 0.35 : 0.3) * k * waves);
+      ctx.stroke();
+    }
+  }
+
+  // ---- the mini pages
+  const HOME = `
+    <div class="bar"><span>PALM/MUTE</span></div>
+    <section class="s-hero"><div class="col"><h3><span>Songwriting</span><span>formulas from</span><span>the bands that</span><span>built pop-punk.</span></h3></div></section>
+    <section class="s-intro" data-quiet><div class="col"><p>Palm/Mute studies the chord progressions, palm-muted rhythms and song structures behind pop-punk hits. Then it writes you a brand-new song in your key.</p></div></section>
+    <section class="s-set"><div class="card lead"><h4>How it<br><b>works.</b></h4></div><div class="card c1"><h4>Study the formula</h4></div><div class="card c2"><h4>Generate your song</h4></div></section>
+    <section class="s-band"><div class="col"><h4>Our originality promise</h4></div></section>
+    <section class="s-two" data-quiet><div class="col"><div class="huge">2</div><div><h4>A power chord is only two notes.</h4><p>Root and fifth, no third. The third is the note that decides happy or sad, so without it you're left with pure attitude.</p></div></div></section>
+    <section class="s-board" data-quiet><div class="col"><div class="board">"YOUR EX'S NEW PLACE"</div></div></section>
+    <section class="s-encore" data-quiet data-encore><div class="col"><h4>Count it in.</h4></div></section>
+    <section class="s-foot"><div class="col">PALM/MUTE · E STANDARD · POWER CHORDS</div></section>`;
+  const GEN = `
+    <div class="bar"><span>PALM/MUTE</span></div>
+    <section><div class="col"><h4>SONG GENERATOR</h4>${'<div class="card"></div>'.repeat(7)}</div></section>`;
+
+  const t0 = performance.now();
+  const wins = [...document.querySelectorAll(".win")].map((win) => {
+    const mode = win.dataset.mode;
+    win.innerHTML = (mode === "gen" ? GEN : HOME);
+    const k = parseFloat(win.dataset.strength || "1");
+    const canvases = [];
+    if (mode === "fixed" || mode === "gen") {
+      const cv = document.createElement("canvas"); cv.className = "fixed";
+      win.insertBefore(cv, win.children[1]);
+      canvases.push({ cv, fixed: true });
+    } else {
+      win.querySelectorAll("[data-quiet]").forEach((sec) => {
+        const cv = document.createElement("canvas"); cv.className = "sec-scope"; sec.prepend(cv); canvases.push({ cv, fixed: false });
+      });
+    }
+    const encore = win.querySelector("[data-encore]");
+    return { win, mode, k, canvases, encore, wavesOnlyEncore: win.dataset.waves === "encore", waves: 0 };
+  });
+
+  let colorsNow = colors();
+  const draw = (now) => {
+    const t = (now - t0) / 1000;
+    for (const w of wins) {
+      const r = w.win.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) continue;
+      const s = (w.win.clientWidth / 1440) * 0.9; // a 1440px window at the 90% design scale, shrunk to the box
+      if (w.wavesOnlyEncore) {
+        const er = w.encore.getBoundingClientRect(), wr = w.win.getBoundingClientRect();
+        const target = er.top < wr.bottom - 40 ? 1 : 0;
+        w.waves += (target - w.waves) * 0.06;
+      } else w.waves = 1;
+      for (const { cv } of w.canvases) {
+        const dpr = Math.min(2, devicePixelRatio || 1);
+        const cw = Math.round(cv.clientWidth * dpr), ch = Math.round(cv.clientHeight * dpr);
+        if (!cw || !ch) continue;
+        if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+        const ctx = cv.getContext("2d");
+        ctx.clearRect(0, 0, cw, ch);
+        paint(ctx, cw, ch, t, colorsNow, s * dpr, w.k, w.waves);
+      }
+    }
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+
+  document.getElementById("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const darkNow = root.dataset.theme === "dark" || (root.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    root.dataset.theme = darkNow ? "light" : "dark";
+    colorsNow = colors();
+  });
+})();
+</script>
+</body>
+</html>

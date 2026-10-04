@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* A fourth card for the home page's "How it works" posters, and four ways all four could read. The cards are the
+     real posters (ink, red, outlined and, new, brass, the same four as the Generator's guide), with crop marks and
+     frames. Every claim in the copy is something the app does today. */
+  :root {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --brass:#B8862E;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --text-primary:#171310; --text-secondary:#4E4738; --text-faint:#72675A;
+    --on-dark:#F6F1E4; --on-accent:#FFF9EF; --on-brass:#171310;
+    --lift:0 2px 4px rgba(23,19,16,.05), 0 30px 60px -30px rgba(23,19,16,.35);
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-faint:#9A8E7B; --on-accent:#140F0C;
+    --lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --brass:#C9973C;
+    --line:#352D25; --line-strong:#463B30; --text-primary:#F1EADB; --text-secondary:#CFC5B0; --text-faint:#9A8E7B; --on-accent:#140F0C;
+    --lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--text-primary); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding-inline: 16px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } }
+  .pagebar { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .pagebar .wrap { min-height: 56px; display: flex; align-items: center; gap: 12px; }
+  .pagebar b { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); margin-right: auto; font-weight: 400; }
+  .tog { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; font-family: var(--f-mono); font-size: 12px; cursor: pointer; }
+  main { padding-block: 32px 120px; display: flex; flex-direction: column; gap: 72px; }
+  h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.02; letter-spacing: -.02em; }
+  .lede { max-width: 800px; margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-secondary); }
+  .opt { display: flex; flex-direction: column; gap: 18px; }
+  .opt-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .opt-h .no { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .opt-h h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 22px; }
+  .opt-h span:last-child { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+  .why { margin: 0; max-width: 860px; font-size: 15px; line-height: 1.55; color: var(--text-secondary); }
+  .why b { color: var(--text-primary); }
+
+  /* the cards: the home page's posters, four across on desktop */
+  .row { display: grid; gap: clamp(14px, 2vw, 26px); grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 10px 4px 18px; }
+  @media (max-width: 1100px) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+  .card { position: relative; overflow: hidden; min-height: 400px; border-radius: 14px; padding: 26px 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 26px; box-shadow: var(--lift);
+    outline: 1px solid color-mix(in srgb, currentColor 15%, transparent); outline-offset: -8px; }
+  .card::after { content: ""; position: absolute; right: -30px; bottom: -30px; width: 60%; aspect-ratio: 1; border-radius: 50%; background-image: radial-gradient(circle, currentColor 1.4px, transparent 1.9px); background-size: 10px 10px; opacity: .22;
+    -webkit-mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); mask: radial-gradient(circle at 100% 100%, #000, transparent 70%); }
+  .card::before { content: ""; position: absolute; inset: 3px; z-index: 1; pointer-events: none; --m: color-mix(in srgb, currentColor 55%, transparent);
+    background: linear-gradient(var(--m), var(--m)) left top / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) left top / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) right top / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) right top / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) left bottom / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) left bottom / 1.5px 9px no-repeat,
+      linear-gradient(var(--m), var(--m)) right bottom / 9px 1.5px no-repeat, linear-gradient(var(--m), var(--m)) right bottom / 1.5px 9px no-repeat; }
+  .card:nth-child(1) { --fg: var(--on-dark); background: var(--ink); color: var(--on-dark); rotate: -1.5deg; }
+  .card:nth-child(2) { --fg: var(--on-accent); background: var(--accent); color: var(--on-accent); rotate: 1.2deg; }
+  .card:nth-child(3) { --fg: var(--text-primary); background: var(--surface); color: var(--text-primary); border: 1.5px solid var(--text-primary); rotate: -.8deg; }
+  .card:nth-child(4) { --fg: var(--on-brass); background: var(--brass); color: var(--on-brass); rotate: 1deg; }
+  .tag { position: absolute; top: 24px; right: 24px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; opacity: .75; }
+  .num { font-family: var(--f-display); font-size: clamp(90px, 9vw, 140px); line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--fg); opacity: .9; }
+  .card h3 { margin: 0 0 12px; font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 2.2vw, 32px); line-height: 1; text-transform: uppercase; }
+  .card p { margin: 0; font-size: 16px; line-height: 1.55; opacity: .88; }
+  .new { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); font-size: 12px; letter-spacing: .1em; vertical-align: middle; }
+  .card:nth-child(1) .new { background: var(--on-dark); color: var(--ink); }
+  .changed { font-family: var(--f-mono); font-size: 12px; color: var(--text-faint); }
+</style>
+</head>
+<body>
+<div class="pagebar"><div class="wrap"><b>HOME · HOW IT WORKS · FOUR CARDS</b><button class="tog" id="theme" type="button">LIGHT / DARK</button></div></div>
+<main class="wrap">
+  <section>
+    <h1>A fourth card for "How it works"</h1>
+    <p class="lede">The home page's "How it works" has three posters (Study the formula, Generate your song, Make it yours), and it's never had a fourth. Each set below is a way all four could read. The new fourth card is brass, completing the same ink, red, outlined and brass set as the Generator's guide. On desktop the four still slide sideways as you scroll; phones stack them. Cards marked NEW are new; anything rewritten is listed under the cards.</p>
+  </section>
+  <div id="sets"></div>
+</main>
+<script>
+(() => {
+  const SETS = [
+    { id: "A", name: "The full session", sub: "keeps today's three, adds the takeaway · recommended",
+      why: "<b>Why:</b> the smallest change. The first two cards are untouched. Card 3 now says what \"make it yours\" actually means in the app (options, locks, build again). The new card 4 covers practice and export, which the home page doesn't mention anywhere today. It tells the whole story, from the formula to leaving with your song.",
+      changed: "Card 3 rewritten (it now names Options, Lock and Build again). Card 4 new.",
+      cards: [
+        ["Study the formula", "We break down the chord degrees, rhythm templates and section lengths behind pop-punk's biggest songs. We study the pattern underneath, never the tabs themselves."],
+        ["Generate your song", "Pick a key and a feel. Palm/Mute writes an intro, verse, chorus, solo and breakdown in E standard. A complete song structure, ready to play."],
+        ["Make it yours", "Change any part's rhythm, style, bars or drums, lock the parts you love, and build again. Every take is written fresh from chord degrees and rhythm patterns."],
+        ["Take it away", "Loop a part, add a count-in and slow it down until it's in your hands. Then download a PDF songbook or MIDI for your DAW, or send the song as a link.", true],
+      ] },
+    { id: "B", name: "Rehearsal room", sub: "short band-language titles, more concrete",
+      why: "<b>Why:</b> it reads like a band's evening: count in, write, rehearse, record. The bodies are specific: 12 keys, the five feels from 80 to 180 BPM, the 2:30 to 5:30 lengths, the real practice speeds. It sells the tool hardest, but it drops the \"we study the formula\" story; that's still covered by the intro and the originality promise below.",
+      changed: "All four rewritten.",
+      cards: [
+        ["Count in", "Pick one of 12 keys and one of five feels, from an 80 BPM ballad to 180 BPM fast punk, and choose how long the song runs, from 2:30 to 5:30."],
+        ["Write", "Palm/Mute writes every part as real power-chord tabs: intro, verses, choruses, a solo and a breakdown, sized to fit your length."],
+        ["Rehearse", "Loop any part, add a count-in, and drop the speed to 90, 75 or 50% until your hands know it."],
+        ["Record", "Take it to the studio: a PDF songbook, a MIDI file with every part on its own track, or a link that opens the exact song.", true],
+      ] },
+    { id: "C", name: "Two tools", sub: "today's three, plus the Chord Lab",
+      why: "<b>Why:</b> the home page's \"How it works\" is all Generator, but the site has two tools. Card 4 introduces the Chord Lab, which the home page only mentions as a link today. It keeps today's three cards word for word, so it's the least disruptive. It doesn't mention practice or export.",
+      changed: "Card 4 new; cards 1 to 3 unchanged.",
+      cards: [
+        ["Study the formula", "We break down the chord degrees, rhythm templates and section lengths behind pop-punk's biggest songs. We study the pattern underneath, never the tabs themselves."],
+        ["Generate your song", "Pick a key and a feel. Palm/Mute writes an intro, verse, chorus, solo and breakdown in E standard. A complete song structure, ready to play."],
+        ["Make it yours", "Everything is built fresh from chord degrees and rhythm patterns, so the song you get is yours to play, change and finish."],
+        ["Find your chords", "Need more than power chords? The Chord Lab shows the shapes players use up the neck, names a chord you tap, builds loops, finds your key and moves it to a capo or drop tuning.", true],
+      ] },
+    { id: "D", name: "Four verbs", sub: "poster-short, the punchiest",
+      why: "<b>Why:</b> big two-word titles and one-line bodies, closest to a gig poster. It covers the same ground as A in half the words, so the cards feel bolder and the big numbers carry more of the design. Less detail for someone deciding whether to try it.",
+      changed: "All four rewritten.",
+      cards: [
+        ["Learn it.", "The chord moves, palm-muted rhythms and song shapes behind pop-punk's biggest songs. The pattern, never the tabs."],
+        ["Build it.", "One tap writes a whole song in your key: every part, real tabs, the length you asked for."],
+        ["Bend it.", "Change a part's rhythm, style or drums. Lock what you love, roll the rest."],
+        ["Play it out.", "Loop it, slow it down, then take it away as a PDF, a MIDI file or a link.", true],
+      ] },
+  ];
+  document.getElementById("sets").innerHTML = SETS.map((s) => `
+    <section class="opt" id="set-${s.id}">
+      <div class="opt-h"><span class="no">SET ${s.id}</span><h2>${s.name}</h2><span>${s.sub}</span></div>
+      <div class="row">${s.cards.map(([t, b, isNew], i) => `
+        <article class="card"><span class="tag">SONG ${String(i + 1).padStart(2, "0")}</span>
+          <div class="num" aria-hidden="true">${String(i + 1).padStart(2, "0")}</div>
+          <div><h3>${t}${isNew ? '<span class="new">NEW</span>' : ""}</h3><p>${b}</p></div></article>`).join("")}</div>
+      <p class="why">${s.why}</p>
+      <p class="changed">${s.changed}</p>
+    </section>`).join("");
+  document.getElementById("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const darkNow = root.dataset.theme === "dark" || (root.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    root.dataset.theme = darkNow ? "light" : "dark";
+  });
+})();
+</script>
+</body>
+</html>

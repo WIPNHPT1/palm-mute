@@ -36,12 +36,12 @@ test.describe("stage: design scale and background", () => {
     });
   }
 
-  test("the home page draws at 90% from 1440px too, and has no stage layer", async ({ page }, info) => {
+  test("the home page draws at 90% from 1440px too, with the same fixed scope as the other pages", async ({ page }, info) => {
     onlyAtWidths(info, [1920]);
     lightOnly(info);
     await gotoAndSettle(page, "/");
     expect((await page.locator("header > div").first().boundingBox())!.height).toBeCloseTo(76 * 0.9, 0);
-    await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
+    await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
   });
 
   test("the background actually draws (and draws a still frame with reduced motion)", async ({ page }, info) => {
@@ -57,12 +57,13 @@ test.describe("stage: design scale and background", () => {
 });
 
 test.describe("stage: menu button, titles and page change", () => {
-  test("the menu button is three strings that cross into a close mark", async ({ page }, info) => {
+  test("the menu button is rock horns that turn into a close mark", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
     await gotoAndSettle(page, "/generator/");
-    const icon = page.locator("header .string-icon");
-    await expect(icon.locator("> span")).toHaveCount(3);
+    const icon = page.locator("header .horns-icon");
+    await expect(icon.locator(".horns-hand path")).toHaveCount(5);
+    await expect(icon.locator(".horns-x line")).toHaveCount(2);
     await openMenu(page);
     await expect(icon).toHaveAttribute("data-open", "true");
     await expect(page.getByRole("button", { name: "Close menu" })).toBeVisible();

@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import { Encore } from "@/components/count-in/Encore";
 import { PowerChordDiagram } from "@/components/count-in/PowerChordDiagram";
-import { Scope } from "@/components/count-in/Scope";
 import { Setlist } from "@/components/count-in/Setlist";
 import { Stage } from "@/components/count-in/Stage";
+import { StageBackground } from "@/components/StageBackground";
 import { StampBand } from "@/components/count-in/StampBand";
 import { TitleBoard } from "@/components/count-in/TitleBoard";
 import { VuMeter } from "@/components/count-in/VuMeter";
@@ -25,13 +25,14 @@ export function CountIn() {
       <svg width="0" height="0" className="absolute" aria-hidden="true">
         <filter id="ci-rough"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves={2} result="n" /><feDisplacementMap in="SourceGraphic" in2="n" scale="3" /></filter>
       </svg>
+      {/* the Generator and Chord Lab's fixed scope, showing through the quiet sections (owner's pick A, docs/mockups/home-scope-options.html) */}
+      <StageBackground playing={false} showsThrough=".ci [data-quiet]" />
       <div className="ci-grain" aria-hidden="true" />
       <VuMeter />
 
       <Stage reduced={reduced} />
 
-      <section className="ci-intro" aria-label="What Palm/Mute does" data-scope>
-        <Scope />
+      <section className="ci-intro" aria-label="What Palm/Mute does" data-quiet>
         <div className="ci-wrap" data-reveal>
           <p>
             Palm/Mute studies the chord progressions, palm-muted rhythms and song structures behind <mark className="[--d:0]">pop-punk hits.</mark> Then it writes
@@ -44,8 +45,7 @@ export function CountIn() {
       <Setlist reduced={reduced} />
       <StampBand />
 
-      <section className="ci-two" aria-labelledby="ci-two" data-scope>
-        <Scope />
+      <section className="ci-two" aria-labelledby="ci-two" data-quiet>
         <div className="ci-wrap ci-tn-grid">
           <div className="ci-huge2" data-reveal aria-hidden="true">2<span>NOTES</span></div>
           <div data-reveal className="[--d:1]">
