@@ -218,3 +218,98 @@ test.describe("chord lab: name that chord", () => {
     await expect(named(page)).toHaveText("Asus4/E"); // the same frets are different notes in another tuning
   });
 });
+
+// 03 Progression builder
+const builder = (page: Page) => page.locator('[data-tool="builder"]');
+const loopNames = (page: Page) => builder(page).locator("[data-loop] li button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")!.replace(/^Chord \d+: /, "")));
+
+test.describe("chord lab: progression builder", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+
+  test("starts on I-V-vi-IV as power chords in the key; the palette adds chords, borrowed ones included", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    expect(await loopNames(page)).toEqual(["I, G5", "V, D5", "vi, E5", "IV, C5"]);
+    await builder(page).getByRole("button", { name: "Add bVII, F5", exact: true }).click();
+    await builder(page).getByRole("button", { name: "Add iv, C5", exact: true }).click();
+    expect((await loopNames(page)).slice(4)).toEqual(["bVII, F5", "iv, C5"]);
+    await radio(page, "Key", "D").click();
+    await expect(builder(page).getByRole("button", { name: "Add vi, B5", exact: true })).toBeVisible();
+    // Full chords: new chords come in as their natural quality.
+    await radio(page, "Chord sound", "FULL CHORDS").click();
+    await builder(page).getByRole("button", { name: "Add vi, Bm", exact: true }).click();
+    expect((await loopNames(page)).at(-1)).toBe("vi, Bm");
+  });
+
+  test("a loop holds eight chords; edit a chord's type, move it, remove it", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    for (let i = 0; i < 4; i++) await builder(page).getByRole("button", { name: "Add I, G5", exact: true }).click();
+    expect(await loopNames(page)).toHaveLength(8);
+    await expect(builder(page).getByRole("button", { name: "Add I, G5", exact: true })).toBeDisabled();
+    await builder(page).getByRole("button", { name: "Chord 2: V, D5" }).click();
+    await builder(page).locator("[data-chord-editor]").getByRole("radio", { name: "SUS4" }).click();
+    expect((await loopNames(page))[1]).toBe("V, Dsus4");
+    await builder(page).getByRole("button", { name: /MOVE LEFT/ }).click();
+    expect((await loopNames(page)).slice(0, 2)).toEqual(["V, Dsus4", "I, G5"]);
+    await builder(page).getByRole("button", { name: "REMOVE" }).click();
+    expect(await loopNames(page)).toHaveLength(7);
+    await builder(page).getByRole("button", { name: "CLEAR" }).click();
+    await expect(builder(page).locator("[data-loop]")).toContainText("Empty");
+    await expect(builder(page).getByRole("button", { name: /PLAY THE LOOP/ })).toBeDisabled();
+    await builder(page).getByRole("button", { name: "START OVER" }).click();
+    expect(await loopNames(page)).toHaveLength(4);
+  });
+
+  test("what next? suggests the three likeliest chords after the last one, and adds them", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    // After IV in a pop-punk loop: back home, the V, or the vi.
+    const next = builder(page).getByRole("list", { name: "Likely next chords" }).getByRole("button");
+    await expect(next).toHaveCount(3);
+    await expect(next.first()).toHaveAccessibleName("Add I next, G5");
+    await next.first().click();
+    expect((await loopNames(page)).at(-1)).toBe("I, G5");
+    await expect(builder(page)).toContainText("What next? After I");
+  });
+
+  test("the loop plays what it shows: one bar per chord, in the Lab's tuning, looping", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    let pb = (await lastPlayback(page))!;
+    expect(pb.bpm).toBe(150);
+    expect(pb.loop).toBe(true);
+    expect(pb.bars).toHaveLength(4);
+    // G5, D5, E5, C5: the bass note of each bar's strum.
+    expect(pb.bars.map((b) => b.cells[0]!.notes[0] % 12)).toEqual([7, 2, 4, 0]);
+    // Editing stops the loop; a new tuning changes the sound.
+    await builder(page).getByRole("button", { name: "Add I, G5", exact: true }).click();
+    await expect.poll(() => lastPlayback(page)).toBeNull();
+    await radio(page, "Tuning", "DROP D").click();
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    pb = (await lastPlayback(page))!;
+    expect(pb.bars[0].cells[0]!.notes[0]).toBe(43); // G5 in Drop D is still G
+    expect(pb.bars).toHaveLength(5);
+  });
+
+  test("the vibe meters follow the loop", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    const meter = (name: string) => builder(page).getByRole("meter", { name });
+    await expect(meter("How classic")).toHaveAttribute("aria-valuenow", "100");
+    const bright = Number(await meter("Dark to bright").getAttribute("aria-valuenow"));
+    await expect(builder(page)).toContainText("It ends part-way"); // ends on IV
+    await builder(page).getByRole("button", { name: "Add V, D5", exact: true }).click();
+    await expect(builder(page)).toContainText("It ends away from home");
+    await builder(page).getByRole("button", { name: "CLEAR" }).click();
+    for (const d of ["vi", "iv", "bVI", "vi"]) await builder(page).getByRole("list", { name: "Chords in the key" }).getByRole("button", { name: new RegExp(`^Add ${d},`) }).click();
+    expect(Number(await meter("Dark to bright").getAttribute("aria-valuenow"))).toBeLessThan(bright);
+    await expect(builder(page)).toContainText("Your own twist");
+    await builder(page).getByRole("button", { name: "CLEAR" }).click();
+    for (const d of ["IV", "V", "I"]) await builder(page).getByRole("button", { name: new RegExp(`^Add ${d},`) }).click();
+    await expect(builder(page)).toContainText("It ends at home");
+  });
+});
