@@ -340,6 +340,9 @@
 
 /* title board: the tool cards' red notch on its top edge */
 .ci-board { position: relative; }
+/* gradients (owner's pick, docs/mockups/gradient-options.html): the ink bands get the same red stage light from above as
+   the transport bar (.sig-stage-light in app/globals.css) */
+.ci-board, .ci-stamp-band { background-image: radial-gradient(60% 140% at 50% -40%, rgb(var(--accent-rgb) / .22), transparent 70%); }
 .ci-board::before { content: ""; position: absolute; left: clamp(14px, 3.4vw, 48px); top: 0; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--accent); }
 
 /* kickers: the page title's ruler scale after the label */

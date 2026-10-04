@@ -102,11 +102,16 @@ for (const { path, chips: hasChips, setup } of PAGES) {
           seen.add(el);
           if (el.closest('.sr-only, #site-menu, [disabled], [aria-hidden="true"]')) continue;
           const cs = getComputedStyle(el);
-          const fg = parse(cs.color);
+          // Gradient text (the page titles' ember fade) is painted by its background; every colour stop has to pass.
+          const clipped = cs.backgroundClip === "text" || cs.getPropertyValue("-webkit-background-clip") === "text";
+          const fgs = clipped ? [...cs.backgroundImage.matchAll(/rgba?\([^)]*\)/g)].map((m) => parse(m[0])) : [parse(cs.color)];
           const bg = background(el);
-          const color = blend(fg, bg);
-          const [l1, l2] = [lum(color), lum(bg)].sort((a, b) => b - a);
-          const ratio = (l1 + 0.05) / (l2 + 0.05);
+          const ratio = Math.min(
+            ...fgs.map((fg) => {
+              const [l1, l2] = [lum(blend(fg, bg)), lum(bg)].sort((a, b) => b - a);
+              return (l1 + 0.05) / (l2 + 0.05);
+            }),
+          );
           const size = parseFloat(cs.fontSize);
           const large = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700);
           if (ratio < (large ? 3 : 4.5)) out.push(`${ratio.toFixed(2)} "${n.textContent!.trim().slice(0, 30)}" ${cs.color} on rgb(${bg.map(Math.round).join(",")})`);

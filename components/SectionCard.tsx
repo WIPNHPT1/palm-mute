@@ -101,7 +101,7 @@ export function SectionCard({
       data-active={active}
       data-locked={locked}
       data-section={section.id}
-      className={`sig-surface min-w-0 scroll-mt-[96px] rounded-outer bg-surface transition-[border-color,box-shadow] duration-200 ${
+      className={`sig-surface sig-wash min-w-0 scroll-mt-[96px] rounded-outer bg-surface transition-[border-color,box-shadow] duration-200 ${
         active
           ? "border-[1.5px] border-accent shadow-card-highlight"
           : locked

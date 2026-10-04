@@ -4,7 +4,7 @@ export const REPO_URL = "https://github.com/WIPNHPT1/palm-mute";
 
 export function Footer() {
   return (
-    <footer className="flex justify-center border-t border-line py-[10px]">
+    <footer className="sig-rule flex justify-center py-[10px]">
       <a
         href={REPO_URL}
         target="_blank"

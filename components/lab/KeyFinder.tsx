@@ -146,7 +146,7 @@ export function KeyFinder() {
             ))}
           </ul>
 
-          <div className="flex flex-col gap-[10px] border-t border-line pt-[16px]">
+          <div className="sig-rule flex flex-col gap-[10px] pt-[16px]">
             <GroupLabel>Move them</GroupLabel>
             <div className="flex flex-wrap items-center gap-x-[20px] gap-y-[10px]">
               <Stepper label="Transpose" value={shift} min={-11} max={11} onChange={setShift} text={`${shift > 0 ? "+" : ""}${shift} semitone${Math.abs(shift) === 1 ? "" : "s"}`} />

@@ -404,6 +404,70 @@
   .sig-notice, .sig-notice-ic, .sig-chip[aria-current="true"]::after, .sig-ring-prog, .sig-beat, .sig-pill[aria-checked="true"], .sig-rise, button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
 }
 
+/* ---- Gradients (owner's picks, docs/mockups/gradient-options.html). Every gradient blends the site's own tokens or a
+   tint of one; no new hues, nothing moves. Comes after the signature finish so it overrides it where they meet. ---- */
+@layer components {
+  /* top bar: a faint red stage glow behind the wordmark (over the wordmark at every width, wherever the page column sits) */
+  .sig-topbar {
+    background-image: radial-gradient(440px 160% at max(70px, calc((100% - var(--page-max)) / 2 + 90px)) 0%, rgb(var(--color-accent) / 0.26), transparent 70%);
+  }
+
+  /* page title: ink warming into red on its last letters. Deep red on paper; the brighter red in dark, where deep red
+     would fall under 3:1 on the near-black page. The gradient spans the title's own width, not the column's. */
+  .sig-title {
+    --ember: var(--color-accent-deep);
+    width: fit-content;
+    max-width: 100%;
+    background-image: linear-gradient(90deg, rgb(var(--color-text-primary)) 45%, rgb(var(--ember)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+  }
+  .dark .sig-title { --ember: var(--color-accent); }
+
+  /* primary button: domed, lighter at the top and darker at the bottom, over the button's own red */
+  .sig-btn { background-image: linear-gradient(180deg, rgb(255 255 255 / 0.2), transparent 55%, rgb(0 0 0 / 0.12)); }
+
+  /* cards (the Lab's tool cards, the Generator's section cards): a faint red wash behind the header only */
+  .sig-card, .sig-wash { background-image: linear-gradient(180deg, rgb(var(--color-accent) / 0.08), transparent 44px); }
+
+  /* chord chips: the sounding chip glows red from below, like an amp's light (its bar still fills across it) */
+  .sig-chip[aria-current="true"] { background-image: radial-gradient(90% 80% at 50% 115%, rgb(var(--color-accent) / 0.6), transparent 70%); }
+
+  /* meters: a VU ramp, green to brass to red. The ramp spans the whole track, so the colour at the tip says how far */
+  .sig-meter { container-type: inline-size; }
+  .sig-meter > i {
+    background-color: transparent;
+    background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.3), transparent 55%), linear-gradient(90deg, rgb(var(--color-success)), rgb(var(--color-brass)) 65%, rgb(var(--color-accent)));
+    background-size: 100% 100%, 100cqw 100%;
+    background-repeat: no-repeat;
+  }
+
+  /* page background (Song Generator, Chord Lab): a warm brass spotlight over the page title, falling off down the page */
+  .sig-spotlight {
+    background-image: radial-gradient(900px 560px at max(140px, calc((100% - var(--page-max)) / 2 + 180px)) 0, rgb(var(--color-brass) / 0.18), transparent 70%);
+    background-repeat: no-repeat;
+  }
+
+  /* rules and dividers: a hairline that fades out at both ends (in place of a border-top) */
+  .sig-rule { position: relative; }
+  .sig-rule::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--color-line)) 18% 82%, transparent);
+    pointer-events: none;
+  }
+
+  /* ink bands (the transport bar; the home page's title board and stamp band in app/count-in.css): a red stage light
+     from above, centred */
+  .sig-stage-light { background-image: radial-gradient(60% 140% at 50% -40%, rgb(var(--color-accent) / 0.22), transparent 70%); }
+}
+
 /* ---- Split-flap card titles (components/FlapText.tsx): letters flip in, one after another, the first time a card
    scrolls into view. Before the observer runs (or without it) the title is simply there. ---- */
 @layer components {
