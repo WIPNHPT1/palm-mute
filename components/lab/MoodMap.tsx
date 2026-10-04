@@ -44,7 +44,7 @@ function Star() {
  * nearest loop (the chips pick exactly), and only the picked loop is labelled.
  */
 export function MoodMap() {
-  const { key, tuning, loop, toggle, playing } = useLab();
+  const { key, tuning, loop, toggle, playing, bar } = useLab();
   const keyPc = pitchClassOf(key);
   const points = useMemo(() => moodPoints(), []);
   const [picked, setPicked] = useState(START);
@@ -148,7 +148,11 @@ export function MoodMap() {
           {current.degrees.map((d, i) => {
             const c = naturalLoop([d])[0];
             return (
-              <li key={i} className="flex min-w-[58px] flex-col items-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark">
+              <li
+                key={i}
+                aria-current={playing === playId(current.id) && bar === i ? "true" : undefined}
+                className={`flex min-w-[58px] flex-col items-center rounded-mid bg-chip-bg px-[8px] py-[4px] font-mono text-text-on-dark ${playing === playId(current.id) && bar === i ? "shadow-[inset_0_-4px_0_0_rgb(var(--color-accent-on-ink))]" : ""}`}
+              >
                 <span className="text-[12px] text-chip-tab">{d}</span>
                 <b className="text-[13px]">{chordName(degreeRoot(keyPc, d), c.type)}</b>
               </li>

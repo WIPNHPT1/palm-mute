@@ -33,6 +33,8 @@ type Lab = {
   sendToFinder: (text: string) => void;
   /** What's playing (an id the tool chose), or null. One thing at a time. */
   playing: string | null;
+  /** The bar sounding now in what's playing (a loop's bars are its chords, one each), or null. */
+  bar: number | null;
   /** Plays `bars` under `id`, or stops if `id` is already playing. Loops play until stopped. */
   toggle: (id: string, bars: PlaybackBar[], loop?: boolean) => void;
   stop: () => void;
@@ -49,18 +51,25 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const [loop, setLoop] = useState<LoopChord[]>(START_LOOP);
   const [finderRequest, setFinderRequest] = useState<{ text: string; n: number } | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [bar, setBar] = useState<number | null>(null);
 
   const stop = useCallback(() => {
     audio.stop();
     setPlaying(null);
+    setBar(null);
   }, []);
 
   const toggle = useCallback(
     (id: string, bars: PlaybackBar[], loop = false) => {
       if (playing === id) return stop();
       setPlaying(id);
-      void audio.play({ bars, bpm: LAB_BPM, loop, onEnd: () => setPlaying((p) => (p === id ? null : p)) }).then((ok) => {
-        if (!ok) setPlaying((p) => (p === id ? null : p));
+      setBar(0);
+      const done = () => {
+        setPlaying((p) => (p === id ? null : p));
+        setBar(null);
+      };
+      void audio.play({ bars, bpm: LAB_BPM, loop, onBar: setBar, onEnd: done }).then((ok) => {
+        if (!ok) done();
       });
     },
     [playing, stop],
@@ -78,8 +87,8 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const sendToFinder = useCallback((text: string) => setFinderRequest((r) => ({ text, n: (r?.n ?? 0) + 1 })), []);
 
   const value = useMemo<Lab>(
-    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, loop, setLoop, finderRequest, sendToFinder, playing, toggle, stop }),
-    [key, tuning, left, chord, setChord, shapeRequest, loop, finderRequest, sendToFinder, playing, toggle, stop],
+    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, loop, setLoop, finderRequest, sendToFinder, playing, bar, toggle, stop }),
+    [key, tuning, left, chord, setChord, shapeRequest, loop, finderRequest, sendToFinder, playing, bar, toggle, stop],
   );
   return <LabContext.Provider value={value}>{children}</LabContext.Provider>;
 }

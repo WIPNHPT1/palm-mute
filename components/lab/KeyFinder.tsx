@@ -13,6 +13,22 @@ import { loopBars } from "@/lib/lab/sound";
 const PLAY_ID = "finder:loop";
 const MAX_CAPO = 7;
 
+/** Chord names joined by " · ", the one sounding now underlined (and marked for screen readers). */
+function ChordList({ chords, current }: { chords: ParsedChord[]; current: number | null }) {
+  return (
+    <>
+      {chords.map((c, i) => (
+        <span key={i}>
+          {i > 0 && " · "}
+          <span aria-current={current === i ? "true" : undefined} className={current === i ? "underline decoration-accent decoration-[3px] underline-offset-[5px]" : ""}>
+            {chordName(c.root, c.type)}
+          </span>
+        </span>
+      ))}
+    </>
+  );
+}
+
 function Stepper({ label, value, text, onChange, min, max }: { label: string; value: number; text: string; onChange: (v: number) => void; min: number; max: number }) {
   return (
     <div role="group" aria-label={label} className="flex items-center gap-[6px]">
@@ -35,7 +51,7 @@ function Stepper({ label, value, text, onChange, min, max }: { label: string; va
  * and the Lab's tuning see which shapes to play so it still sounds as written. The sound matches the shapes.
  */
 export function KeyFinder() {
-  const { tuning, finderRequest, toggle, playing } = useLab();
+  const { tuning, finderRequest, toggle, playing, bar } = useLab();
   const [text, setText] = useState("G D Em C");
   const [shift, setShift] = useState(0);
   const [capo, setCapo] = useState(0);
@@ -161,13 +177,13 @@ export function KeyFinder() {
               <div className="grid grid-cols-[72px_minmax(0,1fr)] items-baseline gap-x-[12px] rounded-outer border border-line bg-paper px-[12px] py-[10px]">
                 <dt className="font-mono text-[12px] font-bold text-text-faint">SOUNDS</dt>
                 <dd className="font-mono text-[13px] text-text-primary" data-sounds>
-                  {sounding.map((c) => chordName(c.root, c.type)).join(" · ")}
+                  <ChordList chords={sounding} current={playing === PLAY_ID ? bar : null} />
                 </dd>
               </div>
               <div className="grid grid-cols-[72px_minmax(0,1fr)] items-baseline gap-x-[12px] rounded-outer border border-line bg-paper px-[12px] py-[10px]">
                 <dt className="font-mono text-[12px] font-bold text-text-faint">PLAY</dt>
                 <dd className="font-mono text-[13px] text-text-primary" data-shapes>
-                  {shapes.map((c) => chordName(c.root, c.type)).join(" · ")}
+                  <ChordList chords={shapes} current={playing === PLAY_ID ? bar : null} />
                   <span className="mt-[4px] block text-[12px] text-text-muted">
                     {capo
                       ? `With the capo at fret ${capo}: play these shapes to sound as written, in ${getTuning(tuning).label}.`

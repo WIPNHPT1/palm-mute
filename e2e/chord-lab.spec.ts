@@ -614,3 +614,54 @@ test.describe("chord lab: keyboard", () => {
     await expect(tunings.nth(0)).toHaveAttribute("aria-checked", "false");
   });
 });
+
+// Show what's playing
+test.describe("chord lab: what's sounding is shown", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+  });
+  const current = (page: Page, root: string) => page.locator(`${root} [aria-current="true"]`);
+
+  test("the Builder marks the chord that's playing, moves on with the loop, and clears on stop and on edit", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    const at = async () => (await current(page, '[data-tool="builder"] [data-loop]').getAttribute("aria-label")) ?? "";
+    const first = await at();
+    expect(first).toMatch(/^Chord 1:/);
+    // At 150 BPM a bar is 1.6s: within 4s it has moved on, and always exactly one chord is marked.
+    await expect.poll(at, { timeout: 4000, intervals: [200] }).not.toBe(first);
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    // Stop clears it.
+    await builder(page).getByRole("button", { name: "STOP", exact: true }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    // Editing while it plays stops it and clears the mark.
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    await builder(page).getByRole("button", { name: "Add I, G5", exact: true }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+    // A new tuning clears it too.
+    await builder(page).getByRole("button", { name: "PLAY THE LOOP" }).click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(1);
+    await radio(page, "Tuning", "DROP D").click();
+    await expect(current(page, '[data-tool="builder"] [data-loop]')).toHaveCount(0);
+  });
+
+  test("the Key finder and the Mood map mark the sounding chord too", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await finder(page).getByRole("button", { name: "HEAR IT" }).click();
+    await expect(current(page, '[data-tool="key-finder"] [data-sounds]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="key-finder"] [data-shapes]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="key-finder"] [data-sounds]')).toHaveText("G");
+    await finder(page).getByRole("button", { name: "STOP" }).click();
+    await expect(current(page, '[data-tool="key-finder"]')).toHaveCount(0);
+    await mood(page).getByRole("button", { name: /^HEAR IT IN G$/ }).click();
+    await expect(current(page, '[data-tool="mood-map"] [data-mood-panel]')).toHaveCount(1);
+    await expect(current(page, '[data-tool="mood-map"] [data-mood-panel]')).toContainText("G");
+    await mood(page).getByRole("button", { name: /^STOP$/ }).click();
+    await expect(current(page, '[data-tool="mood-map"]')).toHaveCount(0);
+  });
+});
