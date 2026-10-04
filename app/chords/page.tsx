@@ -5,11 +5,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { LabProvider } from "@/components/lab/LabContext";
 import { LabSetup } from "@/components/lab/LabSetup";
+import { NameIt } from "@/components/lab/NameIt";
 import { type LabTool, ToolCard, ToolStrip } from "@/components/lab/ToolCard";
 
 // The Chord Lab (docs/chord-lab-prd.md): a guitarist's chord toolbox, independent of the Generator. Its tools
 // stack as full-width cards under one setup (the owner's layout C), with a strip to jump between them.
-const TOOLS: LabTool[] = [{ id: "dictionary", n: 1, title: "Dictionary", hint: "every chord, every position, on the neck" }];
+const TOOLS: LabTool[] = [
+  { id: "dictionary", n: 1, title: "Dictionary", hint: "every chord, every position, on the neck" },
+  { id: "name-it", n: 2, title: "Name that chord", hint: "tap a shape, get its name" },
+];
 
 const GUIDE: GuideStep[] = [
   { title: "Look it up", body: <>Pick a <b>chord</b> and see every way to play it, on a box and on the <b>neck</b>.</> },
@@ -29,6 +33,9 @@ export default function ChordLabPage() {
         <div className="flex flex-col gap-[14px] tablet:gap-[18px]">
           <ToolCard tool={TOOLS[0]}>
             <Dictionary />
+          </ToolCard>
+          <ToolCard tool={TOOLS[1]}>
+            <NameIt />
           </ToolCard>
         </div>
       </div>

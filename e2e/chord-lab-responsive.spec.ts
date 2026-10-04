@@ -36,4 +36,20 @@ test.describe("chord lab: every screen", () => {
     const box = (await page.locator(tool).boundingBox())!;
     for (const c of cards) expect(c.right).toBeLessThanOrEqual(box.x + box.width + 0.5);
   });
+
+  test("Name that chord fits with a shape named, the near-miss hint showing, and a bad shape", async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+    const tool = '[data-tool="name-it"]';
+    const input = page.locator(`${tool} input`);
+    for (const shape of ["x32010", "x32013", "x3201", "x-10-12-12-10-x"]) {
+      await input.fill(shape);
+      expect(await horizontalOverflow(page), shape).toBeLessThanOrEqual(0);
+      expect(await layoutProblems(page, tool), shape).toEqual([]);
+    }
+    // The neck's tap areas are real tap targets on phones.
+    if (projectWidth(test.info()) < 834) {
+      const small = await page.locator(`${tool} rect[data-tap]`).evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).filter((r) => r.width && (r.width < 30 || r.height < 30)).length);
+      expect(small).toBe(0);
+    }
+  });
 });
