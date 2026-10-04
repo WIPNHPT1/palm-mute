@@ -66,12 +66,17 @@ test.describe("share and takes", () => {
     await expect(other.locator("[data-shared-notice]")).toContainText("shared song");
     expect(await snapshot(other)).toEqual(before);
     await expect(section(other, "Breakdown")).toContainText("Locked in D");
-    expect(other.url()).not.toContain("#song="); // the address bar is tidied
+    // The address bar keeps following the song (so a reload brings it back), and reloading it opens the same song quietly.
+    await expect.poll(() => other.url(), { timeout: 5000 }).toMatch(/\/generator\/#song=[A-Za-z0-9_-]+$/);
+    await other.reload();
+    await other.waitForLoadState("networkidle");
+    await expect(other.locator("[data-shared-notice]")).toHaveCount(0);
+    expect(await snapshot(other)).toEqual(before);
     await expect(other.getByRole("region", { name: "Song setup" })).toBeVisible(); // straight to the song
   });
 
   test("a broken or tampered link falls back safely", async ({ page }) => {
-    // Each link opens fresh (a hash-only change on the same page wouldn't reload it).
+    // Each link opens fresh, as a link from elsewhere does.
     const open = async (url: string) => {
       await page.goto("about:blank");
       await page.goto(url);

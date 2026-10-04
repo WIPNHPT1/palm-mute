@@ -3,10 +3,10 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import * as audio from "@/lib/audio/engine";
 import type { PlaybackBar } from "@/lib/playback";
-import { type ChordTypeId, type TuningId } from "@/lib/lab/chords";
+import { type ChordTypeId, type TuningId, TUNING_IDS } from "@/lib/lab/chords";
 import { type LoopChord, START_LOOP } from "@/lib/lab/mood";
 import { LAB_BPM } from "@/lib/lab/sound";
-import type { NoteName } from "@/lib/musicTheory";
+import { type NoteName, PITCH_CLASSES } from "@/lib/musicTheory";
 
 /**
  * The Chord Lab's own state (docs/chord-lab-prd.md §4): its key, tuning and handedness, the chord being
@@ -42,6 +42,25 @@ type Lab = {
 
 const LabContext = createContext<Lab | null>(null);
 
+/** Where the Lab remembers the player's setup (and only the setup: not the chord, the loop or what was typed). */
+export const LAB_STORAGE_KEY = "palm-mute-lab-v1";
+
+/** What was remembered, checked against what the Lab knows; anything else (or no storage) means the defaults. */
+export function readSetup(raw: string | null): Partial<{ key: NoteName; tuning: TuningId; left: boolean }> {
+  try {
+    const data: unknown = raw ? JSON.parse(raw) : null;
+    if (typeof data !== "object" || data === null) return {};
+    const d = data as Record<string, unknown>;
+    return {
+      ...(PITCH_CLASSES.includes(d.key as NoteName) ? { key: d.key as NoteName } : {}),
+      ...(TUNING_IDS.includes(d.tuning as TuningId) ? { tuning: d.tuning as TuningId } : {}),
+      ...(typeof d.left === "boolean" ? { left: d.left } : {}),
+    };
+  } catch {
+    return {};
+  }
+}
+
 export function LabProvider({ children }: { children: ReactNode }) {
   const [key, setKey] = useState<NoteName>("G");
   const [tuning, setTuning] = useState<TuningId>("e-standard");
@@ -74,6 +93,29 @@ export function LabProvider({ children }: { children: ReactNode }) {
     },
     [playing, stop],
   );
+
+  // Remember key, tuning and handedness between visits. Read after the page is up (so the server's page and the
+  // first render match), written only once that read is done, and never allowed to break the page.
+  const [remembered, setRemembered] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = readSetup(localStorage.getItem(LAB_STORAGE_KEY));
+      if (saved.key) setKey(saved.key);
+      if (saved.tuning) setTuning(saved.tuning);
+      if (saved.left !== undefined) setLeft(saved.left);
+    } catch {
+      // storage unavailable: the defaults stay
+    }
+    setRemembered(true);
+  }, []);
+  useEffect(() => {
+    if (!remembered) return;
+    try {
+      localStorage.setItem(LAB_STORAGE_KEY, JSON.stringify({ key, tuning, left }));
+    } catch {
+      // full or blocked: it just isn't remembered
+    }
+  }, [remembered, key, tuning, left]);
 
   // A new tuning changes every sound: stop whatever was playing in the old one.
   useEffect(() => stop(), [tuning, stop]);
