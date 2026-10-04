@@ -178,6 +178,8 @@ export function TabBlock({
         viewBox={`0 0 ${width} ${height}`}
         width={width}
         height={height}
+        // drawn in design pixels, so it's 10% smaller from 1440px like the rest of the page
+        style={{ width: `calc(${width} * var(--u))` }}
         className={`block h-auto max-w-full font-mono ${svgClassName}`}
       >
         {behind}

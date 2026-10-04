@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { designUnit } from "@/lib/designUnit";
 import { paintOscilloscope, readStageColors } from "@/lib/stagePaint";
 
 const FPS = 30;
@@ -34,7 +35,7 @@ export function Scope() {
         cv.height = h;
       }
       ctx.clearRect(0, 0, w, h);
-      if (w && h) paintOscilloscope(ctx, w, h, t, false, colors, dpr);
+      if (w && h) paintOscilloscope(ctx, w, h, t, false, colors, dpr * designUnit()); // design pixels, like the other pages' scope
     };
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);

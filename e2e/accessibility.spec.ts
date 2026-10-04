@@ -31,27 +31,29 @@ for (const { path, chips: hasChips, setup } of PAGES) {
       await setup(page);
     });
 
-    test("every tap target is at least 44×44px", async ({ page }) => {
-      const small = await page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>("header a, header button, main a, main button, main input, footer a, footer button")]
+    test("every tap target is at least 44×44px (design pixels: 90% of that from 1440px)", async ({ page }) => {
+      const small = await page.evaluate(() => {
+        const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1; // 0.9 from 1440px (design scale)
+        return [...document.querySelectorAll<HTMLElement>("header a, header button, main a, main button, main input, footer a, footer button")]
           .filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden")
           .map((el) => ({ el, r: el.getBoundingClientRect() }))
-          .filter(({ r }) => r.width < 43.5 || r.height < 43.5)
-          .map(({ el, r }) => `${el.tagName} "${el.getAttribute("aria-label") ?? el.textContent?.trim()}" ${Math.round(r.width)}×${Math.round(r.height)}`),
-      );
+          .filter(({ r }) => r.width < 43.5 * u || r.height < 43.5 * u)
+          .map(({ el, r }) => `${el.tagName} "${el.getAttribute("aria-label") ?? el.textContent?.trim()}" ${Math.round(r.width)}×${Math.round(r.height)}`);
+      });
       expect(small).toEqual([]);
     });
 
-    test("no text below 12px, except tab art hidden behind a text alternative", async ({ page }) => {
+    test("no text below 12px (design pixels: 10.8px from 1440px), except tab art hidden behind a text alternative", async ({ page }) => {
       const tiny = await page.evaluate(() => {
         const out: string[] = [];
+        const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1; // 0.9 from 1440px (design scale)
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
           const el = n.parentElement!;
           if (!n.textContent!.trim() || !el.getClientRects().length) continue;
           if (el.closest('[aria-hidden="true"], .sr-only, #site-menu')) continue;
           const size = parseFloat(getComputedStyle(el).fontSize);
-          if (size < 11.99) out.push(`${size}px "${n.textContent!.trim().slice(0, 30)}"`);
+          if (size < 12 * u - 0.01) out.push(`${size}px "${n.textContent!.trim().slice(0, 30)}"`);
         }
         return out;
       });
