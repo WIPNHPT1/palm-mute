@@ -4,6 +4,7 @@ import { type GuideStep, PageGuide } from "@/components/PageGuide";
 import { PageHeader } from "@/components/PageHeader";
 import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
+import { KeyFinder } from "@/components/lab/KeyFinder";
 import { LabProvider } from "@/components/lab/LabContext";
 import { LabSetup } from "@/components/lab/LabSetup";
 import { NameIt } from "@/components/lab/NameIt";
@@ -15,6 +16,7 @@ const TOOLS: LabTool[] = [
   { id: "dictionary", n: 1, title: "Dictionary", hint: "every chord, every position, on the neck" },
   { id: "name-it", n: 2, title: "Name that chord", hint: "tap a shape, get its name" },
   { id: "builder", n: 3, title: "Progression builder", hint: "tap chords into a loop" },
+  { id: "key-finder", n: 4, title: "Key finder & transposer", hint: "chords to key; move them" },
 ];
 
 const GUIDE: GuideStep[] = [
@@ -41,6 +43,9 @@ export default function ChordLabPage() {
           </ToolCard>
           <ToolCard tool={TOOLS[2]}>
             <Builder />
+          </ToolCard>
+          <ToolCard tool={TOOLS[3]}>
+            <KeyFinder />
           </ToolCard>
         </div>
       </div>

@@ -68,4 +68,20 @@ test.describe("chord lab: every screen", () => {
       expect(r.right).toBeLessThanOrEqual(box.x + box.width + 0.5);
     }
   });
+
+  test("the Key finder fits with results, a transposed capo'd loop, and an unreadable chord", async ({ page }) => {
+    await gotoAndSettle(page, "/chords/");
+    const tool = '[data-tool="key-finder"]';
+    for (const chords of ["G D Em C", "G D C F Bb Eb Ab Db", "G H Em"]) {
+      await page.locator(`${tool} input`).fill(chords);
+      await page.locator(`${tool} button[aria-label="Transpose up"]`).click({ trial: true }).catch(() => undefined);
+      expect(await horizontalOverflow(page), chords).toBeLessThanOrEqual(0);
+      expect(await layoutProblems(page, tool), chords).toEqual([]);
+    }
+    await page.locator(`${tool} input`).fill("G D Em C");
+    for (let i = 0; i < 3; i++) await page.locator(`${tool} button[aria-label="Capo up"]`).click();
+    await page.locator(`${tool} button[aria-label="Transpose down"]`).click();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    expect(await layoutProblems(page, tool)).toEqual([]);
+  });
 });

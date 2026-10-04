@@ -24,6 +24,9 @@ type Lab = {
   /** `shape` (e.g. "x32010") asks the Dictionary to open on that voicing; each request counts once. */
   setChord: (root: number, type: ChordTypeId, shape?: string) => void;
   shapeRequest: { shape: string; n: number } | null;
+  /** The Builder sends its loop to the Key finder as chord names; each request counts once. */
+  finderRequest: { text: string; n: number } | null;
+  sendToFinder: (text: string) => void;
   /** What's playing (an id the tool chose), or null. One thing at a time. */
   playing: string | null;
   /** Plays `bars` under `id`, or stops if `id` is already playing. Loops play until stopped. */
@@ -39,6 +42,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const [left, setLeft] = useState(false);
   const [chord, setChordState] = useState<{ root: number; type: ChordTypeId }>({ root: 7, type: "maj" });
   const [shapeRequest, setShapeRequest] = useState<{ shape: string; n: number } | null>(null);
+  const [finderRequest, setFinderRequest] = useState<{ text: string; n: number } | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
 
   const stop = useCallback(() => {
@@ -66,9 +70,11 @@ export function LabProvider({ children }: { children: ReactNode }) {
     if (shape) setShapeRequest((r) => ({ shape, n: (r?.n ?? 0) + 1 }));
   }, []);
 
+  const sendToFinder = useCallback((text: string) => setFinderRequest((r) => ({ text, n: (r?.n ?? 0) + 1 })), []);
+
   const value = useMemo<Lab>(
-    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, playing, toggle, stop }),
-    [key, tuning, left, chord, setChord, shapeRequest, playing, toggle, stop],
+    () => ({ key, setKey, tuning, setTuning, left, setLeft, chord, setChord, shapeRequest, finderRequest, sendToFinder, playing, toggle, stop }),
+    [key, tuning, left, chord, setChord, shapeRequest, finderRequest, sendToFinder, playing, toggle, stop],
   );
   return <LabContext.Provider value={value}>{children}</LabContext.Provider>;
 }

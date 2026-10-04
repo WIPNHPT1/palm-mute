@@ -85,6 +85,9 @@ export type KeyFit = {
   numerals: { text: string; numeral: string | null; borrowed: boolean }[];
 };
 
+/** How usual each degree is in a pop-punk loop (the tie-breaker when chords fit several keys). */
+const USUAL: Record<string, number> = { I: 0.15, IV: 0.15, V: 0.15, vi: 0.15, ii: 0.05, iii: 0.05 };
+
 /** A chord's numeral as a borrowed chord (bIII, iv, bVI, bVII) of the key, or null. */
 function borrowedIn(key: number, chord: ParsedChord): string | null {
   for (const d of DEGREES.filter((x) => x.borrowed)) {
@@ -100,7 +103,9 @@ function borrowedIn(key: number, chord: ParsedChord): string | null {
 
 /**
  * The major keys a set of chords fits, best first: one point for each chord in the key, half for a borrowed
- * chord, a little extra when the loop starts or ends on the key's I and for each I, IV or V it uses.
+ * chord, a little extra for each of the genre's usual chords (I, IV, V, vi) it uses and when the loop starts or
+ * ends on the key's I. Power chords fit several keys (A5 G5 F5 are vi V IV of C and iii ii I of F): the usual
+ * chords decide those.
  */
 export function findKeys(chords: ParsedChord[], top = 3): KeyFit[] {
   if (!chords.length) return [];
@@ -111,7 +116,7 @@ export function findKeys(chords: ParsedChord[], top = 3): KeyFit[] {
       const n = numeralIn(key, c.root, c.type);
       if (n) {
         score += 1;
-        if (["I", "IV", "V"].includes(n.replace(/(5|7|maj7|sus2|sus4|add9)$/, ""))) score += 0.1;
+        score += USUAL[n.replace(/(5|7|maj7|sus2|sus4|add9)$/, "")] ?? 0;
         return { text: c.text, numeral: n, borrowed: false };
       }
       const b = borrowedIn(key, c);
@@ -121,8 +126,8 @@ export function findKeys(chords: ParsedChord[], top = 3): KeyFit[] {
       }
       return { text: c.text, numeral: null, borrowed: false };
     });
-    if (chords[0].root === key) score += 0.3;
-    if (chords[chords.length - 1].root === key) score += 0.2;
+    if (chords[0].root === key) score += 0.15;
+    if (chords[chords.length - 1].root === key) score += 0.1;
     fits.push({ key, score, numerals });
   }
   return fits.sort((a, b) => b.score - a.score || a.key - b.key).slice(0, top);
@@ -146,11 +151,12 @@ export function transpose(chord: ParsedChord, semitones: number): ParsedChord {
 }
 
 /**
- * The shapes to play for a chord to sound as written: a capo raises every string, and a tuning a semitone
- * down (Eb standard, Drop C#) lowers it, so the shape is the sound minus both.
+ * The shape to play for a chord to sound as written with a capo: the capo raises every string, so the shape is
+ * the sound minus the capo's frets. (The Lab's tuning doesn't change chord names: its diagrams already name
+ * chords by what they sound in that tuning, so a tuning only changes the frets, as in the Dictionary.)
  */
-export function shapeFor(chord: ParsedChord, capo: number, tuningOffset: number): ParsedChord {
-  return transpose(chord, -capo - tuningOffset);
+export function shapeFor(chord: ParsedChord, capo: number): ParsedChord {
+  return transpose(chord, -capo);
 }
 
 /** The scale of a key, for the explorer's scale dots. */
