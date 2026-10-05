@@ -348,8 +348,12 @@
 .hb-faq details { position: relative; border-color: transparent; border-radius: 16px; background: var(--glass-pane); box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-ring), var(--glass-drop); }
 
 /* ---------- Speaker cone (owner's pick, docs/mockups/home-scroll-options.html option 5; Speaker.tsx) ----------
-   A big cone behind the hero's card, a 2×2 cab behind the kit, both on faint speaker cloth, pumping on the beat. The
-   home page's scope gives way to them (the Generator and the Chord Lab keep theirs). */
+   A big cone behind the hero's card, a 2×2 cab behind the kit, both on faint speaker cloth, pumping on the beat. Below
+   them, the Generator and the Chord Lab's scope (the fixed .stage-bg) shows through the questions and the encore. No
+   hard edges: the hero's cloth fades out at its foot; down the kit the cab fades out while the paper over the scope
+   fades away, so the speakers dissolve into the scope's grid and lines. */
 .hb-speaker { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.hb-kit-sec { isolation: isolate; }
-.hb-kit-sec > .hb-speaker { z-index: -1; }
+.hb-hero .hb-speaker { -webkit-mask: linear-gradient(#000 calc(100% - 180px), transparent); mask: linear-gradient(#000 calc(100% - 180px), transparent); }
+.hb-kit-sec { isolation: isolate; background: linear-gradient(var(--paper) 0 40%, rgb(var(--color-paper) / 0) 85%); }
+.hb-kit-sec > .hb-speaker { z-index: -1;
+  -webkit-mask: linear-gradient(transparent 0, #000 180px, #000 40%, transparent 85%); mask: linear-gradient(transparent 0, #000 180px, #000 40%, transparent 85%); }

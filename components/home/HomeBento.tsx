@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BentoGrid } from "@/components/home/BentoGrid";
 import { Speaker } from "@/components/home/Speaker";
+import { StageBackground } from "@/components/StageBackground";
 import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
 import { progressions } from "@/lib/musicTheory";
 
@@ -66,6 +67,9 @@ export function HomeBento() {
 
   return (
     <div ref={root} className="hb" style={{ "--beat": `${Math.round(60000 / bpm)}ms` } as React.CSSProperties}>
+      {/* the Generator and Chord Lab's fixed scope, showing through the lower sections; the kit cross-fades from the
+          speaker cab into it (app/home.css, "Speaker cone") */}
+      <StageBackground playing={false} showsThrough=".hb [data-quiet]" />
       <div className="hb-grain" aria-hidden="true" />
       <Hero state={state} beat={beat} bpm={bpm} onKey={(key) => set({ key })} />
       <Marquee />

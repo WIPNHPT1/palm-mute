@@ -36,12 +36,12 @@ test.describe("stage: design scale and background", () => {
     });
   }
 
-  test("the home page draws at 90% from 1440px too; its background is the speakers, not the scope", async ({ page }, info) => {
+  test("the home page draws at 90% from 1440px too, with the speakers up top and the same fixed scope lower down", async ({ page }, info) => {
     onlyAtWidths(info, [1920]);
     lightOnly(info);
     await gotoAndSettle(page, "/");
     expect((await page.locator("header > div").first().boundingBox())!.height).toBeCloseTo(76 * 0.9, 0);
-    await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
+    await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
     await expect(page.locator("canvas.hb-speaker")).toHaveCount(2);
   });
 
