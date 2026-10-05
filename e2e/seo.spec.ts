@@ -33,7 +33,8 @@ test.describe("SEO, share cards and icons", () => {
       }
       expect(await meta('meta[property="og:image:width"]')).toBe("1200");
       expect(await meta('meta[property="og:image:height"]')).toBe("630");
-      expect(await page.locator('meta[name="theme-color"]').count()).toBe(2);
+      // one theme colour since dark became the default (#70): the dark theme's ink
+      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#0B0908");
       // Structured data: a web app.
       const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!);
       expect(ld["@type"]).toBe("WebApplication");

@@ -12,7 +12,10 @@ export const test = base.extend<{ consoleErrors: string[]; darkChoice: void }>({
   darkChoice: [
     async ({ page }, use, info) => {
       await page.addInitScript((theme) => {
-        if (!localStorage.getItem("palm-mute-theme")) localStorage.setItem("palm-mute-theme", theme);
+        // about:blank has no storage (a test opening a link "fresh" passes through it): skip it there
+        try {
+          if (!localStorage.getItem("palm-mute-theme")) localStorage.setItem("palm-mute-theme", theme);
+        } catch {}
       }, info.project.use.colorScheme === "dark" ? "dark" : "light");
       await use();
     },
