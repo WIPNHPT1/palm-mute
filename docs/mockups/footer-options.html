@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute Footers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Six cinematic footers for every page (today: a lone GitHub icon). Each is shown under the end of the home page
+     (the encore), so you see how a page ends into it. Real content only: the three pages, the GitHub repo, the
+     promise, the tempo. Transform and opacity only; STILL and reduced motion freeze it. */
+  :root, [data-theme="dark"] {
+    --ink:#0B0908; --paper:#15110E; --surface:#1F1A16; --accent:#E85A42; --accent-rgb:232 90 66; --brass:#C9973C; --brass-rgb:201 151 60; --success:#52A862;
+    --line:#352D25; --line-strong:#463B30; --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#140F0C;
+    --dot:rgb(246 241 228 / .14); color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --ink:#171310; --paper:#F6F1E4; --surface:#FFFFFF; --accent:#C23A26; --accent-rgb:194 58 38; --brass:#B8862E; --brass-rgb:184 134 46; --success:#3F8F4F;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A; --on-accent:#FFF9EF; --dot:rgb(23 19 16 / .2); color-scheme: light;
+  }
+  :root { --display:"Archivo Black","Arial Black",sans-serif; --ui:"Space Grotesk",system-ui,sans-serif; --mono:"Space Mono",ui-monospace,Menlo,monospace; --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1); --pad:clamp(16px, 4vw, 56px); }
+  * { box-sizing: border-box; }
+  html { overflow-x: clip; }
+  body { margin: 0; background: var(--paper); color: var(--t1); font-family: var(--ui); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; } button { font: inherit; color: inherit; }
+  .wrap { width: 100%; max-width: 1296px; margin: 0 auto; padding-inline: var(--pad); }
+
+  .pick { position: sticky; top: 0; z-index: 100; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; background: #000; color: #EDE6D6; border-bottom: 1px solid #333; font-family: var(--mono); font-size: 12px; }
+  .pick b { color: #E85A42; font-weight: 400; letter-spacing: .12em; margin-right: 4px; }
+  .pick button { min-height: 44px; padding: 0 12px; border: 1px solid #3a3530; border-radius: 6px; background: #14110F; cursor: pointer; }
+  .pick button[aria-pressed="true"] { background: #E85A42; color: #140F0C; border-color: #E85A42; }
+  .pick .sp { flex: 1; }
+  .about { max-width: 1296px; margin: 0 auto; padding: 22px var(--pad) 0; font-size: 15px; line-height: 1.55; color: var(--t2); }
+  .about b { display: block; color: var(--t1); font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 4px; }
+  .opt { display: none; } .opt.on { display: block; }
+
+  /* the end of the home page, for context */
+  .encore { position: relative; text-align: center; padding: 120px 0 110px; overflow: hidden; margin-top: 24px; border-top: 1px dashed var(--line); }
+  .encore .tape { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; opacity: .08; pointer-events: none; }
+  .encore .tape div { display: flex; width: max-content; font-family: var(--display); font-size: clamp(60px, 9vw, 150px); line-height: 1; white-space: nowrap; animation: tape 30s linear infinite; }
+  .encore .tape div:nth-child(2) { animation-direction: reverse; color: var(--accent); }
+  @keyframes tape { to { transform: translateX(-50%); } }
+  .h2 { position: relative; margin: 0 0 30px; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: -.025em; line-height: .92; font-size: clamp(34px, 5vw, 76px); }
+  .btn { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 24px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-family: var(--display); font-size: 13px; box-shadow: 0 8px 22px -8px rgb(var(--accent-rgb) / .7); }
+  .btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+  /* shared footer bits */
+  .wm { display: inline-flex; align-items: center; font-family: var(--display); line-height: .85; letter-spacing: -.03em; }
+  .wm svg { width: .6em; height: .9em; margin: 0 .04em; fill: var(--accent); }
+  .nav { display: flex; flex-wrap: wrap; gap: 4px 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; }
+  .nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--t3); transition: color .2s; } .nav a:hover { color: var(--t1); }
+  .nav a.here { color: var(--t1); } .nav a.here::before { content: "▶"; color: var(--accent); margin-right: 8px; font-size: 9px; }
+  .gh { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--t3); font-family: var(--mono); font-size: 12px; letter-spacing: .14em; } .gh:hover { color: var(--t1); }
+  .gh svg { width: 18px; height: 18px; fill: currentColor; }
+  .fine { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--t4); }
+  .live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: .16em; }
+  .live i { width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(82 168 98 / .22); animation: blink .667s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .halftone { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.7px); background-size: 9px 9px; }
+
+  /* ===== 1 · End credits ===== */
+  .f1 { position: relative; background: #050403; color: #F1EADB; overflow: hidden; }
+  .f1 .roll { position: relative; height: 420px; overflow: hidden; -webkit-mask: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
+  .f1 .reel { position: absolute; left: 0; right: 0; top: 100%; display: grid; gap: 30px; text-align: center; animation: credits 28s linear infinite; }
+  .f1 .reel div small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: #A89C86; margin-bottom: 6px; }
+  .f1 .reel div b { font-family: var(--display); font-weight: 400; font-size: clamp(22px, 2.4vw, 32px); text-transform: uppercase; letter-spacing: -.01em; }
+  .f1 .reel div.red b { color: #E85A42; }
+  @keyframes credits { to { transform: translateY(calc(-100% - 420px)); } }
+  .f1 .end { position: relative; text-align: center; padding: 30px 0 46px; border-top: 1px solid #1F1A16; }
+  .f1 .end .wm { font-size: clamp(54px, 9vw, 140px); color: #F1EADB; }
+  .f1 .end .row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 26px; margin-top: 20px; }
+  .f1 .nav a, .f1 .gh { color: #A89C86; } .f1 .nav a:hover, .f1 .gh:hover { color: #F1EADB; }
+  .f1 .bars { position: absolute; left: 0; right: 0; height: 8vh; background: #000; z-index: 2; } .f1 .bars.t { top: 0; } .f1 .bars.b { bottom: 0; }
+  .f1 .fine { color: #72675A; }
+
+  /* ===== 2 · Marquee sign ===== */
+  .f2 { position: relative; padding: 70px 0 30px; background: radial-gradient(70% 90% at 50% 0%, rgb(var(--accent-rgb) / .18), transparent 70%), var(--ink); color: #F6F1E4; overflow: hidden; }
+  .f2 .sign { position: relative; margin: 0 auto; width: min(100%, 1100px); padding: clamp(26px, 4vw, 54px) clamp(16px, 3vw, 40px); border-radius: 16px; background: #120E0B; box-shadow: inset 0 0 0 2px #2A241C, 0 40px 80px -30px rgba(0,0,0,.9); text-align: center; }
+  .f2 .bulbs { position: absolute; inset: 10px; pointer-events: none; }
+  .f2 .bulbs i { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #6B5A45; transition: background .1s, box-shadow .1s; }
+  .f2 .bulbs i.on { background: #FFE3B0; box-shadow: 0 0 6px 2px rgb(255 200 120 / .9), 0 0 18px 4px rgb(var(--brass-rgb) / .5); }
+  .f2 .now { font-family: var(--mono); font-size: 12px; letter-spacing: .3em; color: #E85A42; }
+  .f2 .sign .wm { margin: 12px 0 8px; font-size: clamp(48px, 9vw, 132px); color: #FFF3DC; text-shadow: 0 0 18px rgb(255 200 120 / .55), 0 0 60px rgb(var(--accent-rgb) / .45); animation: buzz 7s steps(1) infinite; }
+  @keyframes buzz { 0%, 100% { opacity: 1; } 41% { opacity: .55; } 42% { opacity: 1; } 43% { opacity: .7; } 44% { opacity: 1; } }
+  .f2 .bill { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 30px; font-family: var(--display); font-size: clamp(16px, 1.8vw, 24px); text-transform: uppercase; }
+  .f2 .bill a { color: #D9CFB9; min-height: 44px; display: inline-flex; align-items: center; } .f2 .bill a:hover { color: #FFF3DC; text-shadow: 0 0 12px rgb(255 200 120 / .6); }
+  .f2 .bill span { color: #E85A42; }
+  .f2 .base { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .f2 .gh, .f2 .fine { color: #A89C86; }
+
+  /* ===== 3 · Curtain call ===== */
+  .f3 { position: relative; background: var(--ink); color: #F6F1E4; overflow: hidden; padding-top: 64px; }
+  .f3 .spot { position: absolute; left: 50%; top: -30%; width: 70vw; height: 140%; translate: -50% 0; background: radial-gradient(closest-side, rgb(255 236 205 / .14), transparent 70%); animation: sway 12s ease-in-out infinite alternate; }
+  @keyframes sway { from { transform: translateX(-6vw); } to { transform: translateX(6vw); } }
+  .f3 .curtain { position: absolute; top: 0; bottom: 0; width: 18%; background: repeating-linear-gradient(90deg, #5E1A10 0 18px, #8A2415 18px 30px, #6B1E12 30px 44px); box-shadow: inset -30px 0 40px rgba(0,0,0,.6); transform-origin: top; }
+  .f3 .curtain.l { left: 0; animation: swayl 9s ease-in-out infinite alternate; } .f3 .curtain.r { right: 0; transform: scaleX(-1); animation: swayr 9s ease-in-out infinite alternate; }
+  @keyframes swayl { to { transform: skewX(1.2deg); } } @keyframes swayr { from { transform: scaleX(-1); } to { transform: scaleX(-1) skewX(1.2deg); } }
+  .f3 .valance { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: repeating-radial-gradient(circle at 20px -6px, #8A2415 0 22px, transparent 23px 40px) 0 0 / 40px 30px, linear-gradient(#5E1A10, #8A2415); }
+  .f3 .mid { position: relative; z-index: 1; padding: 30px 20% 0; text-align: center; }
+  .f3 .mid .kick { font-family: var(--mono); font-size: 12px; letter-spacing: .3em; color: #E85A42; }
+  .f3 .mid .nav { justify-content: center; margin: 18px 0 6px; } .f3 .nav a { color: #D9CFB9; } .f3 .nav a:hover { color: #fff; }
+  .f3 .mid .gh { color: #A89C86; }
+  .f3 .giant { position: relative; z-index: 0; margin-top: 30px; text-align: center; width: max-content; margin-inline: auto; font-family: var(--display); font-size: var(--giant, 15vw); line-height: .74; letter-spacing: -.05em; white-space: nowrap; color: transparent; -webkit-text-stroke: 2px rgb(246 241 228 / .55);
+    -webkit-mask: linear-gradient(#000 50%, transparent 92%); mask: linear-gradient(#000 50%, transparent 92%); transform: translateY(14%); }
+  .f3 .giant span { color: #E85A42; -webkit-text-stroke: 0; }
+  @media (max-width: 760px) { .f3 .mid { padding-inline: 22%; } .f3 .curtain { width: 16%; } }
+
+  /* ===== 4 · Run-out groove ===== */
+  .f4 { position: relative; padding: 70px 0 40px; background: var(--paper); overflow: hidden; }
+  .f4 .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: center; }
+  @media (min-width: 900px) { .f4 .grid { grid-template-columns: minmax(0, 1fr) auto; } }
+  .f4 .kick { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; color: var(--accent); margin-bottom: 12px; }
+  .f4 h3 { margin: 0 0 20px; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: clamp(36px, 5vw, 72px); line-height: .9; letter-spacing: -.02em; }
+  .f4 h3 em { font-style: normal; color: transparent; -webkit-text-stroke: 2px var(--t1); }
+  .f4 .disc { position: relative; width: min(78vw, 420px); aspect-ratio: 1; justify-self: center; border-radius: 50%;
+    background: radial-gradient(circle, transparent 0 31%, #0d0b0a 31.5%), repeating-radial-gradient(circle, #141110 0 1.2px, #0b0908 1.2px 2.6px); box-shadow: 0 30px 60px -20px rgba(0,0,0,.6), inset 0 0 0 2px #222; animation: spin 1.8s linear infinite; }
+  .f4 .disc::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 20deg, transparent 0 40deg, rgba(255,255,255,.07) 50deg, transparent 60deg 220deg, rgba(255,255,255,.05) 230deg, transparent 240deg); }
+  .f4 .lbl { position: absolute; inset: 31%; border-radius: 50%; background: var(--accent); color: #FFF9EF; display: grid; place-items: center; text-align: center; }
+  .f4 .lbl b { font-family: var(--display); font-weight: 400; font-size: clamp(13px, 1.6vw, 20px); line-height: 1; } .f4 .lbl small { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .16em; margin-top: 5px; }
+  .f4 .lbl::after { content: ""; position: absolute; width: 8%; aspect-ratio: 1; border-radius: 50%; background: var(--paper); }
+  .f4 .arm { position: absolute; right: -2%; top: -4%; width: 46%; height: 70%; pointer-events: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .f4 .groove { margin-top: 18px; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; color: var(--t4); }
+  .f4 .base { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+  /* ===== 5 · Ticket stub ===== */
+  .f5 { position: relative; padding: 80px 0 40px; background: var(--ink); color: #F6F1E4; overflow: hidden; }
+  .f5 .ticket { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); margin: 0 auto; width: min(100%, 1060px); border-radius: 14px; background: #F6F1E4; color: #171310; box-shadow: 0 40px 80px -30px rgba(0,0,0,.9); rotate: -1.5deg; transition: rotate .6s var(--spring), transform .6s var(--spring); }
+  .f5 .ticket:hover { rotate: 0deg; transform: translateY(-6px); }
+  @media (min-width: 820px) { .f5 .ticket { grid-template-columns: minmax(0, 1fr) 240px; } }
+  .f5 .main { position: relative; padding: clamp(22px, 3vw, 40px); background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(23,19,16,.035) 22px 23px); }
+  .f5 .main .top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; letter-spacing: .2em; color: #C23A26; }
+  .f5 .main .wm { margin: 16px 0 10px; font-size: clamp(46px, 7vw, 104px); color: #171310; } .f5 .main .wm svg { fill: #C23A26; }
+  .f5 .main .wm-o { color: transparent; -webkit-text-stroke: 2px #171310; }
+  .f5 .main .nav a { color: #4E4738; } .f5 .main .nav a:hover { color: #171310; } .f5 .main .nav a.here { color: #171310; } .f5 .main .nav a.here::before { color: #C23A26; }
+  .f5 .stub { position: relative; padding: 26px 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; background: #C23A26; color: #FFF9EF; border-radius: 0 0 14px 14px; }
+  @media (min-width: 820px) { .f5 .stub { border-radius: 0 14px 14px 0; border-left: 3px dashed rgba(0,0,0,.4); } }
+  .f5 .stub::before, .f5 .stub::after { content: ""; position: absolute; left: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); display: none; }
+  @media (min-width: 820px) { .f5 .stub::before, .f5 .stub::after { display: block; } .f5 .stub::before { top: -12px; } .f5 .stub::after { bottom: -12px; } }
+  .f5 .stub b { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: .95; text-transform: uppercase; }
+  .f5 .stub small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .16em; }
+  .f5 .barcode { height: 54px; background: repeating-linear-gradient(90deg, #FFF9EF 0 2px, transparent 2px 4px, #FFF9EF 4px 5px, transparent 5px 9px, #FFF9EF 9px 12px, transparent 12px 14px); }
+  .f5 .stub .gh { color: #FFF9EF; }
+  .f5 .base { display: flex; justify-content: center; margin-top: 30px; } .f5 .fine { color: #A89C86; }
+
+  /* ===== 6 · Amp head ===== */
+  .f6 { position: relative; padding: 60px 0 0; background: var(--paper); overflow: hidden; }
+  .f6 .amp { position: relative; margin: 0 auto; width: min(100%, 1160px); border-radius: 18px 18px 0 0; background: linear-gradient(#211B15, #120E0B); color: #F6F1E4; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 -20px 60px -30px rgba(0,0,0,.6); padding: 20px clamp(16px, 3vw, 36px) 0; }
+  .f6 .panel { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 26px; padding: 16px 20px; border-radius: 10px; background: linear-gradient(#E8DFCB, #CFC3A9); color: #171310; box-shadow: inset 0 2px 0 rgba(255,255,255,.6), inset 0 -2px 0 rgba(0,0,0,.15); }
+  .f6 .panel .wm { font-size: clamp(30px, 3.4vw, 44px); color: #171310; } .f6 .panel .wm svg { fill: #C23A26; }
+  .f6 .knobs { display: flex; gap: 16px; margin-left: auto; flex-wrap: wrap; }
+  .f6 .knob { display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: #4E4738; }
+  .f6 .knob i { position: relative; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3A3229, #0B0908); box-shadow: 0 3px 0 #000, inset 0 0 0 2px #4A4036; transition: rotate .5s var(--spring); }
+  .f6 .knob i::after { content: ""; position: absolute; left: 50%; top: 4px; width: 3px; height: 11px; margin-left: -1.5px; border-radius: 2px; background: #F6F1E4; }
+  .f6 .knob.eleven i { rotate: 150deg; } .f6 .knob.eleven span { color: #C23A26; font-weight: 700; }
+  .f6 .pilot { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #FFB5A6, #E85A42 55%, #8A2415); box-shadow: 0 0 14px 4px rgb(232 90 66 / .7); animation: glow 1.333s ease-in-out infinite; }
+  @keyframes glow { 50% { box-shadow: 0 0 6px 1px rgb(232 90 66 / .5); } }
+  .f6 .grille { position: relative; margin-top: 18px; height: 220px; border-radius: 10px 10px 0 0; overflow: hidden;
+    background: repeating-linear-gradient(45deg, #2A241C 0 2px, #171310 2px 6px), repeating-linear-gradient(-45deg, rgba(0,0,0,.4) 0 2px, transparent 2px 6px); box-shadow: inset 0 10px 30px rgba(0,0,0,.6); }
+  .f6 .grille .cone { position: absolute; top: 50%; width: 260px; aspect-ratio: 1; margin-top: -130px; border-radius: 50%; background: radial-gradient(circle, rgba(0,0,0,.0) 0 20%, rgba(0,0,0,.35) 21% 40%, rgba(0,0,0,.15) 41% 70%, transparent 71%); animation: thump .333s ease-out infinite; }
+  .f6 .grille .cone.a { left: 18%; } .f6 .grille .cone.b { right: 18%; animation-delay: .1665s; }
+  @keyframes thump { 0% { transform: scale(1.03); } 30% { transform: scale(1); } }
+  .f6 .badge { position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 8px 16px; border-radius: 6px; background: linear-gradient(#E8DFCB, #B8AA8C); color: #171310; font-family: var(--display); font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.6); }
+  .f6 .jacks { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; padding-top: 14px; border-top: 1px solid rgba(23,19,16,.15); }
+  .f6 .jacks a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px 0 6px; border-radius: 999px; background: rgba(0,0,0,.08); font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: #2A241C; }
+  .f6 .jacks a::before { content: ""; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle, #000 0 30%, #8A7B63 32% 46%, #4A4036 48%); box-shadow: 0 1px 0 rgba(255,255,255,.5); }
+  .f6 .jacks a:hover::before { background: radial-gradient(circle, #E85A42 0 30%, #8A7B63 32% 46%, #4A4036 48%); }
+  .f6 .jacks a.here { color: #C23A26; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  .still *, .still *::before, .still *::after { animation-play-state: paused !important; }
+</style>
+</head>
+<body>
+<div class="pick" role="toolbar" aria-label="Footer options">
+  <b>FOOTER</b>
+  <button type="button" data-o="1" aria-pressed="true">1 · End credits</button>
+  <button type="button" data-o="2" aria-pressed="false">2 · Marquee sign</button>
+  <button type="button" data-o="3" aria-pressed="false">3 · Curtain call</button>
+  <button type="button" data-o="4" aria-pressed="false">4 · Run-out groove</button>
+  <button type="button" data-o="5" aria-pressed="false">5 · Ticket stub</button>
+  <button type="button" data-o="6" aria-pressed="false">6 · Amp head</button>
+  <span class="sp"></span>
+  <button type="button" id="still" aria-pressed="false">STILL</button>
+  <button type="button" id="theme" aria-pressed="false">LIGHT</button>
+</div>
+<div class="about" id="about"></div>
+
+<section class="encore" aria-label="End of the home page (context)">
+  <div class="tape" aria-hidden="true"><div><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span></div><div><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span></div></div>
+  <div class="wrap"><h2 class="h2">Count it in.</h2><a class="btn" href="#"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>START WRITING</a></div>
+</section>
+
+<!-- 1 -->
+<footer class="opt f1 on" id="o1" data-about="<b>1 · End credits</b>The song's over, roll the credits. Letterbox bars close in, and the page's credits scroll up like a film's: Written by you · Key, Feel, Tempo · Chords: I–V–vi–IV · Tabs stored: none · Every riff: new. Then the giant wordmark lands, with the three pages and GitHub underneath. Pure black in both themes, the cinema look.">
+  <span class="bars t"></span>
+  <div class="roll" aria-hidden="true"><div class="reel">
+    <div><small>WRITTEN BY</small><b>You</b></div>
+    <div><small>IN THE KEY OF</small><b>A</b></div>
+    <div><small>FEEL</small><b>Fast punk · 180 BPM</b></div>
+    <div><small>CHORDS</small><b>I – V – vi – IV</b></div>
+    <div><small>TUNING</small><b>E standard</b></div>
+    <div class="red"><small>TABS STORED</small><b>None</b></div>
+    <div><small>EVERY RIFF</small><b>Written fresh</b></div>
+    <div><small>PARTS</small><b>Intro · Verse · Chorus · Solo · Breakdown</b></div>
+    <div class="red"><small>NO ARTISTS WERE COPIED IN THE MAKING OF THIS SONG</small><b>✦</b></div>
+  </div></div>
+  <div class="end"><div class="wrap">
+    <span class="wm" data-wm></span>
+    <div class="row"><nav class="nav" aria-label="Footer"><a class="here" href="#">HOME</a><a href="#">SONG GENERATOR</a><a href="#">CHORD LAB</a></nav><a class="gh" href="#" data-gh>GITHUB</a></div>
+    <p class="fine" style="margin:16px 0 0">PALM/MUTE · POP-PUNK SONG GENERATOR · E STANDARD</p>
+  </div></div>
+  <span class="bars b"></span>
+</footer>
+
+<!-- 2 -->
+<footer class="opt f2" id="o2" data-about="<b>2 · Marquee sign</b>A venue marquee. A ring of bulbs chases round a black sign in time with the beat, the wordmark glows like neon (with the odd flicker), and the pages are on the bill like the night's acts. A red stage glow from above. Ink in both themes.">
+  <div class="wrap">
+    <div class="sign"><div class="bulbs" data-bulbs aria-hidden="true"></div>
+      <div class="now">TONIGHT · ALL AGES · <span class="live" style="color:inherit"><i></i>180 BPM</span></div>
+      <span class="wm" data-wm></span>
+      <nav class="bill" aria-label="Footer"><a href="#">Home</a><span aria-hidden="true">✦</span><a href="#">Song Generator</a><span aria-hidden="true">✦</span><a href="#">Chord Lab</a></nav>
+    </div>
+    <div class="base"><span class="fine">NO TABS STORED · CHORD PATTERNS ONLY</span><a class="gh" href="#" data-gh>GITHUB</a></div>
+  </div>
+</footer>
+
+<!-- 3 -->
+<footer class="opt f3" id="o3" data-about="<b>3 · Curtain call</b>The curtain comes down. Red stage curtains frame the footer and sway, a spotlight drifts across, and under a 'thanks for playing' the pages and GitHub sit centre stage. Beneath them, the wordmark runs edge to edge in giant outline type, cropped by the floor like a stage-lit set. The most theatrical.">
+  <div class="spot" aria-hidden="true"></div><div class="curtain l" aria-hidden="true"></div><div class="curtain r" aria-hidden="true"></div><div class="valance" aria-hidden="true"></div>
+  <div class="mid"><div class="kick">THANKS FOR PLAYING · GOODNIGHT</div><nav class="nav" aria-label="Footer"><a class="here" href="#">HOME</a><a href="#">SONG GENERATOR</a><a href="#">CHORD LAB</a></nav><a class="gh" href="#" data-gh>GITHUB</a></div>
+  <div class="giant" aria-hidden="true">PALM<span>/</span>MUTE</div>
+</footer>
+
+<!-- 4 -->
+<footer class="opt f4" id="o4" data-about="<b>4 · Run-out groove</b>The end of side A. A record keeps spinning at 33⅓ with the red Palm/Mute label, its run-out groove crackling, while the footer copy says 'that's the end of the side' with the pages and GitHub. Paper in light, ink in dark: the only option that follows the theme fully.">
+  <div class="halftone" aria-hidden="true" style="opacity:.5"></div>
+  <div class="wrap" style="position:relative">
+    <div class="grid">
+      <div><div class="kick">END OF SIDE A</div><h3>Flip it,<br><em>write another.</em></h3><nav class="nav" aria-label="Footer"><a class="here" href="#">HOME</a><a href="#">SONG GENERATOR</a><a href="#">CHORD LAB</a></nav><div class="groove">· · · RUN-OUT GROOVE · NO TABS STORED · CHORD PATTERNS ONLY · · ·</div></div>
+      <div class="disc" aria-hidden="true"><div class="lbl"><div><b>PALM/MUTE</b><small>SIDE A · 180</small></div></div></div>
+    </div>
+    <div class="base"><span class="fine">PALM/MUTE · E STANDARD · POWER CHORDS</span><a class="gh" href="#" data-gh>GITHUB</a></div>
+  </div>
+</footer>
+
+<!-- 5 -->
+<footer class="opt f5" id="o5" data-about="<b>5 · Ticket stub</b>A gig ticket. The cream ticket carries the wordmark and the pages; the red stub is torn off along a dashed perforation, with 'Admit one', a barcode and GitHub. Tilted a little, it straightens and lifts when you hover. On ink in both themes.">
+  <div class="wrap">
+    <div class="ticket">
+      <div class="main"><div class="top"><span>PALM/MUTE PRESENTS</span><span>E STANDARD · 180 BPM · ALL AGES</span></div>
+        <div><span class="wm" data-wm></span></div>
+        <nav class="nav" aria-label="Footer"><a class="here" href="#">HOME</a><a href="#">SONG GENERATOR</a><a href="#">CHORD LAB</a></nav></div>
+      <div class="stub"><div><small>ADMIT ONE</small><b>No tabs<br>stored</b></div><div class="barcode" aria-hidden="true"></div><a class="gh" href="#" data-gh>GITHUB</a></div>
+    </div>
+    <div class="base"><span class="fine">KEEP THIS STUB · CHORD PATTERNS ONLY</span></div>
+  </div>
+</footer>
+
+<!-- 6 -->
+<footer class="opt f6" id="o6" data-about="<b>6 · Amp head</b>The page ends in an amp. A cream control panel with the wordmark, a glowing red pilot light pulsing on the beat, and knobs (the last turned to 11); the pages are input jacks. Below it, a speaker grille whose two cones thump at 180 BPM. Ink amp on paper in light; the most tactile.">
+  <div class="amp">
+    <div class="panel">
+      <span class="pilot" aria-hidden="true"></span><span class="wm" data-wm></span>
+      <div class="knobs" aria-hidden="true"><span class="knob"><i style="rotate:-60deg"></i>GAIN</span><span class="knob"><i style="rotate:20deg"></i>BASS</span><span class="knob"><i style="rotate:40deg"></i>TREBLE</span><span class="knob eleven"><i></i><span>11</span></span></div>
+      <nav class="jacks" aria-label="Footer"><a class="here" href="#">HOME</a><a href="#">GENERATOR</a><a href="#">CHORD LAB</a><a href="#">GITHUB</a></nav>
+    </div>
+    <div class="grille" aria-hidden="true"><span class="cone a"></span><span class="cone b"></span><span class="badge">PALM/MUTE</span></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const WM = `PALM<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M6.4 0 0 9.2h3.6L2.6 16 10 6.4H6.2z"/></svg>MUTE`;
+  const GH = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>`;
+  $$("[data-wm]").forEach((e) => e.innerHTML = WM);
+  $$("[data-gh]").forEach((e) => e.innerHTML = GH + "GITHUB");
+  $$("a[href='#']").forEach((a) => a.addEventListener("click", (e) => e.preventDefault()));
+  // marquee bulbs around the sign, chasing on the beat
+  const bulbs = $("[data-bulbs]"); const N = 46; let html = "";
+  for (let i = 0; i < N; i++) { const t = i / N; let x, y; if (t < .35) { x = t / .35 * 100; y = 0; } else if (t < .5) { x = 100; y = (t - .35) / .15 * 100; } else if (t < .85) { x = 100 - (t - .5) / .35 * 100; y = 100; } else { x = 0; y = 100 - (t - .85) / .15 * 100; } html += `<i style="left:${x}%;top:${y}%"></i>`; }
+  bulbs.innerHTML = html;
+  let still = false, b = 0; const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const chase = () => { $$("i", bulbs).forEach((d, i) => d.classList.toggle("on", (i + b) % 3 === 0)); b++; };
+  chase(); setInterval(() => { if (!still && !reduced) chase(); }, 333);
+  const show = (n) => { $$(".opt").forEach((o) => o.classList.toggle("on", o.id === "o" + n)); $$(".pick [data-o]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.o === n))); $("#about").innerHTML = $("#o" + n).dataset.about; requestAnimationFrame(fitGiant); try { history.replaceState(null, "", "#" + n); } catch {} };
+  $$(".pick [data-o]").forEach((x) => x.addEventListener("click", () => show(x.dataset.o)));
+  $("#theme").addEventListener("click", (e) => { const dark = document.documentElement.dataset.theme !== "dark"; document.documentElement.dataset.theme = dark ? "dark" : "light"; e.currentTarget.textContent = dark ? "LIGHT" : "DARK"; });
+  $("#still").addEventListener("click", (e) => { still = !still; e.currentTarget.setAttribute("aria-pressed", String(still)); document.body.classList.toggle("still", still); });
+  const q = new URLSearchParams(location.search); if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme");
+  // fit the curtain call's giant wordmark to the width
+  const fitGiant = () => { const g = $(".f3 .giant"); if (!g || !g.offsetParent) return; g.style.setProperty("--giant", "100px"); const w = g.scrollWidth; g.style.setProperty("--giant", (100 * g.parentElement.clientWidth * .98 / w).toFixed(1) + "px"); };
+  addEventListener("resize", fitGiant); document.fonts.ready.then(fitGiant);
+  const fromHash = () => show((location.hash.match(/^#([1-6])$/) || [, "1"])[1]);
+  addEventListener("hashchange", fromHash); fromHash();
+})();
+</script>
+</body>
+</html>
