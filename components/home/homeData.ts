@@ -4,7 +4,7 @@ import midiLanes from "@/data/midi-lanes.json";
 import { FEEL_IDS, getFeel, getTemplate, playbackBpm } from "@/lib/generator";
 import { TUNINGS, positionOf, voicingsFor } from "@/lib/lab/chords";
 import { MOOD_LOOPS, moodPoints } from "@/lib/lab/mood";
-import { type Degree, type NoteName, type TabString, PITCH_CLASSES, TAB_STRINGS, chordForDegree, chordFor } from "@/lib/musicTheory";
+import { type Degree, type NoteName, type TabString, PITCH_CLASSES, TAB_STRINGS, chordForDegree } from "@/lib/musicTheory";
 import { LENGTH, formatLength, planSong } from "@/lib/songLength";
 
 export type HomeState = { key: number; feel: number; length: number; speed: number };
@@ -29,14 +29,20 @@ export function chordsFor(keyIndex: number) {
   });
 }
 
-/** Two bars of a palm-muted verse, eight eighth-note strums each, from the chord library's shapes (A5 then E5). */
-function barRows(root: NoteName): Record<TabString, string> {
-  const tab = chordFor(root).chord.twoNoteTab;
-  return Object.fromEntries(TAB_STRINGS.map((s) => [s, tab[s] === "-" ? "-".repeat(16) : `${tab[s]}-`.repeat(8)])) as Record<TabString, string>;
+/**
+ * The loop as a palm-muted verse in a key: one bar per chord (I, V, vi, IV, or the first `bars` of them), eight
+ * eighth-note downstrokes each, on the chord library's two-note shapes, so the tab plays what the chips show. Each bar
+ * is 16 characters after "e|", with a "|" between bars.
+ */
+export function loopTab(keyIndex: number, bars = 4) {
+  const chords = chordsFor(keyIndex).slice(0, bars);
+  const strums = (fret: string) => (fret === "-" ? "-".repeat(16) : `${fret}-`.repeat(8));
+  return {
+    names: chords.map((c) => c.name),
+    rows: TAB_STRINGS.map((s: TabString) => `${s}|${chords.map((c) => strums(c.chord.twoNoteTab[s])).join("|")}|`),
+    pm: `  ${chords.map(() => "P.M.------------").join(" ")}`,
+  };
 }
-const A = barRows("A");
-const E = barRows("E");
-export const TAB_ROWS = [...TAB_STRINGS.map((s) => `${s}|${A[s]}|${E[s]}|`), `  P.M.${"-".repeat(30)}`];
 
 /** The song lengths the Generator offers (its slider's steps). */
 export const LENGTHS: number[] = [];

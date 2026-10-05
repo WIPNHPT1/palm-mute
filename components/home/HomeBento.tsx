@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BentoGrid } from "@/components/home/BentoGrid";
 import { StageBackground } from "@/components/StageBackground";
-import { type HomeState, FEELS, KEYS, SPEEDS, STATS, TAB_ROWS, bpmOf, chordsFor } from "@/components/home/homeData";
+import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
 import { progressions } from "@/lib/musicTheory";
 
 /**
- * The home page (owner's pick, docs/mockups/home-bento-eye-candy.html: "Live session · Bento" with the film-burn
- * hero light). A live Song Generator card in the hero, then the stats, the Bento grid of working tiles and the
+ * The home page (owner's pick, docs/mockups/home-bento-eye-candy.html: "Live session · Bento"; the hero is "Studio
+ * glass", docs/mockups/home-hero-premium.html). A live Song Generator card in the hero, then the stats, the Bento grid of working tiles and the
  * questions. One beat clock drives every tile at the tempo of the feel picked (and the practice speed), so the page
  * plays as one song. The clock stops while the tab is hidden and never runs with reduced motion.
  */
@@ -119,8 +119,8 @@ function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm
   return (
     <section className="hb-hero" aria-labelledby="hb-title">
       <div className="hb-fx" aria-hidden="true">
-        <div className="hb-halftone" />
-        <i className="hb-burn a" /><i className="hb-burn b" /><i className="hb-burn c" />
+        <div className="hb-studio" />
+        <i className="hb-aura a" /><i className="hb-aura b" /><i className="hb-aura c" />
       </div>
       <div className="hb-wrap hb-hgrid">
         <div ref={col}>
@@ -139,15 +139,14 @@ function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm
             <Link className="hb-lnk" href="/chords/">Open the Chord Lab →</Link>
           </div>
         </div>
-        <div className="hb-stage3d" data-reveal>
-          <div className="hb-card hb-app" data-live-card>
-            <div className="hb-float a">KEY OF <b>{KEYS[state.key]}</b> · {FEELS[state.feel].label}</div>
-            <div className="hb-cardhd"><span className="hb-num">01</span><span>Verse 1</span><span className="hb-mono">×2 · 0:08</span></div>
+        <div data-reveal>
+          <div className="hb-glass" data-live-card>
+            <div className="hb-cardhd"><span className="hb-num">01</span><span>Verse 1</span><span className="hb-cap">KEY OF <b>{KEYS[state.key]}</b> · {FEELS[state.feel].label}</span></div>
             <KeyPills value={state.key} onChange={onKey} label="Key, in the live card" />
             <Chips keyIndex={state.key} beat={beat} />
-            <Tab beat={beat} />
+            <Tab keyIndex={state.key} beat={beat} />
             <Transport beat={beat} speed={state.speed} />
-            <div className="hb-float b"><b>●</b> NO TABS STORED</div>
+            <div className="hb-glass-foot"><span><i />NO TABS STORED</span><span>×2 · E STANDARD</span></div>
           </div>
         </div>
       </div>
@@ -178,8 +177,10 @@ export function Chips({ keyIndex, beat }: { keyIndex: number; beat: number }) {
       {chords.map((c, i) => {
         const now = beat > 0 && bar % 4 === i;
         return (
-          <span key={`${keyIndex}-${i}-${now ? bar : "x"}`} className={`hb-chip${now ? " now" : ""}`} style={{ "--i": i } as React.CSSProperties} aria-hidden="true">
+          // keyed by the key, so the chips flip in when it changes; only the bar fill restarts each bar
+          <span key={`${keyIndex}-${i}`} className={`hb-chip${now ? " now" : ""}`} style={{ "--i": i } as React.CSSProperties} aria-hidden="true">
             <small>{c.degree}</small><b>{c.name}</b><pre>{c.tab}</pre>
+            {now && <i key={bar} className="hb-fill" />}
           </span>
         );
       })}
@@ -187,26 +188,29 @@ export function Chips({ keyIndex, beat }: { keyIndex: number; beat: number }) {
   );
 }
 
-export function Tab({ beat }: { beat: number }) {
-  // the playhead sweeps the two bars (after "e|"), one eighth-note cell per beat: 16 cells of 2 characters, then 17
-  const text = useRef<HTMLSpanElement>(null);
-  const [ch, setCh] = useState(0);
-  useEffect(() => {
-    const ro = new ResizeObserver(() => setCh((text.current?.offsetWidth ?? 0) / TAB_ROWS[0].length));
-    ro.observe(text.current!);
-    return () => ro.disconnect();
-  }, []);
-  const cell = beat % 16;
-  const x = ch * (2 + cell * 2 + (cell >= 8 ? 1 : 0));
+/**
+ * The loop's tab in the key: one bar per chord, as the chips show it. One beat is a quarter note: the bar sounding is
+ * the chip that's lit (a chord a bar), and the playhead moves two eighth-note strums a beat. Before the first beat (and
+ * with reduced motion) the playhead waits at the start and no bar is lit.
+ */
+export function Tab({ keyIndex, beat }: { keyIndex: number; beat: number }) {
+  const tab = useMemo(() => loopTab(keyIndex), [keyIndex]);
+  const bar = Math.floor(beat / 4) % 4;
   return (
-    <pre className="hb-tab" aria-hidden="true">
-      <span ref={text} style={{ display: "inline-block" }}>{TAB_ROWS[0]}</span>
-      {"\n"}
-      {TAB_ROWS.slice(1, 6).join("\n")}
-      {"\n"}
-      <span className="pm">{TAB_ROWS[6]}</span>
-      <span className="head" style={{ transform: `translateX(${x}px)` }} />
-    </pre>
+    <div className="hb-tabw">
+      <pre className="hb-tab" aria-hidden="true" data-bar={beat > 0 ? bar : undefined} style={{ "--bar": bar, "--cell": (beat % 4) * 2 } as React.CSSProperties}>
+        <span className="hb-tab-in">
+          {beat > 0 && <span className="cur" />}
+          <span className="head" />
+          {"  "}
+          {tab.names.map((n, i) => <b key={i}>{n.padEnd(17)}</b>)}
+          {"\n"}
+          {tab.rows.join("\n")}
+          {"\n"}
+          <span className="pm">{tab.pm}</span>
+        </span>
+      </pre>
+    </div>
   );
 }
 

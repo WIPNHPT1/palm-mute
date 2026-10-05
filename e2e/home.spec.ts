@@ -1,7 +1,7 @@
 import { expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
 
-// The home page (docs/mockups/home-bento-eye-candy.html, owner's pick: "Live session · Bento" with the film-burn
-// hero light): a live Song Generator card in the hero, the stats, a Bento grid of working tiles, questions, encore.
+// The home page (docs/mockups/home-bento-eye-candy.html, owner's pick: "Live session · Bento"; the hero is "Studio
+// glass", docs/mockups/home-hero-premium.html): a live Song Generator card in the hero, the stats, a Bento grid of working tiles, questions, encore.
 
 test.describe("home", () => {
   test("the hero: headline, CTAs, and a live card in A", async ({ page }) => {
@@ -11,6 +11,39 @@ test.describe("home", () => {
     await expect(page.getByRole("link", { name: /Open the Chord Lab/ })).toHaveAttribute("href", /\/chords\/$/);
     await expect(page.locator("[data-live-card] .hb-chip b")).toHaveText(["A5", "E5", "F#5", "D5"]);
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+  });
+
+  test("the live card's tab plays the loop in the key, one bar per chord, with the lit chip", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await gotoAndSettle(page, "/");
+    const tab = page.locator("[data-live-card] .hb-tab");
+    const rows = async () => (await tab.textContent())!.split("\n").map((r) => r.trimEnd());
+    // A: A5 (A open, D 2nd), E5 (E open, A 2nd), F#5 (E 2nd, A 4th), D5 (D open, G 2nd), eight strums a bar
+    expect(await rows()).toEqual([
+      "  A5               E5               F#5              D5",
+      "e|----------------|----------------|----------------|----------------|",
+      "B|----------------|----------------|----------------|----------------|",
+      "G|----------------|----------------|----------------|2-2-2-2-2-2-2-2-|",
+      "D|2-2-2-2-2-2-2-2-|----------------|----------------|0-0-0-0-0-0-0-0-|",
+      "A|0-0-0-0-0-0-0-0-|2-2-2-2-2-2-2-2-|4-4-4-4-4-4-4-4-|----------------|",
+      "E|----------------|0-0-0-0-0-0-0-0-|2-2-2-2-2-2-2-2-|----------------|",
+      "  P.M.------------ P.M.------------ P.M.------------ P.M.------------",
+    ]);
+    // the bar lit in the tab is the chip lit above it
+    await expect(tab).toHaveAttribute("data-bar", /[0-3]/, { timeout: 5000 });
+    for (let i = 0; i < 3; i++) {
+      const [bar, chip] = await page.evaluate(() => {
+        const card = document.querySelector("[data-live-card]")!;
+        return [card.querySelector(".hb-tab")!.getAttribute("data-bar"), String([...card.querySelectorAll(".hb-chip")].findIndex((c) => c.classList.contains("now")))];
+      });
+      expect(bar).toBe(chip);
+      await page.waitForTimeout(450);
+    }
+    // in F: F5 on the low E string, C5 on the A string, D5 on the open D string, A#5 on the A string
+    await page.getByRole("group", { name: "Key, in the live card" }).getByRole("button", { name: "F", exact: true }).click();
+    expect((await rows())[0]).toBe("  F5               C5               D5               A#5");
+    expect((await rows())[6]).toBe("E|1-1-1-1-1-1-1-1-|----------------|----------------|----------------|");
   });
 
   test("the key, feel and speed drive the whole page", async ({ page }, info) => {
@@ -52,16 +85,18 @@ test.describe("home", () => {
     if (projectWidth(info) >= 834) await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
   });
 
-  test("the film burn moves by transform and opacity only: no blend modes, no live blur", async ({ page }, info) => {
+  test("the studio light moves by transform and opacity only, and the glass has no live blur", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
     await gotoAndSettle(page, "/");
-    const burns = await page.locator(".hb-burn").evaluateAll((els) => els.map((e) => { const cs = getComputedStyle(e); return { blend: cs.mixBlendMode, filter: cs.filter, anim: cs.animationName }; }));
-    expect(burns).toEqual([
-      { blend: "normal", filter: "none", anim: "hb-burn-a" },
-      { blend: "normal", filter: "none", anim: "hb-burn-b" },
-      { blend: "normal", filter: "none", anim: "hb-burn-c" },
+    const lights = await page.locator(".hb-aura").evaluateAll((els) => els.map((e) => { const cs = getComputedStyle(e); return { blend: cs.mixBlendMode, filter: cs.filter, anim: cs.animationName }; }));
+    expect(lights).toEqual([
+      { blend: "normal", filter: "none", anim: "hb-aura-a" },
+      { blend: "normal", filter: "none", anim: "hb-aura-b" },
+      { blend: "normal", filter: "none", anim: "hb-aura-a" },
     ]);
+    const glass = page.locator("[data-live-card]");
+    expect(await glass.evaluate((e) => getComputedStyle(e).backdropFilter)).toMatch(/^(none|)$/);
     expect(await page.locator(".hb-grain").evaluate((e) => getComputedStyle(e).mixBlendMode)).toBe("normal");
   });
 
@@ -73,7 +108,9 @@ test.describe("home", () => {
     const chips = () => page.locator("[data-live-card] .hb-chip.now").count();
     await page.waitForTimeout(1000);
     expect(await chips()).toBe(0);
-    expect(await page.locator(".hb-burn").first().evaluate((e) => getComputedStyle(e).animationName)).toBe("none");
+    expect(await page.locator(".hb-aura").first().evaluate((e) => getComputedStyle(e).animationName)).toBe("none");
+    // the tab waits at the start: no bar lit
+    await expect(page.locator("[data-live-card] .hb-tab")).not.toHaveAttribute("data-bar", /./);
   });
 
   test("song titles flip and shuffle", async ({ page }, info) => {
