@@ -82,9 +82,9 @@ test.describe("home", () => {
       els.filter((e) => e.getClientRects().length).map((e) => ({ t: (e.textContent || e.getAttribute("aria-label") || "").trim().slice(0, 20), w: (e as HTMLElement).offsetWidth, h: (e as HTMLElement).offsetHeight })).filter(({ w, h }) => w < min || h < min).map(({ t }) => t), 43.5 * u);
     expect(small).toEqual([]);
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
-    // the speakers replace the scope here (the Generator and the Chord Lab keep it)
-    await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
+    // the speakers up top, the Generator and Chord Lab's scope behind the lower sections
     await expect(page.locator('canvas.hb-speaker[aria-hidden="true"]')).toHaveCount(2);
+    await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
   });
 
   test("speaker cone: a big cone behind the hero, a 2×2 cab behind the kit, drawn and pumping on the beat", async ({ page }, info) => {
@@ -102,6 +102,23 @@ test.describe("home", () => {
     await expect.poll(async () => (await one.evaluate((c: HTMLCanvasElement) => { const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 64) if (d[i] > 0) n++; return n; }))).toBeGreaterThan(100);
     const a = await frame();
     await expect.poll(frame, { timeout: 3000 }).not.toBe(a);
+  });
+
+  test("the kit cross-fades from the speaker cab into the scope: no hard edges", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await gotoAndSettle(page, "/");
+    const fades = await page.evaluate(() => {
+      const kit = document.querySelector(".hb-kit-sec")!, cab = kit.querySelector(".hb-speaker")!, hero = document.querySelector(".hb-hero .hb-speaker")!;
+      const mask = (e: Element) => { const cs = getComputedStyle(e); return cs.maskImage || cs.getPropertyValue("-webkit-mask-image"); };
+      return { kitBg: getComputedStyle(kit).backgroundImage, cab: mask(cab), hero: mask(hero) };
+    });
+    // the paper over the scope fades away down the kit while the cab fades out over the same stretch
+    expect(fades.kitBg).toMatch(/linear-gradient/);
+    expect(fades.cab).toMatch(/linear-gradient/);
+    expect(fades.hero).toMatch(/linear-gradient/);
+    // and the scope is there underneath, for the questions and the encore
+    await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
   });
 
   test("speaker cone stands still with reduced motion", async ({ page }, info) => {
