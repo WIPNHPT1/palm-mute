@@ -151,12 +151,9 @@
 .hb-tab .cur { position: absolute; top: 1.45em; height: 8.7em; left: calc((2 + var(--bar, 0) * 17) * 1ch - .3ch); width: 16.6ch; border-radius: 3px; background: rgb(var(--accent-rgb) / .12); transition: left .25s var(--out); }
 .hb-tab .head { position: absolute; top: 1.2em; height: 9.2em; width: 2px; margin-left: -1px; left: calc((2.5 + var(--bar, 0) * 17 + var(--cell, 0)) * 1ch); border-radius: 1px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); transition: left 90ms linear; }
 .hb-transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); flex-wrap: wrap; }
-.hb-play { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
-.hb-play svg.p { width: 14px; height: 14px; fill: currentColor; margin-left: 2px; }
-.hb-play svg.hb-ringsvg { position: absolute; inset: -5px; width: calc(100% + 10px); height: calc(100% + 10px); transform: rotate(-90deg); }
-.hb-play svg.hb-ringsvg circle { fill: none; stroke-width: 2; } .hb-play .tr { stroke: rgb(246 241 228 / .15); }
-.hb-play .pr { stroke: var(--accent); stroke-dasharray: 151; stroke-dashoffset: 151; animation: hb-arc calc(var(--beat) * 4) linear infinite; stroke-linecap: round; }
-@keyframes hb-arc { to { stroke-dashoffset: 0; } }
+/* the play button is just the icon (owner's call): no disc, no ring */
+.hb-play { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--accent); }
+.hb-play svg.p { width: 20px; height: 20px; fill: currentColor; margin-left: 2px; }
 .hb-prog { flex: 1; min-width: 80px; height: 4px; border-radius: 2px; background: rgb(246 241 228 / .12); overflow: hidden; }
 .hb-prog i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: hb-prog 40s linear infinite; } @keyframes hb-prog { from { transform: scaleX(0); } }
 .hb-speed { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid rgb(246 241 228 / .14); }

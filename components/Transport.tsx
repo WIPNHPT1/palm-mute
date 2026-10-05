@@ -79,9 +79,9 @@ export function Transport({
           onClick={onPlay}
           aria-pressed={playing}
           aria-label={playing ? "Stop the song" : "Play the song"}
-          className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full sig-btn bg-accent text-text-on-accent"
+          className="sig-play flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-mid text-accent-on-ink"
         >
-          {playing ? <StopIcon size={14} /> : <PlayIcon size={14} />}
+          {playing ? <StopIcon size={18} /> : <PlayIcon size={20} />}
         </button>
         <div className="flex min-w-0 flex-auto flex-col leading-[1.3] desktop:flex-none desktop:basis-[200px]" aria-live="off">
           <b className="truncate font-mono text-[12px]" data-transport-part>
