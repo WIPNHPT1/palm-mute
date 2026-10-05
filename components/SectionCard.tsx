@@ -250,7 +250,7 @@ export function SectionCard({
       </div>
 
       {options && open && (
-        <div id={panelId} data-options-panel className="rounded-b-[6.5px] border-t border-line bg-paper">
+        <div id={panelId} data-options-panel className="glass-well rounded-b-[6.5px] border-t border-line bg-paper">
           {options}
         </div>
       )}

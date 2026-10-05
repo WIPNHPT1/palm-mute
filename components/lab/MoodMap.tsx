@@ -65,7 +65,7 @@ export function MoodMap() {
           data-plot
           role="group"
           aria-label="Mood map: tap a dot to hear that loop"
-          className="relative aspect-square overflow-hidden rounded-outer border border-line bg-paper tablet:aspect-[4/3]"
+          className="glass-well relative aspect-square overflow-hidden rounded-outer border border-line bg-paper tablet:aspect-[4/3]"
           onClick={(e) => {
             if ((e.target as HTMLElement).closest("button")) return;
             const r = e.currentTarget.getBoundingClientRect();
@@ -125,7 +125,7 @@ export function MoodMap() {
         <p className="col-start-2 font-mono text-[12px] text-text-muted">Tap a dot to hear it. Tap empty space to hear the nearest.</p>
       </div>
 
-      <div className="flex flex-col gap-[12px] rounded-outer border-[1.5px] border-ink bg-surface p-[14px] dark:border-line-strong" data-mood-panel>
+      <div className="glass flex flex-col gap-[12px] rounded-outer border-[1.5px] border-ink bg-surface p-[14px]" data-mood-panel>
         <GroupLabel>Picked loop</GroupLabel>
         <span className="font-display text-[26px] leading-none" data-picked>
           {current.id}

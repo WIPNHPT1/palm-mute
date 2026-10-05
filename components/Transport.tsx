@@ -67,7 +67,7 @@ export function Transport({
       role="region"
       aria-label="Playback"
       data-transport
-      className="sig-stage-light fixed inset-x-0 bottom-0 z-30 bg-ink px-[12px] pb-[calc(8px+env(safe-area-inset-bottom,0px))] pt-[8px] text-text-on-dark shadow-[0_-10px_24px_-12px_rgba(23,19,16,0.45)] min-[400px]:px-[20px] tablet:px-[32px] desktop:px-[56px] dark:border-t dark:border-line-strong"
+      className="sig-stage-light glass-smoke fixed inset-x-0 bottom-0 z-30 bg-ink px-[12px] pb-[calc(8px+env(safe-area-inset-bottom,0px))] pt-[8px] text-text-on-dark shadow-[0_-10px_24px_-12px_rgba(23,19,16,0.45)] min-[400px]:px-[20px] tablet:px-[32px] desktop:px-[56px] dark:border-t dark:border-line-strong"
     >
       {/* Progress: a hairline on the top edge below 1280px. */}
       <div className="absolute inset-x-0 top-0 h-[3px] bg-ink-soft desktop:hidden" aria-hidden="true">

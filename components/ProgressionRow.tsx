@@ -41,7 +41,7 @@ export function ProgressionRow({
   badge?: string;
   className?: string;
 }) {
-  const container = `rounded-mid border bg-paper px-[12px] py-[8px] tablet:px-[14px] tablet:gap-[12px] ${highlighted ? "border-accent" : "border-line hover:border-text-faintest"}`;
+  const container = `glass-well rounded-mid border bg-paper px-[12px] py-[8px] tablet:px-[14px] tablet:gap-[12px] ${highlighted ? "border-accent" : "border-line hover:border-text-faintest"}`;
 
   return (
     <div data-progression={progression.id} className={`relative flex flex-col gap-[8px] tablet:flex-row tablet:items-center ${container} ${className}`}>

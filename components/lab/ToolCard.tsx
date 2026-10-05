@@ -55,7 +55,7 @@ export function ToolStrip({ tools }: { tools: LabTool[] }) {
     };
   }, [tools]);
   return (
-    <nav aria-label="Lab tools" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-[4px] rounded-outer bg-ink p-[6px]">
+    <nav aria-label="Lab tools" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] gap-[4px] relative rounded-outer glass-smoke bg-ink p-[6px]">
       {tools.map((t) => (
         <a
           key={t.id}

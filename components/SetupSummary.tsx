@@ -6,7 +6,7 @@
  */
 export function SetupSummary({ items, onEdit }: { items: { step: number; label: string; value: string }[]; onEdit: (step: number) => void }) {
   return (
-    <section aria-label="Song setup" data-setup-summary className="flex flex-wrap items-center gap-[6px] rounded-outer border border-line bg-surface p-[8px]">
+    <section aria-label="Song setup" data-setup-summary className="flex flex-wrap items-center gap-[6px] rounded-outer glass border border-line bg-surface p-[8px]">
       {items.map((it) => (
         <button
           key={it.label}
