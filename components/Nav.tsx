@@ -7,13 +7,13 @@ import { REPO_URL } from "@/components/Footer";
 import { Wordmark } from "@/components/Wordmark";
 import { applyTheme, currentTheme } from "@/lib/theme";
 
-const LINKS = [
+export const LINKS = [
   { href: "/", label: "Count In" },
   { href: "/generator/", label: "Generator" },
   { href: "/chords/", label: "Chord Lab" },
 ];
 
-function isActive(pathname: string, href: string) {
+export function isActive(pathname: string, href: string) {
   const norm = (p: string) => (p.length > 1 ? p.replace(/\/$/, "") : p);
   return norm(pathname) === norm(href);
 }
