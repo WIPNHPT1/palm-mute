@@ -44,7 +44,7 @@ Otherwise, prefer making a reasonable call, documenting it (in the PR descriptio
 - `npm run verify` — data-layer and music-theory invariants (must pass before any PR)
 - `npm run build:brand` — regenerates the favicons, app icons and share image (Playwright's Chromium)
 - `npm run build:readme` — regenerates the README images in `docs/readme/` (run `npm run build` first)
-- `npm run test:e2e` — Playwright browser tests (Chromium + WebKit, 320–1920px, light + dark); builds and serves `out/` itself. Must pass before any PR. Run one project with e.g. `npx playwright test --project=chromium-390-light`
+- `npm run test:e2e` — Playwright browser tests (Chromium + WebKit, 320–1920px, light + dark); builds and serves `out/` itself. **Not required before opening a PR** (owner's call, 2026-10-05): the full suite takes 12–20 minutes, and GitHub CI runs it on every PR. Before a PR, run just the specs that cover what you changed (e.g. `npx playwright test e2e/home.spec.ts`), and say in the PR which ones you ran. Run one project with e.g. `npx playwright test --project=chromium-390-light`
 
 ## Custom slash command
 
