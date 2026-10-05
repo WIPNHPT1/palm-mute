@@ -36,7 +36,7 @@ test.describe("stage: design scale and background", () => {
     });
   }
 
-  test("the home page draws at 90% from 1440px too, with the same fixed scope as the other pages", async ({ page }, info) => {
+  test("the home page draws at 90% from 1440px too, with the same fixed scope as the other pages (behind its quiet sections)", async ({ page }, info) => {
     onlyAtWidths(info, [1920]);
     lightOnly(info);
     await gotoAndSettle(page, "/");

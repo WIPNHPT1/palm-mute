@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute Live Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Four fuller takes on concept 1, "Live session" (home-premium-options.html): the same live Generator card in the
+     hero, then a long scroll of real content: keys, feels, lengths, every part, shaping, practice, export, the Chord
+     Lab's five tools, the originality promise, questions and the encore. Each option tells that story differently.
+     Everything shown is something the app does today. Dark by default; LIGHT and STILL top right. */
+  :root, [data-theme="dark"] {
+    --ink:#0B0908; --ink-soft:#1F1A16; --paper:#15110E; --surface:#1F1A16; --board:#0F0C0A; --board-cell:#1A1511;
+    --accent:#E85A42; --accent-rgb:232 90 66; --brass:#C9973C; --brass-rgb:201 151 60; --success:#52A862;
+    --line:#352D25; --line-strong:#463B30; --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B;
+    --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#140F0C; --chip:#0B0908; --chip-tab:#C9BFA9;
+    --dot:rgb(246 241 228 / .14); --leak:246 241 228; --leak-a:.3; --leak-k:.55;
+    --lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); --sh:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8);
+    --hi:rgba(246,241,228,.07); --grain:.09; color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --ink:#171310; --ink-soft:#2A241C; --paper:#F6F1E4; --surface:#FFFFFF; --board:#211B15; --board-cell:#2A231C;
+    --accent:#C23A26; --accent-rgb:194 58 38; --brass:#B8862E; --brass-rgb:184 134 46; --success:#3F8F4F;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A;
+    --on-accent:#FFF9EF; --chip:#171310; --dot:rgb(23 19 16 / .22); --leak:184 134 46; --leak-a:.42; --leak-k:1;
+    --lift:0 2px 4px rgba(23,19,16,.05), 0 30px 60px -30px rgba(23,19,16,.35); --sh:0 1px 2px rgba(23,19,16,.06), 0 12px 24px -16px rgba(23,19,16,.32);
+    --hi:rgba(255,255,255,.7); --grain:.07; color-scheme: light;
+  }
+  :root { --display:"Archivo Black","Arial Black",sans-serif; --ui:"Space Grotesk",system-ui,sans-serif; --mono:"Space Mono",ui-monospace,Menlo,monospace;
+    --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1); --pad:clamp(16px, 4vw, 56px); --bar:68px; --pick:61px; }
+  * { box-sizing: border-box; }
+  html { overflow-x: clip; }
+  body { margin: 0; background: var(--paper); color: var(--t1); font-family: var(--ui); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  button { font: inherit; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { width: 100%; max-width: 1296px; margin: 0 auto; padding-inline: var(--pad); }
+
+  /* picker (not part of the designs) */
+  .pick { position: sticky; top: 0; z-index: 100; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; background: #000; color: #EDE6D6; border-bottom: 1px solid #333; font-family: var(--mono); font-size: 12px; }
+  .pick b { color: #E85A42; font-weight: 400; letter-spacing: .12em; margin-right: 6px; }
+  .pick button { min-height: 44px; padding: 0 12px; border: 1px solid #3a3530; border-radius: 6px; background: #14110F; cursor: pointer; }
+  .pick button[aria-pressed="true"] { background: #E85A42; color: #140F0C; border-color: #E85A42; }
+  .pick .sp { flex: 1; }
+  .about { position: fixed; z-index: 99; left: 16px; bottom: 16px; width: min(440px, calc(100vw - 32px)); padding: 16px 44px 16px 18px; border-radius: 12px; background: #000; color: #D9CFB9; border: 1px solid #3a3530; font-size: 14px; line-height: 1.5; box-shadow: 0 20px 50px -20px rgba(0,0,0,.9); }
+  .about b { color: #F6F1E4; font-family: var(--display); font-weight: 400; font-size: 18px; display: block; margin-bottom: 4px; }
+  .about button { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: transparent; color: #A89C86; font-size: 20px; cursor: pointer; }
+  .about[hidden] { display: none; }
+  .opt { display: none; } .opt.on { display: block; }
+
+  /* ---------- foundation ---------- */
+  .sitebar { position: sticky; top: var(--pick); z-index: 50; height: var(--bar); background: var(--ink); background-image: radial-gradient(440px 160% at 90px 0%, rgb(var(--accent-rgb) / .22), transparent 70%); }
+  .sitebar .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .wm { display: inline-flex; align-items: center; font-family: var(--display); font-size: 16px; color: var(--on-dark); }
+  .wm svg { width: .6em; height: .9em; margin: 0 .04em; fill: var(--accent); }
+  .horns { width: 44px; height: 44px; display: grid; place-items: center; margin-right: -10px; color: var(--on-dark); }
+  .horns svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .grainl { position: fixed; inset: -12%; z-index: 90; pointer-events: none; opacity: var(--grain); animation: grain 1.2s steps(6) infinite;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .167 .167 .167 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  [data-theme="light"] .grainl { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -.167 -.167 -.167 0 .5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  @keyframes grain { 20% { transform: translate(-4%, 3%); } 40% { transform: translate(3%, -5%); } 60% { transform: translate(-2%, 6%); } 80% { transform: translate(5%, -2%); } }
+  .halftone { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.7px); background-size: 9px 9px; opacity: .6; }
+  .leak { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .leak i { position: absolute; border-radius: 50%; }
+  .leak i:nth-child(1) { left: -28vw; top: -30vw; width: 80vw; aspect-ratio: 1; background: radial-gradient(closest-side, rgb(var(--leak) / var(--leak-a)), rgb(var(--brass-rgb) / calc(.2 * var(--leak-k))) 55%, transparent); animation: leakA 28s ease-in-out infinite alternate; }
+  .leak i:nth-child(2) { right: -34vw; bottom: -38vw; width: 84vw; aspect-ratio: 1; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / calc(.16 * var(--leak-k))), transparent); animation: leakB 28s ease-in-out infinite alternate; }
+  @keyframes leakA { to { opacity: .55; transform: translate(4vw, 2vw); } } @keyframes leakB { from { opacity: .45; } to { opacity: 1; transform: translate(-4vw, -3vw); } }
+  .kick { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--accent); display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .kick::after { content: ""; flex: 0 0 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+  .mono { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--t3); }
+  .live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: .16em; }
+  .live i { width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(82 168 98 / .22); animation: blink .667s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .kin { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: -.035em; line-height: .88; font-size: var(--kin, 6vw); }
+  .kin > span { display: block; width: max-content; white-space: nowrap; }
+  .kin > span:nth-child(1), .kin > span:nth-child(3) { text-shadow: .02em .02em 0 rgb(var(--accent-rgb) / .38); }
+  .kin > span:nth-child(2) { color: transparent; -webkit-text-stroke: 2px var(--t1); margin-left: var(--in2, 0); }
+  .kin > span:nth-child(4) { color: var(--accent); margin-left: var(--in4, 0); }
+  .btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 24px; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent);
+    font-family: var(--display); font-size: 13px; letter-spacing: .02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(0,0,0,.16), 0 8px 22px -8px rgb(var(--accent-rgb) / .7); transition: transform .3s var(--out); }
+  .btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.3) 50%, transparent 62%); transform: translateX(-130%); transition: transform .72s var(--out); }
+  .btn:hover { transform: translateY(-2px); } .btn:hover::after { transform: translateX(130%); }
+  .btn svg { width: 12px; height: 12px; fill: currentColor; }
+  .btn.ghost { background: transparent; color: var(--t1); box-shadow: inset 0 0 0 1.5px var(--t1); }
+  .btn.sm { min-height: 44px; padding: 0 16px; font-size: 12px; }
+  .lnk { font-family: var(--mono); font-size: 12.5px; color: var(--t3); padding: 12px 4px; } .lnk:hover { color: var(--t1); }
+  section { position: relative; }
+  .sec { padding: clamp(80px, 10vw, 140px) 0; }
+  .h2 { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: -.025em; line-height: .92; font-size: clamp(34px, 5vw, 76px); }
+  .h2 em { font-style: normal; color: var(--accent); } .h2 .o { color: transparent; -webkit-text-stroke: 2px var(--t1); }
+  .h3 { margin: 0 0 8px; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 2.2vw, 30px); line-height: .98; }
+  .lede { margin: 16px 0 0; max-width: 540px; font-size: clamp(16px, 1.35vw, 18px); line-height: 1.6; color: var(--t2); }
+  .p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--t2); }
+  [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity .9s var(--out), transform 1.1s var(--out); transition-delay: calc(var(--d, 0) * 80ms); }
+  [data-reveal].in { opacity: 1; transform: none; }
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 80px); align-items: center; }
+  .split.flip > :first-child { order: 2; }
+  @media (max-width: 960px) { .split { grid-template-columns: minmax(0, 1fr); } .split.flip > :first-child { order: 0; } }
+
+  /* the Generator's parts */
+  .card { position: relative; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: inset 0 1px 0 var(--hi), var(--sh); }
+  .card::before { content: ""; position: absolute; left: 18px; top: -1.5px; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--accent); }
+  .pad { padding: 18px; }
+  .num { display: inline-block; padding: 1px 7px; border-radius: 4px; background: var(--ink); color: var(--on-dark); font-family: var(--mono); font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .cardhd { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; font-family: var(--display); font-size: 18px; }
+  .cardhd .mono { margin-left: auto; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { position: relative; min-width: 40px; min-height: 44px; padding: 0 8px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; font-family: var(--mono); font-size: 13px; color: var(--t3); cursor: pointer; transition: background .2s, color .2s; }
+  .pill:hover { color: var(--t1); }
+  .pill.on { background: var(--ink); color: var(--on-dark); border-color: var(--ink); font-weight: 700; box-shadow: inset 0 1px 0 rgba(246,241,228,.14), 0 6px 12px -8px rgba(0,0,0,.6); animation: pop .32s var(--spring); }
+  .pill.on::after { content: ""; position: absolute; top: 3px; left: 50%; width: 14px; height: 2px; margin-left: -7px; border-radius: 1px; background: var(--accent); }
+  @keyframes pop { from { transform: scale(1.12); } }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; overflow: hidden; width: 58px; padding: 6px 0 8px; border-radius: 6px; background: var(--chip); color: var(--on-dark); text-align: center; font-family: var(--mono); box-shadow: inset 0 0 0 1px rgba(246,241,228,.09); transition: transform .3s var(--out); }
+  .chip small { display: block; font-size: 12px; color: var(--on-dark-3); }
+  .chip b { display: block; font-size: 15px; margin: 2px 0 4px; }
+  .chip pre { margin: 0; font-size: 9px; line-height: 1.25; color: var(--chip-tab); text-align: left; padding-left: 9px; }
+  .chip.now { background-image: linear-gradient(to top, rgb(var(--accent-rgb) / .3), transparent 70%); transform: translateY(-3px); }
+  .chip.now::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); animation: barfill 1333ms linear forwards; }
+  .chip.flipin { animation: flipin .5s var(--spring); }
+  @keyframes flipin { from { transform: rotateY(90deg); } }
+  @keyframes barfill { from { width: 0; } to { width: 100%; } }
+  .tab { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--paper); font-family: var(--mono); font-size: 12px; line-height: 1.45; color: var(--t1); white-space: pre; overflow: hidden; position: relative; }
+  .tab .pm { color: var(--t3); }
+  .tab .head { position: absolute; top: 8px; bottom: 8px; width: 2px; left: 12px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); }
+  .seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--paper); box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
+  .seg button { position: relative; z-index: 1; min-height: 52px; border: 0; background: transparent; font-family: var(--mono); font-size: 12px; color: var(--t3); cursor: pointer; transition: color .3s; }
+  .seg button small { display: block; font-size: 12px; opacity: .8; }
+  .seg button.on { color: var(--on-dark); font-weight: 700; }
+  .seg .thumb { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; border-radius: 6px; background: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong), 0 8px 14px -8px rgba(0,0,0,.6); transition: transform .5s var(--spring), width .4s var(--out); }
+  .seg .thumb::after { content: ""; position: absolute; bottom: 4px; left: 50%; width: 16px; height: 2px; margin-left: -8px; border-radius: 1px; background: var(--accent); }
+  .transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); flex-wrap: wrap; }
+  .play { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+  .play svg.p { width: 14px; height: 14px; fill: currentColor; margin-left: 2px; }
+  .play svg.ring { position: absolute; inset: -5px; width: calc(100% + 10px); height: calc(100% + 10px); transform: rotate(-90deg); }
+  .play svg.ring circle { fill: none; stroke-width: 2; }
+  .play .tr { stroke: rgb(246 241 228 / .15); } .play .pr { stroke: var(--accent); stroke-dasharray: 151; stroke-dashoffset: 151; animation: arc var(--barms, 1333ms) linear infinite; stroke-linecap: round; }
+  @keyframes arc { to { stroke-dashoffset: 0; } }
+  .prog { flex: 1; min-width: 80px; height: 4px; border-radius: 2px; background: rgb(246 241 228 / .12); overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: prog 40s linear infinite; }
+  @keyframes prog { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .tog { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid rgb(246 241 228 / .14); background: transparent; color: var(--on-dark-3); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; cursor: pointer; }
+  .tog.on { color: var(--on-dark); border-color: var(--accent); background: rgb(var(--accent-rgb) / .14); }
+  .speed { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid rgb(246 241 228 / .14); }
+  .speed button { min-width: 50px; min-height: 44px; border: 0; background: transparent; color: var(--on-dark-3); font-family: var(--mono); font-size: 12px; cursor: pointer; }
+  .speed button.on { background: var(--on-dark); color: var(--ink); font-weight: 700; }
+
+  /* ---------- hero ---------- */
+  .hero { min-height: calc(100svh - var(--bar) - var(--pick)); display: flex; align-items: center; overflow: hidden; padding: 40px 0 60px; }
+  .hgrid { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(28px, 4vw, 64px); align-items: center; }
+  @media (max-width: 1000px) { .hgrid { grid-template-columns: minmax(0, 1fr); } }
+  .hleft .top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+  .hleft p { margin: 26px 0; max-width: 460px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.55; color: var(--t2); }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+  .stage3d { perspective: 1400px; }
+  .app { transform: rotateY(-9deg) rotateX(4deg); padding: 18px; display: flex; flex-direction: column; gap: 14px; transition: transform 1.2s var(--out); }
+  .stage3d:hover .app { transform: rotateY(-3deg) rotateX(1deg); }
+  .float { position: absolute; z-index: 2; padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--on-dark); font-family: var(--mono); font-size: 12px; letter-spacing: .1em; box-shadow: var(--lift); animation: bob 6s ease-in-out infinite; }
+  .float.a { right: -10px; top: -18px; } .float.b { left: -24px; bottom: 70px; animation-delay: -3s; background: var(--accent); color: var(--on-accent); }
+  .float b { color: var(--accent); } .float.b b { color: var(--on-accent); }
+  @keyframes bob { 50% { transform: translateY(-10px); } }
+  .marquee { border-block: 1px solid var(--line); overflow: hidden; padding: 18px 0; }
+  .marquee div { display: flex; gap: 40px; width: max-content; animation: tape 40s linear infinite; font-family: var(--display); font-size: clamp(26px, 3vw, 44px); }
+  .marquee span:nth-child(odd) { color: transparent; -webkit-text-stroke: 1.5px var(--t1); } .marquee span:nth-child(3n) { color: var(--accent); -webkit-text-stroke: 0; }
+  @keyframes tape { to { transform: translateX(-50%); } }
+
+  /* ---------- content blocks ---------- */
+  .bigkey { font-family: var(--display); font-size: clamp(110px, 14vw, 220px); line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 3px var(--accent); }
+  .bigkey small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--t3); -webkit-text-stroke: 0; margin-top: 14px; }
+  .metro { display: flex; gap: 10px; margin-top: 18px; }
+  .metro i { width: 16px; height: 16px; border-radius: 50%; background: var(--line-strong); transition: background .06s, transform .06s; }
+  .metro i.on { background: var(--accent); transform: scale(1.25); box-shadow: 0 0 12px rgb(var(--accent-rgb) / .6); }
+  .metro i:first-child.on { background: var(--brass); }
+  .strum { margin-top: 16px; font-family: var(--mono); font-size: 18px; letter-spacing: .3em; color: var(--t2); }
+  .range { width: 100%; accent-color: var(--accent); height: 44px; }
+  .form { display: flex; gap: 3px; height: 40px; margin-top: 14px; }
+  .form i { flex: var(--f) 1 0; border-radius: 3px; background: var(--line-strong); position: relative; transition: flex .5s var(--out); font-style: normal; }
+  .form i.ch { background: var(--accent); } .form i.so { background: var(--brass); } .form i.lc { background: var(--accent); box-shadow: inset 0 0 0 2px var(--brass); }
+  .form i span { position: absolute; left: 4px; bottom: -20px; font-family: var(--mono); font-size: 10px; color: var(--t4); white-space: nowrap; }
+  .lenout { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 34px; }
+  .lenout div { font-family: var(--display); font-size: clamp(34px, 3.4vw, 52px); line-height: 1; }
+  .lenout small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--t3); margin-top: 6px; }
+  .parts { display: grid; gap: 10px; }
+  .part { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px 16px; align-items: center; padding: 14px 16px; }
+  .part .nm { font-family: var(--display); font-size: 18px; }
+  .part .nm small { display: block; font-family: var(--mono); font-size: 12px; color: var(--t3); margin-top: 2px; font-weight: 400; }
+  .part .mini { display: flex; gap: 4px; flex-wrap: wrap; }
+  .part .mini span { padding: 4px 7px; border-radius: 4px; background: var(--chip); color: var(--on-dark); font-family: var(--mono); font-size: 12px; }
+  .part.ch { border-color: var(--accent); }
+  .part .acts { display: flex; gap: 6px; }
+  .ib { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--t2); cursor: pointer; }
+  .ib svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ib.on { color: var(--accent); border-color: var(--accent); background: rgb(var(--accent-rgb) / .1); }
+  .optsp { display: flex; flex-direction: column; gap: 12px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+  .tabs button { min-height: 44px; padding: 0 14px; border: 0; background: transparent; font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--t3); border-bottom: 2px solid transparent; cursor: pointer; }
+  .tabs button.on { color: var(--t1); border-color: var(--accent); }
+  .optlist { display: grid; gap: 8px; }
+  .optlist button { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; font-family: var(--ui); font-size: 15px; color: var(--t2); cursor: pointer; text-align: left; }
+  .optlist button.on { border-color: var(--accent); color: var(--t1); background: rgb(var(--accent-rgb) / .08); }
+  .optlist button span { font-family: var(--mono); font-size: 12px; color: var(--t3); }
+  .exports { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 960px) { .exports { grid-template-columns: minmax(0, 1fr); } }
+  .pdf { aspect-ratio: .74; border-radius: 6px; background: #FFFDF7; color: #171310; padding: 16px; box-shadow: var(--lift); font-family: var(--mono); font-size: 9.5px; line-height: 1.5; overflow: hidden; rotate: -2deg; }
+  .pdf b { display: block; font-family: var(--display); font-size: 17px; text-transform: uppercase; margin-bottom: 4px; }
+  .roll { border-radius: 8px; background: var(--ink); padding: 12px; display: flex; flex-direction: column; gap: 5px; position: relative; overflow: hidden; }
+  .roll div { display: flex; align-items: center; gap: 8px; height: 18px; font-family: var(--mono); font-size: 10px; color: var(--on-dark-3); }
+  .roll div span { width: 70px; flex: none; }
+  .roll .lane { position: relative; flex: 1; height: 10px; }
+  .roll .lane i { position: absolute; top: 0; height: 10px; border-radius: 2px; background: var(--c); }
+  .roll .ph { position: absolute; top: 8px; bottom: 8px; width: 2px; background: var(--on-dark); left: 90px; animation: ph 8s linear infinite; }
+  @keyframes ph { to { left: calc(100% - 10px); } }
+  .share { display: flex; flex-direction: column; gap: 14px; justify-content: flex-start; }
+  .url { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--paper); font-family: var(--mono); font-size: 12px; color: var(--t2); overflow: hidden; white-space: nowrap; }
+  .url b { color: var(--accent); font-weight: 400; }
+  .copied { font-family: var(--mono); font-size: 12px; color: var(--success); opacity: 0; transition: opacity .3s; } .copied.on { opacity: 1; }
+  .lab { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+  .lab > * { grid-column: span 2; } .lab > .w3 { grid-column: span 3; }
+  @media (max-width: 960px) { .lab { grid-template-columns: minmax(0, 1fr); } .lab > *, .lab > .w3 { grid-column: auto; } }
+  .tool { display: flex; flex-direction: column; gap: 12px; }
+  .tool .demo { flex: 1; min-height: 190px; display: grid; place-items: center; border-radius: 8px; background: var(--paper); padding: 12px; position: relative; overflow: hidden; }
+  .boxes { display: flex; gap: 14px; } .boxes svg { width: clamp(70px, 8vw, 100px); }
+  .neckmini { width: 100%; max-height: 150px; } .neckmini .on { fill: var(--accent); }
+  .named { position: absolute; right: 14px; top: 10px; font-family: var(--display); font-size: 28px; text-align: right; background: rgb(from var(--paper) r g b / .85); padding: 2px 6px; border-radius: 6px; }
+  .named small { display: block; font-family: var(--mono); font-size: 12px; color: var(--t3); text-align: right; }
+  .meters { display: grid; gap: 8px; width: 100%; margin-top: 10px; }
+  .meter { display: grid; grid-template-columns: 70px 1fr; gap: 8px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--t3); }
+  .meter b { display: block; height: 10px; border-radius: 2px; background: var(--line-strong); position: relative; overflow: hidden; }
+  .meter b i { position: absolute; inset: 0 auto 0 0; width: var(--v); background: var(--accent); transition: width .7s var(--out); -webkit-mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px); mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px); }
+  .kf { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .kf .in { min-height: 44px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid var(--accent); font-family: var(--mono); font-size: 14px; }
+  .kf .res { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-size: 22px; }
+  .kf .res small { font-family: var(--mono); font-size: 12px; color: var(--t3); }
+  .mood { position: relative; width: 100%; height: 100%; min-height: 170px; }
+  .mood .md { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--t3); }
+  .mood .md.on { background: var(--accent); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .3), 0 0 0 9px rgb(var(--accent-rgb) / .12); }
+  .mood .md span { position: absolute; left: 13px; top: -5px; font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--t3); }
+  .mood .md.on span { color: var(--t1); font-weight: 700; }
+  .mood .ax { position: absolute; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--t4); }
+  .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-block: 1px solid var(--line); }
+  @media (max-width: 960px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stats div { padding: 28px 18px; border-right: 1px solid var(--line); }
+  .stats div:last-child { border-right: 0; }
+  .stats b { display: block; font-family: var(--display); font-size: clamp(44px, 5vw, 76px); line-height: .9; letter-spacing: -.03em; }
+  .stats div:nth-child(odd) b { color: transparent; -webkit-text-stroke: 2px var(--t1); }
+  .stats div:last-child b { color: var(--accent); -webkit-text-stroke: 0; }
+  .stats small { display: block; margin-top: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--t3); }
+  .band { background: var(--ink); color: var(--on-dark); padding: clamp(80px, 10vw, 140px) 0;
+    clip-path: polygon(0 3%, 5% 0, 12% 2.5%, 20% .5%, 29% 3%, 38% 0, 47% 2%, 56% .5%, 65% 3%, 74% 0, 83% 2.5%, 92% .5%, 100% 2%, 100% 97%, 94% 100%, 85% 97.5%, 76% 99.5%, 67% 97%, 58% 100%, 49% 98%, 40% 99.5%, 31% 97%, 22% 100%, 13% 97.5%, 4% 99.5%, 0 97%); }
+  .band .h2 { color: var(--on-dark); }
+  .band p { color: var(--on-dark-2); }
+  .stamp { justify-self: center; width: min(70vw, 320px); aspect-ratio: 1; position: relative; color: var(--accent); rotate: -9deg; }
+  .stamp svg { position: absolute; inset: 0; width: 100%; height: 100%; animation: turn 30s linear infinite; }
+  .stamp text { font-family: var(--display); font-size: 17px; letter-spacing: .12em; fill: currentColor; }
+  .stamp .core { position: absolute; inset: 22%; border-radius: 50%; border: 3px solid currentColor; display: grid; place-items: center; text-align: center; font-family: var(--display); font-size: clamp(18px, 2.2vw, 26px); line-height: 1; }
+  .stamp .core small { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; margin-top: 8px; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  .board { border-radius: 14px; padding: clamp(18px, 3vw, 40px); background: var(--board); color: var(--on-dark); box-shadow: var(--lift); }
+  .board .bt { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--on-dark-3); margin-bottom: 18px; }
+  .flaps { display: flex; flex-wrap: wrap; gap: .3em .35em; font-size: clamp(18px, 3.4vw, 46px); }
+  .flaps .w { display: inline-flex; gap: .08em; }
+  .flaps .c { position: relative; width: .78em; height: 1.3em; display: grid; place-items: center; border-radius: .12em; background: linear-gradient(#2A241C 50%, #211B15 50%); font-family: var(--mono); font-weight: 700; box-shadow: 0 2px 0 #000; }
+  .flaps .c::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--board); }
+  .flaps .c.flip { animation: flap .08s linear; } @keyframes flap { from { transform: rotateX(80deg); } }
+  .neck2 { width: 100%; max-width: 560px; color: var(--t1); }
+  .poster { position: relative; overflow: hidden; border-radius: 14px; padding: 26px; min-height: 340px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--lift); outline: 1px solid color-mix(in srgb, currentColor 15%, transparent); outline-offset: -8px; }
+  .poster .bn { font-family: var(--display); font-size: clamp(90px, 9vw, 130px); line-height: .8; color: transparent; -webkit-text-stroke: 2px var(--fg); }
+  .poster h3 { margin: 0 0 10px; font-family: var(--display); font-weight: 400; font-size: clamp(22px, 2vw, 30px); line-height: 1; text-transform: uppercase; }
+  .poster p { margin: 0; font-size: 15px; line-height: 1.55; opacity: .88; }
+  .poster .tg { position: absolute; top: 24px; right: 24px; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; opacity: .75; }
+  .p1 { --fg: var(--on-dark); background: var(--ink); color: var(--on-dark); rotate: -1.5deg; } .p2 { --fg: var(--on-accent); background: var(--accent); color: var(--on-accent); rotate: 1.2deg; }
+  .p3 { --fg: var(--t1); background: var(--surface); color: var(--t1); border: 1.5px solid var(--t1); rotate: -.8deg; } .p4 { --fg: #171310; background: var(--brass); color: #171310; rotate: 1deg; }
+  .posters { display: grid; gap: clamp(14px, 2vw, 26px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 1100px) { .posters { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 600px) { .posters { grid-template-columns: minmax(0, 1fr); } }
+  .faq { display: grid; gap: 10px; max-width: 900px; }
+  .faq details { border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .faq summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 14px; min-height: 60px; padding: 0 20px; cursor: pointer; font-family: var(--display); font-size: clamp(17px, 1.6vw, 21px); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font-family: var(--mono); font-size: 22px; color: var(--accent); transition: transform .3s var(--out); }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq p { margin: 0; padding: 0 20px 18px; font-size: 16px; line-height: 1.6; color: var(--t2); max-width: 720px; }
+  .encore { text-align: center; padding: clamp(100px, 13vw, 190px) 0; overflow: hidden; }
+  .encore .tape { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; opacity: .08; pointer-events: none; }
+  .encore .tape div { display: flex; width: max-content; font-family: var(--display); font-size: clamp(60px, 9vw, 150px); line-height: 1; white-space: nowrap; animation: tape 30s linear infinite; }
+  .encore .tape div:nth-child(2) { animation-direction: reverse; color: var(--accent); }
+  .encore .h2 { position: relative; margin-bottom: 36px; }
+  .encore .row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+  .foot { padding: 40px 0; background: var(--ink); color: var(--on-dark-3); font-family: var(--mono); font-size: 12px; letter-spacing: .12em; }
+  .foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; }
+
+  /* ---------- B: sticky studio ---------- */
+  .studio { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 80px); }
+  @media (max-width: 960px) { .studio { grid-template-columns: minmax(0, 1fr); } .studio .stick { position: relative !important; top: 0 !important; } }
+  .chap { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; opacity: .28; transition: opacity .5s; }
+  .chap.on { opacity: 1; }
+  .chap .n { font-family: var(--display); font-size: 96px; line-height: .8; color: transparent; -webkit-text-stroke: 2px var(--accent); }
+  .stick { position: sticky; top: calc(var(--pick) + var(--bar) + 6vh); align-self: start; }
+  .stick .app { transform: none; }
+  .stagebadge { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stagebadge span { padding: 6px 10px; border-radius: 6px; background: var(--ink); color: var(--on-dark-2); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; transition: background .3s, color .3s; }
+  .stagebadge span.hot { background: var(--accent); color: var(--on-accent); }
+  .exportrow { display: flex; gap: 8px; } .exportrow span { flex: 1; padding: 10px; border-radius: 8px; border: 1px dashed var(--line-strong); font-family: var(--mono); font-size: 12px; color: var(--t3); text-align: center; transition: all .4s var(--out); }
+  .exportrow span.hot { border-style: solid; border-color: var(--accent); color: var(--t1); background: rgb(var(--accent-rgb) / .1); }
+
+  /* ---------- C: bento ---------- */
+  .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: minmax(150px, auto); gap: 16px; }
+  .bento > * { grid-column: span 4; }
+  .bento .s3 { grid-column: span 3; } .bento .s5 { grid-column: span 5; } .bento .s6 { grid-column: span 6; } .bento .s7 { grid-column: span 7; } .bento .s8 { grid-column: span 8; } .bento .r2 { grid-row: span 2; }
+  @media (max-width: 960px) { .bento { grid-template-columns: minmax(0, 1fr); } .bento > *, .bento .s3, .bento .s5, .bento .s6, .bento .s7, .bento .s8 { grid-column: auto; } .bento .r2 { grid-row: auto; } }
+  .tile { padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+  .tile .mono { color: var(--accent); }
+  .tile.ink { background: var(--ink); color: var(--on-dark); border-color: var(--ink); } .tile.ink .p { color: var(--on-dark-2); }
+  .tile.red { background: var(--accent); color: var(--on-accent); border-color: var(--accent); } .tile.red .p, .tile.red .mono { color: var(--on-accent); }
+  .tile.brass { background: var(--brass); color: #171310; border-color: var(--brass); } .tile.brass .p, .tile.brass .mono { color: #171310; }
+  .tile .huge { font-family: var(--display); font-size: clamp(64px, 7vw, 110px); line-height: .8; letter-spacing: -.04em; }
+
+  /* ---------- D: two tools ---------- */
+  .switch { display: inline-flex; padding: 5px; border-radius: 12px; background: var(--ink); gap: 4px; }
+  .switch button { min-height: 52px; padding: 0 22px; border: 0; border-radius: 8px; background: transparent; color: var(--on-dark-3); font-family: var(--display); font-size: 14px; letter-spacing: .02em; cursor: pointer; }
+  .switch button.on { background: var(--accent); color: var(--on-accent); }
+  .pane { display: none; } .pane.on { display: block; animation: rise .6s var(--out); }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+  .rows { display: grid; gap: clamp(40px, 6vw, 90px); margin-top: 50px; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } [data-reveal] { opacity: 1; transform: none; } }
+  .still *, .still *::before, .still *::after { animation-play-state: paused !important; }
+</style>
+</head>
+<body>
+<div class="pick" role="toolbar" aria-label="Options">
+  <b>LIVE SESSION · FOUR LONG VERSIONS</b>
+  <button type="button" data-o="A" aria-pressed="true">A · The walkthrough</button>
+  <button type="button" data-o="B" aria-pressed="false">B · Sticky studio</button>
+  <button type="button" data-o="C" aria-pressed="false">C · Bento</button>
+  <button type="button" data-o="D" aria-pressed="false">D · Two tools</button>
+  <span class="sp"></span>
+  <button type="button" id="still" aria-pressed="false">STILL</button>
+  <button type="button" id="theme" aria-pressed="true">DARK</button>
+</div>
+<div class="grainl" aria-hidden="true"></div>
+<aside class="about" id="about"><div id="aboutText"></div><button type="button" aria-label="Hide the description">×</button></aside>
+<div id="opts"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let still = false;
+
+  // ---------------- real content ----------------
+  const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const KEYS = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const FEELS = [["FAST PUNK", 180, "▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼"], ["HALF-TIME", 90, "▼ · ▼ ▲ · ▲ ▼ ▲"], ["MID-TEMPO", 140, "▼ ▼ ▲ ▼ ▲ ▼ ▼ ▲"], ["POP STRUM", 150, "▼ · ▼ ▲ · ▲ ▼ ▲"], ["BALLAD", 80, "▼ · · · ▼ · · ·"]];
+  const DEG = [["I", 0], ["V", 7], ["vi", 9], ["IV", 5]];
+  const TITLES = ["Your Ex's New Place", "Parking Lot Crisis", "The Text I Didn't Send", "Last Slice of Pizza", "Voicemail, Undeleted", "Basement Show Encore", "Gas Station at 2 AM", "Group Chat Minus Me", "Still in Your Hoodie", "Waffle House at 3 AM"];
+  const LANES = ["Sub", "Bass", "Piano L", "Rhythm gtr", "Vox guide", "Piano R", "Pads", "Lead gtr", "Synth", "Drums"];
+  const RHYTHMS = [["Driving eighths", "CHORUS"], ["Gallop", "VERSE"], ["Chugs into open hits", "INTRO"], ["Quarter-note climb", "PRE-CHORUS"]];
+  const PARTS = [["Intro", "Chugs into open hits · 4 bars", "", "riff"], ["Verse 1", "Gallop · palm-muted · ×2", "", ""], ["Pre-chorus", "Quarter-note climb", "", ""], ["Chorus", "Driving eighths · open", "ch", ""], ["Solo", "Lead over the chorus chords", "so", "lead"], ["Breakdown", "Half the band drops out", "", ""], ["Last chorus", "Up a tone", "ch", ""]];
+  const POSTERS = [["Study the formula", "We break down the chord degrees, rhythm templates and section lengths behind pop-punk's biggest songs. We study the pattern underneath, never the tabs themselves."],
+    ["Generate your song", "Pick a key and a feel. Palm/Mute writes an intro, verse, chorus, solo and breakdown in E standard. A complete song structure, ready to play."],
+    ["Make it yours", "Everything is built fresh from chord degrees and rhythm patterns, so the song you get is yours to play, change and finish."],
+    ["Find your chords", "Need more than power chords? The Chord Lab shows the shapes players use up the neck, names a chord you tap, builds loops, finds your key and moves it to a capo or drop tuning."]];
+  const FAQ = [["Is it free?", "Yes. Palm/Mute runs in your browser: no download, no sign-up."],
+    ["Do I need an account?", "No. There are no accounts. Your song lives in the page's address, so copying the link keeps it, and the Chord Lab remembers your setup on your device."],
+    ["Is it copying real songs?", "No. Palm/Mute studies chord degrees, rhythm templates and section lengths, the patterns underneath. It never stores or reproduces an artist's tab, so every riff is written fresh."],
+    ["Can I use it in my DAW?", "Yes. Export a MIDI file with every part on its own track (sub, bass, piano, rhythm and lead guitar, a guide vocal, pads, synth and drums), with a marker where each section starts."],
+    ["Which tunings?", "The Song Generator writes in E standard. The Chord Lab covers E standard, Eb standard, Drop D and Drop C#, with a capo up to the 7th fret."],
+    ["Is it just power chords?", "Songs are written in power chords, the shape pop-punk runs on. The Chord Lab has ten chord types, from 5 and octaves to majors, minors, sus, add9 and sevenths."]];
+
+  const name5 = (k, off) => NOTES[(NOTES.indexOf(KEYS[k]) + off) % 12];
+  const voice = (note) => { const e = (NOTES.indexOf(note) - 4 + 12) % 12; if (e <= 7) return { s: 0, f: e }; return { s: 1, f: (NOTES.indexOf(note) - 9 + 12) % 12 }; };
+  const chipTab = (note) => { const v = voice(note); return ["e", "B", "G", "D", "A", "E"].map((st, i) => { const si = 5 - i; let x = "-"; if (si === v.s) x = v.f; if (si === v.s + 1) x = v.f + 2; return `${st}|${x}`; }).join("\n"); };
+  const chipsHTML = (k) => DEG.map(([d, o]) => { const n = name5(k, o); return `<span class="chip"><small>${d}</small><b>${n}5</b><pre>${chipTab(n)}</pre></span>`; }).join("");
+  const play = `<span class="play"><svg class="ring" viewBox="0 0 54 54"><circle class="tr" cx="27" cy="27" r="24"/><circle class="pr" cx="27" cy="27" r="24"/></svg><svg class="p" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg></span>`;
+  const TAB = ["e|----------------|----------------|", "B|----------------|----------------|", "G|----------------|----------------|", "D|7-7-7-7-7-7-7-7-|----------------|", "A|7-7-7-7-7-7-7-7-|2-2-2-2-2-2-2-2-|", "E|5-5-5-5-5-5-5-5-|0-0-0-0-0-0-0-0-|", "  P.M.------------------------------"];
+  const tabHTML = TAB.map((l, i) => i === 6 ? `<span class="pm">${l}</span>` : l).join("\n") + `<span class="head"></span>`;
+  const ICON = { lock: `<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`, play: `<svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg>`, opts: `<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>`, again: `<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>` };
+
+  // ---------------- blocks ----------------
+  const B = {};
+  B.bar = () => `<header class="sitebar"><div class="wrap"><span class="wm">PALM<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M6.4 0 0 9.2h3.6L2.6 16 10 6.4H6.2z"/></svg>MUTE</span><span class="horns"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/><path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/><path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/><path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/><path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></svg></span></div></header>`;
+  B.app = (extra = "") => `<div class="card app" data-app>
+      <div class="float a">KEY OF <b data-appkey>A</b> · <span data-appfeel>FAST PUNK</span></div>
+      <div class="cardhd"><span class="num">01</span><span data-apppart>Verse 1</span><span class="mono" data-appmeta>×2 · 0:08</span></div>
+      <div class="pills" data-pills></div>
+      <div class="chips" data-chips>${chipsHTML(0)}</div>
+      <pre class="tab" data-tab>${tabHTML}</pre>
+      ${extra}
+      <div class="transport">${play}<span class="mono" style="color:var(--on-dark-2)">0:<span data-clock>08</span> / <span data-total>3:13</span></span><span class="prog"><i></i></span><span class="mono" style="color:var(--on-dark-3)" data-appspeed>100%</span></div>
+      <div class="float b"><b>●</b> NO TABS STORED</div></div>`;
+  B.hero = (sub = "A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.") => `<section class="hero"><div class="leak"><i></i><i></i></div><div class="halftone"></div>
+    <div class="wrap hgrid"><div class="hleft" data-fit-col><div class="top"><span class="mono">COUNT IN · ABOUT PALM/MUTE</span><span class="live"><i></i>LIVE · 180 BPM</span></div>
+      <h1 class="kin" data-fit><span>Songwriting</span><span>formulas from</span><span>the bands that</span><span>built pop-punk.</span></h1>
+      <p>${sub}</p><div class="cta"><a class="btn" href="#"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>START WRITING</a><a class="lnk" href="#">Open the Chord Lab →</a></div></div>
+      <div class="stage3d" data-reveal>${B.app()}</div></div></section>`;
+  B.marquee = () => `<div class="marquee" aria-hidden="true"><div>${[...Array(2)].flatMap(() => ["I–V–vi–IV", "vi–IV–I–V", "I–IV–V", "I–V–IV–V", "vi–V–IV", "IV–I–V–vi", "I–bVII–IV", "I–vi–ii–V"]).map((p) => `<span>${p}</span>`).join("")}</div></div>`;
+  B.key = (flip = false) => `<section class="sec"><div class="wrap split ${flip ? "flip" : ""}">
+    <div data-reveal><div class="kick">01 · YOUR KEY</div><h2 class="h2">Twelve keys.<br><em>One tap.</em></h2><p class="lede">Every key is written in E standard with power chords you can actually play. Tap one and the whole song moves with it: the chords, the tabs, the solo.</p>
+      <div class="bigkey" style="margin-top:28px"><span data-bigkey>A</span><small>I–V–vi–IV IN <span data-bigkey2>A</span></small></div></div>
+    <div class="card pad" data-reveal style="--d:1"><div class="cardhd"><span class="num">1</span>Key<span class="mono">TAP ONE</span></div><div class="pills" data-keypick></div><div class="chips" data-keychips style="margin-top:18px">${chipsHTML(0)}</div></div></div></section>`;
+  B.feel = (flip = true) => `<section class="sec"><div class="wrap split ${flip ? "flip" : ""}">
+    <div data-reveal><div class="kick">02 · YOUR FEEL</div><h2 class="h2">Five feels,<br><em>five tempos.</em></h2><p class="lede">From an 80 BPM ballad to 180 BPM fast punk. The strum, the drums and every riff follow the feel you pick.</p></div>
+    <div class="card pad" data-reveal style="--d:1"><div class="cardhd"><span class="num">2</span>Feel<span class="mono" data-feelname>FAST PUNK</span></div><div class="seg" data-feelseg><span class="thumb"></span></div>
+      <div class="bigkey" style="margin-top:24px"><span data-feelbpm>180</span><small>BEATS PER MINUTE</small></div><div class="metro" data-metro><i></i><i></i><i></i><i></i></div><div class="strum" data-strum>▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼</div></div></div></section>`;
+  B.length = (flip = false) => `<section class="sec"><div class="wrap split ${flip ? "flip" : ""}">
+    <div data-reveal><div class="kick">03 · YOUR LENGTH</div><h2 class="h2">2:30 to 5:30.<br><span class="o">Your call.</span></h2><p class="lede">Choose how long the song runs and Palm/Mute sizes every part to fit: more verses, a second chorus, a longer solo.</p></div>
+    <div class="card pad" data-reveal style="--d:1"><div class="cardhd"><span class="num">3</span>Length<span class="mono">DRAG</span></div>
+      <input class="range" type="range" min="0" max="6" value="1" step="1" aria-label="Song length" data-len>
+      <div class="form" data-lenform></div>
+      <div class="lenout"><div><span data-lentime>3:00</span><small>LENGTH</small></div><div><span data-lenparts>8</span><small>PARTS</small></div><div><span data-lenbars>135</span><small>BARS AT 180</small></div></div></div></div></section>`;
+  B.parts = () => `<section class="sec"><div class="wrap">
+    <div data-reveal><div class="kick">04 · EVERY PART</div><h2 class="h2">A whole song,<br><em>every bar tabbed.</em></h2><p class="lede">Not a chord chart: real tabs for every part. Palm-muted verses, a lift into open choruses, a solo and a breakdown, all in your key.</p></div>
+    <div class="parts" style="margin-top:40px">${PARTS.map(([n, d, k], i) => `<div class="card part ${k}" data-reveal style="--d:${i}"><span class="num">${String(i + 1).padStart(2, "0")}</span><div><div class="nm">${n}<small>${d}</small></div><div class="mini" style="margin-top:8px" data-partchips="${i}"></div></div><div class="acts"><button class="ib" type="button" aria-label="Play ${n}">${ICON.play}</button><button class="ib" type="button" aria-label="Options for ${n}">${ICON.opts}</button><button class="ib" type="button" aria-label="Lock ${n}" data-lock>${ICON.lock}</button></div></div>`).join("")}</div></div></section>`;
+  B.shape = (flip = true) => `<section class="sec"><div class="wrap split ${flip ? "flip" : ""}">
+    <div data-reveal><div class="kick">05 · MAKE IT YOURS</div><h2 class="h2">Shape any part.<br><em>Lock the ones you love.</em></h2><p class="lede">Open a part's options to change its rhythm, style, bars or drums. Lock what's working, hit build again, and only the rest changes.</p></div>
+    <div class="card pad optsp" data-reveal style="--d:1"><div class="cardhd"><span class="num">01</span>Verse 1 options<span class="mono">LOCKED PARTS STAY</span></div>
+      <div class="tabs" role="tablist"><button class="on" type="button">RHYTHM</button><button type="button">STYLE</button><button type="button">BARS</button><button type="button">DRUMS</button></div>
+      <div class="optlist" data-rhythms>${RHYTHMS.map(([r, w], i) => `<button type="button" class="${i === 1 ? "on" : ""}">${r}<span>${w}</span></button>`).join("")}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" type="button" data-again>${ICON.again.replace("<svg", '<svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2"')} BUILD AGAIN</button><button class="ib on" type="button" aria-label="Locked" data-lock>${ICON.lock}</button></div></div></div></section>`;
+  B.practise = (flip = false) => `<section class="sec"><div class="wrap split ${flip ? "flip" : ""}">
+    <div data-reveal><div class="kick">06 · PRACTISE</div><h2 class="h2">Loop it.<br>Slow it.<br><em>Nail it.</em></h2><p class="lede">Loop any part, add a count-in, and drop the speed to 90, 75 or 50% until your hands know it. The tab follows the playhead.</p></div>
+    <div data-reveal style="--d:1"><div class="card pad" style="display:flex;flex-direction:column;gap:14px"><div class="cardhd" style="margin:0"><span class="num">04</span>Chorus<span class="mono" data-pbpm>180 BPM</span></div><pre class="tab" data-ptab>${tabHTML}</pre>
+      <div class="transport">${play}<button class="tog on" type="button" data-loop>↻ LOOP PART</button><button class="tog" type="button" data-countin>COUNT-IN</button><span class="speed" data-speed><button class="on" type="button">100%</button><button type="button">90%</button><button type="button">75%</button><button type="button">50%</button></span></div></div></div></div></section>`;
+  B.export = () => `<section class="sec"><div class="wrap">
+    <div data-reveal><div class="kick">07 · TAKE IT AWAY</div><h2 class="h2">For the stand,<br>the studio, <em>the band.</em></h2></div>
+    <div class="exports" style="margin-top:40px">
+      <div class="card pad" data-reveal><div class="cardhd"><span class="num">PDF</span>Songbook</div><div class="pdf"><b>Your ex's new place</b>KEY A · FAST PUNK · 180 BPM · 3:13<br><br>VERSE 1 ×2<br>${TAB.slice(0, 6).join("<br>")}<br><br>CHORUS<br>e|----------------|<br>B|----------------|</div><p class="p" style="margin-top:16px">Every part's tab with bar numbers and rhythm stems, ready to print.</p></div>
+      <div class="card pad" data-reveal style="--d:1"><div class="cardhd"><span class="num">MIDI</span>Ten parts</div><div class="roll" data-roll></div><p class="p" style="margin-top:16px">Every part on its own track, with markers where each section starts.</p></div>
+      <div class="card pad share" data-reveal style="--d:2"><div class="cardhd" style="margin:0"><span class="num">LINK</span>Send it to the band</div><div class="url">palmmute.ai/generator/<b>#your-song</b></div><div style="display:flex;align-items:center;gap:12px"><button class="btn sm" type="button" data-copy>COPY LINK</button><span class="copied" data-copied>COPIED ✓</span></div><p class="p">The link opens the exact song: same key, feel, parts and takes.</p></div>
+    </div></div></section>`;
+  B.lab = (title = true) => `<section class="sec"><div class="wrap">
+    ${title ? `<div data-reveal><div class="kick">THE CHORD LAB</div><h2 class="h2">Need more than<br><em>power chords?</em></h2><p class="lede">Five tools for every chord question, in four tunings, right- or left-handed.</p></div>` : ""}
+    <div class="lab" style="margin-top:${title ? 40 : 0}px">
+      <div class="card pad tool w3" data-reveal><div class="cardhd" style="margin:0"><span class="num">01</span>Dictionary<span class="mono">G MAJOR</span></div><div class="demo"><div class="boxes" data-boxes></div></div><p class="p">The shapes players actually use, up the neck.</p></div>
+      <div class="card pad tool w3" data-reveal style="--d:1"><div class="cardhd" style="margin:0"><span class="num">02</span>Name that chord</div><div class="demo" data-nameit></div><p class="p">Tap a shape onto the neck; it names the chord and its keys.</p></div>
+      <div class="card pad tool" data-reveal style="--d:2"><div class="cardhd" style="margin:0"><span class="num">03</span>Builder</div><div class="demo" style="display:block"><div class="chips" data-buildchips></div><div class="meters"><div class="meter">BRIGHT<b><i data-m1 style="--v:62%"></i></b></div><div class="meter">RESTLESS<b><i data-m2 style="--v:40%"></i></b></div></div></div><p class="p">Tap chords into a loop; it suggests what comes next.</p></div>
+      <div class="card pad tool" data-reveal style="--d:3"><div class="cardhd" style="margin:0"><span class="num">04</span>Key finder</div><div class="demo"><div class="kf"><div class="in" data-kfin>G D Em C</div><div class="res"><span data-kfkey>G major</span><small data-kfdeg>I V vi IV</small></div><div class="mono" data-kfcapo>CAPO 2 · PLAY IN F</div></div></div><p class="p">Chords to key; move them to another key, a capo or a drop tuning.</p></div>
+      <div class="card pad tool" data-reveal style="--d:4"><div class="cardhd" style="margin:0"><span class="num">05</span>Mood map</div><div class="demo"><div class="mood" data-mood><span class="ax" style="left:2px;top:50%">DARK</span><span class="ax" style="right:2px;top:50%">BRIGHT</span><span class="ax" style="left:50%;top:0;translate:-50% 0">RESTLESS</span><span class="ax" style="left:50%;bottom:0;translate:-50% 0">SETTLED</span></div></div><p class="p">Dark to bright, settled to restless: tap a loop.</p></div>
+    </div></div></section>`;
+  B.stats = () => `<section><div class="stats wrap" style="padding-inline:0" data-reveal><div><b>12</b><small>KEYS</small></div><div><b>5</b><small>FEELS</small></div><div><b>7</b><small>SONG LENGTHS</small></div><div><b>4</b><small>TUNINGS</small></div><div><b>10</b><small>MIDI PARTS</small></div><div><b>0</b><small>TABS STORED</small></div></div></section>`;
+  let stampN = 0;
+  B.promise = () => { const id = "sr" + stampN++; return `<section class="band"><div class="wrap split"><div data-reveal><div class="kick" style="color:var(--accent)">THE PROMISE</div><h2 class="h2">Every riff is new.<br><span class="o" style="-webkit-text-stroke-color:var(--on-dark)">Nothing is copied.</span></h2><p class="lede" style="color:var(--on-dark-2)">Palm/Mute never stores or reproduces an artist's tab. Songs are written from chord degrees and rhythm patterns only, so what you play is written for you.</p></div>
+    <div class="stamp" data-reveal aria-hidden="true"><svg viewBox="0 0 300 300"><defs><path id="${id}" d="M150 150m-122 0a122 122 0 1 1 244 0a122 122 0 1 1-244 0"/></defs><circle cx="150" cy="150" r="146" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-width="2"/><text><textPath href="#${id}" textLength="752" lengthAdjust="spacing">NO TABS STORED ✦ CHORD PATTERNS ONLY ✦</textPath></text></svg><div class="core"><div>100%<br>ORIGINAL<small>PALM/MUTE</small></div></div></div></div></section>`; };
+  B.twonotes = () => `<section class="sec"><div class="wrap split"><div data-reveal><div class="kick">DID YOU KNOW</div><h2 class="h2">A power chord is<br><em>only two notes.</em></h2><p class="lede">Root and fifth, no third. The third decides happy or sad, so without it you're left with pure attitude. That's why it's the only shape pop-punk ever needed.</p></div>
+    <svg class="neck2" viewBox="0 0 560 220" data-reveal style="--d:1"><g stroke="currentColor" stroke-width="2">${[0, 1, 2, 3, 4, 5].map((s) => `<line x1="40" x2="540" y1="${30 + s * 30}" y2="${30 + s * 30}" opacity="${0.5 + s * .1}"/>`).join("")}</g><line x1="40" x2="40" y1="30" y2="180" stroke="currentColor" stroke-width="6"/>${[1, 2, 3, 4, 5].map((f) => `<line x1="${40 + f * 100}" x2="${40 + f * 100}" y1="30" y2="180" stroke="var(--line-strong)" stroke-width="3"/><text x="${f * 100 - 10}" y="210" fill="var(--t4)" font-family="Space Mono" font-size="13" text-anchor="middle">${f}</text>`).join("")}<line x1="290" y1="180" x2="490" y2="150" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" opacity=".3"/><circle cx="290" cy="180" r="15" fill="var(--accent)"/><text x="290" y="185" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="13" fill="var(--on-accent)">R</text><circle cx="490" cy="150" r="15" fill="var(--accent)"/><text x="490" y="155" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="13" fill="var(--on-accent)">5</text><text x="540" y="20" text-anchor="end" font-family="Archivo Black" font-size="26" fill="currentColor">G5</text></svg></div></section>`;
+  B.titles = () => `<section class="sec" style="padding-top:0"><div class="wrap"><div class="board" data-reveal><div class="bt"><span>STUCK ON A SONG TITLE?</span><span>NOW PLAYING · TRACK 04</span></div><div class="flaps" data-flaps></div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;margin-top:24px"><span class="mono" style="color:var(--on-dark-3)">Every song deserves a slightly dramatic title.</span><button class="btn sm" type="button" data-shuffle>SHUFFLE</button></div></div></div></section>`;
+  B.posters = () => `<section class="sec"><div class="wrap"><div data-reveal><div class="kick">HOW IT WORKS</div><h2 class="h2" style="margin-bottom:40px">How it <em>works.</em></h2></div><div class="posters">${POSTERS.map(([t, b], i) => `<article class="poster p${i + 1}" data-reveal style="--d:${i}"><span class="tg">SONG 0${i + 1}</span><div class="bn" aria-hidden="true">0${i + 1}</div><div><h3>${t}</h3><p>${b}</p></div></article>`).join("")}</div></div></section>`;
+  B.faq = () => `<section class="sec"><div class="wrap"><div data-reveal><div class="kick">QUESTIONS</div><h2 class="h2" style="margin-bottom:36px">Before you <em>count in.</em></h2></div><div class="faq">${FAQ.map(([q, a], i) => `<details data-reveal style="--d:${i}"${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
+  B.encore = () => `<section class="encore"><div class="tape"><div><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span></div><div><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span></div></div><div class="wrap"><h2 class="h2">Count it in.</h2><div class="row"><a class="btn" href="#"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>START WRITING</a><a class="btn ghost" href="#">OPEN THE CHORD LAB</a></div></div></section>
+    <footer class="foot"><div class="wrap"><span>PALM/MUTE · E STANDARD · POWER CHORDS</span><span>SONG GENERATOR · CHORD LAB · ABOUT</span></div></footer>`;
+
+  // ---- B: one sticky card the whole way down
+  B.studio = () => `<section class="sec"><div class="wrap studio">
+    <div>${[["Pick a key.", "Twelve keys, all in E standard. Watch the chords and tabs move with it.", "KEY"], ["Pick a feel.", "Five feels, from an 80 BPM ballad to 180 BPM fast punk. The strum and drums follow.", "FEEL"], ["Pick a length.", "2:30 to 5:30. Every part is sized to fit, from the intro to the last chorus.", "LENGTH"], ["Hit build.", "Intro, verses, choruses, a solo and a breakdown, every bar tabbed. Lock what you love, build again for the rest.", "BUILD"], ["Practise it.", "Loop a part, add a count-in, slow it to 90, 75 or 50%.", "PRACTISE"], ["Take it away.", "A PDF songbook, a MIDI file with ten parts, or a link for the band.", "EXPORT"]]
+      .map(([h, p, t], i) => `<div class="chap${i === 0 ? " on" : ""}" data-chap="${i}"><span class="n">0${i + 1}</span><h3 class="h3" style="font-size:clamp(30px,3.4vw,50px);margin-top:10px">${h}</h3><p class="lede">${p}</p></div>`).join("")}</div>
+    <div class="stick">${B.app(`<div class="stagebadge" data-badges><span class="hot">KEY</span><span>FEEL</span><span>LENGTH</span><span>BUILD</span><span>PRACTISE</span><span>EXPORT</span></div><div class="form" data-stickform></div><div class="exportrow" data-exportrow><span>PDF SONGBOOK</span><span>MIDI · 10 PARTS</span><span>LINK</span></div>`)}</div>
+  </div></section>`;
+
+  // ---- C: bento tiles
+  B.bento = () => `<section class="sec"><div class="wrap"><div data-reveal><div class="kick">EVERYTHING IN ONE PLACE</div><h2 class="h2" style="margin-bottom:40px">The whole kit,<br><em>at a glance.</em></h2></div>
+    <div class="bento">
+      <div class="card tile s5" data-reveal><span class="mono">KEY</span><div class="pills" data-keypick></div><div class="chips" data-keychips>${chipsHTML(0)}</div></div>
+      <div class="card tile ink s3" data-reveal style="--d:1"><span class="mono">FEEL</span><div class="huge" data-feelbpm>180</div><div class="metro" data-metro><i></i><i></i><i></i><i></i></div><p class="p" data-feelname>FAST PUNK</p></div>
+      <div class="card tile s4" data-reveal style="--d:2"><span class="mono">LENGTH</span><input class="range" type="range" min="0" max="6" value="1" aria-label="Song length" data-len><div class="form" data-lenform></div><p class="p" style="margin-top:14px"><b data-lentime>3:00</b> · <span data-lenparts>8</span> parts · <span data-lenbars>135</span> bars</p></div>
+      <div class="card tile s7 r2" data-reveal><span class="mono">EVERY PART, TABBED</span><pre class="tab" data-ptab>${tabHTML}</pre><div class="parts">${PARTS.slice(0, 4).map(([n, d, k], i) => `<div class="card part ${k}" style="box-shadow:none;padding:10px 12px"><span class="num">0${i + 1}</span><div class="nm" style="font-size:16px">${n}<small>${d}</small></div><button class="ib${i === 1 ? " on" : ""}" type="button" aria-label="Lock ${n}" data-lock>${ICON.lock}</button></div>`).join("")}</div></div>
+      <div class="card tile red s5" data-reveal style="--d:1"><span class="mono">PRACTISE</span><div class="huge" data-pbpmh>180</div><div class="transport" style="background:rgba(0,0,0,.18)">${play}<span class="speed" data-speed><button class="on" type="button">100%</button><button type="button">90%</button><button type="button">75%</button><button type="button">50%</button></span></div></div>
+      <div class="card tile s5" data-reveal style="--d:2"><span class="mono">MAKE IT YOURS</span><div class="optlist" data-rhythms>${RHYTHMS.slice(0, 3).map(([r, w], i) => `<button type="button" class="${i === 1 ? "on" : ""}">${r}<span>${w}</span></button>`).join("")}</div><button class="btn sm" type="button" data-again>BUILD AGAIN</button></div>
+      <div class="card tile s4" data-reveal><span class="mono">PDF SONGBOOK</span><div class="pdf" style="aspect-ratio:auto;height:180px"><b>Your ex's new place</b>KEY A · 180 BPM<br><br>${TAB.slice(0, 6).join("<br>")}</div></div>
+      <div class="card tile ink s4" data-reveal style="--d:1"><span class="mono">MIDI · 10 PARTS</span><div class="roll" data-roll style="background:transparent;padding:0"></div></div>
+      <div class="card tile brass s4" data-reveal style="--d:2"><span class="mono">SHARE</span><div class="huge" style="font-size:clamp(40px,4vw,64px)">One link.</div><p class="p">Opens the exact song for the whole band.</p><div><button class="btn sm" type="button" data-copy style="background:#171310;color:#F6F1E4">COPY LINK</button> <span class="copied" data-copied style="color:#171310">COPIED ✓</span></div></div>
+    </div></div></section>`;
+
+  // ---- D: two tools behind a switch
+  B.twotools = () => `<section class="sec"><div class="wrap"><div data-reveal style="text-align:center"><div class="kick" style="justify-content:center">TWO TOOLS</div><h2 class="h2">Write it.<br><em>Understand it.</em></h2>
+    <div class="switch" role="tablist" style="margin-top:30px" data-switch><button class="on" type="button" role="tab" aria-selected="true">SONG GENERATOR</button><button type="button" role="tab" aria-selected="false">CHORD LAB</button></div></div>
+    <div class="pane on" data-pane="0"><div class="rows">${B.inner(B.key(false))}${B.inner(B.feel(true))}${B.inner(B.parts())}${B.inner(B.practise(false))}${B.inner(B.export())}</div></div>
+    <div class="pane" data-pane="1"><div class="rows">${B.inner(B.lab(false))}<div class="split" style="margin-top:20px"><div><h3 class="h3" style="font-size:clamp(30px,3.4vw,48px)">Four tunings,<br><em style="font-style:normal;color:var(--accent)">either hand.</em></h3><p class="lede">E standard, Eb standard, Drop D and Drop C#, right- or left-handed. A capo up to the 7th fret, and the maths always agrees with the shapes.</p></div><div class="card pad"><div class="seg" data-tuning><span class="thumb"></span><button class="on" type="button">E STD</button><button type="button">Eb STD</button><button type="button">DROP D</button><button type="button">DROP C#</button></div><div class="chips" style="margin-top:18px" data-tunechips></div></div></div></div></div>
+  </div></section>`;
+  B.inner = (html) => html.replace(/^<section class="sec">/, "<div>").replace(/<\/section>$/, "</div>").replace('<div class="wrap', '<div class="').replace(/class="\s/, 'class="');
+
+  // ---------------- the four options ----------------
+  const OPTS = {
+    A: { name: "A · The walkthrough", about: "One long, linear story that follows a song from start to finish, each step a live, working piece of the Generator: pick a key (tap one and the chords transpose), pick a feel (the tempo and metronome follow), drag the length (the song's form grows), every part tabbed, shaping and locks, practice speeds, the three ways to take it away. Then the Chord Lab's five tools, the originality promise, questions and the encore. The most complete tour.",
+      html: () => B.bar() + B.hero() + B.marquee() + B.key() + B.feel() + B.length() + B.parts() + B.shape() + B.practise() + B.export() + B.lab() + B.promise() + B.faq() + B.encore() },
+    B: { name: "B · Sticky studio", about: "The hero's live card follows you down the page. On the left, six short chapters (key, feel, length, build, practise, export) scroll past; on the right the same card stays put and acts out each chapter in turn: it changes key, changes feel, grows the song's form, builds, slows down for practice and lights its exports. Then the stats, the Chord Lab, posters, the promise, questions and the encore. The most cinematic.",
+      html: () => B.bar() + B.hero() + B.studio() + B.stats() + B.lab() + B.posters() + B.promise() + B.faq() + B.encore() },
+    C: { name: "C · Bento", about: "After the hero, the numbers (12 keys, 5 feels, 7 lengths, 4 tunings, 10 MIDI parts, 0 tabs stored), then everything at once in a bento grid of live tiles: key, feel, length, every part, practice speeds, shaping, PDF, MIDI and share, each one working. Then the Chord Lab, the power-chord explainer, the title board, the promise, questions and the encore. The densest and most 'product site'.",
+      html: () => B.bar() + B.hero() + B.stats() + B.bento() + B.lab() + B.twonotes() + B.titles() + B.promise() + B.faq() + B.encore() },
+    D: { name: "D · Two tools", about: "After the hero and the progressions marquee, a big switch between the two tools. SONG GENERATOR shows key, feel, every part, practice and export; CHORD LAB shows the five tools plus tunings and handedness, with the chips re-voicing per tuning. Then the stats, the power-chord explainer, the title board, posters, the promise, questions and the encore. The clearest about the site having two tools.",
+      html: () => B.bar() + B.hero() + B.marquee() + B.twotools() + B.stats() + B.twonotes() + B.titles() + B.posters() + B.promise() + B.faq() + B.encore() },
+  };
+  $("#opts").innerHTML = Object.entries(OPTS).map(([k, o]) => `<div class="opt" id="opt${k}">${o.html()}</div>`).join("");
+
+  // ---------------- behaviour (per option root) ----------------
+  const BEAT = 333;
+  const fit = (root) => $$("[data-fit]", root).forEach((kin) => {
+    const col = kin.closest("[data-fit-col]"); const cs = getComputedStyle(col);
+    const cw = col.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 6; const ind = [0, cw * .05, 0, cw * .09];
+    kin.style.setProperty("--in2", ind[1] + "px"); kin.style.setProperty("--in4", ind[3] + "px"); kin.style.setProperty("--kin", "100px");
+    const ws = [...kin.children].map((s) => s.offsetWidth);
+    kin.style.setProperty("--kin", Math.max(26, Math.min(110, ...ws.map((w, i) => ((cw - ind[i]) / w) * 100))).toFixed(1) + "px");
+  });
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { rootMargin: "0px 0px -8% 0px" });
+
+  const setup = (root) => {
+    const st = { key: 0, feel: 0, len: 1, speed: 0, beat: 0, auto: true };
+    // keys: every key picker in this option, and every chip row, move together
+    $$("[data-pills],[data-keypick]", root).forEach((el) => {
+      el.innerHTML = KEYS.map((k, i) => `<button type="button" class="pill${i === 0 ? " on" : ""}" aria-pressed="${i === 0}">${k}</button>`).join("");
+      $$(".pill", el).forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setKey(i); }));
+    });
+    const setKey = (i) => {
+      st.key = i;
+      $$("[data-pills] .pill,[data-keypick] .pill", root).forEach((b) => { const on = KEYS[i] === b.textContent; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+      $$("[data-chips],[data-keychips]", root).forEach((c) => { c.innerHTML = chipsHTML(i); $$(".chip", c).forEach((x, k) => { x.style.animationDelay = k * 60 + "ms"; x.classList.add("flipin"); }); });
+      $$("[data-bigkey],[data-bigkey2],[data-appkey]", root).forEach((e) => e.textContent = KEYS[i]);
+      $$("[data-partchips]", root).forEach((e) => { const p = +e.dataset.partchips; const prog = p === 3 || p === 6 ? [[0], [7], [9], [5]] : p === 2 ? [[9], [5], [7]] : [[0], [7], [9], [5]]; e.innerHTML = prog.map(([o]) => `<span>${name5(i, o + (p === 6 ? 2 : 0))}5</span>`).join(""); }); // the last chorus is up a tone
+    };
+    // feel
+    const feelSegs = $$("[data-feelseg]", root);
+    feelSegs.forEach((s) => s.insertAdjacentHTML("beforeend", FEELS.map(([n, b], i) => `<button type="button" class="${i === 0 ? "on" : ""}">${n}<small>${b} BPM</small></button>`).join("")));
+    const placeThumb = (seg, i) => { const btns = $$("button", seg), b = btns[i], th = $(".thumb", seg); btns.forEach((x, k) => x.classList.toggle("on", k === i)); if (b && th) { th.style.width = b.offsetWidth + "px"; th.style.transform = `translateX(${b.offsetLeft - 4}px)`; } };
+    const countTo = (el, to) => { const from = parseInt(el.textContent, 10) || to, t0 = performance.now(); const run = (n) => { const k = Math.min(1, (n - t0) / 600); el.textContent = Math.round(from + (to - from) * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(run); }; requestAnimationFrame(run); };
+    const setFeel = (i) => { st.feel = i; feelSegs.forEach((s) => placeThumb(s, i)); $$("[data-feelbpm]", root).forEach((e) => countTo(e, FEELS[i][1])); $$("[data-feelname],[data-appfeel]", root).forEach((e) => e.textContent = FEELS[i][0]); $$("[data-strum]", root).forEach((e) => e.textContent = FEELS[i][2]); updateBPM(); };
+    feelSegs.forEach((s) => $$("button", s).forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setFeel(i); })));
+    // length
+    const LEN = ["2:30", "3:00", "3:30", "4:00", "4:30", "5:00", "5:30"];
+    const formFor = (n) => { const base = [["Intro", 2, ""], ["Verse 1", 4, ""], ["Chorus", 4, "ch"], ["Verse 2", 4, ""], ["Chorus", 4, "ch"], ["Solo", 4, "so"], ["Last chorus", 4, "lc"]]; const extras = [["Pre-chorus", 2, "", 2], ["Pre-chorus", 2, "", 5], ["Breakdown", 2, "", 8], ["Verse 3", 4, "", 9], ["Chorus", 4, "ch", 10], ["Bridge", 2, "", 11]]; const f = base.slice(); extras.slice(0, n).forEach(([a, b, c, at]) => f.splice(Math.min(at, f.length - 1), 0, [a, b, c])); return f; };
+    const setLen = (i) => { st.len = i; const f = formFor(i); $$("[data-lenform],[data-stickform]", root).forEach((el) => el.innerHTML = f.map(([n, w, k]) => `<i class="${k}" style="--f:${w}" title="${n}"></i>`).join("")); $$("[data-lentime]", root).forEach((e) => e.textContent = LEN[i]); $$("[data-total]", root).forEach((e) => e.textContent = LEN[i]); $$("[data-lenparts]", root).forEach((e) => e.textContent = f.length); const secs = 150 + i * 30; $$("[data-lenbars]", root).forEach((e) => e.textContent = Math.round(secs * 180 / 60 / 4)); $$("[data-len]", root).forEach((r) => r.value = i); };
+    $$("[data-len]", root).forEach((r) => r.addEventListener("input", () => { st.auto = false; setLen(+r.value); }));
+    // practice speed
+    const SPEEDS = [1, .9, .75, .5];
+    const updateBPM = () => { const bpm = Math.round(FEELS[st.feel][1] * SPEEDS[st.speed]); $$("[data-pbpm]", root).forEach((e) => e.textContent = bpm + " BPM"); $$("[data-pbpmh]", root).forEach((e) => countTo(e, bpm)); $$("[data-appspeed]", root).forEach((e) => e.textContent = Math.round(SPEEDS[st.speed] * 100) + "%"); root.style.setProperty("--barms", Math.round(60000 / bpm * 4) + "ms"); };
+    const setSpeed = (i) => { st.speed = i; $$("[data-speed]", root).forEach((s) => $$("button", s).forEach((b, k) => b.classList.toggle("on", k === i))); updateBPM(); };
+    $$("[data-speed]", root).forEach((s) => $$("button", s).forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setSpeed(i); })));
+    $$("[data-loop],[data-countin]", root).forEach((b) => b.addEventListener("click", () => b.classList.toggle("on")));
+    $$("[data-lock]", root).forEach((b) => b.addEventListener("click", () => b.classList.toggle("on")));
+    $$("[data-rhythms]", root).forEach((l) => $$("button", l).forEach((b) => b.addEventListener("click", () => { $$("button", l).forEach((x) => x.classList.toggle("on", x === b)); })));
+    $$("[data-again]", root).forEach((b) => b.addEventListener("click", () => { $$("[data-chips] .chip,[data-keychips] .chip", root).forEach((x, k) => { x.classList.remove("flipin"); void x.offsetWidth; x.style.animationDelay = k * 70 + "ms"; x.classList.add("flipin"); }); }));
+    $$("[data-copy]", root).forEach((b) => b.addEventListener("click", () => { const c = b.parentElement.querySelector("[data-copied]"); c.classList.add("on"); setTimeout(() => c.classList.remove("on"), 1600); }));
+    // MIDI rolls
+    $$("[data-roll]", root).forEach((r) => { r.innerHTML = LANES.map((l, i) => { let notes = ""; for (let k = 0; k < 10; k++) if ((k * (i + 3)) % 5 < 3) notes += `<i style="left:${k * 10}%;width:${5 + ((k + i) % 3) * 2}%;--c:${i === 9 ? "var(--on-dark-3)" : i % 3 === 0 ? "var(--accent)" : i % 3 === 1 ? "var(--brass)" : "var(--on-dark-2)"}"></i>`; return `<div><span>${l.toUpperCase()}</span><span class="lane">${notes}</span></div>`; }).join("") + `<span class="ph"></span>`; });
+    // Chord Lab demos
+    const box = (frets, base = 1) => { const fs = frets.split(" "); let s = `<svg viewBox="-6 0 76 100">`; for (let x = 0; x < 6; x++) s += `<line x1="${10 + x * 10}" y1="14" x2="${10 + x * 10}" y2="94" stroke="var(--t3)"/>`; for (let f = 0; f <= 5; f++) s += `<line x1="10" y1="${14 + f * 16}" x2="60" y2="${14 + f * 16}" stroke="var(--t3)" stroke-width="${f === 0 && base === 1 ? 4 : 1}"/>`; fs.forEach((f, x) => { const cx = 10 + x * 10; if (f === "x") s += `<text x="${cx}" y="10" font-size="8" text-anchor="middle" fill="var(--t3)">×</text>`; else if (+f === 0) s += `<circle cx="${cx}" cy="7" r="3" fill="none" stroke="var(--t3)"/>`; else s += `<circle cx="${cx}" cy="${14 + (+f - base + .5) * 16}" r="5" fill="var(--accent)"/>`; }); if (base > 1) s += `<text x="5" y="25" font-size="8" text-anchor="end" fill="var(--t3)">${base}</text>`; return s + "</svg>"; };
+    $$("[data-boxes]", root).forEach((b) => b.innerHTML = box("3 2 0 0 0 3") + box("3 5 5 4 3 3") + box("x 10 12 12 12 10", 10));
+    $$("[data-nameit]", root).forEach((d) => { let s = `<svg class="neckmini" viewBox="0 0 320 120">`; for (let x = 0; x < 6; x++) s += `<line x1="10" x2="310" y1="${12 + x * 19}" y2="${12 + x * 19}" stroke="var(--t3)" stroke-width="${1 + (5 - x) * .25}"/>`; for (let f = 0; f <= 5; f++) s += `<line x1="${10 + f * 60}" x2="${10 + f * 60}" y1="12" y2="107" stroke="var(--line-strong)" stroke-width="${f === 0 ? 5 : 2}"/>`; [[5, 3], [4, 2], [0, 3]].forEach(([str, f]) => s += `<circle class="on" cx="${10 + (f - .5) * 60}" cy="${12 + str * 19}" r="8" data-tap/>`); d.innerHTML = s + `</svg><div class="named"><span data-namedname>G</span><small data-namedsub>G MAJOR · OPEN</small></div>`; });
+    $$("[data-buildchips]", root).forEach((c) => c.innerHTML = ["G", "D", "Em", "C"].map((n, i) => `<span class="chip" style="width:52px"><small>${["I", "V", "vi", "IV"][i]}</small><b>${n}</b></span>`).join(""));
+    const MOOD = [["I–V–vi–IV", 62, 40], ["vi–IV–I–V", 38, 46], ["I–IV–V", 76, 72], ["I–bVII–IV", 70, 26], ["vi–V–IV", 24, 60], ["i–bVI–bIII–bVII", 14, 28]];
+    $$("[data-mood]", root).forEach((m) => m.insertAdjacentHTML("beforeend", MOOD.map(([n, x, y], i) => `<span class="md${i === 0 ? " on" : ""}" style="left:${x}%;top:${y}%"><span>${n}</span></span>`).join("")));
+    $$("[data-tuning]", root).forEach((s) => $$("button", s).forEach((b, i) => b.addEventListener("click", () => setTuning(i))));
+    const TUNE = [["E standard", 0], ["Eb standard", -1], ["Drop D", -2], ["Drop C#", -3]];
+    const setTuning = (i) => { $$("[data-tuning]", root).forEach((s) => placeThumb(s, i)); $$("[data-tunechips]", root).forEach((c) => c.innerHTML = ["G", "D", "Em", "C"].map((n) => `<span class="chip" style="width:72px"><small>${TUNE[i][0].toUpperCase()}</small><b>${n}</b></span>`).join("")); };
+    // title board
+    const FL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; let ti = 0;
+    const showTitle = () => { $$("[data-flaps]", root).forEach((el) => { const t = `"${TITLES[ti % TITLES.length]}"`.toUpperCase(); el.innerHTML = t.split(" ").map((w) => `<span class="w">${[...w].map((ch) => `<span class="c" data-c="${ch}">${ch}</span>`).join("")}</span>`).join(""); if (reduced || still) return; const cells = $$(".c", el), settle = cells.map((_, i) => 4 + i * .6 + Math.random() * 6); let tick = 0; const id = setInterval(() => { tick++; let busy = false; cells.forEach((c, i) => { const r = c.dataset.c; if (tick < settle[i]) { busy = true; c.textContent = /[A-Z0-9]/.test(r) ? FL[Math.floor(Math.random() * FL.length)] : r; } else c.textContent = r; c.classList.remove("flip"); void c.offsetWidth; c.classList.add("flip"); }); if (!busy) clearInterval(id); }, 55); }); ti++; };
+    $$("[data-shuffle]", root).forEach((b) => b.addEventListener("click", showTitle));
+    // D: the switch
+    $$("[data-switch]", root).forEach((sw) => $$("button", sw).forEach((b, i) => b.addEventListener("click", () => { $$("button", sw).forEach((x, k) => { x.classList.toggle("on", k === i); x.setAttribute("aria-selected", String(k === i)); }); $$("[data-pane]", root).forEach((p) => p.classList.toggle("on", +p.dataset.pane === i)); $$("[data-pane].on [data-reveal]", root).forEach((e) => e.classList.add("in")); setTimeout(() => { $$("[data-feelseg],[data-tuning]", root).forEach((s) => placeThumb(s, s.matches("[data-tuning]") ? 0 : st.feel)); }, 50); })));
+    // B: chapters drive the sticky card
+    const chapIO = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; const n = +e.target.dataset.chap; $$("[data-chap]", root).forEach((c) => c.classList.toggle("on", +c.dataset.chap === n)); $$("[data-badges] span", root).forEach((s, k) => s.classList.toggle("hot", k === n));
+      if (n === 0) { setKey((st.key + 5) % 12); } if (n === 1) setFeel((st.feel + 1) % 5); if (n === 2) setLen((st.len + 2) % 7); if (n === 3) { const p = $("[data-apppart]", root); p.textContent = "Chorus"; $("[data-appmeta]", root).textContent = "OPEN · 0:24"; $$("[data-chips] .chip", root).forEach((x, k) => { x.classList.remove("flipin"); void x.offsetWidth; x.style.animationDelay = k * 70 + "ms"; x.classList.add("flipin"); }); }
+      if (n === 4) setSpeed(2); else if (st.speed) setSpeed(0); $$("[data-exportrow] span", root).forEach((s, k) => s.classList.toggle("hot", n === 5)); }), { rootMargin: "-45% 0px -45% 0px" });
+    $$("[data-chap]", root).forEach((c) => chapIO.observe(c));
+
+    setKey(0); setFeel(0); setLen(1); setSpeed(0); setTuning(0); showTitle();
+    $$("[data-reveal]", root).forEach((e) => io.observe(e));
+    // the beat: the live card plays, the metronome ticks, demos move on
+    return () => {
+      const b = st.beat++;
+      const chips = $$("[data-chips] .chip", root), i = Math.floor(b / 4) % 4;
+      chips.forEach((c, k) => { if (k === i && b % 4 === 0) { c.classList.remove("now"); void c.offsetWidth; c.classList.add("now"); } else if (k !== i) c.classList.remove("now"); });
+      $$("[data-tab],[data-ptab]", root).forEach((tab) => { const head = $(".head", tab); if (!head) return; const w = tab.clientWidth - 24, frac = ((b % 8) + 1) / 8; head.style.transition = `transform ${BEAT}ms linear`; head.style.transform = `translateX(${w * .08 + w * .82 * frac}px)`; });
+      $$("[data-clock]", root).forEach((e) => e.textContent = String(8 + Math.floor(b / 3) % 50).padStart(2, "0"));
+      $$("[data-metro]", root).forEach((m) => $$("i", m).forEach((d, k) => d.classList.toggle("on", k === b % 4)));
+      if (st.auto && b % 24 === 12) setKey((st.key + 5) % 12);
+      if (st.auto && b % 24 === 0 && b) setFeel((st.feel + 1) % 5);
+      if (b % 8 === 0) { const ms = $$("[data-mood] .md", root); const on = (b / 8) % ms.length; ms.forEach((m, k) => m.classList.toggle("on", k === on)); $$("[data-m1]", root).forEach((e) => e.style.setProperty("--v", 30 + Math.round(Math.random() * 60) + "%")); $$("[data-m2]", root).forEach((e) => e.style.setProperty("--v", 20 + Math.round(Math.random() * 60) + "%")); }
+      if (b % 12 === 0) { const kf = [["G D Em C", "G major", "I V vi IV", "CAPO 2 · PLAY IN F"], ["Am F C G", "C major", "vi IV I V", "CAPO 3 · PLAY IN A"], ["E B C#m A", "E major", "I V vi IV", "DROP D · SAME SHAPES −2"]][(b / 12) % 3]; $$("[data-kfin]", root).forEach((e) => e.textContent = kf[0]); $$("[data-kfkey]", root).forEach((e) => e.textContent = kf[1]); $$("[data-kfdeg]", root).forEach((e) => e.textContent = kf[2]); $$("[data-kfcapo]", root).forEach((e) => e.textContent = kf[3]); }
+      if (b % 40 === 20) showTitle();
+    };
+  };
+
+  const ticks = {}; let current = "A", beatTimer = 0;
+  const show = (k) => {
+    current = k;
+    $$(".opt").forEach((o) => o.classList.toggle("on", o.id === "opt" + k));
+    $$(".pick [data-o]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.o === k)));
+    $("#aboutText").innerHTML = `<b>${OPTS[k].name}</b>${OPTS[k].about}`; $("#about").hidden = false;
+    const root = $("#opt" + k);
+    if (!ticks[k]) ticks[k] = setup(root);
+    scrollTo({ top: 0, behavior: "instant" }); fit(root);
+    requestAnimationFrame(() => $$("[data-feelseg],[data-tuning]", root).forEach((s) => { const on = $$("button", s).findIndex((b) => b.classList.contains("on")); const b = $$("button", s)[on], th = $(".thumb", s); if (b && th) { th.style.width = b.offsetWidth + "px"; th.style.transform = `translateX(${b.offsetLeft - 4}px)`; } }));
+    try { history.replaceState(null, "", "#" + k); } catch {}
+  };
+  const pickH = () => document.documentElement.style.setProperty("--pick", $(".pick").offsetHeight + "px"); pickH(); addEventListener("resize", pickH);
+  const startBeat = () => { clearInterval(beatTimer); if (!still && !reduced) beatTimer = setInterval(() => ticks[current] && ticks[current](), BEAT); };
+  $$(".pick [data-o]").forEach((b) => b.addEventListener("click", () => show(b.dataset.o)));
+  $("#about button").addEventListener("click", () => { $("#about").hidden = true; });
+  $("#theme").addEventListener("click", (e) => { const dark = document.documentElement.dataset.theme !== "dark"; document.documentElement.dataset.theme = dark ? "dark" : "light"; e.currentTarget.textContent = dark ? "DARK" : "LIGHT"; e.currentTarget.setAttribute("aria-pressed", String(dark)); });
+  $("#still").addEventListener("click", (e) => { still = !still; e.currentTarget.setAttribute("aria-pressed", String(still)); document.body.classList.toggle("still", still); startBeat(); });
+  addEventListener("resize", () => fit($("#opt" + current))); document.fonts.ready.then(() => fit($("#opt" + current)));
+  show((location.hash.match(/^#([A-D])$/) || [, "A"])[1]); startBeat();
+})();
+</script>
+</body>
+</html>

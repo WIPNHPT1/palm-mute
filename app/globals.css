@@ -455,7 +455,7 @@
     pointer-events: none;
   }
 
-  /* ink bands (the transport bar; the home page's title board and stamp band in app/count-in.css): a red stage light
+  /* ink bands (the transport bar): a red stage light
      from above, centred */
   .sig-stage-light { background-image: radial-gradient(60% 140% at 50% -40%, rgb(var(--color-accent) / 0.22), transparent 70%); }
 }

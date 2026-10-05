@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm/Mute Bento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Live session · Bento, with every piece of eye candy from the six concepts (home-premium-options.html) as a working
+     tile: the live card, tape deck, 3D neck, split-flap titles, count-in, mixing desk, MIDI roll, scope, stamp, mood
+     map and more. Plus four new hero lights (the light leak, redone for light and dark) to switch between at the top.
+     Everything moves by transform and opacity; the beat follows the feel you pick; STILL and reduced motion freeze it. */
+  :root, [data-theme="dark"] {
+    --ink:#0B0908; --ink-soft:#1F1A16; --paper:#15110E; --paper-rgb:21 17 14; --surface:#1F1A16; --board:#0F0C0A;
+    --accent:#E85A42; --accent-rgb:232 90 66; --brass:#C9973C; --brass-rgb:201 151 60; --success:#52A862; --cream-rgb:246 241 228;
+    --line:#352D25; --line-strong:#463B30; --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B;
+    --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#140F0C; --chip:#0B0908; --chip-tab:#C9BFA9;
+    --dot:rgb(246 241 228 / .14); --dot-hot:rgb(var(--brass-rgb) / .55);
+    --lift:0 2px 4px rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.8); --sh:0 1px 2px rgba(0,0,0,.4), 0 12px 24px -16px rgba(0,0,0,.8);
+    --hi:rgba(246,241,228,.07); --grain:.09; color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --ink:#171310; --ink-soft:#2A241C; --paper:#F6F1E4; --paper-rgb:246 241 228; --surface:#FFFFFF; --board:#211B15;
+    --accent:#C23A26; --accent-rgb:194 58 38; --brass:#B8862E; --brass-rgb:184 134 46; --success:#3F8F4F;
+    --line:#E4DAC3; --line-strong:#DCD3BE; --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A;
+    --on-accent:#FFF9EF; --chip:#171310; --dot:rgb(23 19 16 / .2); --dot-hot:rgb(var(--accent-rgb) / .5);
+    --lift:0 2px 4px rgba(23,19,16,.05), 0 30px 60px -30px rgba(23,19,16,.35); --sh:0 1px 2px rgba(23,19,16,.06), 0 12px 24px -16px rgba(23,19,16,.32);
+    --hi:rgba(255,255,255,.7); --grain:.07; color-scheme: light;
+  }
+  :root { --display:"Archivo Black","Arial Black",sans-serif; --ui:"Space Grotesk",system-ui,sans-serif; --mono:"Space Mono",ui-monospace,Menlo,monospace;
+    --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1); --pad:clamp(16px, 4vw, 56px); --bar:68px; --pick:61px; --beat:333ms; }
+  * { box-sizing: border-box; }
+  html { overflow-x: clip; }
+  body { margin: 0; background: var(--paper); color: var(--t1); font-family: var(--ui); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  button { font: inherit; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { width: 100%; max-width: 1296px; margin: 0 auto; padding-inline: var(--pad); }
+
+  /* ---- picker (not part of the design) ---- */
+  .pick { position: sticky; top: 0; z-index: 100; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; background: #000; color: #EDE6D6; border-bottom: 1px solid #333; font-family: var(--mono); font-size: 12px; }
+  .pick b { color: #E85A42; font-weight: 400; letter-spacing: .12em; margin-right: 4px; }
+  .pick button { min-height: 44px; padding: 0 12px; border: 1px solid #3a3530; border-radius: 6px; background: #14110F; cursor: pointer; }
+  .pick button[aria-pressed="true"] { background: #E85A42; color: #140F0C; border-color: #E85A42; }
+  .pick .sp { flex: 1; } .pick .gap { width: 10px; }
+  .about { position: fixed; z-index: 99; left: 16px; bottom: 16px; width: min(440px, calc(100vw - 32px)); padding: 16px 44px 16px 18px; border-radius: 12px; background: #000; color: #D9CFB9; border: 1px solid #3a3530; font-size: 14px; line-height: 1.5; box-shadow: 0 20px 50px -20px rgba(0,0,0,.9); }
+  .about b { color: #F6F1E4; font-family: var(--display); font-weight: 400; font-size: 18px; display: block; margin-bottom: 4px; }
+  .about button { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: transparent; color: #A89C86; font-size: 20px; cursor: pointer; }
+  .about[hidden] { display: none; }
+  .from { position: absolute; z-index: 4; top: 10px; right: 10px; padding: 3px 7px; border-radius: 4px; background: #000; color: #E85A42; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; pointer-events: none; }
+  .nolabels .from { display: none; }
+
+  /* ---- foundation ---- */
+  .sitebar { position: sticky; top: var(--pick); z-index: 50; height: var(--bar); background: var(--ink); background-image: radial-gradient(440px 160% at 90px 0%, rgb(var(--accent-rgb) / .22), transparent 70%); }
+  .sitebar .wrap { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .wm { display: inline-flex; align-items: center; font-family: var(--display); font-size: 16px; color: var(--on-dark); }
+  .wm svg { width: .6em; height: .9em; margin: 0 .04em; fill: var(--accent); }
+  .horns { width: 44px; height: 44px; display: grid; place-items: center; margin-right: -10px; color: var(--on-dark); }
+  .horns svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .grainl { position: fixed; inset: -12%; z-index: 90; pointer-events: none; opacity: var(--grain); animation: grain 1.2s steps(6) infinite;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .167 .167 .167 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  [data-theme="light"] .grainl { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -.167 -.167 -.167 0 .5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  @keyframes grain { 20% { transform: translate(-4%, 3%); } 40% { transform: translate(3%, -5%); } 60% { transform: translate(-2%, 6%); } 80% { transform: translate(5%, -2%); } }
+  .kick { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--accent); display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .kick::after { content: ""; flex: 0 0 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+  .mono { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--t3); }
+  .live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: .16em; }
+  .live i { width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(82 168 98 / .22); animation: blink calc(var(--beat) * 2) steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .kin { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: -.035em; line-height: .88; font-size: var(--kin, 6vw); position: relative; }
+  .kin > span { display: block; width: max-content; white-space: nowrap; }
+  .kin > span:nth-child(1), .kin > span:nth-child(3) { text-shadow: .02em .02em 0 rgb(var(--accent-rgb) / .38); }
+  .kin > span:nth-child(2) { color: transparent; -webkit-text-stroke: 2px var(--t1); margin-left: var(--in2, 0); }
+  .kin > span:nth-child(4) { color: var(--accent); margin-left: var(--in4, 0); }
+  .btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 24px; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent);
+    font-family: var(--display); font-size: 13px; letter-spacing: .02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(0,0,0,.16), 0 8px 22px -8px rgb(var(--accent-rgb) / .7); transition: transform .3s var(--out); }
+  .btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.3) 50%, transparent 62%); transform: translateX(-130%); transition: transform .72s var(--out); }
+  .btn:hover { transform: translateY(-2px); } .btn:hover::after { transform: translateX(130%); }
+  .btn svg { width: 12px; height: 12px; fill: currentColor; }
+  .btn.ghost { background: transparent; color: var(--t1); box-shadow: inset 0 0 0 1.5px var(--t1); }
+  .btn.sm { min-height: 44px; padding: 0 16px; font-size: 12px; }
+  .lnk { font-family: var(--mono); font-size: 12.5px; color: var(--t3); padding: 12px 4px; } .lnk:hover { color: var(--t1); }
+  section { position: relative; }
+  .sec { padding: clamp(70px, 9vw, 130px) 0; }
+  .h2 { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: -.025em; line-height: .92; font-size: clamp(34px, 5vw, 76px); }
+  .h2 em { font-style: normal; color: var(--accent); } .h2 .o { color: transparent; -webkit-text-stroke: 2px var(--t1); }
+  .p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--t2); }
+  [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity .9s var(--out), transform 1.1s var(--out); transition-delay: calc(var(--d, 0) * 70ms); }
+  [data-reveal].in { opacity: 1; transform: none; }
+
+  /* ---- the Generator's parts ---- */
+  .card { position: relative; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: inset 0 1px 0 var(--hi), var(--sh); }
+  .card::before { content: ""; position: absolute; left: 18px; top: -1.5px; width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--accent); z-index: 2; }
+  .num { display: inline-block; padding: 1px 7px; border-radius: 4px; background: var(--ink); color: var(--on-dark); font-family: var(--mono); font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .cardhd { display: flex; align-items: baseline; gap: 10px; font-family: var(--display); font-size: 18px; } .cardhd .mono { margin-left: auto; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { position: relative; min-width: 40px; min-height: 44px; padding: 0 8px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; font-family: var(--mono); font-size: 13px; color: var(--t3); cursor: pointer; }
+  .pill:hover { color: var(--t1); }
+  .pill.on { background: var(--ink); color: var(--on-dark); border-color: var(--ink); font-weight: 700; box-shadow: inset 0 1px 0 rgba(246,241,228,.14), 0 6px 12px -8px rgba(0,0,0,.6); animation: pop .32s var(--spring); }
+  .pill.on::after { content: ""; position: absolute; top: 3px; left: 50%; width: 14px; height: 2px; margin-left: -7px; border-radius: 1px; background: var(--accent); }
+  @keyframes pop { from { transform: scale(1.12); } }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; overflow: hidden; width: 58px; padding: 6px 0 8px; border-radius: 6px; background: var(--chip); color: var(--on-dark); text-align: center; font-family: var(--mono); box-shadow: inset 0 0 0 1px rgba(246,241,228,.09); transition: transform .3s var(--out); }
+  .chip small { display: block; font-size: 12px; color: var(--on-dark-3); } .chip b { display: block; font-size: 15px; margin: 2px 0 4px; }
+  .chip pre { margin: 0; font-size: 9px; line-height: 1.25; color: var(--chip-tab); text-align: left; padding-left: 9px; }
+  .chip.now { background-image: linear-gradient(to top, rgb(var(--accent-rgb) / .3), transparent 70%); transform: translateY(-3px); }
+  .chip.now::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); animation: barfill calc(var(--beat) * 4) linear forwards; }
+  .chip.flipin { animation: flipin .5s var(--spring) both; } @keyframes flipin { from { transform: rotateY(90deg); } }
+  @keyframes barfill { from { width: 0; } to { width: 100%; } }
+  .tab { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--paper); font-family: var(--mono); font-size: 12px; line-height: 1.45; color: var(--t1); white-space: pre; overflow: hidden; position: relative; }
+  .tab .pm { color: var(--t3); }
+  .tab .head { position: absolute; top: 8px; bottom: 8px; width: 2px; left: 12px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); }
+  .transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); flex-wrap: wrap; }
+  .play { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+  .play svg.p { width: 14px; height: 14px; fill: currentColor; margin-left: 2px; }
+  .play svg.ring { position: absolute; inset: -5px; width: calc(100% + 10px); height: calc(100% + 10px); transform: rotate(-90deg); }
+  .play svg.ring circle { fill: none; stroke-width: 2; } .play .tr { stroke: rgb(246 241 228 / .15); }
+  .play .pr { stroke: var(--accent); stroke-dasharray: 151; stroke-dashoffset: 151; animation: arc calc(var(--beat) * 4) linear infinite; stroke-linecap: round; }
+  @keyframes arc { to { stroke-dashoffset: 0; } }
+  .prog { flex: 1; min-width: 80px; height: 4px; border-radius: 2px; background: rgb(246 241 228 / .12); overflow: hidden; }
+  .prog i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: prog 40s linear infinite; } @keyframes prog { from { transform: scaleX(0); } }
+  .speed { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid rgb(246 241 228 / .14); }
+  .speed button { min-width: 50px; min-height: 44px; border: 0; background: transparent; color: var(--on-dark-3); font-family: var(--mono); font-size: 12px; cursor: pointer; }
+  .speed button.on { background: var(--on-dark); color: var(--ink); font-weight: 700; }
+  .ib { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; color: var(--t2); cursor: pointer; }
+  .ib svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ib.on { color: var(--accent); border-color: var(--accent); background: rgb(var(--accent-rgb) / .1); }
+  .optlist { display: grid; gap: 8px; }
+  .optlist button { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: transparent; font-size: 15px; color: var(--t2); cursor: pointer; text-align: left; }
+  .optlist button.on { border-color: var(--accent); color: var(--t1); background: rgb(var(--accent-rgb) / .08); }
+  .optlist button span { font-family: var(--mono); font-size: 12px; color: var(--t3); }
+  .range { width: 100%; accent-color: var(--accent); height: 44px; }
+  .form { display: flex; gap: 3px; height: 40px; }
+  .form i { flex: var(--f) 1 0; border-radius: 3px; background: var(--line-strong); transition: flex .5s var(--out); }
+  .form i.ch { background: var(--accent); } .form i.so { background: var(--brass); } .form i.lc { background: var(--accent); box-shadow: inset 0 0 0 2px var(--brass); }
+  .form i.now { outline: 2px solid var(--t1); outline-offset: 1px; }
+  .metro { display: flex; gap: 10px; } .metro i { width: 16px; height: 16px; border-radius: 50%; background: var(--line-strong); }
+  .metro i.on { background: var(--accent); transform: scale(1.25); box-shadow: 0 0 12px rgb(var(--accent-rgb) / .6); } .metro i:first-child.on { background: var(--brass); }
+
+  /* ================= HERO + the four new lights ================= */
+  .hero { min-height: calc(100svh - var(--bar) - var(--pick)); display: flex; align-items: center; overflow: hidden; padding: 40px 0 60px; isolation: isolate; }
+  .hero .fx { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.7px); background-size: 9px 9px; }
+  .fx > i, .fx > b { position: absolute; display: block; will-change: transform, opacity; }
+  .hgrid { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(28px, 4vw, 64px); align-items: center; }
+  @media (max-width: 1000px) { .hgrid { grid-template-columns: minmax(0, 1fr); } }
+  .hleft .top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+  .hleft p { margin: 26px 0; max-width: 460px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.55; color: var(--t2); }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+  .stage3d { perspective: 1400px; }
+  .app { transform: rotateY(-9deg) rotateX(4deg); padding: 18px; display: flex; flex-direction: column; gap: 14px; transition: transform 1.2s var(--out); }
+  .stage3d:hover .app { transform: rotateY(-3deg) rotateX(1deg); }
+  .float { position: absolute; z-index: 3; padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--on-dark); font-family: var(--mono); font-size: 12px; letter-spacing: .1em; box-shadow: var(--lift); animation: bob 6s ease-in-out infinite; }
+  .float.a { right: -10px; top: -18px; } .float.b { left: -24px; bottom: 70px; animation-delay: -3s; background: var(--accent); color: var(--on-accent); }
+  .float b { color: var(--accent); } .float.b b { color: var(--on-accent); }
+  @keyframes bob { 50% { transform: translateY(-10px); } }
+
+  /* L0 · today: brass/cream glow top-left, faint red bottom-right */
+  .L0 .fx .a { left: -28vw; top: -30vw; width: 80vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--cream-rgb) / .3), rgb(var(--brass-rgb) / .11) 55%, transparent); animation: driftA 28s ease-in-out infinite alternate; }
+  [data-theme="light"] .L0 .fx .a { background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .42), rgb(var(--brass-rgb) / .2) 55%, transparent); }
+  .L0 .fx .b { right: -34vw; bottom: -38vw; width: 84vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .1), transparent); animation: driftB 28s ease-in-out infinite alternate; }
+  @keyframes driftA { to { opacity: .55; transform: translate(4vw, 2vw); } } @keyframes driftB { from { opacity: .45; } to { opacity: 1; transform: translate(-4vw, -3vw); } }
+
+  /* L1 · lit paper: light reads on paper as the *rest* dimming. A warm vignette darkens the edges, the lit corner stays
+     paper-bright with a peach warmth, and the light breathes over ~30s. In dark the same shapes glow cream. */
+  .L1 .fx .v { inset: -10%; background: radial-gradient(120% 110% at 18% 8%, transparent 0 30%, rgb(60 38 20 / .05) 52%, rgb(60 38 20 / .16) 100%); animation: breathe 30s ease-in-out infinite; }
+  .L1 .fx .a { left: -18vw; top: -26vw; width: 74vw; aspect-ratio: 1.15; border-radius: 50%; background: radial-gradient(closest-side, rgb(255 226 190 / .75), rgb(255 214 170 / .35) 45%, transparent 75%); animation: driftA 32s ease-in-out infinite alternate; }
+  .L1 .fx .b { right: -24vw; bottom: -30vw; width: 64vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .12), transparent 70%); animation: driftB 32s ease-in-out infinite alternate; }
+  .L1 .halftone { -webkit-mask: radial-gradient(90% 90% at 18% 10%, rgb(0 0 0 / .45), #000 70%); mask: radial-gradient(90% 90% at 18% 10%, rgb(0 0 0 / .45), #000 70%); }
+  [data-theme="dark"] .L1 .fx .v { background: radial-gradient(120% 110% at 18% 8%, transparent 0 30%, rgb(0 0 0 / .2) 60%, rgb(0 0 0 / .45) 100%); }
+  [data-theme="dark"] .L1 .fx .a { background: radial-gradient(closest-side, rgb(var(--cream-rgb) / .3), rgb(var(--brass-rgb) / .18) 45%, transparent 75%); }
+  @keyframes breathe { 50% { opacity: .75; } }
+
+  /* L2 · film burn: a real light leak, saturated orange into red, bleeding in from the left edge as soft vertical
+     bands that swell and fade, like the end of a roll. Same in both themes; slightly stronger on paper. */
+  .L2 .fx .a, .L2 .fx .b, .L2 .fx .c { top: -20%; bottom: -20%; border-radius: 50%; filter: none; }
+  .L2 .fx .a { left: -20vw; width: 52vw; background: radial-gradient(closest-side, rgb(255 168 70 / .7), rgb(var(--accent-rgb) / .38) 55%, transparent); animation: burnA 18s ease-in-out infinite alternate; }
+  .L2 .fx .b { left: -4vw; width: 24vw; background: radial-gradient(closest-side, rgb(255 205 120 / .65), transparent 70%); animation: burnB 11s ease-in-out infinite alternate; }
+  .L2 .fx .c { right: -16vw; width: 36vw; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .32), transparent 70%); animation: burnC 23s ease-in-out infinite alternate; }
+  [data-theme="light"] .L2 .fx .a { background: radial-gradient(closest-side, rgb(255 140 40 / .62), rgb(var(--accent-rgb) / .42) 50%, transparent); }
+  [data-theme="light"] .L2 .fx .c { background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .3), transparent 70%); }
+  [data-theme="light"] .L2 .fx .b { background: radial-gradient(closest-side, rgb(255 180 70 / .7), transparent 70%); }
+  @keyframes burnA { from { opacity: .55; transform: translateX(-3vw) scaleY(.9); } to { opacity: 1; transform: translateX(3vw) scaleY(1.05); } }
+  @keyframes burnB { from { opacity: .2; transform: translateX(0); } to { opacity: .9; transform: translateX(6vw); } }
+  @keyframes burnC { from { opacity: .3; } to { opacity: .85; transform: translateX(-3vw); } }
+
+  /* L3 · window light: slanted bars of light through a stage window. On paper they're drawn as the *shadows*
+     between the bars (light needs shadow to show); in the dark, as bright bars. They drift a few pixels a second. */
+  .L3 .fx .a { left: 8%; top: -40%; width: 120%; height: 180%; transform-origin: 50% 50%; animation: bars 34s ease-in-out infinite alternate;
+    background: repeating-linear-gradient(90deg, transparent 0 4cqw, rgb(var(--cream-rgb) / .16) 4.6cqw 8.4cqw, transparent 9cqw 13cqw);
+    -webkit-mask: radial-gradient(55% 50% at 50% 45%, #000 20%, rgb(0 0 0 / .4) 60%, transparent 100%); mask: radial-gradient(55% 50% at 50% 45%, #000 20%, rgb(0 0 0 / .4) 60%, transparent 100%); }
+  [data-theme="light"] .L3 .fx .a { background: repeating-linear-gradient(90deg, rgb(80 50 22 / .17) 0 4cqw, transparent 4.6cqw 8.4cqw, rgb(80 50 22 / .17) 9cqw 13cqw); }
+  .L3 .fx .b { left: 20%; top: -20%; width: 80%; height: 110%; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .14), transparent); }
+  [data-theme="light"] .L3 .fx .b { background: radial-gradient(closest-side, rgb(255 222 175 / .6), transparent); }
+  .L3 { container-type: inline-size; }
+  @keyframes bars { from { transform: rotate(-28deg) translateX(-3cqw); } to { transform: rotate(-24deg) translateX(3cqw); } }
+
+  /* L4 · lit halftone: no wash at all. A soft light wanders, and the print's dots it passes swell and warm (brass in
+     the dark, red ink on paper). Pure contrast, so it reads equally in both themes. */
+  .L4 .fx .lamp { left: 40cqw; top: 0; width: 60cqw; aspect-ratio: 1; animation: lampO 36s ease-in-out infinite alternate;
+    -webkit-mask: radial-gradient(closest-side, #000 0, rgb(0 0 0 / .55) 45%, transparent 100%); mask: radial-gradient(closest-side, #000 0, rgb(0 0 0 / .55) 45%, transparent 100%); }
+  .L4 .fx .lamp > i { position: absolute; left: -40cqw; top: 0; width: 100cqw; height: 120cqw; animation: lampI 36s ease-in-out infinite alternate;
+    background-image: radial-gradient(circle, var(--dot-hot) 2.1px, transparent 2.6px); background-size: 9px 9px; }
+  .L4 .fx .lamp > b { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .16), transparent); }
+  [data-theme="light"] .L4 .fx .lamp > b { background: radial-gradient(closest-side, rgb(255 228 190 / .55), transparent); }
+  .L4 { container-type: inline-size; }
+  @keyframes lampO { 0% { transform: translate(0, 0); } 50% { transform: translate(-34cqw, 6cqw); } 100% { transform: translate(-14cqw, 14cqw); } }
+  @keyframes lampI { 0% { transform: translate(0, 0); } 50% { transform: translate(34cqw, -6cqw); } 100% { transform: translate(14cqw, -14cqw); } }
+
+  .marquee { border-block: 1px solid var(--line); overflow: hidden; padding: 18px 0; }
+  .marquee div { display: flex; gap: 40px; width: max-content; animation: tape 40s linear infinite; font-family: var(--display); font-size: clamp(26px, 3vw, 44px); }
+  .marquee span:nth-child(odd) { color: transparent; -webkit-text-stroke: 1.5px var(--t1); } .marquee span:nth-child(3n) { color: var(--accent); -webkit-text-stroke: 0; }
+  @keyframes tape { to { transform: translateX(-50%); } }
+  .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+  @media (max-width: 960px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stats div { padding: 28px 18px; border-right: 1px solid var(--line); } .stats div:last-child { border-right: 0; }
+  .stats b { display: block; font-family: var(--display); font-size: clamp(44px, 5vw, 76px); line-height: .9; letter-spacing: -.03em; }
+  .stats div:nth-child(odd) b { color: transparent; -webkit-text-stroke: 2px var(--t1); } .stats div:last-child b { color: var(--accent); -webkit-text-stroke: 0; }
+  .stats small { display: block; margin-top: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--t3); }
+
+  /* ================= BENTO ================= */
+  .bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: minmax(150px, auto); gap: 16px; }
+  .bento > * { grid-column: span 4; }
+  .bento .s3 { grid-column: span 3; } .bento .s5 { grid-column: span 5; } .bento .s6 { grid-column: span 6; } .bento .s7 { grid-column: span 7; } .bento .s8 { grid-column: span 8; } .bento .s12 { grid-column: span 12; } .bento .r2 { grid-row: span 2; }
+  @media (max-width: 960px) { .bento { grid-template-columns: minmax(0, 1fr); } .bento > *, .bento .s3, .bento .s5, .bento .s6, .bento .s7, .bento .s8, .bento .s12 { grid-column: auto; } .bento .r2 { grid-row: auto; } }
+  .tile { padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; transition: transform .5s var(--out), box-shadow .5s var(--out); transform-style: preserve-3d; }
+  .tile > .mono:first-child, .tile .lab { color: var(--accent); }
+  .tile h3 { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: clamp(20px, 1.9vw, 26px); line-height: 1; }
+  .tile.ink { background: var(--ink); color: var(--on-dark); border-color: var(--ink); } .tile.ink .p { color: var(--on-dark-2); }
+  .tile.red { background: var(--accent); color: var(--on-accent); border-color: var(--accent); } .tile.red .p, .tile.red .mono { color: var(--on-accent); }
+  .tile.brass { background: var(--brass); color: #171310; border-color: var(--brass); } .tile.brass .p, .tile.brass .mono { color: #171310; }
+  .tile .huge { font-family: var(--display); font-size: clamp(64px, 7vw, 112px); line-height: .8; letter-spacing: -.04em; }
+  .tile .huge.o { color: transparent; -webkit-text-stroke: 2.5px currentColor; }
+  .tile .glare { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity .4s; background: radial-gradient(400px circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / .1), transparent 50%); z-index: 3; }
+  .tile:hover .glare { opacity: 1; }
+  .parts { display: grid; gap: 8px; }
+  .part { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); }
+  .part .nm { font-family: var(--display); font-size: 16px; } .part .nm small { display: block; font-family: var(--mono); font-size: 12px; color: var(--t3); margin-top: 2px; }
+  .part.ch { border-color: var(--accent); } .part.now { background: rgb(var(--accent-rgb) / .1); }
+
+  /* tape deck tile */
+  .deck { position: relative; width: 100%; aspect-ratio: 1.6; border-radius: 14px; padding: 4.5%; background: linear-gradient(180deg, #2A241C, #14100D); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 0 #000; }
+  .shell { position: relative; height: 100%; border-radius: 10px; background: linear-gradient(180deg, #E8DFCB, #D9CEB6); box-shadow: inset 0 2px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(0,0,0,.15); padding: 5% 6%; color: #171310; }
+  .label { position: relative; height: 62%; border-radius: 6px; background: #E85A42; background-image: repeating-linear-gradient(0deg, transparent 0 16px, rgba(0,0,0,.08) 16px 17px); color: #FFF9EF; }
+  .label .side { position: absolute; left: 4%; top: 6%; font-family: var(--display); font-size: clamp(18px, 2.4vw, 34px); line-height: 1; }
+  .label .ttl { position: absolute; left: 15%; right: 30%; top: 8%; font-family: var(--display); text-transform: uppercase; font-size: clamp(10px, 1.1vw, 15px); line-height: 1.05; }
+  .label .t { position: absolute; right: 4%; top: 8%; font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-align: right; }
+  .window { position: absolute; left: 50%; top: 40%; width: 56%; height: 34%; translate: -50% -50%; border-radius: 999px; background: #120E0B; box-shadow: inset 0 3px 8px rgba(0,0,0,.8), 0 0 0 3px rgba(255,255,255,.25); display: flex; align-items: center; justify-content: space-between; padding: 0 6%; overflow: hidden; }
+  .window::before { content: ""; position: absolute; left: 22%; right: 22%; top: 40%; height: 26%; background: linear-gradient(90deg, #3A2A1E, #5A3E2A, #3A2A1E); }
+  .reel { position: relative; z-index: 1; width: 30%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #E8DFCB 0 18%, transparent 19%), conic-gradient(from 0deg, #2A2018 0 40deg, #F1EADB 40deg 60deg, #2A2018 60deg 160deg, #F1EADB 160deg 180deg, #2A2018 180deg 280deg, #F1EADB 280deg 300deg, #2A2018 300deg); box-shadow: 0 0 0 5px #4A3626, 0 0 0 8px #2A2018; animation: spin calc(var(--beat) * 7) linear infinite; }
+  .reel.r { animation-duration: calc(var(--beat) * 5); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .shell .bottom { position: absolute; left: 22%; right: 22%; bottom: 0; height: 22%; border-radius: 8px 8px 0 0; background: #CFC3A9; display: flex; justify-content: space-around; align-items: center; } .shell .bottom i { width: 8%; aspect-ratio: 1; border-radius: 50%; background: #2A2018; }
+  .vu { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--t3); }
+  .vu .m { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; } .vu .m i { height: 10px; border-radius: 1px; background: var(--line); }
+  .on-g { background: var(--success) !important; } .on-b { background: var(--brass) !important; } .on-r { background: var(--accent) !important; }
+
+  /* 3D neck tile */
+  .neckwrap { position: relative; flex: 1; min-height: 240px; perspective: 700px; perspective-origin: 50% 0%; overflow: hidden; border-radius: 10px; background: radial-gradient(80% 60% at 50% 100%, rgb(var(--accent-rgb) / .2), transparent); }
+  .neck { position: absolute; left: -10%; right: -10%; bottom: -4%; height: 118%; transform: rotateX(55deg); transform-origin: 50% 100%; background: linear-gradient(90deg, #2A1D14, #3B2919 30%, #2E2016 70%, #22180F); border-radius: 6px; }
+  [data-theme="light"] .neck { background: linear-gradient(90deg, #6B4A2E, #8A6240 30%, #74522F 70%, #5C3E25); }
+  .neck .fret { position: absolute; top: 0; bottom: 0; width: 4px; background: linear-gradient(90deg, #8A7B63, #E8DFCB, #8A7B63); }
+  .neck .nut { position: absolute; top: 0; bottom: 0; left: 0; width: 12px; background: #EDE4D0; }
+  .neck .inlay { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #E8DFCB; opacity: .7; }
+  .neck .str { position: absolute; left: 0; right: 0; height: var(--h); background: linear-gradient(#F1EADB, #8A7B63); box-shadow: 0 2px 2px rgba(0,0,0,.5); }
+  .neck .str.hit { animation: vib .09s linear 8 alternate; } @keyframes vib { from { transform: translateY(-1.5px); } to { transform: translateY(1.5px); } }
+  .neck .dot { position: absolute; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / .25), 0 0 30px 6px rgb(var(--accent-rgb) / .5); transition: left .3s var(--spring), top .3s var(--spring); }
+  .cname { position: absolute; z-index: 2; right: 14px; top: 10px; text-align: right; font-family: var(--display); font-size: clamp(44px, 5vw, 76px); line-height: .85; color: var(--on-dark); text-shadow: 0 6px 30px rgba(0,0,0,.6); }
+  .cname small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); text-shadow: none; margin-top: 6px; }
+
+  /* split-flap tile */
+  .flaps { display: flex; flex-wrap: wrap; gap: .3em .35em; font-size: clamp(16px, 2.4vw, 34px); }
+  .flaps .w { display: inline-flex; gap: .08em; }
+  .flaps .c { position: relative; width: .78em; height: 1.3em; display: grid; place-items: center; border-radius: .12em; background: linear-gradient(#2A241C 50%, #211B15 50%); color: var(--on-dark); font-family: var(--mono); font-weight: 700; box-shadow: 0 2px 0 #000; }
+  .flaps .c::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--board); }
+  .flaps .c.flip { animation: flap .08s linear; } @keyframes flap { from { transform: rotateX(80deg); filter: brightness(1.8); } }
+
+  /* count-in tile */
+  .count { position: relative; flex: 1; min-height: 200px; display: grid; place-items: center; }
+  .count span { position: absolute; font-family: var(--display); font-size: clamp(120px, 14vw, 220px); line-height: 1; color: var(--accent); opacity: 0; }
+  .count span.go { animation: cnt var(--beat) var(--out) both; }
+  .count span.word { font-size: clamp(40px, 5vw, 72px); color: var(--on-dark); text-transform: uppercase; }
+  .count .rest { position: absolute; font-family: var(--display); font-size: clamp(30px, 3.4vw, 50px); text-transform: uppercase; color: transparent; -webkit-text-stroke: 1.5px rgb(var(--cream-rgb) / .35); transition: opacity .3s; }
+  .count.busy .rest { opacity: 0; }
+  .count span.word.go { animation: cntw calc(var(--beat) * 4) var(--out) both; }
+  @keyframes cnt { 0% { opacity: 0; transform: scale(1.5); } 20% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; transform: scale(.9); } }
+  @keyframes cntw { 0% { opacity: 0; transform: scale(1.3); } 15%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .beats { display: flex; gap: 8px; } .beats i { flex: 1; height: 6px; border-radius: 3px; background: rgb(246 241 228 / .12); } .beats i.on { background: var(--accent); }
+
+  /* mixing desk tile */
+  .desk { border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #221C16, #120E0B); color: var(--on-dark); flex: 1; }
+  .strips { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 6px; }
+  @media (max-width: 700px) { .strips { grid-template-columns: repeat(6, minmax(0, 1fr)); } .strips .chn:nth-child(n+6):not(.master) { display: none; } }
+  .chn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 4px; border-radius: 8px; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+  .chn.master { background: rgb(var(--accent-rgb) / .1); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .3); }
+  .knob { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #4A4036, #1A1511); box-shadow: 0 2px 0 #000; position: relative; rotate: var(--r, 0deg); }
+  .knob::after { content: ""; position: absolute; left: 50%; top: 2px; width: 2px; height: 7px; margin-left: -1px; background: var(--accent); }
+  .mv { display: flex; gap: 2px; height: 110px; } .mv .col { width: 5px; display: flex; flex-direction: column-reverse; gap: 2px; } .mv .col i { flex: 1; border-radius: 1px; background: rgba(255,255,255,.06); }
+  .fader { position: relative; width: 5px; height: 80px; border-radius: 3px; background: #0A0806; }
+  .fader b { position: absolute; left: 50%; bottom: var(--v); width: 24px; height: 13px; margin-left: -12px; border-radius: 3px; background: linear-gradient(#EDE4D0, #A89C86); box-shadow: 0 3px 4px rgba(0,0,0,.6); transition: bottom .9s var(--out); }
+  .chn .nm { width: 100%; padding: 3px 2px; border-radius: 3px; background: #EDE4D0; color: #171310; font-family: var(--mono); font-size: 9px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* MIDI roll / scope / stamp / mood / pdf / boxes */
+  .roll { position: relative; border-radius: 8px; background: var(--ink); padding: 12px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+  .roll div { display: flex; align-items: center; gap: 8px; height: 16px; font-family: var(--mono); font-size: 10px; color: var(--on-dark-3); }
+  .roll div span { width: 70px; flex: none; } .roll .lane { position: relative; flex: 1; height: 9px; } .roll .lane i { position: absolute; top: 0; height: 9px; border-radius: 2px; background: var(--c); }
+  .roll .ph { position: absolute; top: 8px; bottom: 8px; width: 2px; background: var(--on-dark); left: 90px; box-shadow: 0 0 8px rgb(var(--cream-rgb) / .6); animation: ph calc(var(--beat) * 32) linear infinite; } @keyframes ph { to { left: calc(100% - 10px); } }
+  .scope { width: 100%; height: 100%; min-height: 160px; flex: 1; border-radius: 8px; background: var(--paper); }
+  .stamp { position: relative; flex: 1; min-height: 220px; display: grid; place-items: center; color: var(--accent); }
+  .stamp .s { position: relative; width: min(100%, 230px); aspect-ratio: 1; rotate: -9deg; }
+  .stamp svg { position: absolute; inset: 0; width: 100%; height: 100%; animation: spin 30s linear infinite; }
+  .stamp text { font-family: var(--display); font-size: 17px; letter-spacing: .12em; fill: currentColor; }
+  .stamp .core { position: absolute; inset: 22%; border-radius: 50%; border: 3px solid currentColor; display: grid; place-items: center; text-align: center; font-family: var(--display); font-size: 20px; line-height: 1; }
+  .stamp .core small { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .2em; margin-top: 6px; }
+  .stamp.slam .s { animation: slam .7s cubic-bezier(.2, 1.6, .4, 1); } @keyframes slam { from { opacity: 0; transform: scale(2.4) rotate(-30deg); } }
+  .mood { position: relative; flex: 1; min-height: 200px; border-radius: 8px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / .12), transparent 50%, rgb(var(--brass-rgb) / .14)), var(--paper); }
+  .mood .md { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--t3); transition: box-shadow .3s; }
+  .mood .md.on { background: var(--accent); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .3), 0 0 0 10px rgb(var(--accent-rgb) / .12); }
+  .mood .md span { position: absolute; left: 13px; top: -5px; font-family: var(--mono); font-size: 11px; white-space: nowrap; color: var(--t3); } .mood .md.on span { color: var(--t1); font-weight: 700; }
+  .mood .ax { position: absolute; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--t4); }
+  .pdf { border-radius: 6px; background: #FFFDF7; color: #171310; padding: 14px; box-shadow: var(--lift); font-family: var(--mono); font-size: 9.5px; line-height: 1.5; overflow: hidden; rotate: -2deg; height: 200px; transition: rotate .6s var(--spring), transform .6s var(--spring); }
+  .tile:hover .pdf { rotate: 0deg; transform: translateY(-6px); }
+  .pdf b { display: block; font-family: var(--display); font-size: 16px; text-transform: uppercase; margin-bottom: 4px; }
+  .boxes { display: flex; gap: 12px; justify-content: center; flex: 1; align-items: center; } .boxes svg { width: clamp(64px, 6vw, 88px); }
+  .neck2 { width: 100%; color: var(--t1); } .neck2 .pulse { fill: none; stroke: var(--accent); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: ping 1.8s ease-out infinite; } .neck2 .pulse.b { animation-delay: .9s; }
+  @keyframes ping { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(2.4); } }
+  .url { display: flex; align-items: center; min-height: 48px; padding: 0 12px; border-radius: 8px; background: rgb(0 0 0 / .14); font-family: var(--mono); font-size: 12px; overflow: hidden; white-space: nowrap; }
+  .copied { font-family: var(--mono); font-size: 12px; opacity: 0; transition: opacity .3s; } .copied.on { opacity: 1; }
+  .sheet { position: relative; padding: 26px 22px 18px; background: #F6F1E4; color: #171310; border-radius: 3px; rotate: -2deg; box-shadow: var(--lift); background-image: repeating-linear-gradient(transparent 0 29px, rgba(23,19,16,.12) 29px 30px); transition: rotate .6s var(--spring); }
+  .tile:hover .sheet { rotate: 0deg; }
+  .sheet::before { content: ""; position: absolute; top: -10px; left: 16px; width: 80px; height: 22px; background: rgb(201 151 60 / .6); rotate: -6deg; }
+  .sheet ol { margin: 0; padding-left: 24px; font-family: var(--display); font-size: 16px; line-height: 30px; text-transform: uppercase; } .sheet li:nth-child(3n) { color: #C23A26; }
+  .sheet li span { font-family: var(--mono); font-size: 11px; color: #6B6152; margin-left: 6px; }
+
+  .faq { display: grid; gap: 10px; max-width: 900px; }
+  .faq details { border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .faq summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 14px; min-height: 60px; padding: 0 20px; cursor: pointer; font-family: var(--display); font-size: clamp(17px, 1.6vw, 21px); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font-family: var(--mono); font-size: 22px; color: var(--accent); transition: transform .3s var(--out); } .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq p { margin: 0; padding: 0 20px 18px; font-size: 16px; line-height: 1.6; color: var(--t2); max-width: 720px; }
+  .encore { text-align: center; padding: clamp(100px, 13vw, 190px) 0; overflow: hidden; }
+  .encore .tape { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; opacity: .08; pointer-events: none; }
+  .encore .tape div { display: flex; width: max-content; font-family: var(--display); font-size: clamp(60px, 9vw, 150px); line-height: 1; white-space: nowrap; animation: tape 30s linear infinite; }
+  .encore .tape div:nth-child(2) { animation-direction: reverse; color: var(--accent); }
+  .encore .h2 { position: relative; margin-bottom: 36px; } .encore .row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+  .foot { padding: 40px 0; background: var(--ink); color: var(--on-dark-3); font-family: var(--mono); font-size: 12px; letter-spacing: .12em; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } [data-reveal] { opacity: 1; transform: none; } }
+  .still *, .still *::before, .still *::after { animation-play-state: paused !important; }
+</style>
+</head>
+<body>
+<div class="pick" role="toolbar" aria-label="Demo controls">
+  <b>HERO LIGHT</b>
+  <button type="button" data-l="0" aria-pressed="false">Today</button>
+  <button type="button" data-l="1" aria-pressed="true">1 · Lit paper</button>
+  <button type="button" data-l="2" aria-pressed="false">2 · Film burn</button>
+  <button type="button" data-l="3" aria-pressed="false">3 · Window light</button>
+  <button type="button" data-l="4" aria-pressed="false">4 · Lit halftone</button>
+  <span class="sp"></span>
+  <button type="button" id="labels" aria-pressed="true">LABELS</button>
+  <button type="button" id="still" aria-pressed="false">STILL</button>
+  <button type="button" id="theme" aria-pressed="false">LIGHT</button>
+</div>
+<div class="grainl" aria-hidden="true"></div>
+<aside class="about" id="about"><div id="aboutText"></div><button type="button" aria-label="Hide the description">×</button></aside>
+
+<header class="sitebar"><div class="wrap"><span class="wm">PALM<svg viewBox="0 0 10 16" aria-hidden="true"><path d="M6.4 0 0 9.2h3.6L2.6 16 10 6.4H6.2z"/></svg>MUTE</span><span class="horns"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4"/><path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3"/><path d="M10 11.6a1.25 1.25 0 0 1 2.5 0a1.25 1.25 0 0 1 2.5 0"/><path d="M7 12.5v3.2a5.3 5.3 0 0 0 5.3 5.3h.4a5.3 5.3 0 0 0 5.3-5.3v-3.2"/><path d="M7.2 15.6c1.7-1.1 3.7-1.4 5.8-.9"/></svg></span></div></header>
+
+<section class="hero L1" id="hero">
+  <div class="fx" aria-hidden="true"><div class="halftone"></div><b class="v"></b><i class="a"></i><i class="b"></i><i class="c"></i><b class="lamp"><b></b><i></i></b></div>
+  <div class="wrap hgrid">
+    <div class="hleft" data-fit-col>
+      <div class="top"><span class="mono">COUNT IN · ABOUT PALM/MUTE</span><span class="live"><i></i>LIVE · <span data-bpm>180</span> BPM</span></div>
+      <h1 class="kin" data-fit><span>Songwriting</span><span>formulas from</span><span>the bands that</span><span>built pop-punk.</span></h1>
+      <p>A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.</p>
+      <div class="cta"><a class="btn" href="#"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>START WRITING</a><a class="lnk" href="#">Open the Chord Lab →</a></div>
+    </div>
+    <div class="stage3d" data-reveal>
+      <div class="card app">
+        <div class="float a">KEY OF <b data-keyname>A</b> · <span data-feelname>FAST PUNK</span></div>
+        <div class="cardhd"><span class="num">01</span><span>Verse 1</span><span class="mono">×2 · 0:08</span></div>
+        <div class="pills" data-keypick></div>
+        <div class="chips" data-chips></div>
+        <pre class="tab" data-tab></pre>
+        <div class="transport"><span class="play" data-play></span><span class="mono" style="color:var(--on-dark-2)">0:<span data-clock>08</span> / 3:00</span><span class="prog"><i></i></span><span class="mono" style="color:var(--on-dark-3)" data-pct>100%</span></div>
+        <div class="float b"><b>●</b> NO TABS STORED</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true"><div data-marquee></div></div>
+<section><div class="stats wrap" style="padding-inline:0" data-reveal><div><b>12</b><small>KEYS</small></div><div><b>5</b><small>FEELS</small></div><div><b>7</b><small>SONG LENGTHS</small></div><div><b>4</b><small>TUNINGS</small></div><div><b>10</b><small>MIDI PARTS</small></div><div><b>0</b><small>TABS STORED</small></div></div></section>
+
+<section class="sec"><div class="wrap">
+  <div data-reveal><div class="kick">EVERYTHING IN ONE PLACE</div><h2 class="h2" style="margin-bottom:40px">The whole kit,<br><em>at a glance.</em></h2></div>
+  <div class="bento">
+    <!-- row: key / feel / length -->
+    <div class="card tile s5" data-reveal><span class="from">GENERATOR</span><span class="mono lab">01 · KEY</span><h3>Twelve keys. One tap.</h3><div class="pills" data-keypick></div><div class="chips" data-chips></div></div>
+    <div class="card tile ink s3" data-reveal style="--d:1"><span class="from">LIVE SESSION</span><span class="mono lab">02 · FEEL</span><div class="huge" data-bpm>180</div><div class="metro" data-metro><i></i><i></i><i></i><i></i></div><div class="optlist" data-feels style="gap:6px"></div></div>
+    <div class="card tile s4" data-reveal style="--d:2"><span class="from">GENERATOR</span><span class="mono lab">03 · LENGTH</span><h3><span data-lentime>3:00</span> · <span data-lenparts>8</span> parts</h3><input class="range" type="range" min="0" max="6" value="1" aria-label="Song length" data-len><div class="form" data-form></div><p class="p">2:30 to 5:30; every part sized to fit.</p></div>
+
+    <!-- row: count-in / every part (r2) -->
+    <div class="card tile ink s5" data-reveal><span class="from">SHOWCASE</span><span class="mono lab">THE COUNT-IN</span><div class="count" data-count><b class="rest">Count it in.</b><span>1</span><span>2</span><span>3</span><span>4</span><span class="word">Go!</span></div><div class="beats" data-beats><i></i><i></i><i></i><i></i></div></div>
+    <div class="card tile s7 r2" data-reveal style="--d:1"><span class="from">GENERATOR</span><span class="mono lab">04 · EVERY PART, TABBED</span><h3>A whole song. Every bar.</h3><pre class="tab" data-tab2></pre><div class="form" data-form2></div><div class="parts" data-parts></div></div>
+    <div class="card tile red s5" data-reveal style="--d:2"><span class="from">GENERATOR</span><span class="mono lab">05 · PRACTISE</span><div class="huge" data-pbpm>180</div><div class="transport" style="background:rgba(0,0,0,.18)"><span class="play" data-play></span><span class="speed" data-speed><button class="on" type="button">100%</button><button type="button">90%</button><button type="button">75%</button><button type="button">50%</button></span></div></div>
+
+    <!-- row: tape deck / neck -->
+    <div class="card tile s6" data-reveal><span class="from">TAPE DECK</span><span class="mono lab">SIDE A · NOW PLAYING</span>
+      <div class="deck"><div class="shell"><div class="label"><div class="side">A</div><div class="ttl" data-tapetitle>Your ex's new place</div><div class="t">PALM/MUTE · C-90<br>E STANDARD</div></div><div class="window"><div class="reel"></div><div class="reel r"></div></div><div class="bottom"><i></i><i></i><i></i><i></i></div></div></div>
+      <div class="vu">L<div class="m" data-vu></div>R<div class="m" data-vu></div></div></div>
+    <div class="card tile ink s6" data-reveal style="--d:1"><span class="from">THE NECK</span><span class="mono lab">ROOT AND FIFTH, ON THE BEAT</span><div class="neckwrap"><div class="neck" data-neck></div><div class="cname"><span data-cname>A5</span><small data-cdeg>I</small></div></div></div>
+
+    <!-- row: mixing desk / stamp -->
+    <div class="card tile s8" data-reveal><span class="from">MIXING DESK</span><span class="mono lab">TEN PARTS · <span data-sect>VERSE</span></span><div class="desk"><div class="strips" data-strips></div></div></div>
+    <div class="card tile s4" data-reveal style="--d:1"><span class="from">GIG POSTER</span><span class="mono lab">THE PROMISE</span><div class="stamp" data-stamp><div class="s"><svg viewBox="0 0 300 300" aria-hidden="true"><defs><path id="sr" d="M150 150m-122 0a122 122 0 1 1 244 0a122 122 0 1 1-244 0"/></defs><circle cx="150" cy="150" r="146" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-width="2"/><text><textPath href="#sr" textLength="752" lengthAdjust="spacing">NO TABS STORED ✦ CHORD PATTERNS ONLY ✦</textPath></text></svg><div class="core"><div>100%<br>ORIGINAL<small>PALM/MUTE</small></div></div></div></div><p class="p">Written from chord degrees and rhythm patterns. Every riff is new.</p></div>
+
+    <!-- row: flaps / setlist -->
+    <div class="card tile ink s7" data-reveal><span class="from">GIG POSTER</span><span class="mono lab">STUCK ON A SONG TITLE?</span><div class="flaps" data-flaps></div><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><span class="p">Every song deserves a slightly dramatic title.</span><button class="btn sm" type="button" data-shuffle>SHUFFLE</button></div></div>
+    <div class="card tile s5" data-reveal style="--d:1"><span class="from">GIG POSTER</span><span class="mono lab">TONIGHT'S SETLIST</span><div class="sheet"><ol data-setlist></ol></div></div>
+
+    <!-- row: make it yours / mood map -->
+    <div class="card tile s6" data-reveal><span class="from">GENERATOR</span><span class="mono lab">06 · MAKE IT YOURS</span><h3>Shape a part. Lock what you love.</h3><div class="optlist" data-rhythms></div><div style="display:flex;gap:10px"><button class="btn sm" type="button" data-again>BUILD AGAIN</button><button class="ib on" type="button" aria-label="Lock Verse 1" data-lock><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button></div></div>
+    <div class="card tile s6" data-reveal style="--d:1"><span class="from">CHORD LAB</span><span class="mono lab">MOOD MAP · <span data-moodname>I–V–vi–IV</span></span><div class="mood" data-mood><span class="ax" style="left:8px;top:50%">DARK</span><span class="ax" style="right:8px;top:50%">BRIGHT</span><span class="ax" style="left:50%;top:6px;translate:-50% 0">RESTLESS</span><span class="ax" style="left:50%;bottom:6px;translate:-50% 0">SETTLED</span></div></div>
+
+    <!-- row: midi / pdf / share -->
+    <div class="card tile s5" data-reveal><span class="from">MIXING DESK</span><span class="mono lab">MIDI · 10 PARTS</span><div class="roll" data-roll></div><p class="p">Every part on its own track, with markers at each section.</p></div>
+    <div class="card tile s3" data-reveal style="--d:1"><span class="from">SHOWCASE</span><span class="mono lab">PDF SONGBOOK</span><div class="pdf" data-pdf></div></div>
+    <div class="card tile brass s4" data-reveal style="--d:2"><span class="from">GENERATOR</span><span class="mono lab">SHARE</span><div class="huge" style="font-size:clamp(40px,4vw,64px)">One link.</div><p class="p">Opens the exact song for the whole band.</p><div class="url">palmmute.ai/generator/#your-song</div><div><button class="btn sm" type="button" data-copy style="background:#171310;color:#F6F1E4">COPY LINK</button> <span class="copied" data-copied>COPIED ✓</span></div></div>
+
+    <!-- row: scope / dictionary / two notes -->
+    <div class="card tile s4" data-reveal><span class="from">STAGE</span><span class="mono lab">THE SCOPE</span><canvas class="scope" data-scope></canvas><p class="p">The same moving scope as the Generator and the Chord Lab.</p></div>
+    <div class="card tile s4" data-reveal style="--d:1"><span class="from">CHORD LAB</span><span class="mono lab">DICTIONARY · G</span><div class="boxes" data-boxes></div><p class="p">The shapes players actually use, up the neck.</p></div>
+    <div class="card tile s4" data-reveal style="--d:2"><span class="from">HOME</span><span class="mono lab">DID YOU KNOW</span><h3>A power chord is only two notes.</h3><svg class="neck2" viewBox="0 0 400 150" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6">${''}</g></svg></div>
+  </div>
+</div></section>
+
+<section class="sec" style="padding-top:0"><div class="wrap"><div data-reveal><div class="kick">QUESTIONS</div><h2 class="h2" style="margin-bottom:36px">Before you <em>count in.</em></h2></div><div class="faq" data-faq></div></div></section>
+<section class="encore"><div class="tape"><div><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span><span>START WRITING ✦ START WRITING ✦ START WRITING ✦&nbsp;</span></div><div><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span><span>E STANDARD ✦ 180 BPM ✦ E STANDARD ✦ 180 BPM ✦&nbsp;</span></div></div><div class="wrap"><h2 class="h2">Count it in.</h2><div class="row"><a class="btn" href="#"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>START WRITING</a><a class="btn ghost" href="#">OPEN THE CHORD LAB</a></div></div></section>
+<footer class="foot"><div class="wrap">PALM/MUTE · E STANDARD · POWER CHORDS · 12 KEYS</div></footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches, fine = matchMedia("(pointer: fine)").matches;
+  let still = false;
+
+  // ---------- real content ----------
+  const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const KEYS = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const FEELS = [["FAST PUNK", 180], ["HALF-TIME", 90], ["MID-TEMPO", 140], ["POP STRUM", 150], ["BALLAD", 80]];
+  const DEG = [["I", 0], ["V", 7], ["vi", 9], ["IV", 5]];
+  const TITLES = ["Your Ex's New Place", "Parking Lot Crisis", "The Text I Didn't Send", "Last Slice of Pizza", "Voicemail, Undeleted", "Basement Show Encore", "Gas Station at 2 AM", "Group Chat Minus Me", "Still in Your Hoodie", "Waffle House at 3 AM"];
+  const LANES = ["Sub", "Bass", "Piano L", "Rhythm gtr", "Vox guide", "Piano R", "Pads", "Lead gtr", "Synth", "Drums"];
+  const RHYTHMS = [["Driving eighths", "CHORUS"], ["Gallop", "VERSE"], ["Chugs into open hits", "INTRO"], ["Quarter-note climb", "PRE-CHORUS"]];
+  const FAQ = [["Is it free?", "Yes. Palm/Mute runs in your browser: no download, no sign-up."],
+    ["Do I need an account?", "No. There are no accounts. Your song lives in the page's address, so copying the link keeps it, and the Chord Lab remembers your setup on your device."],
+    ["Is it copying real songs?", "No. Palm/Mute studies chord degrees, rhythm templates and section lengths, the patterns underneath. It never stores or reproduces an artist's tab, so every riff is written fresh."],
+    ["Can I use it in my DAW?", "Yes. Export a MIDI file with every part on its own track (sub, bass, piano, rhythm and lead guitar, a guide vocal, pads, synth and drums), with a marker where each section starts."],
+    ["Which tunings?", "The Song Generator writes in E standard. The Chord Lab covers E standard, Eb standard, Drop D and Drop C#, with a capo up to the 7th fret."]];
+  const name5 = (k, off) => NOTES[(NOTES.indexOf(KEYS[k]) + off) % 12];
+  const voice = (n) => { const e = (NOTES.indexOf(n) - 4 + 12) % 12; return e <= 7 ? { s: 0, f: e } : { s: 1, f: (NOTES.indexOf(n) - 9 + 12) % 12 }; };
+  const chipTab = (n) => { const v = voice(n); return ["e", "B", "G", "D", "A", "E"].map((st, i) => { const si = 5 - i; let x = "-"; if (si === v.s) x = v.f; if (si === v.s + 1) x = v.f + 2; return `${st}|${x}`; }).join("\n"); };
+  const TAB = ["e|----------------|----------------|", "B|----------------|----------------|", "G|----------------|----------------|", "D|7-7-7-7-7-7-7-7-|----------------|", "A|7-7-7-7-7-7-7-7-|2-2-2-2-2-2-2-2-|", "E|5-5-5-5-5-5-5-5-|0-0-0-0-0-0-0-0-|", "  P.M.------------------------------"];
+  const tabHTML = TAB.map((l, i) => i === 6 ? `<span class="pm">${l}</span>` : l).join("\n") + `<span class="head"></span>`;
+  const st = { key: 0, feel: 0, len: 1, speed: 0, beat: 0, auto: true };
+
+  // ---------- build ----------
+  $$("[data-play]").forEach((e) => e.innerHTML = `<svg class="ring" viewBox="0 0 54 54"><circle class="tr" cx="27" cy="27" r="24"/><circle class="pr" cx="27" cy="27" r="24"/></svg><svg class="p" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg>`);
+  $$("[data-tab],[data-tab2]").forEach((e) => e.innerHTML = tabHTML);
+  $("[data-marquee]").innerHTML = [...Array(2)].flatMap(() => ["I–V–vi–IV", "vi–IV–I–V", "I–IV–V", "I–V–IV–V", "vi–V–IV", "IV–I–V–vi", "I–bVII–IV", "I–vi–ii–V"]).map((p) => `<span>${p}</span>`).join("");
+  $$("[data-keypick]").forEach((el) => { el.innerHTML = KEYS.map((k) => `<button type="button" class="pill">${k}</button>`).join(""); $$(".pill", el).forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setKey(i); })); });
+  $("[data-feels]").innerHTML = FEELS.map(([n, b]) => `<button type="button" style="min-height:44px;border-color:rgb(246 241 228 / .14);color:var(--on-dark-2)">${n}<span>${b}</span></button>`).join("");
+  $$("[data-feels] button").forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setFeel(i); }));
+  $("[data-rhythms]").innerHTML = RHYTHMS.map(([r, w], i) => `<button type="button" class="${i === 1 ? "on" : ""}">${r}<span>${w}</span></button>`).join("");
+  $$("[data-rhythms] button").forEach((b) => b.addEventListener("click", () => $$("[data-rhythms] button").forEach((x) => x.classList.toggle("on", x === b))));
+  $$("[data-vu]").forEach((m) => m.innerHTML = "<i></i>".repeat(24));
+  $("[data-setlist]").innerHTML = TITLES.slice(0, 6).map((t, i) => `<li>${t}<span>${["A", "D", "E", "G", "C", "F#"][i]} · ${[180, 150, 140, 180, 90, 150][i]}</span></li>`).join("");
+  $("[data-pdf]").innerHTML = `<b>Your ex's new place</b>KEY A · FAST PUNK · 180<br><br>VERSE 1 ×2<br>${TAB.slice(0, 6).join("<br>")}<br><br>CHORUS<br>e|----------------|`;
+  $("[data-faq]").innerHTML = FAQ.map(([q, a], i) => `<details data-reveal style="--d:${i}"${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("");
+  $("[data-roll]").innerHTML = LANES.map((l, i) => { let n = ""; for (let k = 0; k < 10; k++) if ((k * (i + 3)) % 5 < 3) n += `<i style="left:${k * 10}%;width:${5 + ((k + i) % 3) * 2}%;--c:${i === 9 ? "var(--on-dark-3)" : i % 3 === 0 ? "var(--accent)" : i % 3 === 1 ? "var(--brass)" : "var(--on-dark-2)"}"></i>`; return `<div><span>${l.toUpperCase()}</span><span class="lane">${n}</span></div>`; }).join("") + `<span class="ph"></span>`;
+  const box = (frets, base = 1) => { const fs = frets.split(" "); let s = `<svg viewBox="-6 0 76 100">`; for (let x = 0; x < 6; x++) s += `<line x1="${10 + x * 10}" y1="14" x2="${10 + x * 10}" y2="94" stroke="var(--t3)"/>`; for (let f = 0; f <= 5; f++) s += `<line x1="10" y1="${14 + f * 16}" x2="60" y2="${14 + f * 16}" stroke="var(--t3)" stroke-width="${f === 0 && base === 1 ? 4 : 1}"/>`; fs.forEach((f, x) => { const cx = 10 + x * 10; if (f === "x") s += `<text x="${cx}" y="10" font-size="8" text-anchor="middle" fill="var(--t3)">×</text>`; else if (+f === 0) s += `<circle cx="${cx}" cy="7" r="3" fill="none" stroke="var(--t3)"/>`; else s += `<circle cx="${cx}" cy="${14 + (+f - base + .5) * 16}" r="5" fill="var(--accent)"/>`; }); if (base > 1) s += `<text x="5" y="25" font-size="8" text-anchor="end" fill="var(--t3)">${base}</text>`; return s + "</svg>"; };
+  $("[data-boxes]").innerHTML = box("3 2 0 0 0 3") + box("3 5 5 4 3 3") + box("x 10 12 12 12 10", 10);
+  // the G5 explainer, with its two pulsing notes
+  $(".neck2").innerHTML = [0, 1, 2, 3, 4, 5].map((s) => `<line x1="30" x2="390" y1="${20 + s * 22}" y2="${20 + s * 22}" stroke="currentColor" stroke-width="${1 + (5 - s) * .3}" opacity=".7"/>`).join("") + `<line x1="30" x2="30" y1="20" y2="130" stroke="currentColor" stroke-width="5"/>` + [1, 2, 3, 4, 5].map((f) => `<line x1="${30 + f * 72}" x2="${30 + f * 72}" y1="20" y2="130" stroke="var(--line-strong)" stroke-width="3"/>`).join("") + `<line x1="210" y1="130" x2="354" y2="108" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" opacity=".3"/><circle class="pulse" cx="210" cy="130" r="12"/><circle class="pulse b" cx="354" cy="108" r="12"/><circle cx="210" cy="130" r="12" fill="var(--accent)"/><circle cx="354" cy="108" r="12" fill="var(--accent)"/><text x="210" y="134" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="11" fill="var(--on-accent)">R</text><text x="354" y="112" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="11" fill="var(--on-accent)">5</text>`;
+  // mixing desk
+  $("[data-strips]").innerHTML = [...LANES, "Master"].map((l, i) => `<div class="chn${i === 10 ? " master" : ""}"><span class="knob" style="--r:${(i * 47) % 180 - 90}deg"></span><div class="mv">${(i === 10 ? 2 : 1) === 2 ? `<span class="col">${"<i></i>".repeat(14)}</span><span class="col">${"<i></i>".repeat(14)}</span>` : `<span class="col">${"<i></i>".repeat(14)}</span>`}</div><div class="fader"><b style="--v:${40 + (i * 23) % 50}%"></b></div><span class="nm">${l}</span></div>`).join("");
+  // 3D neck
+  const neck = $("[data-neck]"), FRETS = 13, fx = (f) => (f === 0 ? .6 : 100 * (1 - Math.pow(2, -f / 12)) / (1 - Math.pow(2, -FRETS / 12)));
+  let nh = `<span class="nut"></span>`; for (let f = 1; f <= FRETS; f++) nh += `<span class="fret" style="left:${fx(f)}%"></span>`;
+  [3, 5, 7, 9].forEach((f) => nh += `<span class="inlay" style="left:${(fx(f) + fx(f - 1)) / 2}%"></span>`);
+  const SY = (s) => 8 + s * 16.8; for (let s = 0; s < 6; s++) nh += `<span class="str" style="top:${100 - SY(s)}%;--h:${(4 - s * .5).toFixed(1)}px"></span>`;
+  neck.innerHTML = nh + `<span class="dot" data-d0>R</span><span class="dot" data-d1>5</span>`;
+  // mood map
+  const MOOD = [["I–V–vi–IV", 62, 40], ["vi–IV–I–V", 38, 46], ["I–IV–V", 76, 72], ["I–bVII–IV", 70, 24], ["vi–V–IV", 22, 60], ["i–bVI–bIII–bVII", 14, 26], ["I–vi–ii–V", 54, 78]];
+  $("[data-mood]").insertAdjacentHTML("beforeend", MOOD.map(([n, x, y]) => `<span class="md" style="left:${x}%;top:${y}%"><span>${n}</span></span>`).join(""));
+
+  // ---------- state ----------
+  const formFor = (n) => { const base = [["Intro", 2, ""], ["Verse 1", 4, ""], ["Chorus", 4, "ch"], ["Verse 2", 4, ""], ["Chorus", 4, "ch"], ["Solo", 4, "so"], ["Last chorus", 4, "lc"]]; const extras = [["Pre-chorus", 2, "", 2], ["Pre-chorus", 2, "", 5], ["Breakdown", 2, "", 8], ["Verse 3", 4, "", 9], ["Chorus", 4, "ch", 10], ["Bridge", 2, "", 11]]; const f = base.slice(); extras.slice(0, n).forEach(([a, b, c, at]) => f.splice(Math.min(at, f.length - 1), 0, [a, b, c])); return f; };
+  const LEN = ["2:30", "3:00", "3:30", "4:00", "4:30", "5:00", "5:30"];
+  const SPEEDS = [1, .9, .75, .5];
+  const setKey = (i) => {
+    st.key = i;
+    $$("[data-keypick] .pill").forEach((b) => b.classList.toggle("on", b.textContent === KEYS[i]));
+    $$("[data-chips]").forEach((c) => { c.innerHTML = DEG.map(([d, o]) => { const n = name5(i, o); return `<span class="chip flipin"><small>${d}</small><b>${n}5</b><pre>${chipTab(n)}</pre></span>`; }).join(""); $$(".chip", c).forEach((x, k) => x.style.animationDelay = k * 60 + "ms"); });
+    $$("[data-keyname]").forEach((e) => e.textContent = KEYS[i]);
+    $("[data-parts]").innerHTML = [["Intro", "Chugs into open hits", "", [0, 7]], ["Verse 1", "Gallop · palm-muted · ×2", "", [0, 7, 9, 5]], ["Chorus", "Driving eighths · open", "ch", [5, 0, 7, 9]], ["Solo", "Lead over the chorus", "", [9, 5, 0, 7]]]
+      .map(([n, d, k, prog], j) => `<div class="part ${k}" data-p="${j}"><span class="num">0${j + 1}</span><div class="nm">${n}<small>${d} · ${prog.map((o) => name5(i, o) + "5").join(" ")}</small></div><button class="ib${j === 1 ? " on" : ""}" type="button" aria-label="Lock ${n}" data-lock><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button></div>`).join("");
+    $$("[data-parts] [data-lock]").forEach((b) => b.addEventListener("click", () => b.classList.toggle("on")));
+  };
+  const countTo = (el, to) => { const from = parseInt(el.textContent, 10) || to, t0 = performance.now(); const run = (n) => { const k = Math.min(1, (n - t0) / 600); el.textContent = Math.round(from + (to - from) * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(run); }; requestAnimationFrame(run); };
+  const bpm = () => Math.round(FEELS[st.feel][1] * SPEEDS[st.speed]);
+  const setTempo = () => { document.documentElement.style.setProperty("--beat", Math.round(60000 / bpm()) + "ms"); restart(); };
+  const setFeel = (i) => { st.feel = i; $$("[data-feels] button").forEach((b, k) => b.classList.toggle("on", k === i)); $$("[data-bpm]").forEach((e) => e.matches(".huge") ? countTo(e, FEELS[i][1]) : (e.textContent = FEELS[i][1])); $$("[data-feelname]").forEach((e) => e.textContent = FEELS[i][0]); countTo($("[data-pbpm]"), bpm()); setTempo(); };
+  const setLen = (i) => { st.len = i; const f = formFor(i); $$("[data-form],[data-form2]").forEach((el) => el.innerHTML = f.map(([n, w, k]) => `<i class="${k}" style="--f:${w}" title="${n}"></i>`).join("")); $("[data-lentime]").textContent = LEN[i]; $("[data-lenparts]").textContent = f.length; $("[data-len]").value = i; };
+  $("[data-len]").addEventListener("input", (e) => { st.auto = false; setLen(+e.target.value); });
+  const setSpeed = (i) => { st.speed = i; $$("[data-speed] button").forEach((b, k) => b.classList.toggle("on", k === i)); $("[data-pct]").textContent = Math.round(SPEEDS[i] * 100) + "%"; countTo($("[data-pbpm]"), bpm()); setTempo(); };
+  $$("[data-speed] button").forEach((b, i) => b.addEventListener("click", () => { st.auto = false; setSpeed(i); }));
+  $$("[data-lock]").forEach((b) => b.addEventListener("click", () => b.classList.toggle("on")));
+  $("[data-again]").addEventListener("click", () => setKey(st.key));
+  $("[data-copy]").addEventListener("click", () => { const c = $("[data-copied]"); c.classList.add("on"); setTimeout(() => c.classList.remove("on"), 1600); });
+  // split-flap
+  const FL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; let ti = 0;
+  const showTitle = () => { const el = $("[data-flaps]"), title = TITLES[ti % TITLES.length], t = `"${title}"`.toUpperCase(); ti++; $("[data-tapetitle]").textContent = title;
+    el.innerHTML = t.split(" ").map((w) => `<span class="w">${[...w].map((ch) => `<span class="c" data-c="${ch}">${ch}</span>`).join("")}</span>`).join("");
+    if (reduced || still) return; const cells = $$(".c", el), settle = cells.map((_, i) => 4 + i * .6 + Math.random() * 6); let tick = 0;
+    const id = setInterval(() => { tick++; let busy = false; cells.forEach((c, i) => { const r = c.dataset.c; if (tick < settle[i]) { busy = true; c.textContent = /[A-Z0-9]/.test(r) ? FL[Math.floor(Math.random() * FL.length)] : r; } else c.textContent = r; c.classList.remove("flip"); void c.offsetWidth; c.classList.add("flip"); }); if (!busy) clearInterval(id); }, 55); };
+  $("[data-shuffle]").addEventListener("click", showTitle);
+  // the scope, from lib/stagePaint.ts
+  const cv = $("[data-scope]"), ctx = cv.getContext("2d");
+  const paintScope = (t) => { const dpr = Math.min(2, devicePixelRatio || 1), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr); if (!w || !h) return; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const dark = document.documentElement.dataset.theme !== "light", s = dpr * .9; ctx.clearRect(0, 0, w, h); ctx.lineWidth = s; ctx.strokeStyle = dark ? "rgb(70 59 48 / .6)" : "rgb(200 190 165 / .7)"; ctx.beginPath();
+    for (let x = 48 * s; x < w; x += 48 * s) { ctx.moveTo(x, 0); ctx.lineTo(x, h); } for (let y = 48 * s; y < h; y += 48 * s) { ctx.moveTo(0, y); ctx.lineTo(w, y); } ctx.stroke();
+    for (let i = 0; i < 3; i++) { const amp = h * (.08 + i * .04), k = ((1.4 + i * .8) * Math.PI * 2) / w, ph = t * (.35 + i * .22) * (bpm() / 120), y0 = h * (.3 + .2 * i); ctx.beginPath();
+      for (let x = 0; x <= w; x += 3 * s) { const y = y0 + amp * Math.sin(x * k + ph) * Math.sin((x / w) * Math.PI) * (1 + .25 * Math.sin(x * k * 3.1 - ph * 1.7)); x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.lineWidth = (i === 1 ? 2.2 : 1.5) * s; ctx.strokeStyle = i === 1 ? (dark ? "rgb(232 90 66 / .7)" : "rgb(194 58 38 / .6)") : (dark ? "rgb(168 156 134 / .5)" : "rgb(107 97 82 / .45)"); ctx.stroke(); } };
+
+  // ---------- the beat ----------
+  const CH = [[0], [7], [9], [5]];
+  const PAT = [[1, 0, 0, 0], [1, 0, 1, 0], [1, 0, 1, 1], [1, 1, 1, 1], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 0, 1], [1, 1, 0, 1], [1, 0, 1, 0], [1, 1, 1, 1]];
+  const lit = (els, lvl, hot, pk) => els.forEach((d, k) => d.className = k < lvl ? (k >= pk ? "on-r" : k >= hot ? "on-b" : "on-g") : "");
+  const onBeat = () => {
+    const b = st.beat++, bar = Math.floor(b / 4), slot = bar % 4, chorus = Math.floor(b / 32) % 2 === 1;
+    // live card + chips
+    $$("[data-chips]").forEach((c) => $$(".chip", c).forEach((x, k) => { x.classList.remove("flipin"); if (k === slot && b % 4 === 0) { x.classList.remove("now"); void x.offsetWidth; x.classList.add("now"); } else if (k !== slot) x.classList.remove("now"); }));
+    $$("[data-tab] .head,[data-tab2] .head").forEach((h) => { const w = h.parentElement.clientWidth - 24; h.style.transition = `transform ${Math.round(60000 / bpm())}ms linear`; h.style.transform = `translateX(${w * .08 + w * .82 * (((b % 8) + 1) / 8)}px)`; });
+    $("[data-clock]").textContent = String(8 + Math.floor(b / 3) % 50).padStart(2, "0");
+    $$("[data-metro] i").forEach((d, k) => d.classList.toggle("on", k === b % 4));
+    // count-in: 1 2 3 4, GO, then a rest, every 3 bars
+    const cb = b % 12, cs = $$("[data-count] span"); $("[data-count]").classList.toggle("busy", cb < 8);
+    if (cb < 4) { cs[cb].classList.remove("go"); void cs[cb].offsetWidth; cs[cb].classList.add("go"); } if (cb === 4) { cs[4].classList.remove("go"); void cs[4].offsetWidth; cs[4].classList.add("go"); }
+    $$("[data-beats] i").forEach((d, k) => d.classList.toggle("on", cb < 4 && k <= cb));
+    // parts + form follow the song
+    $$("[data-parts] .part").forEach((p, k) => p.classList.toggle("now", k === Math.floor(b / 16) % 4));
+    $$("[data-form2] i").forEach((p, k, all) => p.classList.toggle("now", k === Math.floor(b / 16) % all.length));
+    // tape VUs
+    $$("[data-vu]").forEach((m, side) => lit($$("i", m), 10 + Math.round(Math.random() * (chorus ? 13 : 8)) - side, 17, 21));
+    // neck: a new power chord each bar
+    if (b % 4 === 0) { const n = name5(st.key, CH[slot][0]), v = voice(n), mid = (f) => f === 0 ? .3 : (fx(f) + fx(f - 1)) / 2;
+      const d0 = $("[data-d0]"), d1 = $("[data-d1]"); d0.style.left = mid(v.f) + "%"; d0.style.top = (100 - SY(v.s)) + "%"; d1.style.left = mid(v.f + 2) + "%"; d1.style.top = (100 - SY(v.s + 1)) + "%";
+      $$(".str", neck).forEach((s, k) => { s.classList.remove("hit"); if (k === v.s || k === v.s + 1) { void s.offsetWidth; s.classList.add("hit"); } });
+      $("[data-cname]").textContent = n + "5"; $("[data-cdeg]").textContent = DEG[slot][0] + " · " + (v.f === 0 ? "OPEN" : `${["E", "A"][v.s]} STRING · FRET ${v.f}`); }
+    // mixing desk
+    $("[data-sect]").textContent = chorus ? "CHORUS" : "VERSE";
+    $$("[data-strips] .chn").forEach((ch, i) => { const hit = i === 10 ? 1 : PAT[i][b % 4], base = chorus ? 8 : 5; $$(".col", ch).forEach((col) => lit($$("i", col), hit ? base + Math.round(Math.random() * 5) : Math.max(2, base - 3), 9, 12)); if (b % 32 === 0) $(".fader b", ch).style.setProperty("--v", `${(chorus ? 58 : 34) + (i * 17) % 28}%`); });
+    // mood map, titles, stamp, auto demo
+    if (b % 8 === 0) { const on = (b / 8) % MOOD.length; $$("[data-mood] .md").forEach((m, k) => m.classList.toggle("on", k === on)); $("[data-moodname]").textContent = MOOD[on][0]; }
+    if (b % 40 === 20) showTitle();
+    if (b % 48 === 24) { const s = $("[data-stamp]"); s.classList.remove("slam"); void s.offsetWidth; s.classList.add("slam"); }
+    if (st.auto && b % 32 === 16) setKey((st.key + 5) % 12);
+    if (st.auto && b % 64 === 0 && b) setFeel((st.feel + 1) % FEELS.length);
+  };
+  let timer = 0, raf = 0;
+  const restart = () => { clearInterval(timer); if (!still && !reduced) timer = setInterval(onBeat, Math.round(60000 / bpm())); };
+  const loop = (now) => { raf = requestAnimationFrame(loop); if (!still) { const r = cv.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) paintScope(now / 1000); } };
+
+  // ---------- eye candy on every tile: pointer tilt and glare ----------
+  if (fine && !reduced) $$(".tile").forEach((t) => { t.insertAdjacentHTML("beforeend", `<span class="glare"></span>`);
+    t.addEventListener("pointermove", (e) => { const r = t.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; t.style.transform = `perspective(900px) rotateX(${(.5 - y) * 4}deg) rotateY(${(x - .5) * 5}deg) translateY(-3px)`; t.style.setProperty("--gx", x * 100 + "%"); t.style.setProperty("--gy", y * 100 + "%"); });
+    t.addEventListener("pointerleave", () => { t.style.transform = ""; }); });
+
+  // ---------- headline fit, reveal ----------
+  const fit = () => $$("[data-fit]").forEach((kin) => { const col = kin.closest("[data-fit-col]"), cs = getComputedStyle(col), cw = col.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 6, ind = [0, cw * .05, 0, cw * .09];
+    kin.style.setProperty("--in2", ind[1] + "px"); kin.style.setProperty("--in4", ind[3] + "px"); kin.style.setProperty("--kin", "100px"); const ws = [...kin.children].map((s) => s.offsetWidth);
+    kin.style.setProperty("--kin", Math.max(26, Math.min(110, ...ws.map((w, i) => ((cw - ind[i]) / w) * 100))).toFixed(1) + "px"); });
+  addEventListener("resize", fit); document.fonts.ready.then(fit);
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { rootMargin: "0px 0px -8% 0px" });
+  $$("[data-reveal]").forEach((e) => io.observe(e));
+
+  // ---------- controls ----------
+  const LIGHTS = {
+    0: ["Today", "Brass light on paper, cream in the dark. On cream paper the brass reads as a muddy beige wash rather than light, which is what you spotted."],
+    1: ["1 · Lit paper", "On paper, light shows by the rest getting darker: a warm vignette dims the edges, the top-left stays paper-bright with a peach warmth, and the halftone thins where the light is. In the dark, the same shapes glow cream. The subtlest; reads as daylight on a page."],
+    2: ["2 · Film burn", "A real light leak, the kind at the end of a roll: saturated orange into red, bleeding in from the left edge in soft vertical bands that swell and fade, with a faint red answer on the right. Same colour story in both themes, so it reads equally well on paper and in the dark. The boldest."],
+    3: ["3 · Window light", "Slanted bars of light through a stage window. On paper they're drawn as the shadows between the bars (light needs shadow to show on a pale page), in the dark as bright bars. They lean and drift very slowly. The most editorial."],
+    4: ["4 · Lit halftone", "No wash at all: a soft light wanders, and the print's own dots it passes over swell and warm, red ink on paper, brass in the dark. Pure contrast, so it works the same in both themes. The most on-brand."],
+  };
+  const setLight = (n) => { const h = $("#hero"); h.className = "hero L" + n; $$(".pick [data-l]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.l === String(n)))); $("#aboutText").innerHTML = `<b>Hero light: ${LIGHTS[n][0]}</b>${LIGHTS[n][1]}<br><br><span style="color:#A89C86">Below the hero: every eye-candy piece from the six concepts, working, in the Bento grid. LABELS shows where each came from.</span>`; $("#about").hidden = false; };
+  $$(".pick [data-l]").forEach((b) => b.addEventListener("click", () => setLight(+b.dataset.l)));
+  $("#about button").addEventListener("click", () => { $("#about").hidden = true; });
+  $("#labels").addEventListener("click", (e) => { const on = document.body.classList.toggle("nolabels"); e.currentTarget.setAttribute("aria-pressed", String(!on)); });
+  $("#theme").addEventListener("click", (e) => { const dark = document.documentElement.dataset.theme !== "dark"; document.documentElement.dataset.theme = dark ? "dark" : "light"; e.currentTarget.textContent = dark ? "LIGHT" : "DARK"; e.currentTarget.setAttribute("aria-pressed", String(!dark)); });
+  $("#still").addEventListener("click", (e) => { still = !still; e.currentTarget.setAttribute("aria-pressed", String(still)); document.body.classList.toggle("still", still); restart(); });
+  const pickH = () => document.documentElement.style.setProperty("--pick", $(".pick").offsetHeight + "px"); pickH(); addEventListener("resize", pickH);
+
+  const q = new URLSearchParams(location.search);
+  if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme");
+  setKey(0); setFeel(0); setLen(1); setSpeed(0); showTitle(); setLight(+(q.get("light") ?? 1)); fit(); onBeat(); restart(); paintScope(0); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
