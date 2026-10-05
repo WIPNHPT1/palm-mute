@@ -228,7 +228,6 @@ export function Transport({ beat, speed, children }: { beat: number; speed: numb
   return (
     <div className="hb-transport">
       <span className="hb-play" aria-hidden="true">
-        <svg className="hb-ringsvg" viewBox="0 0 54 54"><circle className="tr" cx="27" cy="27" r="24" /><circle className="pr" cx="27" cy="27" r="24" /></svg>
         <svg className="p" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z" /></svg>
       </span>
       {children ?? (
