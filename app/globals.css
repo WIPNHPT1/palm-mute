@@ -653,6 +653,8 @@
   .credits-list .red dd { color: rgb(var(--color-accent-on-ink)); }
   .credits-list .as-written dd { text-transform: none; }
   .credits-end { padding: 40px 20px 56px; text-align: center; border-top: 1px solid rgb(var(--color-text-on-dark) / .08); }
+  /* the ink bands' red stage light from above (owner's pick, docs/mockups/gradient-options.html; .sig-stage-light) */
+  .credits-end { background-image: radial-gradient(60% 140% at 50% -40%, rgb(var(--color-accent) / 0.22), transparent 70%); }
   .credits-wm { display: inline-flex; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(54px, 9vw, 140px); line-height: 0.9; letter-spacing: -0.03em; color: rgb(var(--color-text-on-dark)); }
   /* the bolt sits still here (the header's keeps its flip), at the header wordmark's proportions */
   .credits-wm .wordmark-bolt svg { animation: none; }
