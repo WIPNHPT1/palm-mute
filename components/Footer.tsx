@@ -73,11 +73,11 @@ export function Footer() {
             ))}
           </nav>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="credits-gh">
-            <GitHubIcon size={18} />
+            <GitHubIcon size={18} gradient />
             GitHub
           </a>
         </div>
-        <p className="credits-fine">Palm/Mute · pop-punk song generator · E standard</p>
+        <p className="credits-fine">Palm/Mute · pop-punk song generator</p>
       </div>
     </footer>
   );
