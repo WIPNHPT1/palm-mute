@@ -15,8 +15,13 @@ const FPS = 30;
  *
  * `showsThrough` (the home page): a selector for the sections it shows through. The rest of the page covers it, so it
  * only animates while one of those sections is on screen (and keeps a still frame ready for when one arrives).
+ *
+ * `under` (the Song Generator and the Chord Lab): a selector for a band at the top of the page (the speaker band) that
+ * the scope stays clear of. It fades in over the band's last FADE pixels, following the scroll, so the band dissolves
+ * into it.
  */
-export function StageBackground({ playing, showsThrough }: { playing: boolean; showsThrough?: string }) {
+const FADE = 450;
+export function StageBackground({ playing, showsThrough, under }: { playing: boolean; showsThrough?: string; under?: string }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const live = useRef(playing);
@@ -80,16 +85,37 @@ export function StageBackground({ playing, showsThrough }: { playing: boolean; s
     window.addEventListener("resize", onResize);
     reduced.addEventListener("change", start);
     wide.addEventListener("change", start);
+    // Clear of the band: a mask on the canvas, from transparent above the band's fade to solid at its foot.
+    let fadeFrame = 0;
+    const fade = () => {
+      fadeFrame = 0;
+      const band = under ? document.querySelector(under) : null;
+      if (!band) return;
+      const foot = band.getBoundingClientRect().bottom - cv.getBoundingClientRect().top;
+      const f = FADE * designUnit(); // the band's own fade is in design pixels
+      const m = foot <= 0 ? "none" : `linear-gradient(transparent ${foot - f}px, #000 ${foot}px)`;
+      cv.style.maskImage = m;
+      cv.style.webkitMaskImage = m;
+    };
+    const onScroll = () => { if (!fadeFrame) fadeFrame = requestAnimationFrame(fade); };
+    if (under) {
+      fade();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+    }
     start();
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(fadeFrame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
       sections?.disconnect();
       themes.disconnect();
       window.removeEventListener("resize", onResize);
       reduced.removeEventListener("change", start);
       wide.removeEventListener("change", start);
     };
-  }, [host, showsThrough]);
+  }, [host, showsThrough, under]);
 
   if (!host) return null;
   return createPortal(<canvas ref={canvas} className="stage-bg" data-stage-bg="osc" aria-hidden="true" />, host);

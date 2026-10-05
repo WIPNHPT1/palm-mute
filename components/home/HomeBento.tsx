@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BentoGrid } from "@/components/home/BentoGrid";
-import { Speaker } from "@/components/home/Speaker";
+import { Speaker } from "@/components/Speaker";
 import { StageBackground } from "@/components/StageBackground";
 import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
 import { progressions } from "@/lib/musicTheory";

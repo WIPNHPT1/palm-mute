@@ -498,6 +498,12 @@
   /* sits behind the page (the page's shell is z-index 1) and never takes a click */
   .stage-bg { position: fixed; z-index: 0; pointer-events: none; display: none; left: 0; top: var(--stage-top); width: 100%; height: calc(100% - var(--stage-top)); }
   @media (min-width: 834px) { .stage-bg { display: block; } }
+  /* the speaker band across the top of the Song Generator and the Chord Lab (components/SpeakerBand.tsx): on the page,
+     behind its shell; it fades out over its last 450px while the scope fades in (StageBackground's `under`) */
+  .speaker-band { position: absolute; z-index: 0; left: 0; top: var(--stage-top); width: 100%; height: calc(min(100svh, 1100px) - var(--stage-top)); display: none; pointer-events: none;
+    -webkit-mask: linear-gradient(#000 calc(100% - 450px), transparent); mask: linear-gradient(#000 calc(100% - 450px), transparent); }
+  @media (min-width: 834px) { .speaker-band { display: block; } }
+  .speaker-band > .hb-speaker { position: absolute; inset: 0; width: 100%; height: 100%; }
 }
 
 /* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----
