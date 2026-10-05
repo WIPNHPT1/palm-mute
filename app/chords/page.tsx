@@ -6,6 +6,7 @@ import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { KeyFinder } from "@/components/lab/KeyFinder";
 import { LabProvider, useLab } from "@/components/lab/LabContext";
+import { SpeakerBand } from "@/components/SpeakerBand";
 import { StageBackground } from "@/components/StageBackground";
 import { MoodMap } from "@/components/lab/MoodMap";
 import { LabSetup } from "@/components/lab/LabSetup";
@@ -32,7 +33,12 @@ const GUIDE: GuideStep[] = [
 /** The Lab's moving background, the same scope as the Generator's (it reacts while the Lab is playing). */
 function LabStage() {
   const { playing } = useLab();
-  return <StageBackground playing={playing !== null} />;
+  return (
+    <>
+      <SpeakerBand />
+      <StageBackground playing={playing !== null} under="[data-speaker-band]" />
+    </>
+  );
 }
 
 export default function ChordLabPage() {

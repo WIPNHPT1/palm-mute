@@ -31,6 +31,15 @@ declare global {
 
 
 
+// Each quarter note that sounds, in time with the audio (strong = beats 1 and 3): the speaker cone behind the Song
+// Generator and the Chord Lab pumps on these (components/home/Speaker.tsx).
+const kickListeners = new Set<(strong: boolean) => void>();
+/** Calls `listener(strong)` on every beat of whatever is playing. Returns an unsubscribe. */
+export function onKick(listener: (strong: boolean) => void): () => void {
+  kickListeners.add(listener);
+  return () => kickListeners.delete(listener);
+}
+
 // Sound that can't start (no Web Audio, or the context stays suspended after a tap: a browser or phone setting)
 // is reported once through here, so one notice on every page can say so instead of play doing nothing.
 const blockedListeners = new Set<(blocked: boolean) => void>();
@@ -159,6 +168,10 @@ export async function play(req: PlaybackRequest): Promise<boolean> {
         if (sixteenth === 0 && req.onBar) {
           const onBar = req.onBar;
           T.getDraw().schedule(() => mine === generation && onBar(barIndex), time);
+        }
+        if (sixteenth % 4 === 0 && kickListeners.size) {
+          const strong = sixteenth % 8 === 0;
+          T.getDraw().schedule(() => mine === generation && kickListeners.forEach((l) => l(strong)), time);
         }
         const cell = sixteenth % per === 0 ? sixteenth / per : -1;
         const hit = cell >= 0 ? bar.cells[cell] : null;

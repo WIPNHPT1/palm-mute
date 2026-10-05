@@ -45,6 +45,32 @@ test.describe("stage: design scale and background", () => {
     await expect(page.locator("canvas.hb-speaker")).toHaveCount(2);
   });
 
+  for (const path of ["/generator/", "/chords/"]) {
+    test(`${path}: the home page's speaker band across the top, fading into the scope below`, async ({ page }, info) => {
+      onlyAtWidths(info, [390, 1440]);
+      lightOnly(info);
+      await gotoAndSettle(page, path);
+      const band = page.locator("[data-speaker-band]");
+      await expect(band).toHaveCount(1);
+      await expect(band.locator('canvas[data-speaker="band"]')).toHaveCount(1);
+      if (projectWidth(info) < 834) {
+        // phones: neither the band nor the scope, as before
+        expect(await band.evaluate((e) => getComputedStyle(e).display)).toBe("none");
+        return;
+      }
+      const state = await page.evaluate(() => {
+        const b = document.querySelector("[data-speaker-band]")!, cs = getComputedStyle(b), scope = document.querySelector<HTMLElement>(".stage-bg")!;
+        return { pe: cs.pointerEvents, mask: cs.maskImage || cs.getPropertyValue("-webkit-mask-image"), scopeMask: scope.style.maskImage || scope.style.webkitMaskImage };
+      });
+      expect(state.pe).toBe("none");
+      expect(state.mask).toMatch(/linear-gradient/); // the band fades out at its foot
+      expect(state.scopeMask).toMatch(/linear-gradient/); // while the scope fades in under it
+      // scrolled past the band, the scope shows in full
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await expect.poll(() => page.evaluate(() => { const s = document.querySelector<HTMLElement>(".stage-bg")!; return s.style.maskImage || s.style.webkitMaskImage; })).toBe("none");
+    });
+  }
+
   test("the background actually draws (and draws a still frame with reduced motion)", async ({ page }, info) => {
     onlyAtWidths(info, [1440]);
     lightOnly(info);

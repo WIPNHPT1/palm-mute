@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { onKick } from "@/lib/audio/engine";
 
 /**
  * Speaker cone (owner's pick, docs/mockups/home-scroll-options.html option 5): a canvas that fills its section and draws
- * speaker cloth with one big cone ("one", the hero) or a 2×2 cab ("cab", the kit) on it. The cones pump on the page's
- * beat clock (harder on 1 and 3) and harder still while the page scrolls fast, and drift a little slower than the page
- * (parallax). Faint and behind everything; hidden from screen readers. It only draws while its section is on screen, 30
+ * speaker cloth with one big cone ("one", the home hero; "band", the top of the Song Generator and the Chord Lab) or a
+ * 2×2 cab ("cab", the home kit) on it. The cones pump on a beat (harder on 1 and 3): the home page's beat clock
+ * (`beat`), or with `engine`, whatever is playing, and harder still while the page scrolls fast. They drift a little
+ * slower than the page (parallax). Faint and behind everything; hidden from screen readers. It only draws while its section is on screen, 30
  * frames a second, and draws one still frame (no pumping, no drift) with reduced motion.
  */
-export function Speaker({ kind, beat }: { kind: "one" | "cab"; beat: number }) {
+export function Speaker({ kind, beat = 0, engine = false }: { kind: "one" | "cab" | "band"; beat?: number; engine?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const kick = useRef({ at: -1e9, strong: true });
   // each beat of the page's clock is a kick: note when, and whether it's a strong beat (1 or 3)
   useEffect(() => {
     if (beat > 0) kick.current = { at: performance.now(), strong: beat % 2 === 0 };
   }, [beat]);
+  // or each beat of the music playing
+  useEffect(() => (engine ? onKick((strong) => (kick.current = { at: performance.now(), strong })) : undefined), [engine]);
 
   useEffect(() => {
     const cv = canvas.current;
@@ -81,7 +85,9 @@ export function Speaker({ kind, beat }: { kind: "one" | "cab"; beat: number }) {
       // the push: the last kick decaying, plus the scroll speed
       const since = (now - kick.current.at) / 1000;
       const ex = still ? 0 : (kick.current.strong ? 1 : 0.55) * Math.exp(-since * 9) + Math.min(1.5, Math.abs(vel) / 40);
-      if (kind === "one") {
+      if (kind === "band") {
+        cone(c, W * 0.8, H * 0.44 + drift, Math.min(W * 0.3, H * 0.46), ex);
+      } else if (kind === "one") {
         const wide = W >= 1000;
         cone(c, W * (wide ? 0.72 : 0.5), (wide ? H * 0.5 : H * 0.72) + drift, Math.min(W, H) * (wide ? 0.46 : 0.42), ex);
       } else {
