@@ -1,4 +1,4 @@
-import { expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, projectWidth, test } from "./fixtures";
+import { expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, test } from "./fixtures";
 
 // The home page (docs/mockups/home-bento-eye-candy.html, owner's pick: "Live session · Bento"; the hero is "Studio
 // glass", docs/mockups/home-hero-premium.html): a live Song Generator card in the hero, the stats, a Bento grid of working tiles, questions, encore.
@@ -73,7 +73,7 @@ test.describe("home", () => {
     await expect(slider).toHaveAttribute("aria-valuetext", "5:30");
   });
 
-  test("every tile is there, controls are tappable, and nothing spills sideways", async ({ page }, info) => {
+  test("every tile is there, controls are tappable, and nothing spills sideways", async ({ page }) => {
     await gotoAndSettle(page, "/");
     await expect(page.locator(".hb-tile")).toHaveCount(20);
     const u = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1);
@@ -82,7 +82,37 @@ test.describe("home", () => {
       els.filter((e) => e.getClientRects().length).map((e) => ({ t: (e.textContent || e.getAttribute("aria-label") || "").trim().slice(0, 20), w: (e as HTMLElement).offsetWidth, h: (e as HTMLElement).offsetHeight })).filter(({ w, h }) => w < min || h < min).map(({ t }) => t), 43.5 * u);
     expect(small).toEqual([]);
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
-    if (projectWidth(info) >= 834) await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
+    // the speakers replace the scope here (the Generator and the Chord Lab keep it)
+    await expect(page.locator("canvas.stage-bg")).toHaveCount(0);
+    await expect(page.locator('canvas.hb-speaker[aria-hidden="true"]')).toHaveCount(2);
+  });
+
+  test("speaker cone: a big cone behind the hero, a 2×2 cab behind the kit, drawn and pumping on the beat", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await gotoAndSettle(page, "/");
+    const one = page.locator('.hb-hero canvas[data-speaker="one"]');
+    await expect(one).toHaveCount(1);
+    await expect(page.locator('.hb-kit-sec > canvas[data-speaker="cab"]')).toHaveCount(1);
+    // it fills the hero, under the headline and the card, and never takes a click
+    const box = await one.evaluate((c) => { const r = c.getBoundingClientRect(), h = c.closest(".hb-hero")!.getBoundingClientRect(); return { fits: Math.abs(r.width - h.width) < 2 && Math.abs(r.height - h.height) < 2, pe: getComputedStyle(c).pointerEvents }; });
+    expect(box).toEqual({ fits: true, pe: "none" });
+    // it draws, and the picture changes from moment to moment (the cone pumps)
+    const frame = () => one.evaluate((c: HTMLCanvasElement) => c.toDataURL());
+    await expect.poll(async () => (await one.evaluate((c: HTMLCanvasElement) => { const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 64) if (d[i] > 0) n++; return n; }))).toBeGreaterThan(100);
+    const a = await frame();
+    await expect.poll(frame, { timeout: 3000 }).not.toBe(a);
+  });
+
+  test("speaker cone stands still with reduced motion", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await gotoAndSettle(page, "/");
+    const frame = () => page.locator('canvas[data-speaker="one"]').evaluate((c: HTMLCanvasElement) => c.toDataURL());
+    const a = await frame();
+    await page.waitForTimeout(800);
+    expect(await frame()).toBe(a);
   });
 
   test("the studio light moves by transform and opacity only, and the glass has no live blur", async ({ page }, info) => {

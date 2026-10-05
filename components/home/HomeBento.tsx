@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BentoGrid } from "@/components/home/BentoGrid";
-import { StageBackground } from "@/components/StageBackground";
+import { Speaker } from "@/components/home/Speaker";
 import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
 import { progressions } from "@/lib/musicTheory";
 
@@ -66,8 +66,6 @@ export function HomeBento() {
 
   return (
     <div ref={root} className="hb" style={{ "--beat": `${Math.round(60000 / bpm)}ms` } as React.CSSProperties}>
-      {/* the Generator and Chord Lab's fixed scope, showing through the quiet sections (owner's pick, DECISIONS.md) */}
-      <StageBackground playing={false} showsThrough=".hb [data-quiet]" />
       <div className="hb-grain" aria-hidden="true" />
       <Hero state={state} beat={beat} bpm={bpm} onKey={(key) => set({ key })} />
       <Marquee />
@@ -78,7 +76,8 @@ export function HomeBento() {
           ))}
         </dl>
       </section>
-      <section className="hb-sec" aria-labelledby="hb-kit" data-quiet>
+      <section className="hb-sec hb-kit-sec" aria-labelledby="hb-kit" data-quiet>
+        <Speaker kind="cab" beat={beat} />
         <div className="hb-wrap">
           <div data-reveal>
             <div className="hb-kick">EVERYTHING IN ONE PLACE</div>
@@ -120,6 +119,7 @@ function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm
     <section className="hb-hero" aria-labelledby="hb-title">
       <div className="hb-fx" aria-hidden="true">
         <div className="hb-studio" />
+        <Speaker kind="one" beat={beat} />
         <i className="hb-aura a" /><i className="hb-aura b" /><i className="hb-aura c" />
       </div>
       <div className="hb-wrap hb-hgrid">

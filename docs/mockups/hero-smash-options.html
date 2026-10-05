@@ -1,0 +1,557 @@
+<title>Palm/Mute Guitar Smash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: the site's ink bar, a short brief, then six copies of today's home hero (headline + glass card, unchanged),
+     each with a different guitarist-smashing-a-guitar layer drawn on a canvas behind it. One rig, one beat clock. */
+  :root {
+    --ink:#171310; --ink-rgb:23 19 16; --paper:#F6F1E4; --paper-rgb:246 241 228; --surface:#FFFFFF; --accent:#C23A26; --accent-rgb:194 58 38; --accent-on-ink:#E5573F;
+    --brass:#B8862E; --brass-rgb:184 134 46; --success:#3F8F4F; --line:#E4DAC3; --line-strong:#DCD3BE;
+    --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A; --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#FFF9EF;
+    --pane: linear-gradient(160deg, rgb(255 255 255 / .8), rgb(255 255 255 / .55) 60%); --edge: rgb(255 255 255 / .95);
+    --drop: 0 44px 90px -44px rgb(23 19 16 / .5), 0 18px 34px -24px rgb(23 19 16 / .3);
+    --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .9), rgb(255 255 255 / .1) 35%, rgb(var(--accent-rgb) / .4) 82%, rgb(255 255 255 / .2));
+    --well: rgb(246 241 228 / .7); --grid: rgb(23 19 16 / .045); --aura-a: rgb(194 58 38 / .3); --aura-b: rgb(184 134 46 / .3);
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --ink-rgb:11 9 8; --paper:#15110E; --paper-rgb:21 17 14; --surface:#1F1A16; --accent:#E85A42; --accent-rgb:232 90 66; --accent-on-ink:#E85A42; --brass:#C9973C; --brass-rgb:201 151 60;
+    --success:#52A862; --line:#352D25; --line-strong:#463B30; --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-accent:#140F0C;
+    --pane: linear-gradient(160deg, rgb(246 241 228 / .1), rgb(246 241 228 / .03) 60%), rgb(21 17 14 / .55); --edge: rgb(255 255 255 / .14);
+    --drop: 0 44px 90px -40px rgb(0 0 0 / .9); --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .45), rgb(255 255 255 / .05) 35%, rgb(var(--accent-rgb) / .38) 80%, rgb(255 255 255 / .1));
+    --well: rgb(0 0 0 / .38); --grid: rgb(246 241 228 / .035); --aura-a: rgb(232 90 66 / .42); --aura-b: rgb(201 151 60 / .3);
+    color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --ink-rgb:11 9 8; --paper:#15110E; --paper-rgb:21 17 14; --surface:#1F1A16; --accent:#E85A42; --accent-rgb:232 90 66; --accent-on-ink:#E85A42; --brass:#C9973C; --brass-rgb:201 151 60;
+    --success:#52A862; --line:#352D25; --line-strong:#463B30; --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-accent:#140F0C;
+    --pane: linear-gradient(160deg, rgb(246 241 228 / .1), rgb(246 241 228 / .03) 60%), rgb(21 17 14 / .55); --edge: rgb(255 255 255 / .14);
+    --drop: 0 44px 90px -40px rgb(0 0 0 / .9); --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .45), rgb(255 255 255 / .05) 35%, rgb(var(--accent-rgb) / .38) 80%, rgb(255 255 255 / .1));
+    --well: rgb(0 0 0 / .38); --grid: rgb(246 241 228 / .035); --aura-a: rgb(232 90 66 / .42); --aura-b: rgb(201 151 60 / .3);
+    color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--t1); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } }
+
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; background: #171310; color: #F6F1E4; }
+  .bar .wrap { min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-block: 8px; }
+  .wm { font-family: var(--f-display); font-size: 16px; margin-right: auto; } .wm i { font-style: normal; color: #E5573F; }
+  .seg-c { display: inline-flex; gap: 2px; padding: 3px; border-radius: 8px; background: #2A241C; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; }
+  .seg-c button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #D9CFB9; }
+  .seg-c button[aria-pressed="true"] { background: #F6F1E4; color: #171310; }
+  .intro { padding-block: 32px 4px; }
+  .kick { margin: 0 0 10px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .intro h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 3.2vw, 38px); line-height: 1.05; }
+  .lede { max-width: 72ch; margin: 12px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--t2); }
+  .jump { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; font-family: var(--f-mono); font-size: 12px; }
+  .jump a { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--t2); text-decoration: none; }
+  .opt { padding-block: 44px 6px; }
+  .opt-hd { display: grid; gap: 8px 28px; grid-template-columns: minmax(0, 1fr); align-items: end; margin-bottom: 14px; }
+  @media (min-width: 1000px) { .opt-hd { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; } }
+  .opt-hd .n { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .opt-hd h2 { margin: 4px 0 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 2.4vw, 30px); line-height: 1.05; }
+  .opt-hd p { margin: 6px 0 0; font-size: 15px; line-height: 1.5; color: var(--t2); max-width: 62ch; }
+  .opt-hd ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; color: var(--t3); }
+  .opt-hd li::before { content: "+ "; color: var(--accent); font-family: var(--f-mono); }
+  .pick { min-height: 44px; padding: 0 16px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--surface); font-family: var(--f-mono); font-size: 12px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
+  .pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .frame { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); }
+
+  /* ---------- today's hero, as it is ---------- */
+  .hero { position: relative; isolation: isolate; overflow: hidden; background: var(--paper); min-height: 640px; display: flex; align-items: center; }
+  .hero::before { content: ""; position: absolute; inset: 0; z-index: -3; background:
+    radial-gradient(52% 70% at 70% 30%, var(--aura-a), transparent 70%), radial-gradient(40% 60% at 82% 70%, var(--aura-b), transparent 70%), radial-gradient(42% 60% at 6% 80%, rgb(var(--accent-rgb) / .14), transparent 70%); }
+  .hero::after { content: ""; position: absolute; inset: 0; z-index: -2; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 64px 64px;
+    -webkit-mask: radial-gradient(70% 70% at 72% 50%, #000, transparent); mask: radial-gradient(70% 70% at 72% 50%, #000, transparent); }
+  .hero canvas.smash { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+  .hgrid { position: relative; width: 100%; display: grid; gap: clamp(28px, 4vw, 64px); align-items: center; grid-template-columns: minmax(0, 1fr); padding: 48px clamp(18px, 4vw, 56px) 60px; }
+  @media (min-width: 1000px) { .hgrid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+  .hl { container-type: inline-size; min-width: 0; }
+  .htop { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .16em; color: var(--t3); }
+  .live { display: inline-flex; align-items: center; gap: 9px; color: var(--accent); }
+  .live i { width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(63 143 79 / .22); }
+  .kin { margin: 0; font-family: var(--f-display); font-weight: 400; text-transform: uppercase; letter-spacing: -.035em; line-height: .88; font-size: clamp(30px, 10cqi, 110px); }
+  .kin span { display: block; white-space: nowrap; }
+  .kin span:nth-child(1), .kin span:nth-child(3) { text-shadow: .02em .02em 0 rgb(var(--accent-rgb) / .38); }
+  .kin span:nth-child(2) { color: transparent; -webkit-text-stroke: 2px var(--t1); margin-left: 5%; }
+  .kin span:nth-child(4) { color: var(--accent); margin-left: 9%; }
+  .sub { margin: 26px 0; max-width: 460px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.55; color: var(--t2); }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 24px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-family: var(--f-display); font-size: 13px; text-decoration: none;
+    background-image: linear-gradient(180deg, rgb(255 255 255 / .2), transparent 55%, rgb(0 0 0 / .12)); box-shadow: 0 14px 26px -14px var(--accent); }
+  .btn svg { width: 12px; height: 12px; fill: currentColor; }
+  .lnk { font-family: var(--f-mono); font-size: 12.5px; color: var(--t3); }
+  .glass { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 24px; background: var(--pane); box-shadow: inset 0 1px 0 var(--edge), 0 0 0 1px rgb(var(--ink-rgb) / .06), var(--drop); }
+  .glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; background: var(--edge-grad);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .glass::after { content: ""; position: absolute; z-index: -1; left: 10%; right: 10%; bottom: -44px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .3), transparent); }
+  .ghd { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-family: var(--f-display); font-size: 18px; }
+  .num { padding: 1px 7px; border-radius: 4px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); font-size: 12px; font-weight: 700; }
+  .cap { margin-left: auto; padding: 6px 11px; border-radius: 999px; background: rgb(var(--paper-rgb) / .75); box-shadow: inset 0 0 0 1px var(--line); font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; color: var(--t2); }
+  .cap b { color: var(--accent); }
+  .pills { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  .pill { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: rgb(255 255 255 / .6); font-family: var(--f-mono); font-size: 12px; color: var(--t3); display: grid; place-items: center; }
+  :root[data-theme="dark"] .pill { background: rgb(246 241 228 / .06); border-color: rgb(246 241 228 / .12); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill { background: rgb(246 241 228 / .06); border-color: rgb(246 241 228 / .12); } }
+  .pill.on { background: var(--ink); color: var(--on-dark); border-color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--accent); }
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .chip { position: relative; overflow: hidden; padding: 6px 0 8px; border-radius: 10px; background: #171310; color: #F6F1E4; text-align: center; font-family: var(--f-mono); box-shadow: inset 0 0 0 1px rgba(246,241,228,.09); }
+  .chip small { display: block; font-size: 12px; color: #A89C86; } .chip b { display: block; font-size: 15px; margin: 2px 0 4px; }
+  .chip pre { margin: 0; font-size: 9px; line-height: 1.25; color: #D9CFB9; text-align: left; padding-left: 9px; font-family: var(--f-mono); }
+  .chip.now { background-image: radial-gradient(90% 80% at 50% 115%, rgb(var(--accent-rgb) / .6), transparent 70%); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .6), 0 0 26px -6px rgb(var(--accent-rgb) / .7); }
+  .tabw { container-type: inline-size; }
+  .tab { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); font-family: var(--f-mono); font-size: clamp(6px, calc((100cqi - 28px) / 43), 12px); line-height: 1.45; color: var(--t3); white-space: pre; overflow: hidden; }
+  .tab b { color: var(--t1); }
+  .transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: #171310; color: #F6F1E4; font-family: var(--f-mono); font-size: 12px; }
+  .play { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+  .play svg { width: 14px; height: 14px; fill: currentColor; margin-left: 2px; }
+  .prog { flex: 1; height: 4px; border-radius: 2px; background: rgb(246 241 228 / .12); overflow: hidden; } .prog i { display: block; height: 100%; width: 18%; background: var(--accent); }
+  .gfoot { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; color: var(--t3); }
+  .gfoot i { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); vertical-align: 1px; }
+
+  .picks { position: fixed; z-index: 70; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 12px; max-width: calc(100% - 24px);
+    padding: 8px 8px 8px 16px; border-radius: 999px; background: #171310; color: #D9CFB9; box-shadow: 0 20px 40px -16px rgba(0,0,0,.6); font-family: var(--f-mono); font-size: 12px; }
+  .picks b { color: #F6F1E4; }
+  .picks button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: #E5573F; color: #FFF9EF; font-weight: 700; letter-spacing: .06em; }
+  .picks button:disabled { background: #2A241C; color: #A89C86; }
+  #pick-text { position: fixed; left: 12px; right: 12px; bottom: 76px; z-index: 71; height: 56px; font: 12px/1.5 var(--f-mono); }
+  .foot { padding-block: 40px 120px; font-family: var(--f-mono); font-size: 12px; color: var(--t3); }
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <span class="wm">PALM<i>/</i>MUTE</span>
+    <div class="seg-c" role="group" aria-label="Theme"><button type="button" data-theme-set="light" aria-pressed="false">LIGHT</button><button type="button" data-theme-set="dark" aria-pressed="false">DARK</button></div>
+    <div class="seg-c" role="group" aria-label="Motion"><button type="button" id="run" aria-pressed="true">PLAYING</button></div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap intro">
+    <p class="kick">HOME HERO · BACKGROUND OPTIONS</p>
+    <h1>Smash it: six ways to put a guitarist behind the hero</h1>
+    <p class="lede">The hero stays exactly as it is: the headline, the glass card, the studio light. The guitarist stands in the gap between the headline and the card, behind both; in light mode the silhouette is a soft grey so the headline stays readable over it. On a canvas under everything, a guitarist winds up and smashes a Les Paul into the stage on the downbeat, every two bars at 180 BPM: the body splits, splinters and snapped strings fly, dust kicks up. The figure is drawn at real proportions (a 180 cm player, a 100 cm guitar) and shot like a live photo: backlight, rim light, haze, motion blur, grain. Six photographic treatments. It's decoration only (hidden from screen readers), freezes on the windup with reduced motion, and only draws while on screen.</p>
+    <nav class="jump" id="jump" aria-label="Options"></nav>
+  </section>
+  <div id="options"></div>
+  <p class="wrap foot">Mock-up only. Nothing here changes the site until a pick is built.</p>
+</main>
+
+<div class="picks" role="region" aria-label="Your pick"><span>Pick: <b id="pick-name">none yet</b></span><button type="button" id="copy" disabled>COPY PICK</button></div>
+<textarea id="pick-text" readonly hidden aria-label="Pick to copy"></textarea>
+
+<script>
+  /* ---------- the hero, as it is (key of A, the loop's tab) ---------- */
+  const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 9-14 9z"/></svg>';
+  const STR = ["e", "B", "G", "D", "A", "E"];
+  const LOOP = [["I", "A5", { D: "2", A: "0" }], ["V", "E5", { A: "2", E: "0" }], ["vi", "F#5", { A: "4", E: "2" }], ["IV", "D5", { G: "2", D: "0" }]];
+  const tab = "  " + LOOP.map(([, n]) => `<b>${n}</b>` + " ".repeat(17 - n.length)).join("") + "\n" +
+    STR.map((s) => `${s}|` + LOOP.map(([, , t]) => (t[s] ? `${t[s]}-`.repeat(8) : "-".repeat(16))).join("|") + "|").join("\n") + "\n  " + LOOP.map(() => "P.M.------------").join(" ");
+  const KEYS = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const heroHTML = () => `
+    <canvas class="smash" aria-hidden="true"></canvas>
+    <div class="hgrid">
+      <div class="hl"><div class="htop"><span>COUNT IN · ABOUT PALM/MUTE</span><span class="live"><i></i>LIVE · 180 BPM</span></div>
+        <h3 class="kin" aria-label="Songwriting formulas from the bands that built pop-punk."><span>Songwriting</span><span>formulas from</span><span>the bands that</span><span>built pop-punk.</span></h3>
+        <p class="sub">A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.</p>
+        <div class="cta"><a class="btn" href="#">${PLAY}START WRITING</a><span class="lnk">Open the Chord Lab →</span></div></div>
+      <div class="glass">
+        <div class="ghd"><span class="num">01</span><span>Verse 1</span><span class="cap">KEY OF <b>A</b> · FAST PUNK</span></div>
+        <div class="pills">${KEYS.map((k, i) => `<span class="pill ${i ? "" : "on"}">${k}</span>`).join("")}</div>
+        <div class="chips">${LOOP.map(([d, n, t], i) => `<span class="chip ${i === 1 ? "now" : ""}"><small>${d}</small><b>${n}</b><pre>${STR.map((s) => `${s}|${t[s] ?? "-"}`).join("\n")}</pre></span>`).join("")}</div>
+        <div class="tabw"><pre class="tab">${tab}</pre></div>
+        <div class="transport"><span class="play">${PLAY}</span><span>0:10 / 3:00</span><span class="prog"><i></i></span><span style="color:#A89C86">100%</span></div>
+        <div class="gfoot"><span><i></i>NO TABS STORED</span><span>×2 · E STANDARD</span></div>
+      </div>
+    </div>`;
+
+  /* ---------- the guitarist: a real-proportioned figure, posed in centimetres ----------
+     Everything is measured in cm with the floor at y = 0 (y up), feet either side of x = 0, facing right: a 180 cm
+     player, a 100 cm Les Paul. Drawn into a 1000-unit box (3.4 units a cm, the floor at 965). */
+  const S = 3.4, FX = 520, FY = 965;
+  const P = (p) => [FX + p[0] * S, FY - p[1] * S];
+  const add = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const len = (v) => Math.hypot(v[0], v[1]);
+  const unit = (v) => { const l = len(v) || 1; return [v[0] / l, v[1] / l]; };
+  const fwd = (s) => [s[1], -s[0]]; // the side a direction "faces" (right when s points up)
+  const mix = (a, b, k) => a + (b - a) * k;
+  const mixV = (a, b, k) => [mix(a[0], b[0], k), mix(a[1], b[1], k)];
+
+  // wind up (guitar back over the shoulder), overhead, the smash into the floor, the follow-through, back to the wind-up
+  const K0 = { t: 0, pel: [-6, 93], ch: [-17, 146], head: -0.38, G: [-20, 196], d: [-0.8, 0.6], hair: -1 };
+  const KEYF = [K0,
+    { t: 0.5, pel: [-4, 95], ch: [-12, 151], head: -0.28, G: [-6, 198], d: [-0.15, 0.99], hair: -0.7 },
+    { t: 0.66, pel: [7, 82], ch: [31, 127], head: 0.35, G: [54, 76], d: [0.55, -0.83], hair: 1 },
+    { t: 0.78, pel: [8, 80], ch: [33, 123], head: 0.3, G: [56, 73], d: [0.6, -0.8], hair: 0.8 },
+    { ...K0, t: 1 }];
+  const SMASH_T = 0.66;
+  const ease = (k, fast) => (fast ? k * k * k : 0.5 - Math.cos(k * Math.PI) / 2);
+  function poseAt(t) {
+    let i = 0;
+    while (i < KEYF.length - 2 && t > KEYF[i + 1].t) i++;
+    const a = KEYF[i], b = KEYF[i + 1], k = ease(Math.min(1, Math.max(0, (t - a.t) / (b.t - a.t))), i === 1);
+    return { pel: mixV(a.pel, b.pel, k), ch: mixV(a.ch, b.ch, k), head: mix(a.head, b.head, k), G: mixV(a.G, b.G, k), d: unit(mixV(a.d, b.d, k)), hair: mix(a.hair, b.hair, k) };
+  }
+  // two-bone reach: the joint between a and b, on the side `pick` prefers
+  function joint(a, b, l1, l2, pick) {
+    const v = sub(b, a), dd = Math.min(len(v), l1 + l2 - 0.01), u = unit(v);
+    const x = (l1 * l1 - l2 * l2 + dd * dd) / (2 * dd), h = Math.sqrt(Math.max(0, l1 * l1 - x * x)), n = fwd(u);
+    const j1 = add(add(a, u, x), n, h), j2 = add(add(a, u, x), n, -h);
+    return pick(j1, j2) ? j1 : j2;
+  }
+
+  // drawing helpers (cm in, box units out)
+  function smooth(ctx, pts) {
+    const m = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], n = pts.length;
+    const s = m(pts[n - 1], pts[0]); ctx.moveTo(s[0], s[1]);
+    for (let i = 0; i < n; i++) { const e = m(pts[i], pts[(i + 1) % n]); ctx.quadraticCurveTo(pts[i][0], pts[i][1], e[0], e[1]); }
+    ctx.closePath();
+  }
+  function limb(ctx, a, b, ra, rb) {
+    const A = P(a), B = P(b), n = fwd(unit(sub(B, A)));
+    ctx.moveTo(A[0] + n[0] * ra * S, A[1] + n[1] * ra * S); ctx.lineTo(B[0] + n[0] * rb * S, B[1] + n[1] * rb * S);
+    ctx.lineTo(B[0] - n[0] * rb * S, B[1] - n[1] * rb * S); ctx.lineTo(A[0] - n[0] * ra * S, A[1] - n[1] * ra * S); ctx.closePath();
+    ctx.moveTo(A[0] + ra * S, A[1]); ctx.arc(A[0], A[1], ra * S, 0, 7);
+    ctx.moveTo(B[0] + rb * S, B[1]); ctx.arc(B[0], B[1], rb * S, 0, 7);
+  }
+
+  // the guitar: a Les Paul outline in its own frame (u along the neck from the headstock tip, v across), 100 cm long
+  const LP = [[57, -2.9], [58.6, -5.6], [59, -9.6], [61.6, -12.3], [65, -12.9], [69, -11.7], [73, -11.4], [79, -14.8], [86, -16.4], [93, -15.4], [98, -10.6], [100, -3.6], [100, 3.6], [98, 10.6], [93, 15.4], [86, 16.4], [79, 14.8], [73, 11.4], [69, 12.1], [64, 13.5], [60, 12.1], [57.6, 7.6], [57, 2.9]];
+  const HEAD = [[0, -4.2], [1.5, -4.7], [15.5, -4.9], [18, -2.6], [18, 2.6], [15.5, 4.9], [1.5, 4.7], [0, 4.2]];
+  const CHUNK = [[84, -17], [87.5, -10], [84.5, -5], [89, 1], [86, 7], [90.5, 13], [88, 17.5], [104, 18], [104, -18]];
+  const gFrame = (p) => { const tip = add(p.G, p.d, -20), n = fwd(p.d); return (u, v) => add(add(tip, p.d, u), n, v); };
+  function guitarPath(p, broken) {
+    const g = gFrame(p), body = new Path2D(), path = new Path2D();
+    const q = (pts) => pts.map(([u, v]) => P(g(u, v)));
+    smooth(body, q(LP));
+    const head = q(HEAD); path.moveTo(head[0][0], head[0][1]); head.forEach((h) => path.lineTo(h[0], h[1])); path.closePath();
+    for (const u of [4, 9.5, 15]) for (const v of [-5.6, 5.6]) { const t = P(g(u, v)); path.moveTo(t[0] + S, t[1]); path.arc(t[0], t[1], S, 0, 7); }
+    const neck = q([[17.5, -2.2], [58, -2.9], [58, 2.9], [17.5, 2.2]]); path.moveTo(neck[0][0], neck[0][1]); neck.forEach((h) => path.lineTo(h[0], h[1])); path.closePath();
+    let cut = null;
+    if (broken) { cut = new Path2D(); cut.rect(-5000, -5000, 11000, 11000); const c = q(CHUNK); cut.moveTo(c[0][0], c[0][1]); c.forEach((h) => cut.lineTo(h[0], h[1])); cut.closePath(); }
+    return { body, path, cut, g };
+  }
+
+  // the figure, as one silhouette path set; parts: "all", "body" (no guitar, no hands) or "guitar" (guitar, hands, forearms)
+  function drawFigure(ctx, p, part = "all", broken = false) {
+    const s = unit(sub(p.ch, p.pel)), n = fwd(s);
+    const at = (a, b) => add(add(p.pel, s, a), n, b);
+    const shB = add(p.ch, n, -6), shF = add(p.ch, n, 8);
+    const G2 = add(p.G, p.d, 8);
+    const elbow = (sh, h) => joint(sh, h, 31, 33, (a, b) => a[1] < b[1]);
+    const eB = elbow(shB, p.G), eF = elbow(shF, G2);
+    const wrist = (e, h) => add(h, unit(sub(e, h)), 4.5);
+    const hipB = at(-2, -4), hipF = at(-2, 4), ankB = [-30, 8], ankF = [32, 8];
+    const knee = (h, a) => joint(h, a, 46, 45, (x, y) => x[0] > y[0]);
+    const kB = knee(hipB, ankB), kF = knee(hipF, ankF);
+    const hs = unit(add([s[0] * Math.cos(p.head), s[1] * Math.cos(p.head)], n, Math.sin(p.head))), hn = fwd(hs);
+    const neckTop = add(p.ch, s, 7), headC = add(add(neckTop, hs, 11), hn, 2);
+    const body = part !== "guitar", gtr = part !== "body";
+    ctx.beginPath();
+    if (body) {
+      // back arm (behind the body) and back leg
+      limb(ctx, shB, eB, 5.8, 4.3);
+      if (part === "all") limb(ctx, eB, wrist(eB, p.G), 4.3, 3);
+      limb(ctx, hipB, kB, 8.4, 6); limb(ctx, kB, ankB, 6, 5.2); boot(ctx, ankB);
+      // torso
+      smooth(ctx, [at(-2, -11), at(10, -9.6), at(22, -9), at(32, -10.6), at(44, -12), at(52, -10), at(57, -5.5), at(57, 4.5), at(50, 11.5), at(42, 12.6), at(34, 11), at(24, 10), at(12, 10.6), at(2, 11), at(-5, 8), at(-8, 1), at(-7, -7)].map(P));
+      // neck and head (with the brow, nose and jaw that make a profile read as a person)
+      limb(ctx, add(p.ch, s, 2), neckTop, 6, 5.2);
+      const H = (a, b) => P(add(add(headC, hs, a), hn, b));
+      smooth(ctx, [H(11, -7), H(12.5, 0), H(10, 6.5), H(5, 8.6), H(2.2, 9.2), H(0.5, 10.6), H(-1.5, 9), H(-4, 8.6), H(-6.5, 8), H(-10.5, 5.5), H(-11.5, 0), H(-9, -6.5), H(-2, -9.2), H(5, -9)]);
+      // hair: long strands from the crown, thrown by the swing
+      const root = add(add(headC, hs, 6), hn, -5);
+      for (let i = 0; i < 9; i++) {
+        const back = unit(add([-hn[0], -hn[1]], hs, -0.55)), fore = unit(add(hn, hs, -1.2));
+        const w = (p.hair + 1) / 2, dir = unit(mixV(back, fore, w)), spread = (i - 4) * 0.09, L = 20 + (i % 3) * 5 + w * 6;
+        const rot = [dir[0] * Math.cos(spread) - dir[1] * Math.sin(spread), dir[0] * Math.sin(spread) + dir[1] * Math.cos(spread)];
+        const bend = [-rot[1] * (2 - w * 4), rot[0] * (2 - w * 4)];
+        strand(ctx, add(root, hn, i * 0.9 - 3), rot, L, bend);
+      }
+      // front leg
+      limb(ctx, hipF, kF, 8.6, 6.2); limb(ctx, kF, ankF, 6.2, 5.4); boot(ctx, ankF);
+    }
+    ctx.fill();
+    if (gtr) {
+      const gp = guitarPath(p, broken);
+      ctx.save(); if (gp.cut) ctx.clip(gp.cut, "evenodd"); ctx.fill(gp.body); ctx.restore();
+      ctx.fill(gp.path);
+      ctx.beginPath();
+      // the hands round the neck, the forearms, and the front arm over it all
+      const wB = wrist(eB, p.G), wF = wrist(eF, G2);
+      if (part === "guitar") { limb(ctx, eB, wB, 4.3, 3); }
+      fist(ctx, p.G, p.d); fist(ctx, G2, p.d);
+      limb(ctx, shF, eF, 5.9, 4.4); limb(ctx, eF, wF, 4.4, 3.1);
+      ctx.fill();
+    }
+    if (body && !gtr) { ctx.beginPath(); limb(ctx, add(p.ch, n, 8), eF, 5.9, 4.4); ctx.fill(); }
+    return { impact: guitarPath(p, false).g(98, 0) };
+  }
+  function boot(ctx, a) { const pts = [[-6, -6.5], [-6.5, -2], [-5, 6], [5, 5], [9, 1], [17, -0.5], [21, -3], [21, -6.8], [-6, -8]].map(([x, y]) => P([a[0] + x, a[1] + y])); smooth(ctx, pts); }
+  function fist(ctx, c, d) { const C = P(c), r = Math.atan2(-d[1], d[0]); ctx.moveTo(C[0] + 5.6 * S, C[1]); ctx.ellipse(C[0], C[1], 5.6 * S, 4.6 * S, r, 0, 7); }
+  function strand(ctx, a, dir, L, bend) {
+    const pts = [], back = [];
+    for (let i = 0; i <= 8; i++) { const k = i / 8, c = add(add(a, dir, L * k), bend, Math.sin(k * Math.PI) * 3 * k), w = 1.4 * (1 - k) + 0.15, n = fwd(dir); pts.push(P(add(c, n, w))); back.unshift(P(add(c, n, -w))); }
+    const all = pts.concat(back); ctx.moveTo(all[0][0], all[0][1]); all.forEach((q) => ctx.lineTo(q[0], q[1])); ctx.closePath();
+  }
+
+  /* ---------- the smash: wood, strings, sparks, dust, and the broken-off lower bout ---------- */
+  function burst(p, impact) {
+    const out = [], at = P(impact);
+    for (let i = 0; i < 30; i++) { const a = -Math.PI * (0.08 + Math.random() * 0.84), v = (300 + Math.random() * 900); out.push({ k: "splinter", x: at[0], y: at[1] - 6, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 6, vr: (Math.random() - 0.5) * 24, l: (3 + Math.random() * 12) * S, w: (0.4 + Math.random() * 0.9) * S, life: 1.3 + Math.random() * 0.6 }); }
+    for (let i = 0; i < 18; i++) { const a = -Math.PI * (0.15 + Math.random() * 0.7), v = 700 + Math.random() * 1100; out.push({ k: "spark", x: at[0], y: at[1] - 4, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.25 + Math.random() * 0.35 }); }
+    for (let i = 0; i < 4; i++) out.push({ k: "string", x: at[0] - 30 + i * 8, y: at[1] - 20, a: -Math.PI * (0.3 + Math.random() * 0.4), l: (28 + Math.random() * 30) * S, life: 1.1, seed: Math.random() * 9 });
+    for (let i = 0; i < 4; i++) out.push({ k: "dust", x: at[0] + (Math.random() - 0.5) * 120, y: at[1] - 10, r: 30 + Math.random() * 40, vr: 140 + Math.random() * 120, life: 1.4, max: 1.4 });
+    const g = gFrame(p), c = CHUNK.slice(0, 7).concat([[100, 17], [100, -17]]).map(([u, v]) => P(g(u, v))), cx = c.reduce((s, q) => s + q[0], 0) / c.length, cy = c.reduce((s, q) => s + q[1], 0) / c.length;
+    out.push({ k: "chunk", x: cx, y: cy, pts: c.map(([x, y]) => [x - cx, y - cy]), vx: 260, vy: -520, r: 0, vr: 5.5, life: 2.2 });
+    return out;
+  }
+  function stepDebris(list, dt) {
+    for (const d of list) {
+      d.life -= dt;
+      if ("vx" in d) { d.vy += 3000 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if ("vr" in d && d.k !== "dust") d.r += d.vr * dt; if (d.y > FY - 4 && d.k !== "spark") { d.y = FY - 4; d.vy *= -0.22; d.vx *= 0.55; if (d.vr) d.vr *= 0.4; } }
+      if (d.k === "dust") d.r += d.vr * dt;
+    }
+    return list.filter((d) => d.life > 0);
+  }
+  function drawDebris(ctx, list, c, dustOn = true) {
+    for (const d of list) {
+      const a = Math.min(1, d.life * 1.5);
+      ctx.globalAlpha = a;
+      if (d.k === "splinter") { ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.r); ctx.fillStyle = c.solid; ctx.beginPath(); ctx.moveTo(-d.l / 2, 0); ctx.lineTo(d.l / 2, -d.w / 2); ctx.lineTo(d.l / 2 - d.w, d.w / 2); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      else if (d.k === "chunk") { ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.r); ctx.fillStyle = c.solid; ctx.beginPath(); d.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      else if (d.k === "spark") { ctx.save(); ctx.shadowColor = c.spark; ctx.shadowBlur = 8; ctx.strokeStyle = c.spark; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - d.vx * 0.018, d.y - d.vy * 0.018); ctx.stroke(); ctx.restore(); }
+      else if (d.k === "string") { ctx.strokeStyle = c.string; ctx.lineWidth = 1; ctx.beginPath(); for (let i = 0; i <= 24; i++) { const k = i / 24, w = Math.sin(k * 16 + d.seed + (1.1 - d.life) * 26) * 10 * k * (1.2 - d.life); ctx.lineTo(d.x + Math.cos(d.a) * d.l * k - Math.sin(d.a) * w, d.y + Math.sin(d.a) * d.l * k + Math.cos(d.a) * w); } ctx.stroke(); }
+      else if (d.k === "dust" && dustOn) { const g = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.r); g.addColorStop(0, c.dust(0.32 * (d.life / d.max))); g.addColorStop(1, c.dust(0)); ctx.fillStyle = g; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- photographic layers: stage haze and film grain, made once ---------- */
+  function noiseCanvas(size, cells, octaves) {
+    const cv = document.createElement("canvas"); cv.width = cv.height = size;
+    const ctx = cv.getContext("2d"), img = ctx.createImageData(size, size), vals = new Float32Array(size * size);
+    for (let o = 0; o < octaves; o++) {
+      const n = cells * 2 ** o, g = Array.from({ length: (n + 1) * (n + 1) }, () => Math.random()), amp = 0.5 ** o;
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const fx = (x / size) * n, fy = (y / size) * n, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy, sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+        const v = mix(mix(g[iy * (n + 1) + ix], g[iy * (n + 1) + ix + 1], sx), mix(g[(iy + 1) * (n + 1) + ix], g[(iy + 1) * (n + 1) + ix + 1], sx), sy);
+        vals[y * size + x] += v * amp;
+      }
+    }
+    for (let i = 0; i < vals.length; i++) { const v = Math.max(0, Math.min(1, (vals[i] / 1.6 - 0.3) * 1.9)); img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = 255; img.data[i * 4 + 3] = v * 255; }
+    ctx.putImageData(img, 0, 0);
+    return cv;
+  }
+  const HAZE = noiseCanvas(256, 4, 4);
+  const GRAIN = (() => { const cv = document.createElement("canvas"); cv.width = cv.height = 128; const c = cv.getContext("2d"), img = c.createImageData(128, 128); for (let i = 0; i < 128 * 128; i++) { const v = Math.random() < 0.5 ? 0 : 255; img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = Math.random() * 255; } c.putImageData(img, 0, 0); return cv; })();
+
+  /* ---------- colours, read from the page's tokens ---------- */
+  function palette() {
+    const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const cs = getComputedStyle(document.documentElement), accent = cs.getPropertyValue("--accent-rgb").trim(), brass = cs.getPropertyValue("--brass-rgb").trim();
+    return dark
+      ? { dark, solid: "rgb(6 5 4)", rim: "rgb(255 196 132)", beam: (a) => `rgb(255 214 168 / ${a})`, haze: 0.22, hazeTint: "rgb(255 226 196)", spark: "rgb(255 214 150)", string: "rgb(230 220 200 / .9)", dust: (a) => `rgb(220 200 180 / ${a})`, accent, brass, grain: 0.07 }
+      : { dark, solid: "rgb(23 19 16 / .3)", rim: "rgb(255 246 234)", beam: (a) => `rgb(${brass} / ${a * 0.55})`, haze: 0.35, hazeTint: "rgb(255 250 242)", spark: "rgb(240 150 60)", string: "rgb(60 50 40 / .8)", dust: (a) => `rgb(120 104 86 / ${a * 0.7})`, accent, brass, grain: 0.05 };
+  }
+
+  /* ---------- the six treatments ---------- */
+  const OPTIONS = [
+    { id: "backlit", name: "Backlit through haze", idea: "The concert photo: the player as a dark shape against a hot backlight, light shafts cutting through stage smoke, a warm rim light picking out the edges. Motion blur on the swing.",
+      why: ["The look of real live photography", "Rim light, haze, beams and grain, not outlines", "The guitar actually breaks: a bout splits off and tumbles"],
+      pin: [520, 965], at: [0.5, 0.98], h: 0.98 },
+    { id: "strobe", name: "Strobe burst", idea: "Shot under stage strobes: each flash freezes a frame, earlier flashes hang as ghosts, and the brightest flash lands on the smash.",
+      why: ["A real multi-exposure photo effect", "Moves on the beat, still in between", "The flash marks the downbeat"],
+      pin: [520, 965], at: [0.5, 0.98], h: 0.98, strobe: true },
+    { id: "spot", name: "Single spotlight", idea: "One hard spotlight from straight above: a pool of light on the stage, the player's top edges lit, a dim reflection in the stage floor.",
+      why: ["Theatrical and calm until the hit", "The floor reflection sells the realism", "Dust kicks up into the light on impact"],
+      pin: [520, 965], at: [0.5, 0.96], h: 0.95 },
+    { id: "shadow", name: "Shadow on the wall", idea: "The player is just off-stage; a floor light throws their huge, soft-edged shadow across the studio wall behind the whole hero.",
+      why: ["The quietest and most atmospheric", "Soft penumbra like a real light", "Reaches behind the headline, but faint"],
+      pin: [520, 965], at: [0.42, 1.02], h: 1.5, shadow: true },
+    { id: "closeup", name: "Close-up, shallow focus", idea: "A photographer at the stage edge: the guitar crashing into the floor in sharp focus, the player behind it soft and out of focus.",
+      why: ["The most visceral: wood and strings in focus", "Real depth of field, the body blurred", "The burst frames the bottom of the card"],
+      pin: [853, 965], at: [0.55, 0.97], h: 1.85, closeup: true },
+    { id: "zine", name: "Punk zine photo", idea: "The backlit photo printed in a fine halftone, like a photocopied punk zine pasted behind the card. Realistic shapes, printed texture.",
+      why: ["Ties the photo to the page's printed feel", "Every tone is a dot size, as in real print", "Monochrome in each theme"],
+      pin: [520, 965], at: [0.5, 0.98], h: 0.98, zine: true },
+  ];
+
+  /* ---------- page ---------- */
+  document.getElementById("options").innerHTML = OPTIONS.map((o, i) => `
+    <section class="wrap opt" id="${o.id}" aria-labelledby="t-${o.id}">
+      <div class="opt-hd"><div><div class="n">OPTION ${i + 1} OF 6</div><h2 id="t-${o.id}">${o.name}</h2><p>${o.idea}</p></div>
+        <ul>${o.why.map((w) => `<li>${w}</li>`).join("")}</ul>
+        <button type="button" class="pick" data-pick="${o.id}" aria-pressed="false">PICK THIS ONE</button></div>
+      <div class="frame"><section class="hero" data-hero="${i}" aria-label="Hero, option ${i + 1}">${heroHTML()}</section></div>
+    </section>`).join("");
+  document.getElementById("jump").innerHTML = OPTIONS.map((o, i) => `<a href="#${o.id}">${i + 1} · ${o.name}</a>`).join("");
+
+  const BEAT = 60 / 180, CYCLE = BEAT * 8;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  let running = !reduced.matches;
+  const mk = () => document.createElement("canvas");
+  const stages = OPTIONS.map((o, i) => {
+    const hero = document.querySelector(`[data-hero="${i}"]`), cv = hero.querySelector("canvas");
+    return { o, hero, cv, ctx: cv.getContext("2d"), mask: mk(), mask2: mk(), tmp: mk(), small: mk(), debris: [], lastT: 0, broken: false, ghosts: [], lastBeat: -1, flash: 0, seen: false, frozen: null };
+  });
+  const io = new IntersectionObserver((es) => es.forEach((e) => { const s = stages.find((x) => x.hero === e.target); s.seen = e.isIntersecting; if (s.seen) draw(s, performance.now() / 1000, 0); }), { rootMargin: "100px" });
+  stages.forEach((s) => io.observe(s.hero));
+
+  const fit = (c, W, H) => { if (c.width !== W || c.height !== H) { c.width = W; c.height = H; } return c.getContext("2d"); };
+  function tint(dst, src, color) { if (dst.width !== src.width || dst.height !== src.height) { dst.width = src.width; dst.height = src.height; } const c = dst.getContext("2d"); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "copy"; c.drawImage(src, 0, 0); c.globalCompositeOperation = "source-in"; c.fillStyle = color; c.fillRect(0, 0, dst.width, dst.height); c.globalCompositeOperation = "source-over"; return dst; }
+  // draws a silhouette with a glowing rim; blur > 0 puts it out of focus
+  function rimmed(ctx, s, mask, c, glow, blur = 0) {
+    const W = mask.width;
+    ctx.save(); ctx.shadowColor = c.rim; ctx.shadowBlur = glow + blur; ctx.shadowOffsetX = W; ctx.drawImage(tint(s.tmp, mask, c.rim), -W, 0); ctx.restore();
+    if (blur) { ctx.save(); ctx.shadowColor = c.solid; ctx.shadowBlur = blur; ctx.shadowOffsetX = W; ctx.drawImage(tint(s.tmp, mask, c.solid), -W, 0); ctx.restore(); }
+    else ctx.drawImage(tint(s.tmp, mask, c.solid), 0, 0);
+  }
+  function beams(ctx, W, H, x, now, c, n = 3, spread = 0.5) {
+    ctx.save(); if (c.dark) ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < n; i++) {
+      const a = Math.PI / 2 + (i - (n - 1) / 2) * spread * 0.45 + Math.sin(now * 0.4 + i * 1.7) * 0.06, sx = x + (i - 1) * W * 0.08, L = H * 1.5, w = 0.11;
+      const g = ctx.createLinearGradient(sx, -H * 0.1, sx + Math.cos(a) * L, -H * 0.1 + Math.sin(a) * L); g.addColorStop(0, c.beam(0.28)); g.addColorStop(1, c.beam(0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(sx, -H * 0.1); ctx.lineTo(sx + Math.cos(a - w) * L, -H * 0.1 + Math.sin(a - w) * L); ctx.lineTo(sx + Math.cos(a + w) * L, -H * 0.1 + Math.sin(a + w) * L); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function haze(ctx, W, H, now, c, k = 1) {
+    ctx.save(); ctx.globalAlpha = c.haze * k; ctx.drawImage(tint(HAZE_T, HAZE, c.hazeTint), -W * 0.3 + Math.sin(now * 0.07) * W * 0.12, -H * 0.2, W * 1.7, H * 1.5);
+    ctx.globalAlpha = c.haze * k * 0.6; ctx.drawImage(HAZE_T, -W * 0.5 + Math.cos(now * 0.05) * W * 0.15, -H * 0.4, W * 2.2, H * 2); ctx.restore();
+  }
+  const HAZE_T = mk(); HAZE_T.width = HAZE_T.height = 256;
+  function grain(ctx, W, H, c) { ctx.save(); ctx.globalAlpha = c.grain; ctx.fillStyle = ctx.createPattern(GRAIN, "repeat"); ctx.translate(-Math.random() * 128, -Math.random() * 128); ctx.fillRect(0, 0, W + 128, H + 128); ctx.restore(); }
+
+  function draw(s, now, dt) {
+    const { o, cv, ctx } = s, c = palette();
+    const W = cv.clientWidth, H = cv.clientHeight; fit(cv, W, H);
+    let t = running ? (now % CYCLE) / CYCLE : 0.5;
+    if (o.strobe && running) {
+      const beat = Math.floor((now % CYCLE) / BEAT);
+      if (beat !== s.lastBeat) { const T = [0.08, 0.3, 0.44, 0.52, 0.6, 0.66, 0.76, 0.9][beat]; if (s.frozen !== null) s.ghosts.unshift(s.frozen); s.ghosts = s.ghosts.slice(0, 3); s.frozen = T; s.flash = beat === 5 ? 1 : 0.45; s.lastBeat = beat; }
+      t = s.frozen;
+    }
+    if (t < s.lastT - 0.2) { s.broken = false; }
+    const pose = poseAt(t);
+    const size = H * o.h, ox = W * o.at[0] - (o.pin[0] / 1000) * size, oy = H * o.at[1] - (o.pin[1] / 1000) * size;
+    const box = (cx) => cx.setTransform(size / 1000, 0, 0, size / 1000, ox, oy);
+    // the silhouette mask (with motion blur through the fast part of the swing)
+    const m = fit(s.mask, W, H); m.setTransform(1, 0, 0, 1, 0, 0); m.clearRect(0, 0, W, H); box(m); m.fillStyle = "#000";
+    if (running && !o.strobe && t > 0.54 && t < 0.7) for (let i = 4; i >= 1; i--) { m.globalAlpha = 0.16; drawFigure(m, poseAt(t - i * 0.011), o.closeup ? "guitar" : "all", s.broken); }
+    m.globalAlpha = 1;
+    const hit = drawFigure(m, pose, o.closeup ? "guitar" : "all", s.broken);
+    if (running && s.lastT < SMASH_T && t >= SMASH_T) { s.debris.push(...burst(pose, hit.impact)); s.broken = true; }
+    s.lastT = t;
+    s.debris = stepDebris(s.debris, Math.min(dt, 0.05));
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+    const figX = ox + (o.pin[0] / 1000) * size;
+
+    if (o.zine) return zine(s, c, W, H, now, figX, size, ox, oy);
+    if (o.shadow) {
+      // a floor light in front throws a big soft shadow up the wall
+      const g = ctx.createRadialGradient(W * 0.5, H * 1.05, 0, W * 0.5, H * 1.05, H * 0.9); g.addColorStop(0, `rgb(${c.brass} / ${c.dark ? 0.22 : 0.18})`); g.addColorStop(1, `rgb(${c.brass} / 0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const sk = fit(s.mask2, W, H); sk.setTransform(1, 0, 0, 1, 0, 0); sk.clearRect(0, 0, W, H);
+      sk.setTransform(1, 0, -0.35, 1, 0.35 * H, 0); sk.drawImage(s.mask, 0, 0);
+      box(sk); sk.fillStyle = "#000"; drawDebris(sk, s.debris, { solid: "#000", spark: "#000", string: "#000", dust: () => "rgb(0 0 0 / 0)" }, false);
+      ctx.save(); ctx.globalAlpha = c.dark ? 0.6 : 0.22; ctx.shadowColor = "#000"; ctx.shadowBlur = 7; ctx.shadowOffsetX = W; ctx.drawImage(s.mask2, -W, 0); ctx.restore();
+      grain(ctx, W, H, c);
+      return;
+    }
+    if (o.spot) {
+      const x = figX + size * 0.05, g = ctx.createLinearGradient(0, 0, 0, H);
+      ctx.save(); if (c.dark) ctx.globalCompositeOperation = "lighter";
+      g.addColorStop(0, c.beam(0.05)); g.addColorStop(1, c.beam(0.3)); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(x - size * 0.05, -10); ctx.lineTo(x + size * 0.05, -10); ctx.lineTo(x + size * 0.36, H * 0.97); ctx.lineTo(x - size * 0.36, H * 0.97); ctx.closePath(); ctx.fill();
+      const pool = ctx.createRadialGradient(x, H * 0.97, 0, x, H * 0.97, size * 0.38); pool.addColorStop(0, c.beam(0.5)); pool.addColorStop(1, c.beam(0));
+      ctx.fillStyle = pool; ctx.setTransform(1, 0, 0, 0.16, 0, H * 0.97 * 0.84); ctx.beginPath(); ctx.arc(x, H * 0.97, size * 0.38, 0, 7); ctx.fill(); ctx.restore();
+      haze(ctx, W, H, now, c, 0.5);
+      // a dim reflection in the floor
+      ctx.save(); ctx.globalAlpha = c.dark ? 0.22 : 0.12; ctx.setTransform(1, 0, 0, -0.55, 0, H * 0.97 * 1.55); ctx.drawImage(tint(s.tmp, s.mask, c.solid), 0, 0); ctx.restore();
+      // the top edges catch the light
+      ctx.drawImage(tint(s.tmp, s.mask, c.rim), 0, -2); ctx.drawImage(tint(s.tmp, s.mask, c.solid), 0, 1.5);
+      box(ctx); drawDebris(ctx, s.debris, c); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      grain(ctx, W, H, c);
+      return;
+    }
+    // backlit (and the strobe and the close-up are lit the same way)
+    const bloom = ctx.createRadialGradient(figX, H * 0.45, 0, figX, H * 0.45, H * 0.75);
+    bloom.addColorStop(0, `rgb(${c.accent} / ${c.dark ? 0.42 : 0.2})`); bloom.addColorStop(0.5, `rgb(${c.brass} / ${c.dark ? 0.12 : 0.08})`); bloom.addColorStop(1, "transparent");
+    ctx.fillStyle = bloom; ctx.fillRect(0, 0, W, H);
+    beams(ctx, W, H, figX, now, c);
+    haze(ctx, W, H, now, c);
+    if (o.strobe) s.ghosts.forEach((gt, i) => { const gm = fit(s.mask2, W, H); gm.setTransform(1, 0, 0, 1, 0, 0); gm.clearRect(0, 0, W, H); box(gm); gm.fillStyle = "#000"; drawFigure(gm, poseAt(gt)); ctx.save(); ctx.globalAlpha = 0.34 / (i + 1); rimmed(ctx, s, s.mask2, c, 10); ctx.restore(); });
+    if (o.closeup) {
+      // the player, out of focus behind the guitar
+      const bm = fit(s.mask2, W, H); bm.setTransform(1, 0, 0, 1, 0, 0); bm.clearRect(0, 0, W, H); box(bm); bm.fillStyle = "#000"; drawFigure(bm, pose, "body");
+      rimmed(ctx, s, s.mask2, c, 12, 14);
+    }
+    rimmed(ctx, s, s.mask, c, o.closeup ? 8 : 14);
+    box(ctx); drawDebris(ctx, s.debris, c); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (s.flash > 0) { ctx.fillStyle = `rgb(255 248 238 / ${s.flash * (c.dark ? 0.35 : 0.55)})`; ctx.fillRect(0, 0, W, H); s.flash = Math.max(0, s.flash - dt * 5); }
+    grain(ctx, W, H, c);
+  }
+
+  // the backlit photo, printed in a fine halftone: dark mode prints the light (cream dots on black), light mode prints
+  // the shadows (ink dots on paper)
+  function zine(s, c, W, H, now, figX, size, ox, oy) {
+    const step = 5, w = Math.ceil(W / step), h = Math.ceil(H / step), z = fit(s.small, w, h), ctx = s.ctx;
+    z.setTransform(1 / step, 0, 0, 1 / step, 0, 0);
+    if (c.dark) {
+      z.fillStyle = "#000"; z.fillRect(0, 0, W, H);
+      const lum = { ...c, beam: (a) => `rgb(255 255 255 / ${a * 1.6})`, hazeTint: "#fff", haze: 0.45 };
+      const bloom = z.createRadialGradient(figX, H * 0.45, 0, figX, H * 0.45, H * 0.7); bloom.addColorStop(0, "rgb(255 255 255 / .55)"); bloom.addColorStop(1, "rgb(255 255 255 / 0)");
+      z.fillStyle = bloom; z.fillRect(0, 0, W, H);
+      beams(z, W, H, figX, now, lum); haze(z, W, H, now, lum);
+      z.save(); z.shadowColor = "#fff"; z.shadowBlur = 3; z.shadowOffsetX = w; z.drawImage(tint(s.tmp, s.mask, "#fff"), -W, 0); z.restore();
+    } else {
+      z.fillStyle = "#fff"; z.fillRect(0, 0, W, H);
+      z.save(); z.globalAlpha = 0.28; z.drawImage(tint(HAZE_T, HAZE, "#000"), -W * 0.3 + Math.sin(now * 0.07) * W * 0.12, -H * 0.2, W * 1.7, H * 1.5); z.restore();
+    }
+    z.drawImage(tint(s.tmp, s.mask, "#000"), 0, 0);
+    z.setTransform(size / 1000 / step, 0, 0, size / 1000 / step, ox / step, oy / step);
+    drawDebris(z, s.debris, { solid: "#000", spark: c.dark ? "#fff" : "#000", string: c.dark ? "#fff" : "#000", dust: (a) => (c.dark ? `rgb(255 255 255 / ${a})` : `rgb(0 0 0 / ${a})`) });
+    const px = z.getImageData(0, 0, w, h).data;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = c.dark ? "rgb(241 234 219 / .36)" : "rgb(23 19 16 / .38)";
+    ctx.beginPath();
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const near = Math.max(0, 1 - Math.abs((x + 0.5) * step - figX) / (W * 0.26)), l = px[(y * w + x) * 4] / 255, v = (c.dark ? l : 1 - l) * near;
+      if (v < 0.06) continue;
+      const r = step * 0.56 * Math.sqrt(v), cx = (x + 0.5) * step, cy = (y + 0.5) * step;
+      ctx.moveTo(cx + r, cy); ctx.arc(cx, cy, r, 0, 7);
+    }
+    ctx.fill();
+  }
+
+  let last = performance.now(), raf = 0;
+  function loop(ts) {
+    raf = requestAnimationFrame(loop);
+    if (ts - last < 1000 / 30 || document.hidden) return;
+    const dt = (ts - last) / 1000; last = ts;
+    stages.forEach((s) => s.seen && draw(s, ts / 1000, dt));
+  }
+  function setRun(v) { running = v; const b = document.getElementById("run"); b.setAttribute("aria-pressed", String(v)); b.textContent = v ? "PLAYING" : "PAUSED"; cancelAnimationFrame(raf); if (v) { last = performance.now(); raf = requestAnimationFrame(loop); } stages.forEach((s) => { s.debris = []; s.broken = false; s.frozen = null; s.ghosts = []; s.seen && draw(s, performance.now() / 1000, 0); }); }
+  document.getElementById("run").addEventListener("click", () => setRun(!running));
+  reduced.addEventListener("change", () => setRun(!reduced.matches));
+
+  const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+  const syncTheme = () => document.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.themeSet === "dark") === isDark())));
+  document.querySelectorAll("[data-theme-set]").forEach((b) => b.addEventListener("click", () => { document.documentElement.dataset.theme = b.dataset.themeSet; syncTheme(); stages.forEach((s) => s.seen && draw(s, performance.now() / 1000, 0)); }));
+  syncTheme();
+
+  let picked = null;
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-pick]"); if (!b) return; document.querySelectorAll("[data-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); picked = OPTIONS.find((o) => o.id === b.dataset.pick); document.getElementById("pick-name").textContent = picked.name; document.getElementById("copy").disabled = false; });
+  document.getElementById("copy").addEventListener("click", () => {
+    const text = `Palm/Mute hero background pick: option ${OPTIONS.indexOf(picked) + 1}, ${picked.name}`, area = document.getElementById("pick-text");
+    const fallback = () => { area.value = text; area.hidden = false; area.focus(); area.select(); };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => { area.hidden = true; document.getElementById("copy").textContent = "COPIED"; setTimeout(() => (document.getElementById("copy").textContent = "COPY PICK"), 1500); }, fallback); else fallback();
+  });
+  setRun(running);
+</script>

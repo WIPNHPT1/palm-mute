@@ -346,3 +346,10 @@
 .hb-stats div { border-right-color: rgb(var(--color-line) / .7); }
 .hb-stats-sec { padding-block: 24px; }
 .hb-faq details { position: relative; border-color: transparent; border-radius: 16px; background: var(--glass-pane); box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-ring), var(--glass-drop); }
+
+/* ---------- Speaker cone (owner's pick, docs/mockups/home-scroll-options.html option 5; Speaker.tsx) ----------
+   A big cone behind the hero's card, a 2×2 cab behind the kit, both on faint speaker cloth, pumping on the beat. The
+   home page's scope gives way to them (the Generator and the Chord Lab keep theirs). */
+.hb-speaker { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hb-kit-sec { isolation: isolate; }
+.hb-kit-sec > .hb-speaker { z-index: -1; }
