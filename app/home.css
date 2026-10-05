@@ -1,6 +1,6 @@
-/* The home page (owner's pick, docs/mockups/home-bento-eye-candy.html: "Live session · Bento" with the film-burn hero
-   light). Colours are the design tokens (--color-*, light and dark from tailwind.config.js) and their tints; the
-   film burn adds the one warm light-leak orange the owner picked. Pixel sizes are design pixels (the build rewrites
+/* The home page (owner's pick, docs/mockups/home-bento-eye-candy.html: "Live session · Bento"; hero: "Studio glass",
+   docs/mockups/home-hero-premium.html). Colours are the design tokens (--color-*, light and dark from tailwind.config.js)
+   and their tints. Pixel sizes are design pixels (the build rewrites
    them to the design unit). Everything moves by transform and opacity; the reduced-motion block at the end stills it.
    Every class is prefixed hb- to keep this page's styles out of the other pages' way. */
 
@@ -11,8 +11,6 @@
   --t4: rgb(var(--color-text-faint)); --on-dark: rgb(var(--color-text-on-dark)); --on-dark-2: rgb(var(--color-text-on-dark-muted));
   --on-dark-3: rgb(var(--color-text-on-dark-faint)); --on-accent: rgb(var(--color-text-on-accent));
   --accent-rgb: var(--color-accent); --brass-rgb: var(--color-brass); --cream-rgb: var(--color-text-on-dark);
-  /* the film burn's light-leak orange (owner's pick; not a token) */
-  --burn-rgb: 255 160 60; --burn-hot-rgb: 255 196 110;
   --dot: rgb(var(--color-ink) / .2);
   --lift: 0 2px 4px rgba(23,19,16,.05), 0 30px 60px -30px rgba(23,19,16,.35);
   --sh: 0 1px 2px rgba(23,19,16,.06), 0 12px 24px -16px rgba(23,19,16,.32);
@@ -69,32 +67,60 @@
 /* ---------- hero ---------- */
 .hb-hero { position: relative; min-height: calc(100svh - 76px); display: flex; align-items: center; overflow: hidden; padding: 40px 0 60px; isolation: isolate; }
 .hb-fx { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-.hb-halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.7px); background-size: 9px 9px; }
-/* Film burn: a light leak at the end of a roll, orange into red, bleeding in from the left edge in soft bands that
-   swell and fade, with a faint red answer on the right. The same colour story in both themes, a touch hotter on paper. */
-.hb-burn { position: absolute; top: -20%; bottom: -20%; border-radius: 50%; will-change: transform, opacity; }
-.hb-burn.a { left: -20vw; width: 52vw; background: radial-gradient(closest-side, rgb(var(--burn-rgb) / .62), rgb(var(--accent-rgb) / .42) 50%, transparent); animation: hb-burn-a 18s ease-in-out infinite alternate; }
-.hb-burn.b { left: -4vw; width: 24vw; background: radial-gradient(closest-side, rgb(var(--burn-hot-rgb) / .7), transparent 70%); animation: hb-burn-b 11s ease-in-out infinite alternate; }
-.hb-burn.c { right: -16vw; width: 36vw; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .3), transparent 70%); animation: hb-burn-c 23s ease-in-out infinite alternate; }
-.dark .hb-burn.a { background: radial-gradient(closest-side, rgb(var(--burn-rgb) / .7), rgb(var(--accent-rgb) / .38) 55%, transparent); }
-.dark .hb-burn.b { background: radial-gradient(closest-side, rgb(var(--burn-hot-rgb) / .65), transparent 70%); }
-.dark .hb-burn.c { background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .32), transparent 70%); }
-@keyframes hb-burn-a { from { opacity: .55; transform: translateX(-3vw) scaleY(.9); } to { opacity: 1; transform: translateX(3vw) scaleY(1.05); } }
-@keyframes hb-burn-b { from { opacity: .2; transform: translateX(0); } to { opacity: .9; transform: translateX(6vw); } }
-@keyframes hb-burn-c { from { opacity: .3; } to { opacity: .85; transform: translateX(-3vw); } }
+/* Studio glass (owner's pick, docs/mockups/home-hero-premium.html option 2): a slow red and brass studio light behind
+   the card, a faint studio grid around it, and the card as an edge-lit glass panel. Light: warm paper, white glass.
+   Dark: the night studio. The lights move by transform and opacity only; there is no live blur (DECISIONS.md "Motion
+   performance"), so the glass is a translucent, edge-lit panel over light that is already soft. */
+.hb-studio { position: absolute; inset: 0; background-image: linear-gradient(rgb(var(--color-ink) / .045) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--color-ink) / .045) 1px, transparent 1px); background-size: 64px 64px;
+  -webkit-mask: radial-gradient(70% 70% at 72% 50%, #000, transparent); mask: radial-gradient(70% 70% at 72% 50%, #000, transparent); }
+.dark .hb-studio { background-image: linear-gradient(rgb(var(--cream-rgb) / .035) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--cream-rgb) / .035) 1px, transparent 1px); }
+.hb-aura { position: absolute; border-radius: 50%; will-change: transform, opacity; }
+.hb-aura.a { left: 44%; top: 4%; width: 52vw; height: 70%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .3), rgb(var(--accent-rgb) / .1) 55%, transparent); animation: hb-aura-a 18s ease-in-out infinite alternate; }
+.hb-aura.b { left: 62%; top: 40%; width: 40vw; height: 62%; background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .3), transparent 70%); animation: hb-aura-b 22s ease-in-out -6s infinite alternate; }
+.hb-aura.c { left: -8%; top: 50%; width: 42vw; height: 60%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .16), transparent 70%); animation: hb-aura-a 26s ease-in-out -3s infinite alternate-reverse; }
+.dark .hb-aura.a { background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .42), rgb(var(--accent-rgb) / .14) 55%, transparent); }
+.dark .hb-aura.b { background: radial-gradient(closest-side, rgb(var(--brass-rgb) / .3), transparent 70%); }
+.dark .hb-aura.c { background: radial-gradient(closest-side, rgb(var(--color-accent-deep) / .32), transparent 70%); }
+@keyframes hb-aura-a { from { opacity: .7; transform: translate(0, 0) scale(1); } to { opacity: 1; transform: translate(4vw, -5%) scale(1.1); } }
+@keyframes hb-aura-b { from { opacity: .6; transform: translate(0, 0); } to { opacity: 1; transform: translate(-5vw, 6%) scale(1.08); } }
 .hb-hgrid { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: center; }
 @media (min-width: 1000px) { .hb-hgrid { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
 .hb-htop { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
 .hb-hsub { margin: 26px 0; max-width: 460px; font-size: clamp(15px, 1.3vw, 18px); line-height: 1.55; color: var(--t2); }
 .hb-cta { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
-.hb-stage3d { perspective: 1400px; }
-.hb-app { transform: rotateY(-9deg) rotateX(4deg); padding: 18px; display: flex; flex-direction: column; gap: 14px; transition: transform 1.2s var(--out); }
-.hb-stage3d:hover .hb-app { transform: rotateY(-3deg) rotateX(1deg); }
-@media (max-width: 999px) { .hb-app { transform: none; } }
-.hb-float { position: absolute; z-index: 3; padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--on-dark); font-family: var(--mono); font-size: 12px; letter-spacing: .1em; box-shadow: var(--lift); animation: hb-bob 6s ease-in-out infinite; }
-.hb-float.a { right: -10px; top: -18px; } .hb-float.b { left: -16px; bottom: 70px; animation-delay: -3s; background: var(--accent); color: var(--on-accent); }
-.hb-float b { color: var(--accent); } .hb-float.b b { color: var(--on-accent); }
-@keyframes hb-bob { 50% { transform: translateY(-10px); } }
+
+/* the glass card */
+.hb-glass { --edge: rgb(255 255 255 / .95); --pane: linear-gradient(160deg, rgb(255 255 255 / .8), rgb(255 255 255 / .55) 60%);
+  position: relative; container-type: inline-size; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 24px; background: var(--pane);
+  box-shadow: inset 0 1px 0 var(--edge), 0 0 0 1px rgb(var(--color-ink) / .06), 0 44px 90px -44px rgb(23 19 16 / .5), 0 18px 34px -24px rgb(23 19 16 / .3); }
+.dark .hb-glass { --edge: rgb(255 255 255 / .14); --pane: linear-gradient(160deg, rgb(var(--cream-rgb) / .1), rgb(var(--cream-rgb) / .03) 60%), rgb(var(--color-paper) / .55);
+  box-shadow: inset 0 1px 0 var(--edge), 0 44px 90px -40px rgb(0 0 0 / .9); }
+/* a fine light along the edge, bright at the top left, warming to red at the bottom right */
+.hb-glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(140deg, rgb(255 255 255 / .9), rgb(255 255 255 / .1) 35%, rgb(var(--accent-rgb) / .4) 82%, rgb(255 255 255 / .2));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.dark .hb-glass::before { background: linear-gradient(140deg, rgb(255 255 255 / .45), rgb(255 255 255 / .05) 35%, rgb(var(--accent-rgb) / .38) 80%, rgb(255 255 255 / .1)); }
+/* the red pool of light under the card */
+.hb-glass::after { content: ""; position: absolute; z-index: -1; left: 10%; right: 10%; bottom: -44px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / .3), transparent); pointer-events: none; }
+.hb-glass .hb-cardhd { flex-wrap: wrap; align-items: center; }
+.hb-cap { margin-left: auto; padding: 6px 11px; border-radius: 999px; background: rgb(var(--color-paper) / .75); box-shadow: inset 0 0 0 1px var(--line); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--t2); }
+.hb-cap b { color: var(--accent); }
+.dark .hb-cap { background: rgb(0 0 0 / .35); box-shadow: inset 0 0 0 1px rgb(var(--cream-rgb) / .12); }
+/* twelve keys: one row of twelve when the card is wide enough for 44px keys, otherwise two even rows of six */
+.hb-glass .hb-pills { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+@container (min-width: 600px) { .hb-glass .hb-pills { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+.hb-glass .hb-pill { min-width: 0; background: rgb(var(--color-surface) / .7); border-color: var(--line); }
+.dark .hb-glass .hb-pill { background: rgb(var(--cream-rgb) / .06); border-color: rgb(var(--cream-rgb) / .12); }
+.dark .hb-glass .hb-pill[aria-pressed="true"] { background: var(--on-dark); color: rgb(var(--color-ink)); border-color: var(--on-dark); box-shadow: 0 0 18px rgb(var(--cream-rgb) / .25); }
+.hb-glass .hb-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.hb-glass .hb-chip { width: auto; border-radius: 10px; }
+.hb-glass .hb-chip.now { box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .6), 0 0 26px -6px rgb(var(--accent-rgb) / .7); }
+.hb-glass .hb-tab { background: rgb(var(--color-paper) / .7); box-shadow: inset 0 0 0 1px var(--line); border-radius: 14px; padding: 12px 14px; }
+.dark .hb-glass .hb-tab { background: rgb(0 0 0 / .38); box-shadow: inset 0 0 0 1px rgb(var(--cream-rgb) / .08); }
+.hb-glass .hb-transport { border-radius: 14px; }
+.dark .hb-glass .hb-transport { background: rgb(0 0 0 / .45); box-shadow: inset 0 0 0 1px rgb(var(--cream-rgb) / .08); }
+.hb-glass-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--t3); }
+.hb-glass-foot i { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); vertical-align: 1px; }
 
 /* ---------- the Generator's parts ---------- */
 .hb-card { position: relative; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: inset 0 1px 0 var(--hi), var(--sh); }
@@ -112,12 +138,18 @@
 .hb-chip small { display: block; font-size: 12px; color: var(--on-dark-3); } .hb-chip b { display: block; font-size: 15px; margin: 2px 0 4px; }
 .hb-chip pre { margin: 0; font-size: 9px; line-height: 1.25; color: rgb(var(--color-chip-tab, var(--color-text-on-dark-muted))); text-align: left; padding-left: 9px; font-family: var(--mono); }
 .hb-chip.now { background-image: linear-gradient(to top, rgb(var(--accent-rgb) / .3), transparent 70%); transform: translateY(-3px); }
-.hb-chip.now::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; transform-origin: left; background: var(--accent); animation: hb-barfill calc(var(--beat) * 4) linear both; }
+.hb-chip .hb-fill { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; transform-origin: left; background: var(--accent); animation: hb-barfill calc(var(--beat) * 4) linear both; }
 @keyframes hb-flipin { from { transform: rotateY(90deg); } }
 @keyframes hb-barfill { from { transform: scaleX(0); } }
-.hb-tab { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--paper); font-family: var(--mono); font-size: 12px; line-height: 1.45; color: var(--t1); white-space: pre; overflow: hidden; position: relative; }
-.hb-tab .pm { color: var(--t3); }
-.hb-tab .head { position: absolute; top: 8px; bottom: 8px; width: 2px; left: 12px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); transition: transform var(--beat) linear; }
+/* the loop's tab: one bar per chord (17 characters each, after "e|"); the bar sounding is lit and the playhead moves on
+   the beat, with the chips. Sized to fit its tile: 70 characters of mono, scaled down on narrow tiles. */
+.hb-tabw { container-type: inline-size; min-width: 0; }
+.hb-tab { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--paper); font-family: var(--mono); font-size: clamp(6px, calc((100cqi - 28px) / 43), 12px); line-height: 1.45; color: var(--t3); white-space: pre; overflow: hidden; }
+.hb-tab-in { position: relative; display: inline-block; }
+.hb-tab b { color: var(--t1); font-weight: 700; }
+.hb-tab .pm { color: var(--t4); }
+.hb-tab .cur { position: absolute; top: 1.45em; height: 8.7em; left: calc((2 + var(--bar, 0) * 17) * 1ch - .3ch); width: 16.6ch; border-radius: 3px; background: rgb(var(--accent-rgb) / .12); transition: left .25s var(--out); }
+.hb-tab .head { position: absolute; top: 1.2em; height: 9.2em; width: 2px; margin-left: -1px; left: calc((2.5 + var(--bar, 0) * 17 + var(--cell, 0)) * 1ch); border-radius: 1px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); transition: left 90ms linear; }
 .hb-transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); flex-wrap: wrap; }
 .hb-play { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
 .hb-play svg.p { width: 14px; height: 14px; fill: currentColor; margin-left: 2px; }

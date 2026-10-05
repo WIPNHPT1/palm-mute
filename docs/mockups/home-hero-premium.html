@@ -1,0 +1,559 @@
+<title>Palm/Mute Hero Six</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: Palm/Mute's own shell, then six full-width live heroes stacked, each the same headline + live Song Generator
+     card (the bento of tiles) finished a different high-end way. One beat clock and one music engine drive all six. */
+  :root {
+    --ink:#171310; --ink-soft:#2A241C; --paper:#F6F1E4; --surface:#FFFFFF; --sunk:#EFE8D8; --accent:#C23A26; --accent-on-ink:#E5573F; --accent-deep:#8A2415;
+    --brass:#B8862E; --success:#3F8F4F; --line:#E4DAC3; --line-strong:#DCD3BE;
+    --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A;
+    --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#FFF9EF;
+    --sh-1:0 1px 2px rgba(23,19,16,.05), 0 14px 28px -18px rgba(23,19,16,.35);
+    --sh-2:0 2px 6px rgba(23,19,16,.06), 0 40px 80px -40px rgba(23,19,16,.45);
+    --hi:rgba(255,255,255,.75);
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    --out:cubic-bezier(.16,1,.3,1);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#0B0908; --ink-soft:#221C17; --paper:#15110E; --surface:#1F1A16; --sunk:#191512; --accent:#E85A42; --accent-on-ink:#E85A42; --accent-deep:#A8321F;
+    --brass:#C9973C; --success:#52A862; --line:#352D25; --line-strong:#463B30;
+    --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-accent:#140F0C;
+    --sh-1:0 1px 2px rgba(0,0,0,.4), 0 14px 28px -18px rgba(0,0,0,.85); --sh-2:0 2px 6px rgba(0,0,0,.4), 0 40px 80px -40px rgba(0,0,0,.95);
+    --hi:rgba(246,241,228,.08);
+    color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --ink:#0B0908; --ink-soft:#221C17; --paper:#15110E; --surface:#1F1A16; --sunk:#191512; --accent:#E85A42; --accent-on-ink:#E85A42; --accent-deep:#A8321F;
+    --brass:#C9973C; --success:#52A862; --line:#352D25; --line-strong:#463B30;
+    --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-accent:#140F0C;
+    --sh-1:0 1px 2px rgba(0,0,0,.4), 0 14px 28px -18px rgba(0,0,0,.85); --sh-2:0 2px 6px rgba(0,0,0,.4), 0 40px 80px -40px rgba(0,0,0,.95);
+    --hi:rgba(246,241,228,.08);
+    color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--t1); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } } @media (min-width: 1280px) { .wrap { padding-inline: 56px; } }
+  .mono { font-family: var(--f-mono); }
+
+  /* page shell */
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; background: #171310; color: #F6F1E4; }
+  .bar .wrap { min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 8px; }
+  .wm { font-family: var(--f-display); font-size: 16px; white-space: nowrap; margin-right: auto; }
+  .wm i { font-style: normal; color: #E5573F; }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; }
+  .ctl button { min-height: 36px; padding: 0 10px; border: 1px solid #2A241C; border-radius: 6px; background: transparent; color: #D9CFB9; }
+  .ctl button[aria-pressed="true"] { background: #F6F1E4; color: #171310; border-color: #F6F1E4; }
+  .ctl .sep { width: 1px; height: 20px; background: #2A241C; margin: 0 4px; }
+  .jump { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 12px; font-family: var(--f-mono); font-size: 12px; }
+  .jump a { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--t2); text-decoration: none; }
+  .jump a:hover { border-color: var(--accent); color: var(--t1); }
+
+  .intro { padding-block: 36px 8px; }
+  .kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); white-space: nowrap; }
+  .kicker::after { content: ""; flex: 0 1 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+  .intro h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; text-wrap: balance; }
+  .lede { max-width: 68ch; margin: 14px 0 0; font-size: 16px; line-height: 1.6; color: var(--t2); }
+  .fixnote { display: grid; gap: 4px; max-width: 900px; margin-top: 18px; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 8px 8px 0; font-size: 14px; line-height: 1.55; color: var(--t2); }
+  .fixnote b { color: var(--t1); }
+
+  /* option chrome */
+  .opt { padding-block: 56px 8px; }
+  .opt-hd { display: grid; gap: 8px 32px; grid-template-columns: minmax(0, 1fr); align-items: end; margin-bottom: 18px; }
+  @media (min-width: 1000px) { .opt-hd { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto; } }
+  .opt-hd .n { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .opt-hd h2 { margin: 4px 0 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 2.4vw, 30px); line-height: 1.05; }
+  .opt-hd p { margin: 6px 0 0; font-size: 15px; line-height: 1.5; color: var(--t2); max-width: 60ch; }
+  .opt-hd ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; color: var(--t3); }
+  .opt-hd li::before { content: "+ "; color: var(--accent); font-family: var(--f-mono); }
+  .pick { min-height: 44px; padding: 0 16px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--surface); font-family: var(--f-mono); font-size: 12px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
+  .pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .frame { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--sh-1); }
+
+  /* ================= shared hero parts ================= */
+  .hero { position: relative; isolation: isolate; overflow: hidden; }
+  .hin { position: relative; z-index: 2; display: grid; gap: 40px; align-items: center; grid-template-columns: minmax(0, 1fr); padding: clamp(32px, 5vw, 72px) clamp(18px, 4vw, 64px); }
+  @media (min-width: 1040px) { .hin { grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: 56px; } }
+  .htop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em; color: var(--t3); }
+  .live { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 22%, transparent); }
+  .hl { container-type: inline-size; min-width: 0; }
+  .h1 { margin: 22px 0 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 9.1cqi, 84px); line-height: .92; letter-spacing: -.025em; text-transform: uppercase; }
+  .h1 span { display: block; white-space: nowrap; }
+  .h1 .o { color: transparent; -webkit-text-stroke: 1.5px currentColor; padding-left: .5em; color: transparent; }
+  .h1 .r { color: var(--accent); padding-left: .9em; }
+  .h1 .o { -webkit-text-stroke-color: var(--t1); }
+  .sub { max-width: 44ch; margin: 22px 0 0; font-size: clamp(15px, 1.2vw, 17px); line-height: 1.6; color: var(--t2); }
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 26px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 22px; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-family: var(--f-display); font-size: 13px; letter-spacing: .02em; text-decoration: none;
+    background-image: linear-gradient(180deg, rgba(255,255,255,.2), transparent 55%, rgba(0,0,0,.12)); box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 14px 26px -14px var(--accent); }
+  .btn svg { width: 11px; height: 11px; fill: currentColor; }
+  .lnk { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; color: var(--t2); text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; }
+
+  /* the card's parts */
+  .x-lab { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .16em; color: var(--t4); text-transform: uppercase; }
+  .x-pills { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  @media (min-width: 560px) { .x-pills { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+  .x-pill { min-height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font-family: var(--f-mono); font-size: 11px; color: var(--t2); transition: transform .15s, border-color .15s; }
+  .x-pill:hover { border-color: var(--t4); }
+  .x-pill[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-dark); box-shadow: inset 0 -2px 0 var(--accent-on-ink); }
+  .x-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .x-chip { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px 8px; border-radius: 9px; overflow: hidden; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(246,241,228,.09), inset 0 1px 0 rgba(246,241,228,.1); }
+  .x-chip small { font-size: 10.5px; color: var(--on-dark-3); }
+  .x-chip b { font-size: 14px; letter-spacing: .02em; }
+  .x-chip pre { margin: 4px 0 0; font: 9.5px/1.25 var(--f-mono); color: var(--on-dark-3); text-align: left; }
+  .x-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent-on-ink); }
+  .x-chip.now { background-image: radial-gradient(90% 80% at 50% 115%, color-mix(in srgb, var(--accent) 60%, transparent), transparent 70%); }
+  .x-chip.now::after { animation: x-fill var(--bar-ms, 1700ms) linear forwards; }
+  .x-chip.now pre { color: var(--on-dark-2); }
+  @keyframes x-fill { to { width: 100%; } }
+  .x-tabw { container-type: inline-size; min-width: 0; }
+  .x-tab { position: relative; margin: 0; font-family: var(--f-mono); font-size: clamp(7px, calc(100cqi / 43.5), 12.5px); line-height: 1.55; white-space: pre; color: var(--t3); }
+  .x-tab .x-cur { position: absolute; top: 1.55em; height: 9.3em; left: calc((2 + var(--bar, 0) * 17) * 1ch - .3ch); width: 16.6ch; border-radius: 4px; background: color-mix(in srgb, var(--accent) 11%, transparent); transition: left .25s var(--out); }
+  .x-tab .x-head { position: absolute; top: 1.2em; height: 10em; width: 2px; margin-left: -1px; left: calc((2.5 + var(--bar, 0) * 17 + var(--cell, 0) * 2) * 1ch); border-radius: 1px; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: left 90ms linear; }
+  .x-tab .nm { color: var(--t1); font-weight: 700; }
+  .x-tr { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 12px; background: var(--ink); color: var(--on-dark-2); font-family: var(--f-mono); font-size: 12px; }
+  .x-play { position: relative; flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--on-accent);
+    background-image: linear-gradient(180deg, rgba(255,255,255,.22), transparent 60%); box-shadow: 0 0 0 3px rgba(246,241,228,.08), 0 8px 18px -8px var(--accent); }
+  .x-play svg { width: 12px; height: 12px; fill: currentColor; margin-left: 2px; }
+  .x-prog { flex: 1; height: 4px; border-radius: 2px; background: rgba(246,241,228,.12); overflow: hidden; }
+  .x-prog i { display: block; height: 100%; width: var(--p, 0%); background: linear-gradient(90deg, var(--accent-deep), var(--accent-on-ink)); transition: width .3s linear; }
+  .x-time { color: var(--on-dark); font-variant-numeric: tabular-nums; }
+  .x-spd { color: var(--on-dark-3); }
+
+  /* ================= 1 · Precision bento ================= */
+  .o1 { background: var(--paper); }
+  .o1::before { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(900px 500px at 20% -10%, color-mix(in srgb, var(--brass) 14%, transparent), transparent 70%); }
+  .o1-grid { position: relative; z-index: 1; display: grid; gap: 12px; padding: clamp(18px, 3vw, 40px); grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "head head" "key key" "loop loop" "tab tab" "tr tr" "bpm orig"; }
+  @media (min-width: 1040px) { .o1-grid { grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-areas: "head head head head head head head key key key key key" "head head head head head head head loop loop loop loop loop" "tab tab tab tab tab tab tab tab bpm bpm orig orig" "tr tr tr tr tr tr tr tr bpm bpm orig orig"; } }
+  .t { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 var(--hi), var(--sh-1); transition: transform .35s var(--out), box-shadow .35s var(--out); }
+  .t:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 var(--hi), var(--sh-2); }
+  .t-head { grid-area: head; padding: clamp(22px, 3vw, 40px); justify-content: center; background: var(--surface); }
+    .t-key { grid-area: key; } .t-loop { grid-area: loop; } .t-tab { grid-area: tab; } .t-tr { grid-area: tr; padding: 8px; }
+  .t-tr .x-tr { border-radius: 16px; }
+  .t-bpm { grid-area: bpm; background: var(--ink); color: var(--on-dark); border-color: var(--ink); justify-content: space-between; }
+  .t-bpm .x-lab, .t-orig .x-lab { color: var(--on-dark-3); }
+  .t-orig { grid-area: orig; justify-content: space-between; }
+  .big { font-family: var(--f-display); font-size: clamp(40px, 4vw, 64px); line-height: .9; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .t-orig .big { color: var(--accent); }
+  .sm { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; }
+  .beats { display: flex; gap: 6px; }
+  .beats i { flex: 1; height: 6px; border-radius: 3px; background: rgba(246,241,228,.12); transition: background .08s; }
+  .beats i.on { background: var(--accent-on-ink); box-shadow: 0 0 8px var(--accent-on-ink); }
+  .beats i.on:first-child { background: var(--on-dark); box-shadow: 0 0 8px var(--on-dark); }
+  .t-keybig { margin-top: auto; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .t-keybig .sm { color: var(--t3); }
+  .t-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .t-row b { font-family: var(--f-display); font-weight: 400; font-size: 15px; }
+
+  /* ================= 2 · Studio glass (one dark stage in both themes) ================= */
+  .o2 { --g-bg:#0C0A08; --g-t1:#F4EDE0; --g-t2:#CFC5B0; --g-t3:#9A8E7B; --g-accent:#E85A42; --g-brass:#C9973C; background: var(--g-bg); color: var(--g-t1); }
+  .o2 .htop { color: var(--g-t3); } .o2 .sub { color: var(--g-t2); } .o2 .lnk { color: var(--g-t2); border-color: rgba(244,237,224,.2); }
+  .o2 .h1 .o { -webkit-text-stroke-color: var(--g-t1); } .o2 .h1 .r { color: var(--g-accent); } .o2 .live { color: var(--g-accent); }
+  .o2 .btn { background-color: var(--g-accent); color: #140F0C; }
+  .o2-aura { position: absolute; inset: -20%; z-index: 0; filter: blur(70px); opacity: .85; }
+  .o2-aura i { position: absolute; border-radius: 50%; }
+  .o2-aura i:nth-child(1) { width: 46%; height: 52%; left: 48%; top: 18%; background: radial-gradient(closest-side, rgba(232,90,66,.55), transparent); animation: o2-drift 18s ease-in-out infinite alternate; }
+  .o2-aura i:nth-child(2) { width: 38%; height: 42%; left: 62%; top: 46%; background: radial-gradient(closest-side, rgba(201,151,60,.42), transparent); animation: o2-drift 22s ease-in-out -6s infinite alternate-reverse; }
+  .o2-aura i:nth-child(3) { width: 40%; height: 40%; left: 4%; top: 52%; background: radial-gradient(closest-side, rgba(168,50,31,.35), transparent); animation: o2-drift 26s ease-in-out -3s infinite alternate; }
+  @keyframes o2-drift { to { transform: translate(6%, -8%) scale(1.12); } }
+  .o2 .hin::after { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgba(244,237,224,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(244,237,224,.035) 1px, transparent 1px); background-size: 64px 64px;
+    -webkit-mask: radial-gradient(80% 70% at 70% 50%, #000, transparent); mask: radial-gradient(80% 70% at 70% 50%, #000, transparent); }
+  .o2-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 26px; background: linear-gradient(160deg, rgba(244,237,224,.11), rgba(244,237,224,.03) 60%);
+    -webkit-backdrop-filter: blur(26px) saturate(150%); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 40px 90px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.14); }
+  .o2-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; background: linear-gradient(140deg, rgba(255,255,255,.45), rgba(255,255,255,.05) 35%, rgba(232,90,66,.35) 80%, rgba(255,255,255,.1));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .o2-card::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -46px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgba(232,90,66,.35), transparent); filter: blur(10px); z-index: -1; }
+  .o2-hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .o2-hd .num { font-family: var(--f-mono); font-size: 11px; padding: 2px 7px; border-radius: 5px; background: rgba(244,237,224,.12); }
+  .o2-hd b { font-family: var(--f-display); font-weight: 400; font-size: 17px; }
+  .o2-hd .cap { margin-left: auto; padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 1px rgba(244,237,224,.12); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--g-t2); }
+  .o2-hd .cap b { font-family: inherit; font-size: inherit; color: var(--g-accent); }
+  .o2 .x-pill { background: rgba(244,237,224,.06); border-color: rgba(244,237,224,.12); color: var(--g-t2); }
+  .o2 .x-pill[aria-pressed="true"] { background: var(--g-t1); color: #0C0A08; border-color: var(--g-t1); box-shadow: 0 0 18px rgba(244,237,224,.25); }
+  .o2 .x-chip { background: rgba(0,0,0,.42); box-shadow: inset 0 0 0 1px rgba(244,237,224,.1); }
+  .o2 .x-chip.now { box-shadow: inset 0 0 0 1px rgba(232,90,66,.6), 0 0 26px -6px rgba(232,90,66,.7); }
+  .o2-screen { padding: 12px 14px; border-radius: 14px; background: rgba(0,0,0,.38); box-shadow: inset 0 0 0 1px rgba(244,237,224,.08); }
+  .o2 .x-tab { color: var(--g-t3); } .o2 .x-tab .nm { color: var(--g-t1); }
+  .o2 .x-tr { background: rgba(0,0,0,.45); box-shadow: inset 0 0 0 1px rgba(244,237,224,.08); }
+  .o2-foot { display: flex; justify-content: space-between; gap: 10px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; color: var(--g-t3); }
+  .o2-foot i { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: var(--g-accent); box-shadow: 0 0 8px var(--g-accent); }
+
+  /* ================= 3 · Machined deck ================= */
+  .o3 { background: var(--paper); }
+  .o3::before { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(700px 420px at 72% 30%, color-mix(in srgb, var(--brass) 12%, transparent), transparent 70%); }
+  .o3 { --m-hi: #F1ECE2; --m-lo: #C9C1B2; --m-edge: #A79E8E; --m-scr: #14100D; --m-lcd: #F2C77A; }
+  :root[data-theme="dark"] .o3 { --m-hi: #3A332C; --m-lo: #221D19; --m-edge: #0D0B09; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .o3 { --m-hi: #3A332C; --m-lo: #221D19; --m-edge: #0D0B09; } }
+  .o3-dev { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 26px 24px 22px; border-radius: 28px;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--m-hi), var(--m-lo));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.18), 0 0 0 1px var(--m-edge), 0 50px 90px -46px rgba(23,19,16,.7), 0 18px 30px -20px rgba(23,19,16,.5); }
+  .o3-dev .screw { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--m-hi), var(--m-edge)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+  .o3-dev .screw::after { content: ""; position: absolute; left: 2px; right: 2px; top: 5px; height: 1px; background: rgba(0,0,0,.45); transform: rotate(35deg); }
+  .screw.tl { top: 10px; left: 10px; } .screw.tr { top: 10px; right: 10px; } .screw.bl { bottom: 10px; left: 10px; } .screw.br { bottom: 10px; right: 10px; }
+  .o3-plate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .o3-brand { font-family: var(--f-display); font-size: 14px; letter-spacing: .02em; color: var(--t1); text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+  .o3-brand em { font-style: normal; font-family: var(--f-mono); font-size: 11px; color: var(--t3); margin-left: 6px; }
+  .o3-led { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success), inset 0 -1px 1px rgba(0,0,0,.3); }
+  .o3-seg { position: relative; margin-left: auto; display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 12px; border-radius: 8px; background: var(--m-scr); box-shadow: inset 0 2px 6px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.4);
+    font-family: var(--f-mono); font-weight: 700; font-size: 20px; color: var(--accent-on-ink); text-shadow: 0 0 10px rgba(229,87,63,.7); font-variant-numeric: tabular-nums; }
+  .o3-seg small { font-size: 9.5px; letter-spacing: .16em; color: #8A7E6C; text-shadow: none; font-weight: 400; }
+  .o3-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+  .o3-lab { font-family: var(--f-mono); font-size: 10px; letter-spacing: .18em; color: var(--t3); }
+  .o3 .x-pill { border: 0; border-radius: 6px; background: linear-gradient(180deg, var(--m-hi), var(--m-lo)); color: var(--t2); box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 2px 0 var(--m-edge), 0 3px 6px -2px rgba(0,0,0,.35); }
+  .o3 .x-pill:active { transform: translateY(2px); }
+  .o3 .x-pill[aria-pressed="true"] { background: var(--m-scr); color: var(--m-lcd); box-shadow: inset 0 2px 4px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.35); text-shadow: 0 0 8px rgba(242,199,122,.6); }
+  .o3 .x-chip { border-radius: 10px; background: linear-gradient(180deg, #2B241D, #14100D); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 3px 0 #000, 0 6px 12px -4px rgba(0,0,0,.6); transition: transform .08s; }
+  .o3 .x-chip.now { transform: translateY(2px); box-shadow: 0 1px 0 rgba(255,255,255,.1) inset, 0 1px 0 #000, 0 0 24px -4px rgba(229,87,63,.8); }
+  .o3-lcd { position: relative; padding: 12px 14px; border-radius: 12px; background: var(--m-scr); box-shadow: inset 0 3px 10px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.4); overflow: hidden; }
+  .o3-lcd::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px), radial-gradient(120% 90% at 50% 0%, rgba(242,199,122,.08), transparent 60%); }
+  .o3 .x-tab { color: rgba(242,199,122,.55); text-shadow: 0 0 6px rgba(242,199,122,.25); } .o3 .x-tab .nm { color: var(--m-lcd); }
+  .o3 .x-tab .x-cur { background: rgba(242,199,122,.1); } .o3 .x-tab .x-head { background: #FF6A4D; box-shadow: 0 0 12px #FF6A4D; }
+  .o3 .x-tr { background: var(--m-scr); box-shadow: inset 0 2px 6px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.4); }
+  .o3-ladder { display: flex; gap: 3px; flex: 1; }
+  .o3-ladder i { flex: 1; height: 10px; border-radius: 2px; background: rgba(246,241,228,.08); }
+  .o3-ladder i.on { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .o3-ladder i.on.hot { background: var(--brass); box-shadow: 0 0 6px var(--brass); }
+  .o3-ladder i.on.peak { background: var(--accent-on-ink); box-shadow: 0 0 6px var(--accent-on-ink); }
+  .o3-engr { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; color: var(--t3); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+
+  /* ================= 4 · Exploded view ================= */
+  .o4 { background: var(--paper); }
+  .o4::before { content: ""; position: absolute; inset: 0; z-index: 0; background-image: radial-gradient(circle, var(--line-strong) 1px, transparent 1.5px); background-size: 28px 28px;
+    -webkit-mask: radial-gradient(60% 70% at 72% 50%, #000, transparent); mask: radial-gradient(60% 70% at 72% 50%, #000, transparent); opacity: .7; }
+  .o4-scene { perspective: 1800px; }
+  .o4-stack { --rx: 7deg; --ry: -11deg; display: flex; flex-direction: column; gap: 18px; transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform .6s var(--out); }
+  .o4-layer { position: relative; display: block; transform: translateZ(calc(var(--z) * 22px)); transform-style: preserve-3d;
+    animation: o4-in 1s var(--out) both; animation-delay: calc(var(--z) * 110ms); }
+  @keyframes o4-in { from { opacity: 0; transform: translateZ(0) translateY(calc(var(--z) * -40px)); } }
+  .o4-tag { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .16em; color: var(--t3); }
+  .o4-tag b { color: var(--accent); }
+  .o4-tag::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-strong), transparent); }
+  .o4-tile.dark .o4-tag { margin: 4px 6px 8px; color: var(--on-dark-3); }
+  .o4-tile.dark .o4-tag::after { background: linear-gradient(90deg, rgba(246,241,228,.15), transparent); }
+  .o4-tile { min-width: 0; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--hi), 0 calc(10px + var(--z) * 8px) calc(24px + var(--z) * 10px) calc(-14px - var(--z) * 4px) rgba(23,19,16,.38); }
+  .o4-tile.dark { background: var(--ink); border-color: var(--ink); padding: 8px; }
+  .o4-tile.dark .x-tr { background: transparent; padding: 4px 6px; }
+  .o4-hint { margin-top: 18px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--t4); }
+  @media (max-width: 640px) { .o4-stack { --rx: 0deg; --ry: 0deg; } }
+
+  /* ================= 5 · Editorial spec sheet ================= */
+  .o5 { background: var(--paper); }
+  .o5-cols { position: absolute; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(12, 1fr); padding: 0 clamp(18px, 4vw, 64px); pointer-events: none; }
+  .o5-cols i { border-left: 1px solid color-mix(in srgb, var(--line) 70%, transparent); } .o5-cols i:last-child { border-right: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+  .o5-run { position: relative; z-index: 2; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding: 18px clamp(18px, 4vw, 64px); border-bottom: 1px solid var(--line-strong); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .2em; color: var(--t3); }
+  .o5 .hin { align-items: start; padding-top: clamp(28px, 4vw, 56px); }
+  @media (min-width: 1040px) { .o5 .hin { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); } }
+    .o5-fig { margin: 0; }
+  .o5-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 4px; box-shadow: 0 30px 60px -40px rgba(23,19,16,.5); }
+  .o5-blk { position: relative; }
+  .mk { position: absolute; left: -31px; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; }
+  .o5-fig figcaption { margin-top: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; line-height: 1.6; color: var(--t3); }
+  .o5-fig figcaption b { color: var(--t1); }
+  .o5-notes { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+  .o5-notes li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.5; color: var(--t2); }
+  .o5-notes li span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; }
+  .o5-spec { position: relative; z-index: 2; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-top: 1px solid var(--line-strong); }
+  .o5-spec div { padding: 14px clamp(18px, 2vw, 24px); border-right: 1px solid var(--line); }
+  .o5-spec dt { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; color: var(--t4); }
+  .o5-spec dd { margin: 4px 0 0; font-family: var(--f-display); font-size: 17px; }
+  .o5-spec .red { color: var(--accent); }
+  @media (min-width: 1040px) { .o5-card { margin-left: 36px; } .o5-fig figcaption { margin-left: 36px; } }
+  @media (max-width: 1039px) { .mk { left: auto; right: -8px; top: -8px; translate: none; } }
+
+  /* ================= 6 · Spotlight stage (one dark stage in both themes) ================= */
+  .o6 { --s-bg:#070605; --s-t1:#F4EDE0; --s-t2:#CFC5B0; --s-t3:#8F8371; --s-accent:#E85A42; background: var(--s-bg); color: var(--s-t1); }
+  .o6 .htop { color: var(--s-t3); } .o6 .sub { color: var(--s-t2); } .o6 .lnk { color: var(--s-t2); border-color: rgba(244,237,224,.2); }
+  .o6 .h1 .o { -webkit-text-stroke-color: var(--s-t1); } .o6 .h1 .r { color: var(--s-accent); text-shadow: 0 0 40px rgba(232,90,66,.45); } .o6 .live { color: var(--s-accent); }
+  .o6 .btn { background-color: var(--s-accent); color: #140F0C; }
+  .o6-cone { position: absolute; z-index: 0; top: -10%; right: 4%; width: 62%; height: 120%; pointer-events: none;
+    background: conic-gradient(from 180deg at 50% 0%, transparent 155deg, rgba(255,236,205,.16) 172deg, rgba(255,236,205,.22) 180deg, rgba(255,236,205,.16) 188deg, transparent 205deg);
+    -webkit-mask: linear-gradient(#000 30%, transparent 92%); mask: linear-gradient(#000 30%, transparent 92%); filter: blur(6px); animation: o6-breathe calc(var(--beat-ms, 430ms) * 4) ease-in-out infinite; }
+  @keyframes o6-breathe { 0%, 100% { opacity: .85; } 12% { opacity: 1; } }
+  .o6-floor { position: absolute; z-index: 0; bottom: 4%; right: 8%; width: 54%; height: 120px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,236,205,.16), transparent); filter: blur(8px); }
+  .o6-rim { position: absolute; z-index: 0; left: -10%; top: 10%; width: 50%; height: 70%; background: radial-gradient(closest-side, rgba(232,90,66,.18), transparent); filter: blur(30px); }
+  .o6-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 22px; background: linear-gradient(180deg, #1E1915, #120F0C); color: var(--s-t1);
+    box-shadow: inset 0 1px 0 rgba(255,236,205,.28), inset 0 0 0 1px rgba(255,236,205,.07), 0 60px 100px -50px #000;
+    -webkit-box-reflect: below 14px linear-gradient(transparent 80%, rgba(255,255,255,.08)); }
+  .o6 .x-pill { background: rgba(244,237,224,.05); border-color: rgba(244,237,224,.1); color: var(--s-t2); }
+  .o6 .x-pill[aria-pressed="true"] { background: var(--s-t1); color: #070605; border-color: var(--s-t1); }
+  .o6 .x-chip { background: #0A0807; }
+  .o6 .x-chip.now { box-shadow: inset 0 0 0 1px rgba(232,90,66,.55), 0 0 30px -4px rgba(232,90,66,.8); }
+  .o6-screen { padding: 12px 14px; border-radius: 12px; background: #0A0807; box-shadow: inset 0 0 0 1px rgba(244,237,224,.06); }
+  .o6 .x-tab { color: var(--s-t3); } .o6 .x-tab .nm { color: var(--s-t1); }
+  .o6 .x-tr { background: #0A0807; }
+  .o6-hd { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; color: var(--s-t3); }
+  .o6-hd b { font-family: var(--f-display); font-weight: 400; font-size: 17px; letter-spacing: 0; color: var(--s-t1); }
+  .o6-hd .r { margin-left: auto; color: var(--s-accent); }
+
+  .foot { padding-block: 48px 120px; font-family: var(--f-mono); font-size: 12px; color: var(--t4); }
+  .picks { position: fixed; z-index: 70; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 12px; max-width: calc(100% - 24px);
+    padding: 8px 8px 8px 16px; border-radius: 999px; background: #171310; color: #D9CFB9; box-shadow: 0 20px 40px -16px rgba(0,0,0,.6); font-family: var(--f-mono); font-size: 12px; }
+  .picks b { color: #F6F1E4; }
+  .picks button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: #E5573F; color: #FFF9EF; font-weight: 700; letter-spacing: .06em; }
+  .picks button:disabled { background: #2A241C; color: #A89C86; }
+  #picks-text { position: fixed; left: 12px; right: 12px; bottom: 76px; z-index: 71; height: 60px; font: 12px/1.5 var(--f-mono); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .o4-stack { --rx: 0deg !important; --ry: 0deg !important; }
+  }
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <span class="wm">PALM<i>/</i>MUTE</span>
+    <div class="ctl" role="group" aria-label="Feel" id="feels"></div>
+    <span class="ctl"><span class="sep" aria-hidden="true"></span>
+      <button type="button" id="run" aria-pressed="true">PLAYING</button>
+      <button type="button" id="theme" aria-pressed="false">DARK</button>
+    </span>
+  </div>
+</header>
+
+<main>
+  <section class="wrap intro">
+    <p class="kicker">HOME PAGE · HERO OPTIONS</p>
+    <h1>Six high-end heroes, same bento</h1>
+    <p class="lede">Each keeps today's hero: the headline on the left, the live Song Generator card on the right, made of its tiles (key, the loop, the tab, the transport, the tempo, the promise). What changes is the finish. All six run live on one beat clock: pick a key in any card and every card changes; the feel and play buttons are in the bar.</p>
+    <div class="fixnote">
+      <span><b>Fixed in all six: the tab now plays the loop.</b> On the live site the chord chips show I–V–vi–IV in the chosen key, but the tab under them always plays A5 then E5, and its playhead keeps a different count from the lit chip.</span>
+      <span>Here the tab is the loop itself: one bar per chord, eight palm-muted downstrokes each, with the app's own power-chord shapes (in F: F5 on the low E string 1st fret, C5 on the A string 3rd fret, D5 on the open D string, A#5 on the A string 1st fret). The playhead moves an eighth note at a time, and the lit chip, the highlighted bar and the chord names change together.</span>
+    </div>
+    <nav class="jump" aria-label="Options" id="jump"></nav>
+  </section>
+
+  <div id="options"></div>
+  <p class="wrap foot">Mock-up only. Nothing here changes the site until a pick is built.</p>
+</main>
+
+<div class="picks" role="region" aria-label="Your pick"><span>Pick: <b id="pick-name">none yet</b></span><button type="button" id="copy" disabled>COPY PICK</button></div>
+<textarea id="picks-text" readonly hidden aria-label="Pick to copy"></textarea>
+
+<script>
+  /* ---------- the music, as the app has it ---------- */
+  const KEYS = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const PCS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  // data/chord-library.json, twoNoteTab (high e to low E)
+  const SHAPE = {
+    C: { D: "5", A: "3" }, "C#": { D: "6", A: "4" }, D: { G: "2", D: "0" }, "D#": { G: "3", D: "1" }, E: { A: "2", E: "0" }, F: { A: "3", E: "1" },
+    "F#": { A: "4", E: "2" }, G: { A: "5", E: "3" }, "G#": { A: "6", E: "4" }, A: { D: "2", A: "0" }, "A#": { D: "3", A: "1" }, B: { D: "4", A: "2" },
+  };
+  const STR = ["e", "B", "G", "D", "A", "E"];
+  const LOOP = [["I", 0], ["V", 7], ["vi", 9], ["IV", 5]];
+  const FEELS = [["FAST PUNK", 180], ["HALF-TIME", 90], ["MID-TEMPO", 140], ["POP STRUM", 150], ["BALLAD", 80]];
+
+  function chordsFor(k) {
+    const pc = PCS.indexOf(KEYS[k]);
+    return LOOP.map(([deg, off]) => { const root = PCS[(pc + off) % 12]; return { deg, root, name: root + "5", tab: SHAPE[root] }; });
+  }
+  const fret = (c, s) => c.tab[s] ?? "-";
+  function chipsHTML(chords) {
+    return chords.map((c, i) => `<span class="x-chip" data-i="${i}" aria-hidden="true"><small>${c.deg}</small><b>${c.name}</b><pre>${STR.map((s) => `${s}|${fret(c, s)}`).join("\n")}</pre></span>`).join("");
+  }
+  function tabHTML(chords) {
+    const names = "  " + chords.map((c) => `<span class="nm">${c.name}</span>` + " ".repeat(17 - c.name.length)).join("");
+    const rows = STR.map((s) => `${s}|` + chords.map((c) => (fret(c, s) === "-" ? "-".repeat(16) : `${fret(c, s)}-`.repeat(8))).join("|") + "|");
+    const pm = "  " + chords.map(() => "P.M.------------").join(" ");
+    return `<pre class="x-tab" aria-hidden="true"><span class="x-cur"></span><span class="x-head"></span>${[names, ...rows, pm].join("\n")}</pre>`;
+  }
+
+  /* ---------- the shared parts ---------- */
+  const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 9-14 9z"/></svg>';
+  const pills = (n) => `<div class="x-pills" role="group" aria-label="Key, option ${n}">${KEYS.map((k, i) => `<button type="button" class="x-pill" data-key="${i}" aria-pressed="false">${k}</button>`).join("")}</div>`;
+  const chips = () => `<div class="x-chips" data-chips role="img"></div>`;
+  const tab = () => `<div class="x-tabw" data-tab></div>`;
+  const transport = (extra = "") => `<div class="x-tr"><span class="x-play">${PLAY}</span><span class="x-time" data-time>0:08 / 3:00</span>${extra || '<span class="x-prog"><i></i></span>'}<span class="x-spd">100%</span></div>`;
+  const left = (h1Class = "") => `
+    <div class="hl">
+      <div class="htop"><span>COUNT IN · ABOUT PALM/MUTE</span><span class="live"><i></i>LIVE · <span data-bpm>140</span> BPM</span></div>
+      <h1 class="h1 ${h1Class}"><span>Songwriting</span><span class="o">formulas from</span><span>the bands that</span><span class="r">built pop-punk.</span></h1>
+      <p class="sub">A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.</p>
+      <div class="cta"><a class="btn" href="#">${PLAY}START WRITING</a><a class="lnk" href="#">Open the Chord Lab →</a></div>
+    </div>`;
+
+  /* ---------- the six ---------- */
+  const OPTIONS = [
+    { id: "bento", name: "Precision bento", idea: "The hero becomes the bento: the headline and every part of the card are tiles on one 12-column grid, same radius, same gap, same light.",
+      why: ["No tilt, no glow blob, no dots: one soft light from above", "Key pills in one row of twelve (no lone G#)", "Tempo and \"0 tabs stored\" earn their own tiles"],
+      html: (n) => `<section class="hero o1"><div class="o1-grid">
+        <div class="t t-head">${left()}</div>
+        <div class="t t-key"><span class="x-lab">Key · tap any of the twelve</span>${pills(n)}<div class="t-keybig"><span class="big" data-keyname>F</span><span class="sm">MAJOR · EVERY CHORD FOLLOWS</span></div></div>
+        <div class="t t-loop"><div class="t-row"><span class="x-lab">The loop · I–V–vi–IV</span><b data-keyname>F</b></div>${chips()}</div>
+        <div class="t t-tab"><div class="t-row"><span class="x-lab">01 · Verse 1 · ×2</span><span class="x-lab" data-keyfeel>Key of F · Mid-tempo</span></div>${tab()}</div>
+        <div class="t t-tr">${transport()}</div>
+        <div class="t t-bpm"><span class="x-lab">Tempo</span><div><div class="big" data-bpm>140</div><div class="sm" data-feel>MID-TEMPO</div></div><div class="beats" data-beats><i></i><i></i><i></i><i></i></div></div>
+        <div class="t t-orig"><span class="x-lab">Original</span><div><div class="big">0</div><div class="sm">TABS STORED</div></div><span class="x-lab">E standard</span></div>
+      </div></section>` },
+    { id: "glass", name: "Studio glass", idea: "A dark studio at night. The card is a slab of frosted glass over a slow-moving red and brass light, edged with a fine highlight.",
+      why: ["Real material: blur, edge light and a soft red pool under the card", "The floating tags move inside the card's frame", "Dark stage in both themes, like a product launch"],
+      html: (n) => `<section class="hero o2"><div class="o2-aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="hin">${left()}
+        <div class="o2-card">
+          <div class="o2-hd"><span class="num">01</span><b>Verse 1</b><span class="cap">KEY OF <b data-keyname>F</b> · <span data-feel>MID-TEMPO</span></span></div>
+          ${pills(n)}${chips()}<div class="o2-screen">${tab()}</div>${transport()}
+          <div class="o2-foot"><span><i></i>NO TABS STORED</span><span>×2 · E STANDARD</span></div>
+        </div></div></section>` },
+    { id: "deck", name: "Machined deck", idea: "The card becomes the tape deck the brand is named for: a machined panel with screws, backlit keycaps, a lit tempo readout and a recessed tab screen.",
+      why: ["Hardware detail: brushed face, screws, pressable keys", "The chord keys press in on their beat", "An LED ladder counts the bar in green, brass and red"],
+      html: (n) => `<section class="hero o3"><div class="hin">${left()}
+        <div class="o3-dev"><i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+          <div class="o3-plate"><span class="o3-led" aria-hidden="true"></span><span class="o3-brand">PALM/MUTE<em>PM-1 SONG ENGINE</em></span><span class="o3-seg"><span data-bpm>140</span><small>BPM · <span data-feel>MID-TEMPO</span></small></span></div>
+          <div class="o3-row"><span class="o3-lab">KEY</span>${pills(n)}</div>
+          ${chips()}
+          <div class="o3-lcd">${tab()}</div>
+          ${transport('<span class="o3-ladder" data-ladder>' + "<i></i>".repeat(16) + "</span>")}
+          <div class="o3-engr"><span>VERSE 1 · ×2</span><span>NO TABS STORED</span><span>E STANDARD</span></div>
+        </div></div></section>` },
+    { id: "exploded", name: "Exploded view", idea: "The card comes apart into its layers, floating in depth like a product drawing, each one labelled: pick a key, the loop, the tab, play it.",
+      why: ["Explains the product in one look", "Layers settle into place on load and tilt with the pointer", "Flat and still with reduced motion or on phones"],
+      html: (n) => `<section class="hero o4"><div class="hin">${left()}
+        <div class="o4-scene"><div class="o4-stack" data-tilt>
+          <div class="o4-layer" style="--z:0"><div class="o4-tile"><span class="o4-tag"><b>01</b>PICK A KEY</span>${pills(n)}</div></div>
+          <div class="o4-layer" style="--z:1"><div class="o4-tile"><span class="o4-tag"><b>02</b>THE LOOP</span>${chips()}</div></div>
+          <div class="o4-layer" style="--z:2"><div class="o4-tile"><span class="o4-tag"><b>03</b>REAL TAB</span>${tab()}</div></div>
+          <div class="o4-layer" style="--z:3"><div class="o4-tile dark"><span class="o4-tag"><b>04</b>PLAY IT</span>${transport()}</div></div>
+        </div><p class="o4-hint">VERSE 1 · KEY OF <span data-keyname>F</span> · <span data-feel>MID-TEMPO</span> · NO TABS STORED</p></div>
+      </div></section>` },
+    { id: "editorial", name: "Spec sheet", idea: "A quiet-luxury magazine page: a visible 12-column grid, a running header, the card as a figure with numbered callouts, and a spec strip along the foot.",
+      why: ["Restraint: straight card, fine rules, lots of space", "Numbered callouts say what each part does", "The spec strip states the facts: key, feel, tempo, loop, tuning, 0 tabs"],
+      html: (n) => `<section class="hero o5"><div class="o5-cols" aria-hidden="true">${"<i></i>".repeat(12)}</div>
+        <div class="o5-run"><span>PALM/MUTE</span><span>THE SONGWRITING ENGINE</span><span>FIG. 1 · VERSE 1</span></div>
+        <div class="hin">${left()}
+          <figure class="o5-fig">
+            <div class="o5-card">
+              <div class="o5-blk"><span class="mk">1</span>${pills(n)}</div>
+              <div class="o5-blk"><span class="mk">2</span>${chips()}</div>
+              <div class="o5-blk"><span class="mk">3</span>${tab()}</div>
+              <div class="o5-blk"><span class="mk">4</span>${transport()}</div>
+            </div>
+            <figcaption><b>Fig. 1</b> Verse 1, written live in <b data-keyname>F</b> · <span data-feel>MID-TEMPO</span> · <span data-bpm>140</span> BPM.</figcaption>
+            <ol class="o5-notes"><li><span>1</span>Twelve keys. Every chord follows.</li><li><span>2</span>The loop, I–V–vi–IV, as two-note power chords.</li><li><span>3</span>Real tab, palm-muted eighths, written fresh.</li><li><span>4</span>Play it at full or practice speed.</li></ol>
+          </figure>
+        </div>
+        <dl class="o5-spec"><div><dt>KEY</dt><dd data-keyname>F</dd></div><div><dt>FEEL</dt><dd data-feel>MID-TEMPO</dd></div><div><dt>TEMPO</dt><dd><span data-bpm>140</span> BPM</dd></div><div><dt>LOOP</dt><dd>I–V–vi–IV</dd></div><div><dt>TUNING</dt><dd>E STANDARD</dd></div><div><dt>TABS STORED</dt><dd class="red">0</dd></div></dl>
+      </section>` },
+    { id: "spotlight", name: "Spotlight stage", idea: "A dark stage, one spotlight on the card, the headline caught in a red rim light. The light breathes on the downbeat and the card reflects on the floor.",
+      why: ["One theatrical moment, nothing else moving", "The spotlight lifts on every bar's first beat", "Dark stage in both themes"],
+      html: (n) => `<section class="hero o6"><div class="o6-rim" aria-hidden="true"></div><div class="o6-cone" aria-hidden="true"></div><div class="o6-floor" aria-hidden="true"></div><div class="hin">${left()}
+        <div><div class="o6-card">
+          <div class="o6-hd"><b>Verse 1</b><span>01 · ×2</span><span class="r">KEY OF <span data-keyname>F</span> · <span data-feel>MID-TEMPO</span></span></div>
+          ${pills(n)}${chips()}<div class="o6-screen">${tab()}</div>${transport()}
+          <div class="o6-hd"><span>● NO TABS STORED</span><span class="r" style="color:var(--s-t3)">E STANDARD</span></div>
+        </div></div></div></section>` },
+  ];
+
+  const host = document.getElementById("options");
+  host.innerHTML = OPTIONS.map((o, i) => `
+    <section class="wrap opt" id="${o.id}" aria-labelledby="t-${o.id}">
+      <div class="opt-hd">
+        <div><div class="n">OPTION ${i + 1} OF 6</div><h2 id="t-${o.id}">${o.name}</h2><p>${o.idea}</p></div>
+        <ul>${o.why.map((w) => `<li>${w}</li>`).join("")}</ul>
+        <button type="button" class="pick" data-pick="${o.id}" aria-pressed="false">PICK THIS ONE</button>
+      </div>
+      <div class="frame">${o.html(i + 1)}</div>
+    </section>`).join("");
+  document.getElementById("jump").innerHTML = OPTIONS.map((o, i) => `<a href="#${o.id}">${i + 1} · ${o.name}</a>`).join("");
+  document.getElementById("feels").innerHTML = FEELS.map(([l], i) => `<button type="button" data-feel-i="${i}" aria-pressed="false">${l}</button>`).join("");
+
+  /* ---------- state and the beat clock ---------- */
+  const S = { key: KEYS.indexOf("F"), feel: 2, beat: 0, auto: true, run: !matchMedia("(prefers-reduced-motion: reduce)").matches };
+  const all = (sel) => document.querySelectorAll(sel);
+  const ladderClass = (i) => (i >= 14 ? "on peak" : i >= 11 ? "on hot" : "on");
+
+  function renderKey() {
+    const ch = chordsFor(S.key);
+    all("[data-chips]").forEach((el) => { el.innerHTML = chipsHTML(ch); el.setAttribute("aria-label", `I–V–vi–IV in ${KEYS[S.key]}: ${ch.map((c) => c.name).join(", ")}`); });
+    all("[data-tab]").forEach((el) => { el.innerHTML = tabHTML(ch); });
+    all("[data-keyname]").forEach((el) => { el.textContent = KEYS[S.key]; });
+    all(".x-pill").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.key === S.key)));
+    renderFeel();
+    tick(true);
+  }
+  function renderFeel() {
+    const [label, bpm] = FEELS[S.feel];
+    all("[data-bpm]").forEach((el) => { el.textContent = bpm; });
+    all("[data-feel]").forEach((el) => { el.textContent = label; });
+    all("[data-keyfeel]").forEach((el) => { el.textContent = `Key of ${KEYS[S.key]} · ${label}`; });
+    all("[data-feel-i]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.feelI === S.feel)));
+    document.documentElement.style.setProperty("--beat-ms", `${Math.round(60000 / bpm)}ms`);
+    document.documentElement.style.setProperty("--bar-ms", `${Math.round(240000 / bpm)}ms`);
+  }
+  // one beat = a quarter note; a bar = 4 beats = 8 palm-muted eighths; the loop = 4 bars, one per chord
+  function tick(fresh) {
+    const bar = Math.floor(S.beat / 4) % 4, inBar = S.beat % 4, bpm = FEELS[S.feel][1];
+    all(".x-tab").forEach((t) => { t.style.setProperty("--bar", bar); t.style.setProperty("--cell", inBar * 2); });
+    all("[data-chips]").forEach((g) => g.querySelectorAll(".x-chip").forEach((c) => {
+      const now = +c.dataset.i === bar;
+      if (now && (fresh || inBar === 0)) { c.classList.remove("now"); void c.offsetWidth; }
+      c.classList.toggle("now", now);
+    }));
+    const secs = 8 + Math.floor((S.beat * 60) / bpm) % 172;
+    all("[data-time]").forEach((el) => { el.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} / 3:00`; });
+    all(".x-prog i").forEach((el) => el.style.setProperty("--p", `${((secs / 180) * 100).toFixed(1)}%`));
+    all("[data-beats] i").forEach((el, i) => el.classList.toggle("on", i % 4 === inBar));
+    all("[data-ladder]").forEach((l) => l.querySelectorAll("i").forEach((el, i) => { el.className = i <= inBar * 4 + 3 ? ladderClass(i) : ""; }));
+  }
+
+  let timer = 0;
+  function clock() {
+    clearInterval(timer);
+    document.getElementById("run").setAttribute("aria-pressed", String(S.run));
+    document.getElementById("run").textContent = S.run ? "PLAYING" : "PAUSED";
+    if (!S.run) return;
+    timer = setInterval(() => {
+      if (document.hidden) return;
+      S.beat++;
+      // the demo: a new key every 8 bars (round the circle of fourths), until someone picks one
+      if (S.auto && S.beat % 32 === 0) { S.key = (S.key + 5) % 12; renderKey(); return; }
+      tick(false);
+    }, 60000 / FEELS[S.feel][1]);
+  }
+
+  document.addEventListener("click", (e) => {
+    const p = e.target.closest(".x-pill");
+    if (p) { S.key = +p.dataset.key; S.auto = false; renderKey(); return; }
+    const f = e.target.closest("[data-feel-i]");
+    if (f) { S.feel = +f.dataset.feelI; renderFeel(); clock(); return; }
+    const pk = e.target.closest("[data-pick]");
+    if (pk) { all("[data-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b === pk))); const o = OPTIONS.find((x) => x.id === pk.dataset.pick);
+      document.getElementById("pick-name").textContent = o.name; document.getElementById("copy").disabled = false; picked = o; }
+  });
+  let picked = null;
+  document.getElementById("run").addEventListener("click", () => { S.run = !S.run; clock(); });
+  document.getElementById("copy").addEventListener("click", () => {
+    const n = OPTIONS.indexOf(picked) + 1;
+    const text = `Palm/Mute hero pick: option ${n}, ${picked.name}`;
+    const area = document.getElementById("picks-text");
+    const fallback = () => { area.value = text; area.hidden = false; area.focus(); area.select(); };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => { area.hidden = true; document.getElementById("copy").textContent = "COPIED"; setTimeout(() => (document.getElementById("copy").textContent = "COPY PICK"), 1600); }, fallback);
+    else fallback();
+  });
+
+  // the exploded view tilts gently with the pointer
+  document.querySelectorAll("[data-tilt]").forEach((st) => {
+    const scene = st.closest(".hero");
+    scene.addEventListener("pointermove", (e) => {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches || innerWidth < 640) return;
+      const r = scene.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      st.style.setProperty("--ry", `${-11 + x * 8}deg`); st.style.setProperty("--rx", `${7 - y * 6}deg`);
+    });
+    scene.addEventListener("pointerleave", () => { st.style.removeProperty("--ry"); st.style.removeProperty("--rx"); });
+  });
+
+  const themeBtn = document.getElementById("theme");
+  const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+  const syncTheme = () => themeBtn.setAttribute("aria-pressed", String(isDark()));
+  themeBtn.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; syncTheme(); });
+  syncTheme();
+
+  renderKey();
+  clock();
+</script>

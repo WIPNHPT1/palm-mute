@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Chips, KeyPills, PlayGlyph, Tab, Transport } from "@/components/home/HomeBento";
-import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, TAB_ROWS, chordsFor, formFor, level } from "@/components/home/homeData";
+import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, chordsFor, formFor, level, loopTab } from "@/components/home/homeData";
 import { designUnit } from "@/lib/designUnit";
 import { RHYTHM_NAMES } from "@/components/home/rhythms";
 import { paintOscilloscope, readStageColors } from "@/lib/stagePaint";
@@ -49,7 +49,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
 
       <Tile className="s7 r2" label="04 · EVERY PART, TABBED" d={1}>
         <h3>A whole song. Every bar.</h3>
-        <Tab beat={beat} />
+        <Tab keyIndex={state.key} beat={beat} />
         <Form parts={form.parts} now={moving ? playing % form.parts.length : -1} />
         <Parts keyIndex={state.key} now={moving ? playing % 4 : -1} />
       </Tile>
@@ -114,7 +114,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
       <Tile className="s3" label="PDF SONGBOOK" d={1}>
         <div className="hb-pdf" aria-hidden="true">
           <b>{TITLES[0]}</b>
-          {`KEY A · ${FEELS[0].label} · ${FEELS[0].bpm}\n\nVERSE 1 ×2\n${TAB_ROWS.slice(0, 6).join("\n")}`}
+          {`KEY A · ${FEELS[0].label} · ${FEELS[0].bpm}\n\nVERSE 1 ×2\n${loopTab(0, 2).rows.join("\n")}`}
         </div>
         <p className="hb-p">Every part&apos;s tab, ready to print.</p>
       </Tile>
