@@ -121,6 +121,34 @@ test.describe("home", () => {
     await expect(page.locator('canvas.stage-bg[data-stage-bg="osc"]')).toHaveCount(1);
   });
 
+  test("amp blowout: how it works and the statement are there, read as text, and the footer never moves", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    await gotoAndSettle(page, "/");
+    await expect(page.getByRole("heading", { level: 2, name: "Four steps. One song." })).toHaveCount(1);
+    await expect(page.locator(".hb-poster")).toHaveCount(4);
+    // the giant letters are for the eye; the sentence is read as one piece of text
+    await expect(page.locator(".hb-big")).toHaveAttribute("aria-hidden", "true");
+    await expect(page.locator(".hb-statement .sr-only")).toHaveText("Every riff is new. Nothing is copied.");
+    // scroll through the page fast, then check the stats counted to their real values and the footer stayed put
+    for (let i = 1; i <= 10; i++) { await page.evaluate((k) => window.scrollTo(0, (document.documentElement.scrollHeight * k) / 10), i); await page.waitForTimeout(40); }
+    await page.waitForTimeout(600);
+    await expect(page.locator(".hb-stats dd")).toHaveText(["12", "5", "13", "4", "10", "0"]);
+    expect(await page.locator("footer").evaluate((f) => getComputedStyle(f).translate)).toBe("none");
+    expect(await page.locator(".hb-amp-sparks").evaluate((c) => getComputedStyle(c).pointerEvents)).toBe("none");
+  });
+
+  test("amp blowout with reduced motion: nothing pins, the statement is filled in, no spotlight or sparks", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await gotoAndSettle(page, "/");
+    expect(await page.locator(".hb-how-pin").evaluate((e) => getComputedStyle(e).position)).toBe("static");
+    expect(await page.locator(".hb-statement-pin").evaluate((e) => getComputedStyle(e).position)).toBe("static");
+    expect(await page.locator(".hb-big .ch:not(.lit)").count()).toBe(0);
+    expect(await page.locator(".hb-amp-spot").evaluate((e) => getComputedStyle(e).display)).toBe("none");
+  });
+
   test("speaker cone stands still with reduced motion", async ({ page }, info) => {
     onlyAtWidths(info, [1440]);
     lightOnly(info);
