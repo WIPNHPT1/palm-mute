@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BentoGrid } from "@/components/home/BentoGrid";
 import { Speaker } from "@/components/Speaker";
+import { AmpFx } from "@/components/home/AmpFx";
+import { HowItWorks, Statement } from "@/components/home/AmpSections";
 import { StageBackground } from "@/components/StageBackground";
 import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
 import { progressions } from "@/lib/musicTheory";
@@ -71,6 +73,8 @@ export function HomeBento() {
           speaker cab into it (app/home.css, "Speaker cone") */}
       <StageBackground playing={false} showsThrough=".hb [data-quiet]" />
       <div className="hb-grain" aria-hidden="true" />
+      {/* "Amp blowout": the page moves with the scroll speed and the beat (AmpFx.tsx) */}
+      <AmpFx root={root} beat={beat} />
       <Hero state={state} beat={beat} bpm={bpm} onKey={(key) => set({ key })} />
       <Marquee />
       <section className="hb-stats-sec" aria-label="Palm/Mute in numbers">
@@ -80,6 +84,7 @@ export function HomeBento() {
           ))}
         </dl>
       </section>
+      <HowItWorks />
       <section className="hb-sec hb-kit-sec" aria-labelledby="hb-kit" data-quiet>
         <Speaker kind="cab" beat={beat} />
         <div className="hb-wrap">
@@ -90,6 +95,7 @@ export function HomeBento() {
           <BentoGrid state={state} beat={beat} bpm={bpm} moving={moving} set={set} />
         </div>
       </section>
+      <Statement />
       <Questions />
       <Encore bpm={bpm} />
     </div>
@@ -282,6 +288,7 @@ function Encore({ bpm }: { bpm: number }) {
         <div>{row("START WRITING ✦ START WRITING ✦ START WRITING ✦")}</div>
         <div>{row(`E STANDARD ✦ ${bpm} BPM ✦ E STANDARD ✦ ${bpm} BPM ✦`)}</div>
       </div>
+      <div className="hb-rings" aria-hidden="true"><i /><i /><i /></div>
       <div className="hb-wrap">
         <h2 id="hb-encore" className="hb-h2">Count it in.</h2>
         <div className="row">

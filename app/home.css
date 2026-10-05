@@ -357,3 +357,62 @@
 .hb-kit-sec { isolation: isolate; background: linear-gradient(var(--paper) 0 40%, rgb(var(--color-paper) / 0) 85%); }
 .hb-kit-sec > .hb-speaker { z-index: -1;
   -webkit-mask: linear-gradient(transparent 0, #000 180px, #000 40%, transparent 85%); mask: linear-gradient(transparent 0, #000 180px, #000 40%, transparent 85%); }
+
+/* ---------- Amp blowout (owner's pick, docs/mockups/home-wow-scroll.html option 6; AmpFx.tsx, AmpSections.tsx) ---------- */
+/* the red-cyan split on fast scrolls: solid type only (hollow letters would show the colours through) */
+.hb.hb-split :is(.hb-kin > span[aria-hidden]:not(:nth-child(2)), .hb-h2, .hb-tile h3, .hb-poster h3, .hb-big .ch.lit) {
+  text-shadow: calc(var(--ab, 0) * 1px) 0 rgb(255 40 70 / .6), calc(var(--ab, 0) * -1px) 0 rgb(0 210 255 / .55); }
+/* the kit's tiles bump on every beat; one lit a bar */
+.hb-tile { scale: calc(1 + var(--kick, 0) * .018); }
+.hb-tile.hb-hit { box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1.5px rgb(var(--accent-rgb) / .8), 0 0 50px -10px rgb(var(--accent-rgb) / .8), var(--glass-drop); }
+/* a soft spotlight that follows the cursor (mouse only), under the top bar; and the sparks over the page */
+.hb-amp-spot { position: fixed; left: 0; right: 0; top: var(--stage-top); bottom: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .4s;
+  background: radial-gradient(circle 340px at var(--mx, -999px) var(--my, -999px), transparent 35%, rgb(var(--color-ink) / .16)); }
+.dark .hb-amp-spot { background: radial-gradient(circle 340px at var(--mx, -999px) var(--my, -999px), transparent 35%, rgb(0 0 0 / .32)); }
+.hb-amp-sparks { position: fixed; inset: 0; z-index: 55; width: 100%; height: 100%; pointer-events: none; }
+
+/* how it works: pinned under the top bar, four posters sliding sideways */
+.hb-how { position: relative; height: 420vh; background: var(--paper); }
+.hb-how-pin { position: sticky; top: 76px; height: calc(100svh - 76px); overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 3vh; }
+.hb-how .hb-h2 { font-size: clamp(32px, 4.2vw, 64px); }
+.hb-how-track { display: flex; gap: clamp(18px, 2.4vw, 36px); margin: 0; padding: 0 max(var(--pad), calc((100vw - 1440px) / 2 + var(--pad))); list-style: none; will-change: transform; }
+.hb-poster { position: relative; flex: 0 0 auto; width: min(78vw, 540px); height: min(50vh, 500px); padding: clamp(24px, 3vw, 40px); border-radius: 20px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--glass-drop); }
+.hb-poster h3 { margin: 0 0 14px; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: clamp(26px, 2.8vw, 44px); line-height: 1; }
+.hb-poster p { margin: 0; max-width: 420px; font-size: clamp(15px, 1.2vw, 18px); line-height: 1.55; opacity: .88; }
+.hb-poster-tag { position: absolute; top: clamp(24px, 3vw, 40px); right: clamp(24px, 3vw, 40px); font-family: var(--mono); font-size: 12px; letter-spacing: .14em; opacity: .75; }
+.hb-poster-no { font-family: var(--display); font-size: clamp(90px, 10vw, 170px); line-height: .8; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--stroke); }
+.hb-poster.ink { --stroke: rgb(246 241 228 / .7); background: linear-gradient(160deg, rgb(46 38 30), rgb(14 11 9)); color: var(--on-dark); }
+.hb-poster.red { --stroke: rgb(255 249 239 / .8); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent) 50%, color-mix(in srgb, var(--accent) 78%, #000)); color: var(--on-accent); }
+.hb-poster.clear { --stroke: var(--t1); background: var(--glass-pane); color: var(--t1); box-shadow: inset 0 1px 0 var(--glass-edge), 0 0 0 1.5px var(--t1), var(--glass-drop); }
+.hb-poster.brass { --stroke: rgb(23 19 16 / .7); background: linear-gradient(160deg, color-mix(in srgb, var(--brass) 80%, #fff), var(--brass) 55%, color-mix(in srgb, var(--brass) 80%, #000)); color: #171310; }
+
+/* the statement: pinned giant type over the scope, filling in letter by letter */
+.hb-statement { position: relative; height: 260vh; }
+.hb-statement-pin { position: sticky; top: 76px; height: calc(100svh - 76px); display: grid; place-items: center; overflow: hidden; }
+.hb-big { margin: 0; padding-inline: var(--pad); text-align: center; font-family: var(--display); text-transform: uppercase; letter-spacing: -.03em; line-height: .9; font-size: clamp(44px, 10vw, 170px); }
+.hb-big .w { display: inline-block; white-space: nowrap; }
+.hb-big .ch { display: inline-block; color: transparent; -webkit-text-stroke: 2px rgb(var(--color-text-primary) / .28); transition: color .15s, -webkit-text-stroke-color .15s; }
+.hb-big .ch.lit { color: var(--t1); -webkit-text-stroke-color: transparent; }
+.hb-big .red .ch.lit { color: var(--accent); }
+
+/* the encore's shockwave */
+.hb-rings { position: absolute; inset: 0; pointer-events: none; }
+.hb-rings i { position: absolute; left: 50%; top: 42%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; border: 3px solid var(--accent); opacity: 0; }
+.hb-rings.go i { animation: hb-ring 1.1s var(--out) forwards; } .hb-rings.go i:nth-child(2) { animation-delay: .12s; } .hb-rings.go i:nth-child(3) { animation-delay: .24s; }
+@keyframes hb-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(40); } }
+
+/* phones and reduced motion: nothing pins; the posters stack and the statement reads as a block */
+@media (max-width: 833px) {
+  .hb-how, .hb-statement { height: auto; }
+  .hb-how-pin, .hb-statement-pin { position: static; height: auto; padding-block: 70px; }
+  .hb-how-track { flex-direction: column; transform: none !important; }
+  .hb-poster { width: 100%; height: auto; min-height: 300px; gap: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-how, .hb-statement { height: auto; }
+  .hb-how-pin, .hb-statement-pin { position: static; height: auto; padding-block: 90px; }
+  .hb-how-track { flex-wrap: wrap; justify-content: center; transform: none !important; }
+  .hb-tile { scale: none; }
+  .hb-amp-spot, .hb-amp-sparks { display: none; }
+}
