@@ -7,8 +7,10 @@ test.describe("footer: end credits", () => {
       onlyAtWidths(info, [390, 1440]);
       await gotoAndSettle(page, path);
       const footer = page.locator("footer.credits");
-      await expect(footer.locator("dt")).toContainText(["Written by", "In the key of", "Feel", "Chords", "Tuning", "Tabs stored"]);
-      await expect(footer.locator(".as-written dd")).toHaveText("I – V – vi – IV");
+      await expect(footer.locator("dl.credits-list dt")).toContainText(["Written by", "In the key of", "Feel", "Chords", "Tuning", "Tabs stored"]);
+      await expect(footer.locator("dl.credits-list .as-written dd")).toHaveText("I – V – vi – IV");
+      // the loop's second copy is for the eye only
+      await expect(footer.locator(".credits-copy")).toHaveAttribute("aria-hidden", "true");
       const nav = footer.getByRole("navigation", { name: "Footer" });
       await expect(nav.getByRole("link")).toHaveText(["Home", "Song Generator", "Chord Lab"]);
       await expect(nav.locator('[aria-current="page"]')).toHaveText(current);
@@ -29,6 +31,7 @@ test.describe("footer: end credits", () => {
     await gotoAndSettle(page, "/chords/");
     expect(await page.locator(".credits-reel").evaluate((e) => getComputedStyle(e).animationName)).toBe("none");
     await page.locator("footer.credits").scrollIntoViewIfNeeded();
-    await expect(page.locator(".credits-reel dd").last()).toBeInViewport();
+    await expect(page.locator(".credits-copy")).toBeHidden();
+    await expect(page.locator("dl.credits-list dd").last()).toBeInViewport();
   });
 });

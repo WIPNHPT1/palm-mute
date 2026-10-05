@@ -627,35 +627,48 @@
 }
 
 /* ---- Footer: end credits (owner's pick, docs/mockups/footer-options.html option 1; components/Footer.tsx) ----
-   Every page ends like a film: letterbox bars, the credits rolling up, then the wordmark with the pages and GitHub.
-   Cinema black in both themes, with the on-dark text tokens. The roll runs only while on screen (data-rolling). */
+   Every page ends like a film: the page fades to black, the credits roll up, then the wordmark with the pages and
+   GitHub. One cinema black in both themes, with the on-dark text tokens. The fade is see-through at the top, so the
+   page's own background (and its scope) dissolves into the black. The roll runs only while on screen (data-rolling). */
 @layer components {
-  .credits { position: relative; z-index: 1; background: #050403; color: rgb(var(--color-text-on-dark)); overflow: hidden; }
-  .credits-bar { display: block; height: 7vh; max-height: 64px; background: #000; }
-  .credits-roll { position: relative; height: 380px; overflow: hidden;
-    -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
-  .credits-reel { position: absolute; left: 0; right: 0; top: 100%; margin: 0; display: grid; gap: 30px; padding: 0 20px; text-align: center;
-    animation: credits-roll 28s linear infinite; animation-play-state: paused; }
+  .credits { --credits-black: 5 4 3; position: relative; z-index: 1; color: rgb(var(--color-text-on-dark)); overflow: hidden; }
+  /* an eased fade (slow start, smooth finish) so it reads as the page going dark, not as a grey band; longer on paper */
+  .credits-fade { display: block; height: 160px;
+    background: linear-gradient(rgb(var(--credits-black) / 0), rgb(var(--credits-black) / .03) 12%, rgb(var(--credits-black) / .1) 24%, rgb(var(--credits-black) / .22) 36%,
+      rgb(var(--credits-black) / .38) 48%, rgb(var(--credits-black) / .56) 60%, rgb(var(--credits-black) / .74) 72%, rgb(var(--credits-black) / .88) 84%, rgb(var(--credits-black) / .97) 94%, rgb(var(--credits-black))); }
+  html:not(.dark) .credits-fade { height: 280px; }
+  .credits-roll, .credits-end { background: rgb(var(--credits-black)); }
+  /* four credits tall; the list is there twice, end to end, and slides one list's height, so it loops with no gap */
+  .credits-roll { position: relative; height: 270px; overflow: hidden; }
+  /* the credits fade in and out at the window's edges under black overlays (a mask would let the page show through) */
+  .credits-roll::before, .credits-roll::after { content: ""; position: absolute; left: 0; right: 0; z-index: 1; height: 26%; pointer-events: none; }
+  .credits-roll::before { top: 0; background: linear-gradient(rgb(var(--credits-black)), rgb(var(--credits-black) / 0)); }
+  .credits-roll::after { bottom: 0; background: linear-gradient(rgb(var(--credits-black) / 0), rgb(var(--credits-black))); }
+  .credits-reel { animation: credits-roll 26s linear infinite; animation-play-state: paused; }
   .credits-roll[data-rolling] .credits-reel { animation-play-state: running; }
-  @keyframes credits-roll { to { transform: translateY(calc(-100% - 380px)); } }
-  .credits-reel dt { margin-bottom: 6px; font-family: var(--font-space-mono), monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(var(--color-text-on-dark-faint)); }
-  .credits-reel dd { margin: 0; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.1; text-transform: uppercase; letter-spacing: -0.01em; }
-  .credits-reel .red dd { color: rgb(var(--color-accent-on-ink)); }
-  .credits-reel .as-written dd { text-transform: none; }
-  .credits-end { padding: 30px 20px 44px; text-align: center; border-top: 1px solid #1F1A16; }
+  @keyframes credits-roll { to { transform: translateY(-50%); } }
+  .credits-list { margin: 0; display: grid; gap: 30px; padding: 0 20px 30px; text-align: center; }
+  .credits-list dt { margin-bottom: 6px; font-family: var(--font-space-mono), monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(var(--color-text-on-dark-faint)); }
+  .credits-list dd { margin: 0; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.1; text-transform: uppercase; letter-spacing: -0.01em; }
+  .credits-list .red dd { color: rgb(var(--color-accent-on-ink)); }
+  .credits-list .as-written dd { text-transform: none; }
+  .credits-end { padding: 40px 20px 56px; text-align: center; border-top: 1px solid rgb(var(--color-text-on-dark) / .08); }
   .credits-wm { display: inline-flex; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(54px, 9vw, 140px); line-height: 0.9; letter-spacing: -0.03em; color: rgb(var(--color-text-on-dark)); }
-  .credits-wm .wordmark-bolt svg { width: 0.5em; height: 0.85em; margin: 0 0.04em; }
-  .credits-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 26px; margin-top: 18px; }
+  /* the bolt sits still here (the header's keeps its flip), at the header wordmark's proportions */
+  .credits-wm .wordmark-bolt svg { animation: none; }
+  .credits-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 26px; margin-top: 22px; }
   .credits-links nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 22px; }
   .credits-links a { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; min-width: 44px; font-family: var(--font-space-mono), monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
     color: rgb(var(--color-text-on-dark-faint)); transition: color 0.2s; }
   .credits-links a:hover { color: rgb(var(--color-text-on-dark)); }
   .credits-links a[aria-current="page"] { color: rgb(var(--color-text-on-dark)); }
   .credits-links a[aria-current="page"]::before { content: "▶"; color: rgb(var(--color-accent-on-ink)); font-size: 9px; }
-  .credits-fine { margin: 14px 0 0; font-family: var(--font-space-mono), monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--color-text-on-dark-faint)); }
+  .credits-fine { margin: 18px 0 0; font-family: var(--font-space-mono), monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--color-text-on-dark-faint)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* the credits stand still, all of them showing */
-  .credits-roll { height: auto; padding: 40px 0; -webkit-mask-image: none; mask-image: none; }
-  .credits-reel { position: static; animation: none; }
+  /* the credits stand still, every one showing once */
+  .credits-roll { height: auto; padding-top: 10px; }
+  .credits-roll::before, .credits-roll::after { display: none; }
+  .credits-reel { animation: none; }
+  .credits-copy { display: none; }
 }

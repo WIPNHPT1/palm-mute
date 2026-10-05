@@ -34,9 +34,10 @@ const CREDITS: { role: string; name: string; red?: boolean; asWritten?: boolean 
 ];
 
 /**
- * End credits (owner's pick, docs/mockups/footer-options.html option 1): every page ends like a film. Letterbox bars,
- * the credits rolling up, then the wordmark with the pages and GitHub. Cinema black in both themes. The roll only
- * runs while the footer is on screen, and stands still (every credit showing) with reduced motion.
+ * End credits (owner's pick, docs/mockups/footer-options.html option 1): every page ends like a film. The page fades
+ * to black, the credits roll up (a seamless loop, so the window is never empty), then the wordmark with the pages and
+ * GitHub. One cinema black in both themes. The roll only runs while the footer is on screen, and stands still (every
+ * credit showing once) with reduced motion.
  */
 export function Footer() {
   const pathname = usePathname() ?? "/";
@@ -50,16 +51,13 @@ export function Footer() {
 
   return (
     <footer className="credits">
-      <span className="credits-bar" aria-hidden="true" />
+      <span className="credits-fade" aria-hidden="true" />
       <div ref={roll} className="credits-roll">
-        <dl className="credits-reel">
-          {CREDITS.map((c) => (
-            <div key={c.role} className={[c.red && "red", c.asWritten && "as-written"].filter(Boolean).join(" ") || undefined}>
-              <dt>{c.role}</dt>
-              <dd>{c.name}</dd>
-            </div>
-          ))}
-        </dl>
+        {/* the list twice, end to end, so the roll loops with no gap; the copy is for the eye only */}
+        <div className="credits-reel">
+          <dl className="credits-list"><CreditItems /></dl>
+          <div className="credits-list credits-copy" aria-hidden="true"><CreditItems /></div>
+        </div>
       </div>
       <div className="credits-end">
         <Link href="/" prefetch={false} className="credits-wm" aria-label="Palm/Mute, home">
@@ -81,7 +79,15 @@ export function Footer() {
         </div>
         <p className="credits-fine">Palm/Mute · pop-punk song generator · E standard</p>
       </div>
-      <span className="credits-bar" aria-hidden="true" />
     </footer>
   );
+}
+
+function CreditItems() {
+  return CREDITS.map((c) => (
+    <div key={c.role} className={[c.red && "red", c.asWritten && "as-written"].filter(Boolean).join(" ") || undefined}>
+      <dt>{c.role}</dt>
+      <dd>{c.name}</dd>
+    </div>
+  ));
 }
