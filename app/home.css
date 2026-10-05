@@ -115,8 +115,6 @@
 .hb-glass .hb-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .hb-glass .hb-chip { width: auto; border-radius: 10px; }
 .hb-glass .hb-chip.now { box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .6), 0 0 26px -6px rgb(var(--accent-rgb) / .7); }
-.hb-glass .hb-tab { background: rgb(var(--color-paper) / .7); box-shadow: inset 0 0 0 1px var(--line); border-radius: 14px; padding: 12px 14px; }
-.dark .hb-glass .hb-tab { background: rgb(0 0 0 / .38); box-shadow: inset 0 0 0 1px rgb(var(--cream-rgb) / .08); }
 .hb-glass .hb-transport { border-radius: 14px; }
 .dark .hb-glass .hb-transport { background: rgb(0 0 0 / .45); box-shadow: inset 0 0 0 1px rgb(var(--cream-rgb) / .08); }
 .hb-glass-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--t3); }
@@ -143,13 +141,6 @@
 @keyframes hb-barfill { from { transform: scaleX(0); } }
 /* the loop's tab: one bar per chord (17 characters each, after "e|"); the bar sounding is lit and the playhead moves on
    the beat, with the chips. Sized to fit its tile: 70 characters of mono, scaled down on narrow tiles. */
-.hb-tabw { container-type: inline-size; min-width: 0; }
-.hb-tab { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--paper); font-family: var(--mono); font-size: clamp(6px, calc((100cqi - 28px) / 43), 12px); line-height: 1.45; color: var(--t3); white-space: pre; overflow: hidden; }
-.hb-tab-in { position: relative; display: inline-block; }
-.hb-tab b { color: var(--t1); font-weight: 700; }
-.hb-tab .pm { color: var(--t4); }
-.hb-tab .cur { position: absolute; top: 1.45em; height: 8.7em; left: calc((2 + var(--bar, 0) * 17) * 1ch - .3ch); width: 16.6ch; border-radius: 3px; background: rgb(var(--accent-rgb) / .12); transition: left .25s var(--out); }
-.hb-tab .head { position: absolute; top: 1.2em; height: 9.2em; width: 2px; margin-left: -1px; left: calc((2.5 + var(--bar, 0) * 17 + var(--cell, 0)) * 1ch); border-radius: 1px; background: var(--accent); box-shadow: 0 0 10px 1px rgb(var(--accent-rgb) / .6); transition: left 90ms linear; }
 .hb-transport { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--on-dark); flex-wrap: wrap; }
 /* the play button is just the icon (owner's call): no disc, no ring */
 .hb-play { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--accent); }
@@ -292,17 +283,13 @@
 .hb-mood .md span { position: absolute; top: -6px; font-family: var(--mono); font-size: 12px; white-space: nowrap; color: var(--t3); } .hb-mood .md span.r { left: 14px; } .hb-mood .md span.l { right: 14px; }
 .hb-mood .md.on span { color: var(--t1); font-weight: 700; }
 .hb-mood .ax { position: absolute; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--t4); }
-.hb-pdf { border-radius: 6px; background: #FFFDF7; color: #171310; padding: 14px; box-shadow: var(--lift); font-family: var(--mono); font-size: 9.5px; line-height: 1.5; overflow: hidden; rotate: -2deg; height: 200px; white-space: pre; transition: rotate .6s var(--spring), transform .6s var(--spring); }
-.hb-tile:hover .hb-pdf { rotate: 0deg; transform: translateY(-6px); }
-.hb-pdf b { display: block; font-family: var(--display); font-size: 16px; text-transform: uppercase; margin-bottom: 4px; white-space: normal; }
-.hb-boxes { display: flex; gap: 12px; justify-content: center; flex: 1; align-items: center; } .hb-boxes svg { width: clamp(64px, 6vw, 88px); }
 .hb-g5 { width: 100%; color: var(--t1); } .hb-g5 .pulse { fill: none; stroke: var(--accent); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: hb-ping 1.8s ease-out infinite; } .hb-g5 .pulse.b { animation-delay: .9s; }
 @keyframes hb-ping { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(2.4); } }
 .hb-url { display: flex; align-items: center; min-height: 48px; padding: 0 12px; border-radius: 8px; background: rgb(0 0 0 / .14); font-family: var(--mono); font-size: 12px; overflow: hidden; white-space: nowrap; }
 .hb-sheet { position: relative; padding: 26px 22px 18px; background: #F6F1E4; color: #171310; border-radius: 3px; rotate: -2deg; box-shadow: var(--lift); background-image: repeating-linear-gradient(transparent 0 29px, rgba(23,19,16,.12) 29px 30px); transition: rotate .6s var(--spring); }
 .hb-tile:hover .hb-sheet { rotate: 0deg; }
 .hb-sheet::before { content: ""; position: absolute; top: -10px; left: 16px; width: 80px; height: 22px; background: rgb(201 151 60 / .6); rotate: -6deg; }
-.hb-sheet ol { margin: 0; padding-left: 24px; font-family: var(--display); font-size: 16px; line-height: 30px; text-transform: uppercase; } .hb-sheet li:nth-child(3n) { color: #C23A26; }
+.hb-sheet ol { margin: 0; padding-left: 24px; font-family: var(--display); font-size: 16px; line-height: 30px; text-transform: uppercase; } .hb-sheet li.now { color: #C23A26; }
 .hb-sheet li span { font-family: var(--mono); font-size: 12px; color: #6B6152; margin-left: 6px; }
 
 /* questions and encore */
@@ -413,3 +400,44 @@
   .hb-tile { scale: none; }
   .hb-amp-spot, .hb-amp-sparks { display: none; }
 }
+
+
+/* ---------- Consistent with the Song Generator and the Chord Lab (owner's call, 2026-10-05) ---------- */
+/* key pills: two even rows of six everywhere, a sharp key with its flat under it, as the Generator's key picker */
+.hb-pills { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.hb-pill { min-width: 0; }
+.hb-pill.two { display: flex; flex-direction: column; justify-content: center; font-size: 11.5px; line-height: 1.1; }
+/* the Generator's tab (TabBlock) in the cards */
+.hb-tabw { min-width: 0; }
+/* part rows: plain lock icons as the Generator's; the sounding part gets a red edge, a locked one an ink ring */
+.hb-lock { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--t3); cursor: pointer; }
+.hb-lock:hover { color: var(--t1); }
+.hb-lock[aria-pressed="true"] { color: var(--t1); }
+.hb-part.locked { box-shadow: inset 0 0 0 1.5px rgb(var(--color-text-primary) / .35); }
+.hb-part.now { background: transparent; border-color: rgb(var(--accent-rgb) / .7); box-shadow: 0 0 24px -10px rgb(var(--accent-rgb) / .6); }
+/* the neck: the Lab's labels (string names, fret numbers) and colours (root red, fifth cream) */
+.hb-neck { left: 9%; }
+.hb-neck .sname { position: absolute; left: -5.2%; translate: 0 -50%; font-family: var(--mono); font-size: 14px; color: var(--on-dark-3); }
+.hb-neck .fno { position: absolute; bottom: 1.2%; translate: -50% 0; font-family: var(--mono); font-size: 15px; color: var(--on-dark-3); }
+.hb-neck .dot.fifth { background: var(--on-dark); color: rgb(var(--color-ink)); box-shadow: 0 0 18px rgb(var(--cream-rgb) / .45); }
+/* the PDF page: the real songbook's layout on paper, the Generator's tab in print colours */
+.hb-pdf { display: flex; flex-direction: column; gap: 4px; border-radius: 6px; background: #FFFDF7; color: #171310; padding: 14px; box-shadow: var(--lift); overflow: hidden; rotate: -2deg; transition: rotate .6s var(--out), transform .6s var(--out); }
+.hb-tile:hover .hb-pdf { rotate: 0deg; transform: translateY(-6px); }
+.hb-pdf b { font-family: var(--display); font-size: 16px; text-transform: uppercase; }
+.hb-pdf .facts, .hb-pdf .part { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; color: #4E4738; }
+.hb-pdf .part { margin-top: 6px; color: #171310; font-weight: 700; }
+.hb-pdf .glass-well { margin: 0; padding: 4px 0 0; background: transparent; box-shadow: none; }
+.hb-pdf [data-tab] .fill-text-primary { fill: #171310; }
+.hb-pdf [data-tab] .fill-accent { fill: #C23A26; }
+.hb-pdf [data-tab] :is(.fill-text-muted, .fill-text-faint) { fill: #6B6152; }
+.hb-pdf [data-tab] .stroke-text-secondary { stroke: #4E4738; }
+/* the Lab's chord boxes, with their notes and position */
+.hb-boxes { display: flex; gap: 10px; justify-content: center; flex: 1; align-items: flex-start; }
+.hb-box { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; text-align: center; }
+.hb-box svg { width: clamp(70px, 6.4vw, 96px); }
+.hb-box .nt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--t2); }
+.hb-box .ps { font-family: var(--mono); font-size: 10.5px; color: var(--t3); }
+/* the G5 diagram, drawn as the Lab's neck */
+.hb-g5 .str { stroke: var(--t3); } .hb-g5 .fret { stroke: var(--line-strong); stroke-width: 1.5; } .hb-g5 .nut { stroke: var(--t1); stroke-width: 5; }
+.hb-g5 .inlay { fill: var(--line-strong); } .hb-g5 .lbl { font-family: var(--mono); font-size: 13px; fill: var(--t3); }
+.hb-g5 .fifth { fill: var(--t1); } .hb-g5 .fifth-l { fill: var(--paper); }

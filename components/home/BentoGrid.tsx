@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Chips, KeyPills, PlayGlyph, Tab, Transport } from "@/components/home/HomeBento";
-import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, chordsFor, formFor, level, loopTab } from "@/components/home/homeData";
+import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, formFor, level, sectionFor, shownBpmOf } from "@/components/home/homeData";
+import { LockIcon } from "@/components/icons/LockIcon";
+import { ChordBox } from "@/components/lab/ChordBox";
+import { TabBlock } from "@/components/TabBlock";
+import { rhythmOf, tabFor } from "@/lib/generator";
+import { noteName, shapeNotes } from "@/lib/lab/chords";
 import { designUnit } from "@/lib/designUnit";
 import { RHYTHM_NAMES } from "@/components/home/rhythms";
 import { paintOscilloscope, readStageColors } from "@/lib/stagePaint";
@@ -23,15 +28,15 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
       <Tile className="s5" label="01 · KEY">
         <h3>Twelve keys. One tap.</h3>
         <KeyPills value={state.key} onChange={(key) => set({ key })} label="Key" />
-        <Chips keyIndex={state.key} beat={beat} />
+        <Chips keyIndex={state.key} feelIndex={state.feel} beat={beat} />
       </Tile>
 
       <Tile className="ink s3" label="02 · FEEL" d={1}>
-        <div className="hb-huge" aria-live="polite">{FEELS[state.feel].bpm}<span className="sr-only"> BPM</span></div>
+        <div className="hb-huge" aria-live="polite">{FEELS[state.feel].shown}<span className="sr-only"> BPM</span></div>
         <div className="hb-metro" aria-hidden="true">{[0, 1, 2, 3].map((i) => <i key={i} className={moving && beat % 4 === i ? "on" : ""} />)}</div>
         <div className="hb-opts" role="group" aria-label="Feel">
           {FEELS.map((f, i) => (
-            <button key={f.id} type="button" aria-pressed={i === state.feel} onClick={() => set({ feel: i })}>{f.label}<span>{f.bpm}</span></button>
+            <button key={f.id} type="button" aria-pressed={i === state.feel} onClick={() => set({ feel: i })}>{f.label}<span>{f.shown} BPM</span></button>
           ))}
         </div>
       </Tile>
@@ -49,13 +54,13 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
 
       <Tile className="s7 r2" label="04 · EVERY PART, TABBED" d={1}>
         <h3>A whole song. Every bar.</h3>
-        <Tab keyIndex={state.key} beat={beat} />
+        <Tab keyIndex={state.key} feelIndex={state.feel} beat={beat} />
         <Form parts={form.parts} now={moving ? playing % form.parts.length : -1} />
-        <Parts keyIndex={state.key} now={moving ? playing % 4 : -1} />
+        <Parts keyIndex={state.key} feelIndex={state.feel} now={moving ? playing % 4 : -1} />
       </Tile>
 
       <Tile className="red s5" label="05 · PRACTISE" d={2}>
-        <div className="hb-huge" aria-live="polite">{bpm}<span className="sr-only"> BPM</span></div>
+        <div className="hb-huge" aria-live="polite">{shownBpmOf(state)}<span className="sr-only"> BPM</span></div>
         <Transport beat={beat} speed={state.speed}>
           <span className="hb-speed" role="group" aria-label="Practice speed">
             {SPEEDS.map((s, i) => (
@@ -71,7 +76,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
       </Tile>
 
       <Tile className="ink s6" label="ROOT AND FIFTH, ON THE BEAT" d={1}>
-        <Neck keyIndex={state.key} bar={bar} />
+        <Neck keyIndex={state.key} feelIndex={state.feel} bar={bar} />
       </Tile>
 
       <Tile className="s8" label={`TEN PARTS · ${chorus ? "CHORUS" : "VERSE"}`}>
@@ -91,7 +96,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
         <div className="hb-sheet">
           <ol>
             {TITLES.slice(0, 6).map((t, i) => (
-              <li key={t}>{t}<span>{KEYS[(i * 5) % 12]} · {FEELS[i % FEELS.length].bpm}</span></li>
+              <li key={t} className={i === 0 ? "now" : undefined} aria-current={i === 0 ? "true" : undefined}>{t}<span>{KEYS[(i * 5) % 12]} · {FEELS[i % FEELS.length].shown} BPM</span></li>
             ))}
           </ol>
         </div>
@@ -112,10 +117,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
       </Tile>
 
       <Tile className="s3" label="PDF SONGBOOK" d={1}>
-        <div className="hb-pdf" aria-hidden="true">
-          <b>{TITLES[0]}</b>
-          {`KEY A · ${FEELS[0].label} · ${FEELS[0].bpm}\n\nVERSE 1 ×2\n${loopTab(0, 2).rows.join("\n")}`}
-        </div>
+        <PdfPage />
         <p className="hb-p">Every part&apos;s tab, ready to print.</p>
       </Tile>
 
@@ -132,7 +134,13 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
 
       <Tile className="s4" label="CHORD LAB · G MAJOR" d={1}>
         <div className="hb-boxes" role="img" aria-label={`Three G major shapes: ${G_SHAPES.map((g) => g.position).join(", ")}`}>
-          {G_SHAPES.map((g, i) => <ChordBox key={i} frets={g.frets} />)}
+          {G_SHAPES.map((g, i) => (
+            <div key={i} className="hb-box">
+              <ChordBox voicing={g.voicing} name="G" tuning="e-standard" left={false} />
+              <span className="nt">{shapeNotes(g.frets, "e-standard").filter((n): n is number => n !== null).map((n) => noteName(n)).join(" ")}</span>
+              <span className="ps">{g.position}</span>
+            </div>
+          ))}
         </div>
         <p className="hb-p">The shapes players actually use, up the neck.</p>
       </Tile>
@@ -178,19 +186,24 @@ function Form({ parts, now = -1 }: { parts: { name: string; section: string; wei
   );
 }
 
-const LOCK = <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>;
 
-function Parts({ keyIndex, now }: { keyIndex: number; now: number }) {
-  const chords = chordsFor(keyIndex).map((c) => c.name);
+function Parts({ keyIndex, feelIndex, now }: { keyIndex: number; feelIndex: number; now: number }) {
   const [locked, setLocked] = useState<number[]>([1]);
-  const rows: [string, string, number[]][] = [["Intro", `${RHYTHM_NAMES.intro}`, [0, 1]], ["Verse 1", `${RHYTHM_NAMES.verse} · palm-muted · ×2`, [0, 1, 2, 3]], ["Chorus", `${RHYTHM_NAMES.chorus} · open`, [3, 0, 1, 2]], ["Solo", "Lead over the chorus", [2, 3, 0, 1]]];
+  // what the Generator writes for these parts in this key and feel: its captions and chords
+  const rows = (["intro", "verse", "chorus"] as const).map((id) => {
+    const s = sectionFor(id, keyIndex, feelIndex);
+    const [, rhythm] = s.caption.split(" · ");
+    return { name: id === "verse" ? "Verse 1" : s.label, caption: `${rhythm ?? s.caption}${s.repeat > 1 ? ` · ×${s.repeat}` : ""}`, chords: s.voicings.map((v) => v.chord.name).join(" ") };
+  });
+  const chorus = sectionFor("chorus", keyIndex, feelIndex);
+  rows.push({ name: "Solo", caption: "Lead over the chorus", chords: chorus.voicings.map((v) => v.chord.name).join(" ") });
   return (
     <ul className="hb-parts">
-      {rows.map(([n, d, order], i) => (
-        <li key={n} className={`hb-part${n === "Chorus" ? " ch" : ""}${i === now ? " now" : ""}`}>
+      {rows.map((r, i) => (
+        <li key={r.name} className={`hb-part${i === now ? " now" : ""}${locked.includes(i) ? " locked" : ""}`}>
           <span className="hb-num">0{i + 1}</span>
-          <div className="nm">{n}<small>{d} · {order.map((o) => chords[o]).join(" ")}</small></div>
-          <button className="hb-ib" type="button" aria-label={`Lock ${n}`} aria-pressed={locked.includes(i)} onClick={() => setLocked((l) => (l.includes(i) ? l.filter((x) => x !== i) : [...l, i]))}>{LOCK}</button>
+          <div className="nm">{r.name}<small>{r.caption} · {r.chords}</small></div>
+          <button className="hb-lock" type="button" aria-label={locked.includes(i) ? `Unlock ${r.name}` : `Lock ${r.name}`} aria-pressed={locked.includes(i)} onClick={() => setLocked((l) => (l.includes(i) ? l.filter((x) => x !== i) : [...l, i]))}><LockIcon /></button>
         </li>
       ))}
     </ul>
@@ -212,7 +225,7 @@ function Shape({ keyIndex, onAgain }: { keyIndex: number; onAgain: () => void })
       </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <button className="hb-btn sm" type="button" onClick={() => { setTake((t) => t + 1); onAgain(); }}>BUILD AGAIN</button>
-        <button className="hb-ib" type="button" aria-label="Lock Verse 1" aria-pressed={locked} onClick={() => setLocked((l) => !l)}>{LOCK}</button>
+        <button className="hb-lock" type="button" aria-label={locked ? "Unlock Verse 1" : "Lock Verse 1"} aria-pressed={locked} onClick={() => setLocked((l) => !l)}><LockIcon /></button>
         <span className="hb-mono" aria-live="polite">{take ? `TAKE ${take + 1} · ${KEYS[keyIndex]}` : ""}</span>
       </div>
     </>
@@ -254,24 +267,35 @@ function TapeDeck({ beat, chorus }: { beat: number; chorus: boolean }) {
 
 const FRETS = 13;
 const fx = (f: number) => (f === 0 ? 0.6 : (100 * (1 - Math.pow(2, -f / 12))) / (1 - Math.pow(2, -FRETS / 12)));
-const mid = (f: number) => (f === 0 ? 2.2 : (fx(f) + fx(f - 1)) / 2); // an open string: just behind the nut
+const mid = (f: number) => (f === 0 ? -2.6 : (fx(f) + fx(f - 1)) / 2); // an open string: behind the nut, as in the Lab
 const SY = (s: number) => 8 + s * 16.8; // string 0 = low E, at the bottom
 const STRING_INDEX: Record<string, number> = { E: 0, A: 1, D: 2, G: 3, B: 4, e: 5 };
 
-function Neck({ keyIndex, bar }: { keyIndex: number; bar: number }) {
-  const c = chordsFor(keyIndex)[bar % 4];
-  const rs = STRING_INDEX[c.chord.rootString], fs = STRING_INDEX[c.chord.fifthString];
+function Neck({ keyIndex, feelIndex, bar }: { keyIndex: number; feelIndex: number; bar: number }) {
+  const verse = sectionFor("verse", keyIndex, feelIndex);
+  const c = verse.voicings[bar % verse.voicings.length];
+  const root = c.voicing.notes.find((n) => n.role === "R")!;
+  const fifth = c.voicing.notes.find((n) => n.role === "5");
+  const degree = ["I", "V", "vi", "IV"][verse.chords.findIndex((x) => x.root === c.chord.root)] ?? "";
+  const NAMES = ["E", "A", "D", "G", "B", "e"];
   return (
-    <div className="hb-neckwrap" role="img" aria-label={`${c.name}: root on the ${c.chord.rootString} string, fret ${c.chord.rootFret}; fifth on the ${c.chord.fifthString} string, fret ${c.chord.fifthFret}`}>
+    <div className="hb-neckwrap" role="img" aria-label={`${c.chord.name}: ${c.voicing.notes.map((n) => `${n.role === "5" ? "fifth" : "root"} on the ${n.string} string, ${n.fret === 0 ? "open" : `fret ${n.fret}`}`).join("; ")}`}>
       <div className="hb-neck" aria-hidden="true">
         <span className="nut" />
         {Array.from({ length: FRETS }, (_, i) => <span key={i} className="fret" style={{ left: `${fx(i + 1)}%` }} />)}
         {[3, 5, 7, 9].map((f) => <span key={f} className="inlay" style={{ left: `${mid(f)}%` }} />)}
-        {[0, 1, 2, 3, 4, 5].map((s) => <span key={`${s}-${s === rs || s === fs ? bar : 0}`} className={`str${s === rs || s === fs ? " hit" : ""}`} style={{ top: `${100 - SY(s)}%`, "--h": `${4 - s * 0.5}px` } as React.CSSProperties} />)}
-        <span className="dot" style={{ left: `${mid(c.chord.rootFret)}%`, top: `${100 - SY(rs)}%` }}>R</span>
-        <span className="dot" style={{ left: `${mid(c.chord.fifthFret)}%`, top: `${100 - SY(fs)}%` }}>5</span>
+        <span className="inlay" style={{ left: `${mid(12)}%`, top: "38%" }} /><span className="inlay" style={{ left: `${mid(12)}%`, top: "62%" }} />
+        {[3, 5, 7, 9, 12].map((f) => <span key={`n${f}`} className="fno" style={{ left: `${mid(f)}%` }}>{f}</span>)}
+        {[0, 1, 2, 3, 4, 5].map((s) => {
+          const hit = c.voicing.notes.some((n) => STRING_INDEX[n.string] === s);
+          return <span key={`${s}-${hit ? bar : 0}`} className={`str${hit ? " hit" : ""}`} style={{ top: `${100 - SY(s)}%`, "--h": `${4 - s * 0.5}px` } as React.CSSProperties} />;
+        })}
+        {NAMES.map((n, s) => <span key={`l${s}`} className="sname" style={{ top: `${100 - SY(s)}%` }}>{n}</span>)}
+        {c.voicing.notes.map((n, i) => (
+          <span key={i} className={`dot ${n.role === "5" ? "fifth" : "root"}`} style={{ left: `${mid(n.fret)}%`, top: `${100 - SY(STRING_INDEX[n.string])}%` }}>{n.role === "5" ? "5" : "R"}</span>
+        ))}
       </div>
-      <div className="hb-cname" aria-hidden="true">{c.name}<small>{c.degree} · {c.chord.rootFret === 0 ? "OPEN" : `${c.chord.rootString} STRING · FRET ${c.chord.rootFret}`}</small></div>
+      <div className="hb-cname" aria-hidden="true">{c.chord.name}<small>{degree} · {root.fret === 0 ? `OPEN ${root.string}` : `${root.string} STRING · FRET ${root.fret}`}{fifth ? "" : ""}</small></div>
     </div>
   );
 }
@@ -422,34 +446,46 @@ function Scope({ moving, bpm }: { moving: boolean; bpm: number }) {
   return <canvas ref={canvas} className="hb-scope" aria-hidden="true" />;
 }
 
-function ChordBox({ frets }: { frets: (number | null)[] }) {
-  const played = frets.filter((f): f is number => f !== null && f > 0);
-  const base = Math.max(...played, 0) > 5 ? Math.min(...played) : 1;
+/** G5 as the Chord Lab draws it: low E at the bottom (thickest), the root red on the E string's 3rd fret, the fifth
+ * cream on the A string's 5th, string names and fret numbers. */
+function G5() {
+  const NAMES = ["e", "B", "G", "D", "A", "E"]; // top to bottom
+  const sy = (i: number) => 18 + i * 22; // i = 0 top (high e) … 5 bottom (low E)
+  const fxp = (f: number) => 40 + f * 70; // fret wire f
+  const mid = (f: number) => (fxp(f) + fxp(f - 1)) / 2;
+  const R = { x: mid(3), y: sy(5) }, F = { x: mid(5), y: sy(4) };
   return (
-    <svg viewBox="-6 0 76 100" aria-hidden="true">
-      {[0, 1, 2, 3, 4, 5].map((x) => <line key={`s${x}`} x1={10 + x * 10} y1="14" x2={10 + x * 10} y2="94" stroke="var(--t3)" />)}
-      {[0, 1, 2, 3, 4, 5].map((f) => <line key={`f${f}`} x1="10" y1={14 + f * 16} x2="60" y2={14 + f * 16} stroke="var(--t3)" strokeWidth={f === 0 && base === 1 ? 4 : 1} />)}
-      {frets.map((f, x) =>
-        f === null ? <text key={x} x={10 + x * 10} y="10" fontSize="8" textAnchor="middle" fill="var(--t3)">×</text>
-        : f === 0 ? <circle key={x} cx={10 + x * 10} cy="7" r="3" fill="none" stroke="var(--t3)" />
-        : <circle key={x} cx={10 + x * 10} cy={14 + (f - base + 0.5) * 16} r="5" fill="var(--accent)" />,
-      )}
-      {base > 1 && <text x="5" y="25" fontSize="8" textAnchor="end" fill="var(--t3)">{base}</text>}
+    <svg className="hb-g5" viewBox="0 0 420 160" role="img" aria-label="G5: root on the low E string at the 3rd fret, fifth on the A string at the 5th fret">
+      {[1, 2, 3, 4, 5].map((f) => <line key={f} x1={fxp(f)} x2={fxp(f)} y1={sy(0)} y2={sy(5)} className="fret" />)}
+      <line x1={fxp(0)} x2={fxp(0)} y1={sy(0) - 2} y2={sy(5) + 2} className="nut" />
+      <circle cx={mid(3)} cy={(sy(2) + sy(3)) / 2} r="4" className="inlay" /><circle cx={mid(5)} cy={(sy(2) + sy(3)) / 2} r="4" className="inlay" />
+      {NAMES.map((n, i) => (
+        <g key={n + i}>
+          <line x1={fxp(0)} x2={fxp(5) + 20} y1={sy(i)} y2={sy(i)} className="str" strokeWidth={1 + i * 0.3} />
+          <text x="16" y={sy(i)} className="lbl" dominantBaseline="central" textAnchor="middle">{n}</text>
+        </g>
+      ))}
+      {[3, 5].map((f) => <text key={f} x={mid(f)} y="152" className="lbl" textAnchor="middle">{f}</text>)}
+      <line x1={R.x} y1={R.y} x2={F.x} y2={F.y} stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" opacity=".25" />
+      <circle className="pulse" cx={R.x} cy={R.y} r="12" /><circle className="pulse b" cx={F.x} cy={F.y} r="12" />
+      <circle cx={R.x} cy={R.y} r="12" fill="var(--accent)" /><circle cx={F.x} cy={F.y} r="12" className="fifth" />
+      <text x={R.x} y={R.y} dominantBaseline="central" textAnchor="middle" fontFamily="var(--mono)" fontWeight="700" fontSize="11" fill="var(--on-accent)">R</text>
+      <text x={F.x} y={F.y} dominantBaseline="central" textAnchor="middle" fontFamily="var(--mono)" fontWeight="700" fontSize="11" className="fifth-l">5</text>
     </svg>
   );
 }
 
-function G5() {
+/** One page of the PDF songbook, as the real one prints it: the title, the facts, and the Verse's tab with bar numbers,
+ * rhythm stems and the ×2, on paper. */
+function PdfPage() {
+  const verse = sectionFor("verse", 0, 0);
+  const groups = tabFor(verse, 2);
   return (
-    <svg className="hb-g5" viewBox="0 0 400 150" role="img" aria-label="G5: root on the E string at the 3rd fret, fifth on the A string at the 5th fret">
-      {[0, 1, 2, 3, 4, 5].map((s) => <line key={s} x1="30" x2="390" y1={20 + s * 22} y2={20 + s * 22} stroke="currentColor" strokeWidth={1 + (5 - s) * 0.3} opacity=".7" />)}
-      <line x1="30" x2="30" y1="20" y2="130" stroke="currentColor" strokeWidth="5" />
-      {[1, 2, 3, 4, 5].map((f) => <line key={f} x1={30 + f * 72} x2={30 + f * 72} y1="20" y2="130" stroke="var(--line-strong)" strokeWidth="3" />)}
-      <line x1="210" y1="130" x2="354" y2="108" stroke="var(--accent)" strokeWidth="8" strokeLinecap="round" opacity=".3" />
-      <circle className="pulse" cx="210" cy="130" r="12" /><circle className="pulse b" cx="354" cy="108" r="12" />
-      <circle cx="210" cy="130" r="12" fill="var(--accent)" /><circle cx="354" cy="108" r="12" fill="var(--accent)" />
-      <text x="210" y="134" textAnchor="middle" fontFamily="var(--mono)" fontWeight="700" fontSize="11" fill="var(--on-accent)">R</text>
-      <text x="354" y="112" textAnchor="middle" fontFamily="var(--mono)" fontWeight="700" fontSize="11" fill="var(--on-accent)">5</text>
-    </svg>
+    <div className="hb-pdf" aria-hidden="true">
+      <b>{TITLES[0]}</b>
+      <span className="facts">KEY A · {FEELS[0].label} · {FEELS[0].shown} BPM</span>
+      <span className="part">{verse.label.toUpperCase()} 1 · ×{verse.repeat}</span>
+      <TabBlock groups={groups.slice(0, 1)} spoken={verse.spoken} rhythm={rhythmOf(verse)} repeat={verse.repeat} complete={false} />
+    </div>
   );
 }
