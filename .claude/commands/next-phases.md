@@ -118,7 +118,7 @@ Follow `docs/melody-and-solo-brief.md`, reusing `lib/fretboard.ts` and the Phase
 
 - **Explain as you go:** at the start of each phase, write a short plan in the session. At the end, summarise what changed and what was checked.
 - **Commit often,** with clear messages ending in the attribution lines your harness specifies.
-- **Checks before every PR:** `npm run lint`, `npm run build`, `npm run verify` and `npm run test:e2e` must all pass. Paste their summaries into the PR description.
+- **Checks before every PR:** `npm run lint`, `npm run build` and `npm run verify` must all pass. Paste their summaries into the PR description. Don't run `npm run test:e2e` locally unless the user asks; GitHub runs it on every PR (see CLAUDE.md).
 - **Musical correctness is non-negotiable:** never ship a tab, voicing, melody or bend that the automated checks can't prove correct.
 - **Visual review:** after building each phase, take screenshots at 390 and 1440px in light and dark, look at them, and fix anything clipped, overlapping or unreadable before opening the PR.
 - **Stop and report** instead of guessing if:
