@@ -13,37 +13,58 @@ test.describe("home", () => {
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
   });
 
-  test("the live card's tab plays the loop in the key, one bar per chord, with the lit chip", async ({ page }, info) => {
+  test("the live card's tab is the Generator's verse, drawn the Generator's way, one bar per chord with the lit chip", async ({ page }, info) => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
     await gotoAndSettle(page, "/");
-    const tab = page.locator("[data-live-card] .hb-tab");
-    const rows = async () => (await tab.textContent())!.split("\n").map((r) => r.trimEnd());
-    // A: A5 (A open, D 2nd), E5 (E open, A 2nd), F#5 (E 2nd, A 4th), D5 (D open, G 2nd), eight strums a bar
-    expect(await rows()).toEqual([
-      "  A5               E5               F#5              D5",
+    const wrap = page.locator("[data-live-card] .hb-tabw");
+    const tab = wrap.locator("svg[data-tab]");
+    const rows = (kind: string) => tab.locator(`text[data-row="${kind}"]`).evaluateAll((els) => els.map((e) => (e.textContent ?? "").trimEnd()));
+    // the songbook marks the Generator's tab has: bar numbers, red chord names, P.M. and accents, stems, the ×2
+    await expect(tab.locator('text[data-row="number"]')).toHaveText(["1", "2", "3", "4"]);
+    await expect(tab.locator('text[data-row="repeat"]')).toHaveText("×2");
+    expect((await rows("chords"))[0].trim().split(/\s+/)).toEqual(["A5", "E5", "F#5", "D5"]);
+    // the Verse the Generator writes in A, Fast Punk (I–V–vi–IV): chugs with a dead-strum turnaround
+    expect(await rows("string")).toEqual([
       "e|----------------|----------------|----------------|----------------|",
       "B|----------------|----------------|----------------|----------------|",
-      "G|----------------|----------------|----------------|2-2-2-2-2-2-2-2-|",
-      "D|2-2-2-2-2-2-2-2-|----------------|----------------|0-0-0-0-0-0-0-0-|",
-      "A|0-0-0-0-0-0-0-0-|2-2-2-2-2-2-2-2-|4-4-4-4-4-4-4-4-|----------------|",
-      "E|----------------|0-0-0-0-0-0-0-0-|2-2-2-2-2-2-2-2-|----------------|",
-      "  P.M.------------ P.M.------------ P.M.------------ P.M.------------",
+      "G|----------------|----------------|----------------|2---2-2-2---x-x-|",
+      "D|2---2-2-2---2-2-|----------------|----------------|0---0-0-0---x-x-|",
+      "A|0---0-0-0---0-0-|2---2-2-2---x-x-|4---4-4-4---4-4-|----------------|",
+      "E|----------------|0---0-0-0---x-x-|2---2-2-2---2-2-|----------------|",
     ]);
     // the bar lit in the tab is the chip lit above it
-    await expect(tab).toHaveAttribute("data-bar", /[0-3]/, { timeout: 5000 });
+    await expect(wrap).toHaveAttribute("data-bar", /[0-3]/, { timeout: 5000 });
     for (let i = 0; i < 3; i++) {
       const [bar, chip] = await page.evaluate(() => {
         const card = document.querySelector("[data-live-card]")!;
-        return [card.querySelector(".hb-tab")!.getAttribute("data-bar"), String([...card.querySelectorAll(".hb-chip")].findIndex((c) => c.classList.contains("now")))];
+        return [card.querySelector(".hb-tabw")!.getAttribute("data-bar"), String([...card.querySelectorAll(".hb-chip")].findIndex((c) => c.classList.contains("now")))];
       });
       expect(bar).toBe(chip);
       await page.waitForTimeout(450);
     }
-    // in F: F5 on the low E string, C5 on the A string, D5 on the open D string, A#5 on the A string
+    // in F the chords follow: F5 C5 D5 A#5
     await page.getByRole("group", { name: "Key, in the live card" }).getByRole("button", { name: "F", exact: true }).click();
-    expect((await rows())[0]).toBe("  F5               C5               D5               A#5");
-    expect((await rows())[6]).toBe("E|1-1-1-1-1-1-1-1-|----------------|----------------|----------------|");
+    expect((await rows("chords"))[0].trim().split(/\s+/)).toEqual(["F5", "C5", "D5", "A#5"]);
+  });
+
+  test("home cards agree with the Generator and the Lab: shown tempos, flats on keys, the Lab's chord boxes and neck colours", async ({ page }, info) => {
+    onlyAtWidths(info, [1440]);
+    lightOnly(info);
+    await gotoAndSettle(page, "/");
+    // Half-time shows 90 BPM, as on the Generator (the click stays 180)
+    const feel = page.getByRole("group", { name: "Feel" });
+    await expect(feel.getByRole("button", { name: /HALF-TIME/ })).toContainText("90 BPM");
+    await expect(page.locator(".hb-sheet li").nth(1)).toContainText("90 BPM");
+    // only the song playing is red on the setlist
+    await expect(page.locator(".hb-sheet li.now")).toHaveCount(1);
+    // a sharp key carries its flat, as the Generator's key picker
+    await expect(page.getByRole("group", { name: "Key", exact: true }).getByRole("button", { name: "A# / Bb" })).toHaveCount(1);
+    // the Lab's chord boxes (finger numbers), and the G5 diagram with string names and fret numbers
+    expect(await page.locator(".hb-box svg").count()).toBe(3);
+    await expect(page.locator(".hb-g5 .lbl")).toHaveText(["e", "B", "G", "D", "A", "E", "3", "5"]);
+    // lock buttons are plain icons, as on the Generator
+    expect(await page.locator(".hb-lock").first().evaluate((b) => getComputedStyle(b).borderTopWidth)).toBe("0px");
   });
 
   test("the key, feel and speed drive the whole page", async ({ page }, info) => {
@@ -185,7 +206,7 @@ test.describe("home", () => {
     expect(await chips()).toBe(0);
     expect(await page.locator(".hb-aura").first().evaluate((e) => getComputedStyle(e).animationName)).toBe("none");
     // the tab waits at the start: no bar lit
-    await expect(page.locator("[data-live-card] .hb-tab")).not.toHaveAttribute("data-bar", /./);
+    await expect(page.locator("[data-live-card] .hb-tabw")).not.toHaveAttribute("data-bar", /./);
   });
 
   test("song titles flip and shuffle", async ({ page }, info) => {

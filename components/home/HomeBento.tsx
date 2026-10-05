@@ -7,7 +7,10 @@ import { Speaker } from "@/components/Speaker";
 import { AmpFx } from "@/components/home/AmpFx";
 import { HowItWorks, Statement } from "@/components/home/AmpSections";
 import { StageBackground } from "@/components/StageBackground";
-import { type HomeState, FEELS, KEYS, SPEEDS, STATS, bpmOf, chordsFor, loopTab } from "@/components/home/homeData";
+import { type HomeState, FEELS, KEYS, KEY_NOTES, SPEEDS, STATS, bpmOf, sectionFor, shownBpmOf } from "@/components/home/homeData";
+import { TabBlock } from "@/components/TabBlock";
+import { rhythmOf, tabFor } from "@/lib/generator";
+import { TAB_STRINGS, enharmonicOf } from "@/lib/musicTheory";
 import { progressions } from "@/lib/musicTheory";
 
 /**
@@ -75,7 +78,7 @@ export function HomeBento() {
       <div className="hb-grain" aria-hidden="true" />
       {/* "Amp blowout": the page moves with the scroll speed and the beat (AmpFx.tsx) */}
       <AmpFx root={root} beat={beat} />
-      <Hero state={state} beat={beat} bpm={bpm} onKey={(key) => set({ key })} />
+      <Hero state={state} beat={beat} onKey={(key) => set({ key })} />
       <Marquee />
       <section className="hb-stats-sec" aria-label="Palm/Mute in numbers">
         <dl className="hb-stats hb-wrap" data-reveal>
@@ -103,7 +106,7 @@ export function HomeBento() {
 }
 
 /** The opening screen: the headline, and a live Song Generator card writing verse 1 on the beat. */
-function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm: number; onKey: (k: number) => void }) {
+function Hero({ state, beat, onKey }: { state: HomeState; beat: number; onKey: (k: number) => void }) {
   const col = useRef<HTMLDivElement>(null);
   const kin = useRef<HTMLHeadingElement>(null);
   // fit the headline to its column, as the Generator's page titles never run past theirs
@@ -136,7 +139,7 @@ function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm
         <div ref={col}>
           <div className="hb-htop">
             <span className="hb-mono">COUNT IN · ABOUT PALM/MUTE</span>
-            <span className="hb-live" data-live-bpm={bpm}><i />LIVE · {bpm} BPM</span>
+            <span className="hb-live" data-live-bpm={shownBpmOf(state)}><i />LIVE · {shownBpmOf(state)} BPM</span>
           </div>
           <h1 ref={kin} id="hb-title" className="hb-kin">
             <span aria-hidden="true">Songwriting</span><span aria-hidden="true">formulas from</span><span aria-hidden="true">the bands that</span><span aria-hidden="true">built pop-punk.</span>
@@ -153,8 +156,8 @@ function Hero({ state, beat, bpm, onKey }: { state: HomeState; beat: number; bpm
           <div className="hb-glass" data-live-card>
             <div className="hb-cardhd"><span className="hb-num">01</span><span>Verse 1</span><span className="hb-cap">KEY OF <b>{KEYS[state.key]}</b> · {FEELS[state.feel].label}</span></div>
             <KeyPills value={state.key} onChange={onKey} label="Key, in the live card" />
-            <Chips keyIndex={state.key} beat={beat} />
-            <Tab keyIndex={state.key} beat={beat} />
+            <Chips keyIndex={state.key} feelIndex={state.feel} beat={beat} />
+            <Tab keyIndex={state.key} feelIndex={state.feel} beat={beat} />
             <Transport beat={beat} speed={state.speed} />
             <div className="hb-glass-foot"><span><i />NO TABS STORED</span><span>×2 · E STANDARD</span></div>
           </div>
@@ -171,25 +174,37 @@ export function PlayGlyph() {
 export function KeyPills({ value, onChange, label }: { value: number; onChange: (k: number) => void; label: string }) {
   return (
     <div className="hb-pills" role="group" aria-label={label}>
-      {KEYS.map((k, i) => (
-        <button key={k} type="button" className="hb-pill" aria-pressed={i === value} onClick={() => onChange(i)}>{k}</button>
-      ))}
+      {/* as the Generator's key picker: a sharp key shows its flat name under it */}
+      {KEY_NOTES.map((k, i) => {
+        const flat = enharmonicOf(k);
+        return (
+          <button key={k} type="button" className={`hb-pill${flat ? " two" : ""}`} aria-pressed={i === value} aria-label={flat ? `${k} / ${flat}` : k} onClick={() => onChange(i)}>
+            {flat ? <><span>{k}</span><span>{flat}</span></> : k}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-/** I–V–vi–IV in the key, as the Generator's chord chips (the chord library's two-note tabs); the one sounding fills its bar. */
-export function Chips({ keyIndex, beat }: { keyIndex: number; beat: number }) {
-  const chords = useMemo(() => chordsFor(keyIndex), [keyIndex]);
+/**
+ * The Verse's chords as the Generator's chord chips: the voicings the Generator actually writes for this key and feel
+ * (string and fret per note), in the order they're played; the one sounding fills its bar.
+ */
+export function Chips({ keyIndex, feelIndex, beat }: { keyIndex: number; feelIndex: number; beat: number }) {
+  const verse = useMemo(() => sectionFor("verse", keyIndex, feelIndex), [keyIndex, feelIndex]);
+  const degrees = ["I", "V", "vi", "IV"];
   const bar = Math.floor(beat / 4);
   return (
-    <div className="hb-chips" aria-label={`I–V–vi–IV in ${KEYS[keyIndex]}: ${chords.map((c) => c.name).join(", ")}`} role="img">
-      {chords.map((c, i) => {
+    <div className="hb-chips" aria-label={`I–V–vi–IV in ${KEYS[keyIndex]}: ${verse.voicings.map((v) => v.chord.name).join(", ")}`} role="img">
+      {verse.voicings.map(({ chord, voicing }, i) => {
         const now = beat > 0 && bar % 4 === i;
+        const fretOn = (s: string) => voicing.notes.find((n) => n.string === s)?.fret;
         return (
           // keyed by the key, so the chips flip in when it changes; only the bar fill restarts each bar
           <span key={`${keyIndex}-${i}`} className={`hb-chip${now ? " now" : ""}`} style={{ "--i": i } as React.CSSProperties} aria-hidden="true">
-            <small>{c.degree}</small><b>{c.name}</b><pre>{c.tab}</pre>
+            <small>{degrees[verse.chords.findIndex((c) => c.root === chord.root)] ?? ""}</small><b>{chord.name}</b>
+            <pre>{TAB_STRINGS.map((s) => `${s}|${fretOn(s) ?? "-"}`).join("\n")}</pre>
             {now && <i key={bar} className="hb-fill" />}
           </span>
         );
@@ -199,27 +214,17 @@ export function Chips({ keyIndex, beat }: { keyIndex: number; beat: number }) {
 }
 
 /**
- * The loop's tab in the key: one bar per chord, as the chips show it. One beat is a quarter note: the bar sounding is
- * the chip that's lit (a chord a bar), and the playhead moves two eighth-note strums a beat. Before the first beat (and
- * with reduced motion) the playhead waits at the start and no bar is lit.
+ * The Verse's tab, drawn by the Generator's own TabBlock: bar numbers, red chord names, P.M. and accents, the
+ * rhythm stems and the ×2. The bar sounding (a chord a bar, with the chips) is lit; nothing is lit before the first
+ * beat or with reduced motion.
  */
-export function Tab({ keyIndex, beat }: { keyIndex: number; beat: number }) {
-  const tab = useMemo(() => loopTab(keyIndex), [keyIndex]);
-  const bar = Math.floor(beat / 4) % 4;
+export function Tab({ keyIndex, feelIndex, beat, bars = 4 }: { keyIndex: number; feelIndex: number; beat: number; bars?: number }) {
+  const verse = useMemo(() => sectionFor("verse", keyIndex, feelIndex), [keyIndex, feelIndex]);
+  const groups = useMemo(() => tabFor(verse, bars), [verse, bars]);
+  const bar = Math.floor(beat / 4) % verse.bars.length;
   return (
-    <div className="hb-tabw">
-      <pre className="hb-tab" aria-hidden="true" data-bar={beat > 0 ? bar : undefined} style={{ "--bar": bar, "--cell": (beat % 4) * 2 } as React.CSSProperties}>
-        <span className="hb-tab-in">
-          {beat > 0 && <span className="cur" />}
-          <span className="head" />
-          {"  "}
-          {tab.names.map((n, i) => <b key={i}>{n.padEnd(17)}</b>)}
-          {"\n"}
-          {tab.rows.join("\n")}
-          {"\n"}
-          <span className="pm">{tab.pm}</span>
-        </span>
-      </pre>
+    <div className="hb-tabw" data-bar={beat > 0 ? bar : undefined}>
+      <TabBlock groups={groups.slice(0, 1)} spoken={verse.spoken} rhythm={rhythmOf(verse)} repeat={verse.repeat} complete={groups.length === 1} nowBar={beat > 0 ? bar : null} />
     </div>
   );
 }

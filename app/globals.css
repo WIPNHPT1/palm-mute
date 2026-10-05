@@ -57,7 +57,7 @@
      icon at the strings' 1.75 weight. Hover throws the horns (a quick double shake); opening tips the hand away and
      draws the close mark in, a cream stroke crossed by a red one. ---- */
   .horns-icon { position: absolute; inset: 0; display: grid; place-items: center; }
-  .horns-hand { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+  .horns-hand { fill: none; stroke: url(#horns-fade); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
     transform-box: view-box; transform-origin: 50% 80%; transition: transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms; }
   .horns-x line { stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; transform-box: fill-box; transform-origin: center; transform: scale(0);
     transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms; }
@@ -397,6 +397,9 @@
   .sig-topbar {
     background-image: radial-gradient(440px 160% at max(70px, calc((100% - var(--page-max)) / 2 + 90px)) 0%, rgb(var(--color-accent) / 0.26), transparent 70%);
   }
+  /* no hard edge under the top bar: what scrolls beneath it fades out into it (owner's call) */
+  .sig-topbar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 28px; pointer-events: none;
+    background: linear-gradient(rgb(var(--color-ink) / 0.92), rgb(var(--color-ink) / 0.5) 40%, rgb(var(--color-ink) / 0)); }
 
   /* page title: ink warming into red on its last letters. Deep red on paper; the brighter red in dark, where deep red
      would fall under 3:1 on the near-black page. The gradient spans the title's own width, not the column's. */
@@ -659,9 +662,10 @@
   .credits-list dd { margin: 0; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.1; text-transform: uppercase; letter-spacing: -0.01em; }
   .credits-list .red dd { color: rgb(var(--color-accent-on-ink)); }
   .credits-list .as-written dd { text-transform: none; }
-  .credits-end { padding: 40px 20px 56px; text-align: center; border-top: 1px solid rgb(var(--color-text-on-dark) / .08); }
-  /* the ink bands' red stage light from above (owner's pick, docs/mockups/gradient-options.html; .sig-stage-light) */
-  .credits-end { background-image: radial-gradient(60% 140% at 50% -40%, rgb(var(--color-accent) / 0.22), transparent 70%); }
+  .credits-end { padding: 40px 20px 56px; text-align: center; }
+  /* the ink bands' red stage light (owner's pick, docs/mockups/gradient-options.html), set down inside the band so it
+     rises out of the credits with no hard edge (owner's call: no line, no light starting at the band's top) */
+  .credits-end { background-image: radial-gradient(70% 90% at 50% 38%, rgb(var(--color-accent) / 0.2), transparent 72%); }
   .credits-wm { display: inline-flex; font-family: var(--font-archivo-black), sans-serif; font-size: clamp(54px, 9vw, 140px); line-height: 0.9; letter-spacing: -0.03em; color: rgb(var(--color-text-on-dark)); }
   /* the bolt sits still here (the header's keeps its flip), at the header wordmark's proportions */
   .credits-wm .wordmark-bolt svg { animation: none; }

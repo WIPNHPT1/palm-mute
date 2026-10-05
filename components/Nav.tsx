@@ -101,6 +101,13 @@ export function Nav() {
                 knuckles, the thumb across them; it turns into the close mark when the menu opens */}
             <span className="horns-icon" data-open={menuOpen} aria-hidden="true">
               <svg viewBox="0 0 24 24" className="h-[24px] w-[24px] overflow-visible">
+                {/* the footer GitHub logo's ember fade: cream warming into red on the diagonal (owner's call) */}
+                <defs>
+                  <linearGradient id="horns-fade" gradientUnits="userSpaceOnUse" x1="6" y1="4" x2="18" y2="21">
+                    <stop offset="0.3" style={{ stopColor: "rgb(var(--color-text-on-dark))" }} />
+                    <stop offset="1" style={{ stopColor: "rgb(var(--color-accent-on-ink))" }} />
+                  </linearGradient>
+                </defs>
                 <g className="horns-hand">
                   <path d="M7 12.5V5.4a1.5 1.5 0 0 1 3 0v6.4" />
                   <path d="M15 11.8V7.2a1.5 1.5 0 0 1 3 0v5.3" />

@@ -1,10 +1,10 @@
 // The home page's content, all from the app's own data and engines: the keys, the five feels and their tempos, the
 // chord library's power-chord shapes, the length planner, the MIDI export's parts, the Chord Lab's voicings and mood map.
 import midiLanes from "@/data/midi-lanes.json";
-import { FEEL_IDS, getFeel, getTemplate, playbackBpm } from "@/lib/generator";
+import { FEEL_IDS, type RenderedSection, getFeel, getTemplate, playbackBpm, renderSection } from "@/lib/generator";
 import { TUNINGS, positionOf, voicingsFor } from "@/lib/lab/chords";
 import { MOOD_LOOPS, moodPoints } from "@/lib/lab/mood";
-import { type Degree, type NoteName, type TabString, PITCH_CLASSES, TAB_STRINGS, chordForDegree } from "@/lib/musicTheory";
+import { type NoteName, PITCH_CLASSES } from "@/lib/musicTheory";
 import { LENGTH, formatLength, planSong } from "@/lib/songLength";
 
 export type HomeState = { key: number; feel: number; length: number; speed: number };
@@ -13,36 +13,30 @@ export type HomeState = { key: number; feel: number; length: number; speed: numb
 export const KEY_NOTES: NoteName[] = [...PITCH_CLASSES.slice(9), ...PITCH_CLASSES.slice(0, 9)];
 export const KEYS = KEY_NOTES.map((n) => n as string);
 
-export const FEELS = FEEL_IDS.map((id) => ({ id, label: getFeel(id).label, bpm: playbackBpm(id) }));
+/** `bpm` is the click the page's beat runs at; `shown` is the tempo the Generator shows (Half-time: 90 on a 180 click). */
+export const FEELS = FEEL_IDS.map((id) => ({ id, label: getFeel(id).label, bpm: playbackBpm(id), shown: Number(getFeel(id).displayBpm) || playbackBpm(id) }));
 
 /** The practice speeds (the transport's). */
 export const SPEEDS = [1, 0.9, 0.75, 0.5];
 export const bpmOf = (s: HomeState) => Math.round(FEELS[s.feel].bpm * SPEEDS[s.speed]);
-
-const LOOP: Degree[] = ["I", "V", "vi", "IV"];
-
-/** I–V–vi–IV in a key, with each chord's two-note tab from the chord library. */
-export function chordsFor(keyIndex: number) {
-  return LOOP.map((degree) => {
-    const c = chordForDegree(KEY_NOTES[keyIndex], degree);
-    return { degree, name: c.name, root: c.root, chord: c.chord, tab: TAB_STRINGS.map((s) => `${s}|${c.chord.twoNoteTab[s]}`).join("\n") };
-  });
-}
+/** The tempo to show for the feel and practice speed, as the Generator shows it. */
+export const shownBpmOf = (s: HomeState) => Math.round(FEELS[s.feel].shown * SPEEDS[s.speed]);
 
 /**
- * The loop as a palm-muted verse in a key: one bar per chord (I, V, vi, IV, or the first `bars` of them), eight
- * eighth-note downstrokes each, on the chord library's two-note shapes, so the tab plays what the chips show. Each bar
- * is 16 characters after "e|", with a "|" between bars.
+ * A part of the song in a key and feel, written by the Song Generator's own engine (the same take every time:
+ * I–V–vi–IV, seed 1), so the home page's tabs, chips and captions are exactly what the Generator writes.
  */
-export function loopTab(keyIndex: number, bars = 4) {
-  const chords = chordsFor(keyIndex).slice(0, bars);
-  const strums = (fret: string) => (fret === "-" ? "-".repeat(16) : `${fret}-`.repeat(8));
-  return {
-    names: chords.map((c) => c.name),
-    rows: TAB_STRINGS.map((s: TabString) => `${s}|${chords.map((c) => strums(c.chord.twoNoteTab[s])).join("|")}|`),
-    pm: `  ${chords.map(() => "P.M.------------").join(" ")}`,
-  };
+const sections = new Map<string, RenderedSection>();
+export function sectionFor(id: "intro" | "verse" | "chorus", keyIndex: number, feelIndex: number): RenderedSection {
+  const k = `${id}:${keyIndex}:${feelIndex}`;
+  let s = sections.get(k);
+  if (!s) {
+    s = renderSection(id, { key: KEY_NOTES[keyIndex], feel: FEELS[feelIndex].id, progressionId: "I-V-vi-IV", seed: 1 });
+    sections.set(k, s);
+  }
+  return s;
 }
+
 
 /** The song lengths the Generator offers (its slider's steps). */
 export const LENGTHS: number[] = [];
@@ -62,7 +56,7 @@ export const LANES = (midiLanes.lanes as { id: string; name: string }[]).map((l)
 
 /** The Chord Lab's G major, one shape from each position up the neck (frets low E to high e; null = not played). */
 const G_ALL = voicingsFor(7, "maj", "e-standard");
-export const G_SHAPES = [...new Set(G_ALL.map(positionOf))].map((pos) => G_ALL.find((v) => positionOf(v) === pos)!).slice(0, 3).map((v) => ({ frets: v.frets, position: positionOf(v) }));
+export const G_SHAPES = [...new Set(G_ALL.map(positionOf))].map((pos) => G_ALL.find((v) => positionOf(v) === pos)!).slice(0, 3).map((v) => ({ voicing: v, frets: v.frets, position: positionOf(v) }));
 
 /** The app's own ten loops on the Chord Lab's mood map. */
 export const MOOD = moodPoints(MOOD_LOOPS).filter((p) => p.own).map((p) => ({ id: p.degrees.join("–"), x: p.x, y: p.y }));
