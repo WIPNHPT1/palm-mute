@@ -276,7 +276,7 @@ export function Dictionary() {
               <li
                 key={id}
                 data-voicing={id}
-                className={`flex min-w-0 flex-col rounded-outer border ${selected ? "border-[1.5px] border-accent bg-surface shadow-card-highlight" : "border-line bg-paper"}`}
+                className={`glass flex min-w-0 flex-col rounded-outer border ${selected ? "glass-on border-[1.5px] border-accent bg-surface" : "border-line bg-paper"}`}
               >
                 <button
                   type="button"

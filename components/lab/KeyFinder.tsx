@@ -122,7 +122,7 @@ export function KeyFinder() {
         <>
           <ul aria-label="Keys these chords fit" data-key-fits className="grid gap-[8px]">
             {fits.map((f, i) => (
-              <li key={f.key} className={`grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[14px] gap-y-[4px] rounded-outer border px-[12px] py-[10px] ${i === 0 ? "border-[1.5px] border-accent bg-surface" : "border-line bg-paper"}`}>
+              <li key={f.key} className={`grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-[14px] gap-y-[4px] rounded-outer border px-[12px] py-[10px] ${i === 0 ? "glass glass-on border-[1.5px] border-accent bg-surface" : "glass-well border-line bg-paper"}`}>
                 <span className="font-display text-[18px]">{noteName(f.key)}</span>
                 <span className="font-mono text-[12px] leading-[1.6] text-text-secondary">
                   {i === 0 && <b className="text-text-primary">Best fit · </b>}

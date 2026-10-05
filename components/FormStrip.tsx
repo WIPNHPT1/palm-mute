@@ -23,7 +23,7 @@ export function FormStrip({
 }) {
   return (
     <nav aria-label="Song running order" data-form-strip>
-      <ol className="flex flex-wrap gap-[4px] rounded-outer bg-ink p-[6px] dark:shadow-[inset_0_0_0_1px] dark:shadow-line-strong">
+      <ol className="relative flex flex-wrap gap-[4px] rounded-outer glass-smoke bg-ink p-[6px]">
         {parts.map(({ slot, bars, start }, i) => {
           const active = activePart === i;
           const variation = slot.variation ? VARIATIONS[slot.variation].label : null;

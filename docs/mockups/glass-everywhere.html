@@ -1,0 +1,527 @@
+<title>Palm/Mute Glass Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: the site's ink bar with page tabs, then each page drafted in Studio glass, rendered twice (light, then dark)
+     inside framed stages. The frames carry their own theme tokens (.tl / .td), so both themes show at once whatever
+     the viewer's theme; the page chrome around them follows the viewer. Every glass surface is one of five materials. */
+  :root {
+    --c-bg:#F6F1E4; --c-surface:#FFFFFF; --c-t1:#171310; --c-t2:#4E4738; --c-t3:#6B6152; --c-line:#E4DAC3; --c-accent:#C23A26;
+    --f-display:"Archivo Black","Arial Black",sans-serif; --f-ui:"Space Grotesk",system-ui,sans-serif; --f-mono:"Space Mono",ui-monospace,Menlo,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-bg:#15110E; --c-surface:#1F1A16; --c-t1:#F1EADB; --c-t2:#CFC5B0; --c-t3:#A89C86; --c-line:#352D25; --c-accent:#E85A42; color-scheme: dark; } }
+  :root[data-theme="dark"] { --c-bg:#15110E; --c-surface:#1F1A16; --c-t1:#F1EADB; --c-t2:#CFC5B0; --c-t3:#A89C86; --c-line:#352D25; --c-accent:#E85A42; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--c-bg); color: var(--c-t1); font-family: var(--f-ui); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding-inline: 20px; }
+  @media (min-width: 834px) { .wrap { padding-inline: 32px; } }
+
+  /* chrome */
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; background: #171310; color: #F6F1E4; }
+  .bar .wrap { min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-block: 8px; }
+  .wm { font-family: var(--f-display); font-size: 16px; margin-right: auto; white-space: nowrap; } .wm i { font-style: normal; color: #E5573F; }
+  .seg-c { display: inline-flex; gap: 2px; padding: 3px; border-radius: 8px; background: #2A241C; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; }
+  .seg-c button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #D9CFB9; }
+  .seg-c button[aria-pressed="true"] { background: #F6F1E4; color: #171310; }
+  .intro { padding-block: 32px 12px; }
+  .kick { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--c-accent); }
+  .intro h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 3.2vw, 38px); line-height: 1.05; }
+  .lede { max-width: 72ch; margin: 12px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--c-t2); }
+  .mats { display: grid; gap: 10px; margin-top: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .mat { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-surface); font-size: 13px; line-height: 1.4; color: var(--c-t2); }
+  .mat b { display: block; color: var(--c-t1); font-size: 13.5px; }
+  .mat i { width: 44px; height: 44px; border-radius: 10px; }
+  .notes { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; line-height: 1.5; color: var(--c-t2); max-width: 90ch; }
+  .frame-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 30px 0 10px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--c-t3); }
+  .frame-hd b { font-family: var(--f-display); font-weight: 400; font-size: 20px; letter-spacing: 0; color: var(--c-t1); }
+  .frame { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--c-line); }
+  .foot { padding-block: 40px 80px; font-family: var(--f-mono); font-size: 12px; color: var(--c-t3); }
+
+  /* ================== the two themes, scoped to a frame ================== */
+  .tl { --paper:#F6F1E4; --surface:#FFFFFF; --ink:#171310; --ink-soft:#2A241C; --accent:#C23A26; --accent-rgb:194 58 38; --accent-deep:#8A2415; --accent-on-ink:#E5573F;
+    --brass:#B8862E; --brass-rgb:184 134 46; --success:#3F8F4F; --line:#E4DAC3; --line-strong:#DCD3BE;
+    --t1:#171310; --t2:#4E4738; --t3:#6B6152; --t4:#72675A; --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#FFF9EF;
+    --pane: linear-gradient(160deg, rgb(255 255 255 / .82), rgb(255 255 255 / .56) 60%);
+    --edge: rgb(255 255 255 / .95); --ring: 0 0 0 1px rgb(23 19 16 / .06);
+    --drop: 0 30px 60px -36px rgb(23 19 16 / .45), 0 12px 24px -18px rgb(23 19 16 / .22);
+    --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .95), rgb(255 255 255 / .1) 35%, rgb(var(--accent-rgb) / .4) 82%, rgb(255 255 255 / .25));
+    --well: rgb(246 241 228 / .72); --well-ring: #E4DAC3; --pill: rgb(255 255 255 / .72); --pill-ring: #E4DAC3; --press-bg: #171310; --press-t: #F6F1E4;
+    --aura-a: rgb(194 58 38 / .2); --aura-b: rgb(184 134 46 / .22); --grid: rgb(23 19 16 / .045);
+    color-scheme: light; background: var(--paper); color: var(--t1); }
+  .td { --paper:#15110E; --surface:#1F1A16; --ink:#0B0908; --ink-soft:#221C17; --accent:#E85A42; --accent-rgb:232 90 66; --accent-deep:#A8321F; --accent-on-ink:#E85A42;
+    --brass:#C9973C; --brass-rgb:201 151 60; --success:#52A862; --line:#352D25; --line-strong:#463B30;
+    --t1:#F1EADB; --t2:#CFC5B0; --t3:#A89C86; --t4:#9A8E7B; --on-dark:#F6F1E4; --on-dark-2:#D9CFB9; --on-dark-3:#A89C86; --on-accent:#140F0C;
+    --pane: linear-gradient(160deg, rgb(246 241 228 / .1), rgb(246 241 228 / .03) 60%), rgb(21 17 14 / .55);
+    --edge: rgb(255 255 255 / .14); --ring: 0 0 0 1px rgb(246 241 228 / .04);
+    --drop: 0 40px 80px -40px rgb(0 0 0 / .9), 0 10px 20px -14px rgb(0 0 0 / .6);
+    --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .42), rgb(255 255 255 / .05) 35%, rgb(var(--accent-rgb) / .38) 80%, rgb(255 255 255 / .1));
+    --well: rgb(0 0 0 / .38); --well-ring: rgb(246 241 228 / .08); --pill: rgb(246 241 228 / .06); --pill-ring: rgb(246 241 228 / .12); --press-bg: #F1EADB; --press-t: #0B0908;
+    --aura-a: rgb(232 90 66 / .3); --aura-b: rgb(201 151 60 / .2); --grid: rgb(246 241 228 / .035);
+    color-scheme: dark; background: var(--paper); color: var(--t1); }
+
+  /* the stage behind each page: the studio light and grid */
+  .stage { position: relative; isolation: isolate; overflow: hidden; padding: clamp(18px, 3vw, 44px) clamp(14px, 3vw, 44px) 0; }
+  .stage::before { content: ""; position: absolute; inset: 0; z-index: -2; background:
+      radial-gradient(600px 420px at 78% 6%, var(--aura-a), transparent 70%), radial-gradient(520px 420px at 92% 40%, var(--aura-b), transparent 70%),
+      radial-gradient(520px 520px at 6% 62%, var(--aura-a), transparent 70%), radial-gradient(600px 460px at 70% 92%, var(--aura-b), transparent 70%); }
+  .stage::after { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 64px 64px; }
+  .col { display: flex; flex-direction: column; gap: 16px; max-width: 1280px; margin: 0 auto; }
+
+  /* ================== the five materials ================== */
+  .g { position: relative; min-width: 0; border-radius: 22px; padding: 18px; background: var(--pane); box-shadow: inset 0 1px 0 var(--edge), var(--ring), var(--drop); }
+  .g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; background: var(--edge-grad);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  .g.smoke { --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .32), rgb(255 255 255 / .04) 40%, rgb(var(--accent-rgb) / .45) 85%); background: linear-gradient(160deg, rgb(46 38 30 / .94), rgb(14 11 9 / .92)); color: var(--on-dark); box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), var(--drop); }
+  .g.red { --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .7), rgb(255 255 255 / .05) 45%, rgb(255 255 255 / .2)); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent) 50%, color-mix(in srgb, var(--accent) 78%, #000)); color: var(--on-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 30px 60px -34px rgb(var(--accent-rgb) / .8); }
+  .g.brass { --edge-grad: linear-gradient(140deg, rgb(255 255 255 / .75), rgb(255 255 255 / .05) 45%, rgb(255 255 255 / .2)); background: linear-gradient(160deg, color-mix(in srgb, var(--brass) 80%, #fff), var(--brass) 55%, color-mix(in srgb, var(--brass) 80%, #000)); color: #171310; box-shadow: inset 0 1px 0 rgb(255 255 255 / .4), 0 30px 60px -34px rgb(var(--brass-rgb) / .8); }
+  .g.on { box-shadow: inset 0 1px 0 var(--edge), 0 0 0 1.5px rgb(var(--accent-rgb) / .7), 0 0 40px -12px rgb(var(--accent-rgb) / .6), var(--drop); }
+  .g.slim { padding: 10px; border-radius: 16px; }
+  .well { border-radius: 14px; padding: 12px 14px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); min-width: 0; }
+  .smoke .well, .well.dk { background: rgb(0 0 0 / .32); box-shadow: inset 0 0 0 1px rgb(246 241 228 / .08); }
+
+  /* parts */
+  .lab { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--t4); }
+  .smoke .lab { color: var(--on-dark-3); } .red .lab { color: rgb(255 249 239 / .8); } .brass .lab { color: rgb(23 19 16 / .65); }
+  .hd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .hd h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 18px; }
+  .hd .r { margin-left: auto; }
+  .num { display: inline-block; padding: 1px 7px; border-radius: 5px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); font-size: 11.5px; font-weight: 700; }
+  .td .num { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .mono { font-family: var(--f-mono); }
+  .sm { font-family: var(--f-mono); font-size: 12px; color: var(--t3); line-height: 1.55; }
+  .smoke .sm { color: var(--on-dark-2); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pills.k6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); } .pills.k6 .pill { min-width: 0; }
+  .pill { min-width: 42px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: var(--pill); box-shadow: inset 0 0 0 1px var(--pill-ring); font-family: var(--f-mono); font-size: 11.5px; font-weight: 700; color: var(--t2); line-height: 1.15; }
+  .pill small { display: block; font-weight: 400; color: var(--t4); font-size: 10px; }
+  .pill[aria-pressed="true"] { background: var(--press-bg); color: var(--press-t); box-shadow: inset 0 -2px 0 var(--accent-on-ink), 0 6px 14px -8px rgb(0 0 0 / .5); }
+  .pill.borrowed { box-shadow: inset 0 0 0 1px var(--pill-ring), inset 0 -3px 0 var(--brass); }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); }
+  .seg button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .04em; color: var(--t3); }
+  .seg button[aria-pressed="true"] { background: var(--press-bg); color: var(--press-t); font-weight: 700; box-shadow: inset 0 -2px 0 var(--accent-on-ink), 0 6px 14px -8px rgb(0 0 0 / .5); }
+  .btn { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: var(--on-accent); font-family: var(--f-display); font-size: 12.5px; letter-spacing: .02em; text-decoration: none;
+    background-image: linear-gradient(180deg, rgb(255 255 255 / .22), transparent 55%, rgb(0 0 0 / .14)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), 0 14px 26px -14px var(--accent); }
+  .btn svg { width: 10px; height: 10px; fill: currentColor; }
+  .btn2 { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--pill); box-shadow: inset 0 0 0 1px var(--pill-ring), inset 0 1px 0 var(--edge); font-family: var(--f-mono); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; color: var(--t1); }
+  .smoke .btn2 { background: rgb(246 241 228 / .08); box-shadow: inset 0 0 0 1px rgb(246 241 228 / .14); color: var(--on-dark); }
+  .play { position: relative; flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--pill); box-shadow: inset 0 0 0 1.5px var(--line-strong); color: var(--t2); }
+  .play svg { width: 11px; height: 11px; fill: currentColor; margin-left: 2px; }
+  .play.hot { background: var(--accent); color: var(--on-accent); background-image: linear-gradient(180deg, rgb(255 255 255 / .22), transparent 60%); box-shadow: 0 0 0 3px rgb(246 241 228 / .1), 0 8px 18px -8px var(--accent); }
+  .icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: var(--t3); }
+  .icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tag { padding: 4px 9px; border-radius: 7px; background: var(--pill); box-shadow: inset 0 0 0 1px var(--pill-ring); font-family: var(--f-mono); font-size: 11px; color: var(--t2); white-space: nowrap; }
+  .tag.red { color: var(--accent); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .4); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; min-width: 52px; padding: 7px 6px 8px; border-radius: 10px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); box-shadow: inset 0 0 0 1px rgb(246 241 228 / .09), inset 0 1px 0 rgb(246 241 228 / .1); }
+  .chip small { font-size: 10.5px; color: var(--on-dark-3); } .chip b { font-size: 13px; margin: 1px 0 3px; }
+  .chip pre { margin: 0; font: 8.5px/1.25 var(--f-mono); color: var(--on-dark-3); }
+  .chip.now { background-image: radial-gradient(90% 80% at 50% 115%, rgb(var(--accent-rgb) / .6), transparent 70%); box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .6), 0 0 22px -6px rgb(var(--accent-rgb) / .7); }
+  .chip.now::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 62%; background: var(--accent-on-ink); }
+  .tab { margin: 0; font-family: var(--f-mono); font-size: 11.5px; line-height: 1.5; white-space: pre; color: var(--t3); overflow-x: auto; }
+  .tab b { color: var(--accent); }
+  .smoke .tab { color: var(--on-dark-3); }
+  .field { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring), inset 0 -2px 0 var(--accent); font-family: var(--f-mono); font-size: 13px; color: var(--t1); }
+  .field .ok { margin-left: auto; color: var(--success); }
+  .meter { position: relative; height: 12px; padding: 1px; border-radius: 4px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); margin-top: 20px; }
+  .meter i { display: block; height: 100%; width: var(--v); border-radius: 2px; background: linear-gradient(90deg, var(--success), var(--brass) 65%, var(--accent)) 0 0 / calc(100% * 100 / var(--n)) 100%;
+    -webkit-mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px); mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 10px); }
+  .meter span { position: absolute; top: -20px; left: calc(var(--v) - 16px); padding: 1px 5px; border-radius: 4px; background: var(--ink); color: var(--on-dark); font-family: var(--f-mono); font-size: 11px; }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .prog { flex: 1; min-width: 80px; height: 4px; border-radius: 2px; background: rgb(246 241 228 / .12); overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 22%; background: linear-gradient(90deg, var(--accent-deep), var(--accent-on-ink)); }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: minmax(0, 1fr); } @media (min-width: 800px) { .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+
+  /* page header */
+  .ph { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; padding-top: 6px; }
+  .ph .k { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; color: var(--accent); }
+  .ph .k::after { content: ""; width: 120px; height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); }
+  .ph h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 3vw, 34px); line-height: 1; width: fit-content;
+    background: linear-gradient(90deg, var(--t1) 45%, var(--ember, var(--accent-deep))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .td .ph h2 { --ember: var(--accent); }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--pane); box-shadow: inset 0 1px 0 var(--edge), var(--ring); font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--t2); }
+  .badge i, .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(63 143 79 / .2); display: inline-block; }
+
+  /* guide posters */
+  .poster { min-height: 170px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+  .poster .big { position: absolute; right: 14px; top: 4px; font-family: var(--f-display); font-size: 64px; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px currentColor; opacity: .85; }
+  .poster h4 { margin: 0 0 6px; font-family: var(--f-display); font-weight: 400; font-size: 20px; text-transform: uppercase; }
+  .poster p { margin: 0; font-size: 13.5px; line-height: 1.45; opacity: .9; max-width: 32ch; }
+  .guide-foot { display: flex; justify-content: space-between; gap: 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; color: var(--t3); }
+  .guide-foot span:first-child::before { content: ""; display: inline-block; width: 36px; height: 2px; margin-right: 12px; vertical-align: middle; background: var(--accent); }
+
+  /* generator */
+  .summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .summary .cell { padding: 6px 10px; border-radius: 9px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--t4); }
+  .summary .cell b { display: block; letter-spacing: 0; font-size: 12px; color: var(--t1); }
+  .board { display: flex; gap: 3px; flex-wrap: wrap; }
+  .board span { display: grid; place-items: center; width: 24px; height: 32px; border-radius: 4px; background: linear-gradient(#2B241D 50%, #1A1511 50%); color: #F6F1E4; font-family: var(--f-display); font-size: 15px; box-shadow: inset 0 0 0 1px rgb(246 241 228 / .06); }
+  .board span.sp { background: none; box-shadow: none; width: 10px; }
+  .map { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(96px, 1fr); gap: 4px; overflow-x: auto; }
+  .map div { padding: 7px 9px; border-radius: 9px; background: rgb(246 241 228 / .05); font-family: var(--f-mono); font-size: 11px; line-height: 1.35; color: var(--on-dark-3); white-space: nowrap; }
+  .map div b { display: block; color: var(--on-dark); }
+  .map div.on { background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent)); color: rgb(255 249 239 / .85); } .map div.on b { color: #FFF9EF; }
+  .pages { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pages i { width: 60px; height: 84px; border-radius: 4px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 8px 16px -10px rgb(0 0 0 / .4);
+    background-image: linear-gradient(var(--accent), var(--accent)), repeating-linear-gradient(180deg, var(--line) 0 1px, transparent 1px 5px); background-size: 70% 2px, 70% 60%; background-position: 50% 10px, 50% 22px; background-repeat: no-repeat; }
+  .pages i:first-child { background: #171310; background-image: none; }
+  .lanes { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: 0 12px; font-family: var(--f-mono); font-size: 11.5px; }
+  .lanes > * { padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--t2); }
+  .lanes .h { color: var(--t4); font-size: 10.5px; letter-spacing: .14em; }
+  .range { position: relative; align-self: center; height: 6px; border-radius: 3px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); padding: 0; border: 0; }
+  .range i { position: absolute; top: 0; bottom: 0; left: var(--a); width: var(--w); border-radius: 3px; background: var(--t3); }
+  .range i.g { background: var(--accent); }
+  .linkfield { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* chord lab */
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 4px; }
+  .strip a { display: block; padding: 8px 10px; border-radius: 10px; background: rgb(246 241 228 / .05); font-family: var(--f-mono); font-size: 11px; line-height: 1.4; color: var(--on-dark-3); text-decoration: none; }
+  .strip a b { color: var(--on-dark); }
+  .strip a.on { box-shadow: inset 0 -2px 0 var(--accent-on-ink); background: rgb(246 241 228 / .09); }
+  .ruler { height: 6px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 8px); -webkit-mask: linear-gradient(90deg, #000 60%, transparent); mask: linear-gradient(90deg, #000 60%, transparent); }
+  .shapes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .shape { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 0; text-align: center; border-radius: 16px; }
+  .shape svg { width: 96px; height: auto; }
+  .shape .nt { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; color: var(--t2); }
+  .shape .w { font-family: var(--f-mono); font-size: 11px; color: var(--t3); }
+  .shape .ease { color: var(--brass); letter-spacing: 2px; font-size: 10px; }
+  .shape .acts { align-self: stretch; display: flex; justify-content: space-around; margin-top: 6px; padding: 8px 0; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 11px; font-weight: 700; color: var(--t2); }
+  .neck svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--f-mono); font-size: 11px; color: var(--t3); }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .loopwell { display: flex; flex-wrap: wrap; gap: 6px; min-height: 64px; align-items: center; border-style: dashed; }
+  .result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); font-family: var(--f-mono); font-size: 12px; color: var(--t2); }
+  .result b.k { font-family: var(--f-display); font-size: 16px; color: var(--t1); }
+  .result.best { background: var(--pane); box-shadow: inset 0 1px 0 var(--edge), 0 0 0 1.5px rgb(var(--accent-rgb) / .6); }
+  .result .bor { color: var(--brass); text-decoration: underline; }
+  .result .out { color: var(--accent); }
+  .mapbox { position: relative; aspect-ratio: 16 / 11; max-width: 100%; border-radius: 14px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); overflow: hidden; }
+  .mapbox::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--well-ring); } .mapbox::after { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--well-ring); }
+  .mapbox .q { position: absolute; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; color: var(--t4); }
+  .mapbox .d { position: absolute; display: flex; align-items: center; gap: 6px; translate: -5px -50%; font-family: var(--f-mono); font-size: 11px; color: var(--t2); white-space: nowrap; }
+  .mapbox .d::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--t3); box-shadow: 0 0 0 3px var(--well); }
+  .mapbox .d.on { color: var(--t1); font-weight: 700; } .mapbox .d.on::before { background: var(--accent); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .25); }
+  .moodgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  @media (min-width: 900px) { .moodgrid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } }
+
+  /* home */
+  .hero { display: grid; gap: 28px; align-items: center; grid-template-columns: minmax(0, 1fr); padding-block: 16px 8px; }
+  @media (min-width: 1000px) { .hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); } }
+  .hl { container-type: inline-size; min-width: 0; }
+  .h1 { margin: 16px 0 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 9cqi, 80px); line-height: .9; letter-spacing: -.03em; text-transform: uppercase; }
+  .h1 span { display: block; white-space: nowrap; } .h1 .o { color: transparent; -webkit-text-stroke: 1.5px var(--t1); padding-left: .5em; } .h1 .r { color: var(--accent); padding-left: .9em; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0; padding: 6px; }
+  .stats div { padding: 12px 14px; border-right: 1px solid var(--well-ring); }
+  .stats div:last-child { border-right: 0; }
+  .stats dt { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .16em; color: var(--t4); } .stats dd { margin: 4px 0 0; font-family: var(--f-display); font-size: 28px; }
+  .stats div:last-child dd { color: var(--accent); }
+  .bento { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .s3 { grid-column: span 3; } .s4 { grid-column: span 4; } .s5 { grid-column: span 5; } .s6 { grid-column: span 6; } .s7 { grid-column: span 7; } .s8 { grid-column: span 8; } .s12 { grid-column: span 12; }
+  @media (max-width: 999px) { .bento > * { grid-column: span 12; } }
+  .tile { display: flex; flex-direction: column; gap: 12px; }
+  .tile h4 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 21px; text-transform: uppercase; line-height: 1.05; }
+  .tile p { margin: 0; font-size: 14px; line-height: 1.5; }
+  .huge { font-family: var(--f-display); font-size: clamp(56px, 6vw, 92px); line-height: .85; letter-spacing: -.04em; }
+  .feelrow { display: flex; justify-content: space-between; padding: 10px 12px; border-radius: 10px; background: rgb(246 241 228 / .05); box-shadow: inset 0 0 0 1px rgb(246 241 228 / .1); font-size: 13px; }
+  .feelrow.on { box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / .7); background: rgb(var(--accent-rgb) / .14); }
+  .feelrow span:last-child { font-family: var(--f-mono); font-size: 11px; color: var(--on-dark-3); }
+  .form { display: flex; gap: 3px; height: 36px; }
+  .form i { border-radius: 4px; background: var(--line-strong); }
+  .form i.c { background: var(--accent); } .form i.s { background: var(--brass); }
+  .partrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--well-ring); }
+  .partrow b { display: block; font-size: 14px; } .partrow span { font-family: var(--f-mono); font-size: 11px; color: var(--t3); }
+  .partrow .lock { margin-left: auto; }
+  .partrow.on { box-shadow: inset 0 0 0 1.5px rgb(var(--accent-rgb) / .6); }
+  .tape { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 14px; background: linear-gradient(180deg, #2B241D, #14100D); padding: 14px; }
+  .tape .lbl { height: 100%; border-radius: 8px; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #000)); display: flex; flex-direction: column; justify-content: space-between; padding: 10px 14px; color: #FFF9EF; font-family: var(--f-display); font-size: 14px; }
+  .tape .reels { display: flex; justify-content: center; gap: 60px; } .tape .reels i { width: 54px; height: 54px; border-radius: 50%; background: repeating-conic-gradient(#F6F1E4 0 20deg, #2B241D 20deg 60deg); box-shadow: 0 0 0 6px #171310; }
+  .vu { display: grid; gap: 4px; } .vu div { display: flex; gap: 3px; } .vu i { flex: 1; height: 8px; border-radius: 2px; background: var(--line); } .vu i.on { background: var(--success); }
+  .roll { display: grid; gap: 5px; font-family: var(--f-mono); font-size: 10.5px; color: var(--on-dark-3); }
+  .roll div { display: grid; grid-template-columns: 60px 1fr; align-items: center; gap: 8px; }
+  .roll span { height: 6px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--c, var(--accent)) 0 var(--l, 20px), transparent var(--l, 20px) calc(var(--l, 20px) + var(--gap, 14px))); }
+  .faq { display: grid; gap: 10px; }
+  .faq details { padding: 14px 18px; }
+  .faq summary { cursor: pointer; font-family: var(--f-display); font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+  .faq summary::after { content: "+"; font-family: var(--f-mono); color: var(--accent); }
+  .faq p { margin: 10px 0 0; font-size: 14px; line-height: 1.55; color: var(--t2); }
+  .encore { text-align: center; padding: 40px 18px; display: grid; justify-items: center; gap: 18px; }
+  .encore h4 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(30px, 4vw, 54px); text-transform: uppercase; }
+  .sec-h { margin: 18px 0 2px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .16em; color: var(--accent); }
+  .pad-b { height: 28px; }
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <span class="wm">PALM<i>/</i>MUTE</span>
+    <div class="seg-c" role="group" aria-label="Page"><button type="button" data-page="generator" aria-pressed="true">SONG GENERATOR</button><button type="button" data-page="chords" aria-pressed="false">CHORD LAB</button><button type="button" data-page="home" aria-pressed="false">HOME</button></div>
+    <div class="seg-c" role="group" aria-label="Theme shown"><button type="button" data-show="both" aria-pressed="true">LIGHT + DARK</button><button type="button" data-show="light" aria-pressed="false">LIGHT</button><button type="button" data-show="dark" aria-pressed="false">DARK</button></div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap intro">
+    <p class="kick">DRAFT · STUDIO GLASS, EVERY CARD</p>
+    <h1>Every card on the site, in glass</h1>
+    <p class="lede">The home hero's Studio glass carried through every card on the Song Generator, the Chord Lab and the home page, in light and dark. Layouts, words and colours stay as they are; only the surfaces change. Pick a page in the bar; each one is drawn in light, then dark.</p>
+    <div class="mats" aria-label="The five materials">
+      <div class="mat"><i style="background:linear-gradient(160deg,#fff,#efe7d6);box-shadow:inset 0 1px 0 #fff,0 0 0 1px #e4dac3"></i><span><b>Clear glass</b>Most cards: tools, sections, exports, setup.</span></div>
+      <div class="mat"><i style="background:linear-gradient(160deg,#2e261e,#0e0b09)"></i><span><b>Smoked glass</b>Today's ink cards: song map, tool strip, transport, ink tiles.</span></div>
+      <div class="mat"><i style="background:linear-gradient(160deg,#d8644f,#c23a26 50%,#9a2d1d)"></i><span><b>Red glass</b>Today's red cards: guide step 2, the Practise tile.</span></div>
+      <div class="mat"><i style="background:linear-gradient(160deg,#cfab6c,#b8862e 55%,#936b25)"></i><span><b>Brass glass</b>Today's brass cards: guide step 4, the Share tile.</span></div>
+      <div class="mat"><i style="background:#efe8d8;box-shadow:inset 0 0 0 1px #e4dac3,inset 0 2px 6px rgba(23,19,16,.08)"></i><span><b>Wells</b>Recessed glass for tabs, inputs, maps and tracks.</span></div>
+    </div>
+    <ul class="notes">
+      <li>The red notch, paper grain and ruler on today's cards give way to the glass edge light (bright top left, warming to red). The tool cards keep their ruler under the heading.</li>
+      <li>A card that's sounding or chosen gets a red edge and glow instead of today's red border.</li>
+      <li>No live blur anywhere (the "Motion performance" rule): the glass is translucent over a soft studio light, as on the home hero.</li>
+      <li>Chips, the title board and the transport stay ink, as now.</li>
+    </ul>
+  </section>
+  <div class="wrap" id="frames"></div>
+  <p class="wrap foot">Draft only. Nothing here changes the site until it's built.</p>
+</main>
+
+<script>
+  /* ---------- music, as the app has it ---------- */
+  const PCS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const SHAPE = { C: { D: "5", A: "3" }, "C#": { D: "6", A: "4" }, D: { G: "2", D: "0" }, "D#": { G: "3", D: "1" }, E: { A: "2", E: "0" }, F: { A: "3", E: "1" },
+    "F#": { A: "4", E: "2" }, G: { A: "5", E: "3" }, "G#": { A: "6", E: "4" }, A: { D: "2", A: "0" }, "A#": { D: "3", A: "1" }, B: { D: "4", A: "2" } };
+  const STR = ["e", "B", "G", "D", "A", "E"];
+  const OFF = { I: 0, ii: 2, iii: 4, IV: 5, V: 7, vi: 9 };
+  const chord = (key, deg) => { const r = PCS[(PCS.indexOf(key) + OFF[deg]) % 12]; return { deg, name: r + "5", tab: SHAPE[r] }; };
+  const chipHTML = (c, now) => `<span class="chip${now ? " now" : ""}"><small>${c.deg}</small><b>${c.name}</b><pre>${STR.map((s) => `${s}|${c.tab[s] ?? "-"}`).join("\n")}</pre></span>`;
+  function tabText(chords, feel = "pm") {
+    const names = "  " + chords.map((c) => `<b>${c.name}</b>` + " ".repeat(17 - c.name.length)).join("");
+    const rows = STR.map((s) => `${s}|` + chords.map((c) => (c.tab[s] ? `${c.tab[s]}-`.repeat(8) : "-".repeat(16))).join("|") + "|");
+    const foot = "  " + chords.map(() => (feel === "pm" ? "P.M.------------" : "let ring--------")).join(" ");
+    return [names, ...rows, foot].join("\n");
+  }
+  const KEY = "A";
+  const VERSE = ["I", "V", "vi", "IV"].map((d) => chord(KEY, d));
+  const CHORUS = ["IV", "I", "V", "vi"].map((d) => chord(KEY, d));
+  const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 9-14 9z"/></svg>';
+  const IC = {
+    regen: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M5 20h14"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  };
+  const KEYS_A = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+  const KEYS_C = [["C"], ["C#", "Db"], ["D"], ["D#", "Eb"], ["E"], ["F"], ["F#", "Gb"], ["G"], ["G#", "Ab"], ["A"], ["A#", "Bb"], ["B"]];
+  const pills = (keys, on) => `<div class="pills k6">${keys.map((k) => { const [a, b] = Array.isArray(k) ? k : [k]; return `<button type="button" class="pill" aria-pressed="${a === on}">${a}${b ? `<small>${b}</small>` : ""}</button>`; }).join("")}</div>`;
+  const seg = (items, on) => `<div class="seg">${items.map((t) => `<button type="button" aria-pressed="${t === on}">${t}</button>`).join("")}</div>`;
+  const meter = (label, v, words) => `<div><div class="sm">${label}</div><div class="meter" style="--v:${v}%;--n:${v}"><i></i><span>${v}%</span></div><div class="sm" style="margin-top:6px">${words}</div></div>`;
+
+  /* chord diagram: frets low E to high e (null = not played), roots in red */
+  const OPEN = [40, 45, 50, 55, 59, 64];
+  function diagram(frets, rootPc) {
+    const played = frets.filter((f) => f !== null && f > 0);
+    const lo = played.length ? Math.min(...played) : 1, base = lo <= 2 ? 1 : lo;
+    const W = 100, H = 110, x = (s) => 14 + s * 14.4, y = (f) => 22 + (f - base + 0.5) * 16;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+    for (let s = 0; s < 6; s++) svg += `<line x1="${x(s)}" y1="18" x2="${x(s)}" y2="98" stroke="currentColor" stroke-opacity=".55" stroke-width="1"/>`;
+    for (let f = 0; f <= 5; f++) svg += `<line x1="${x(0)}" y1="${18 + f * 16}" x2="${x(5)}" y2="${18 + f * 16}" stroke="currentColor" stroke-opacity="${f === 0 && base === 1 ? 1 : .4}" stroke-width="${f === 0 && base === 1 ? 3 : 1}"/>`;
+    if (base > 1) svg += `<text x="2" y="${y(base) + 3}" font-size="8" fill="currentColor" font-family="Space Mono">${base}</text>`;
+    frets.forEach((f, s) => {
+      if (f === null) svg += `<text x="${x(s) - 3}" y="12" font-size="9" fill="currentColor" fill-opacity=".6" font-family="Space Mono">×</text>`;
+      else if (f === 0) svg += `<circle cx="${x(s)}" cy="9" r="3.4" fill="none" stroke="currentColor" stroke-width="1.2"/>`;
+      else { const root = (OPEN[s] + f) % 12 === rootPc; svg += `<circle cx="${x(s)}" cy="${y(f)}" r="5.4" fill="${root ? "var(--accent)" : "var(--t1)"}"/>`; }
+    });
+    return svg + "</svg>";
+  }
+  const noteOf = (s, f) => PCS[(OPEN[s] + f) % 12];
+  /* the neck: every note of G major's triad, low E at the bottom */
+  function neckSVG(roles) {
+    const W = 1000, H = 230, fx = (f) => 30 + f * 62, sy = (s) => 200 - s * 34;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+    for (let f = 1; f <= 15; f++) svg += `<line x1="${fx(f)}" y1="26" x2="${fx(f)}" y2="200" stroke="var(--line-strong)" stroke-width="2"/>`;
+    svg += `<line x1="${fx(0)}" y1="26" x2="${fx(0)}" y2="200" stroke="var(--t1)" stroke-width="6"/>`;
+    [3, 5, 7, 9, 15].forEach((f) => (svg += `<circle cx="${fx(f) - 31}" cy="113" r="5" fill="var(--line-strong)"/>`));
+    svg += `<circle cx="${fx(12) - 31}" cy="96" r="5" fill="var(--line-strong)"/><circle cx="${fx(12) - 31}" cy="130" r="5" fill="var(--line-strong)"/>`;
+    for (let s = 0; s < 6; s++) svg += `<line x1="${fx(0)}" y1="${sy(s)}" x2="${fx(15)}" y2="${sy(s)}" stroke="var(--t3)" stroke-width="${1 + (5 - s) * 0.35}"/>`;
+    ["E", "A", "D", "G", "B", "e"].forEach((n, s) => (svg += `<text x="6" y="${sy(s) + 4}" font-size="13" fill="var(--t3)" font-family="Space Mono">${n}</text>`));
+    for (let s = 0; s < 6; s++) for (let f = 0; f <= 15; f++) {
+      const r = roles[noteOf(s, f)]; if (!r) continue;
+      const cx = f === 0 ? fx(0) - 14 : fx(f) - 31, col = r === "R" ? "var(--accent)" : r === "3" ? "var(--brass)" : "var(--t1)";
+      svg += `<circle cx="${cx}" cy="${sy(s)}" r="12" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/><text x="${cx}" y="${sy(s) + 4.5}" text-anchor="middle" font-size="12" font-weight="700" fill="${col}" font-family="Space Mono">${r}</text>`;
+    }
+    [3, 5, 7, 9, 12, 15].forEach((f) => (svg += `<text x="${fx(f) - 31}" y="224" text-anchor="middle" font-size="13" fill="var(--t3)" font-family="Space Mono">${f}</text>`));
+    return svg + "</svg>";
+  }
+
+  /* ---------- shared ---------- */
+  const header = (kick, title, aside = "") => `<div class="ph"><div><div class="k">${kick}</div><h2>${title}</h2></div>${aside}</div>`;
+  const guide = (steps, sig) => `
+    <div class="grid g4">${steps.map(([mat, n, t, p]) => `<div class="g ${mat} poster"><span class="lab">STEP 0${n}</span><span class="big" aria-hidden="true">0${n}</span><div><h4>${t}</h4><p>${p}</p></div></div>`).join("")}</div>
+    <div class="guide-foot"><span>${sig}</span><span>HIDE THE GUIDE ×</span></div>`;
+
+  /* ---------- the Song Generator ---------- */
+  function generator() {
+    return `<div class="col">
+      ${header("SONGWRITING ENGINE", "SONG GENERATOR", '<span class="badge"><i></i>CHORD PATTERNS ONLY · NO TABS STORED</span>')}
+      ${guide([["smoke", 1, "Set up", "Pick a key, a feel, the chords and how long the song runs, from 2:30 to 5:30."], ["red", 2, "Build", "BUILD SONG writes every part as real power-chord tabs, sized to fit your length."], ["", 3, "Shape each part", "Open a part's Options to change its rhythm, style, bars or drums. Lock what you love."], ["brass", 4, "Take it away", "Practise with loop and speed, then download the PDF songbook or MIDI, or copy a link."]], "YOUR KEY · YOUR LENGTH · EVERY PART")}
+      <p class="sec-h">SETUP, OPEN</p>
+      <div class="grid g2">
+        <div class="g stack"><div class="hd"><span class="lab">1 · Key</span><span class="r tag">A major</span></div>${pills(KEYS_A, "A")}<div class="sm">Every chord, tab and part follows the key.</div></div>
+        <div class="g stack"><div class="hd"><span class="lab">2 · Feel</span><span class="r tag">180 BPM</span></div>${seg(["FAST PUNK", "HALF-TIME", "MID-TEMPO", "POP STRUM", "BALLAD"], "FAST PUNK")}<div class="sm">Straight-8th hats, backbeat snare on 2 and 4. Half-time shares the 180 click.</div></div>
+        <div class="g stack"><div class="hd"><span class="lab">3 · Chords</span><span class="r tag">One of the genre's ten</span></div><div class="pills">${["I–V–vi–IV", "vi–IV–I–V", "I–IV–V", "I–V–IV–V", "vi–V–IV", "IV–I–V–vi"].map((p, i) => `<button type="button" class="pill" aria-pressed="${i === 0}" style="padding:0 12px">${p}</button>`).join("")}</div><div class="chips">${VERSE.map((c) => chipHTML(c)).join("")}</div></div>
+        <div class="g stack"><div class="hd"><span class="lab">4 · Length</span><span class="r tag">3:15 · 145 bars</span></div><div class="well" style="padding:16px"><div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent) 0 26%,var(--line-strong) 26%)"></div></div><div class="row" style="justify-content:space-between">${seg(["BEGINNER", "INTERMEDIATE", "ADVANCED"], "INTERMEDIATE")}<button type="button" class="btn">${PLAY}BUILD SONG</button></div></div>
+      </div>
+      <p class="sec-h">SETUP, CLOSED · THE SONG</p>
+      <div class="g slim"><div class="row"><div class="summary">${[["KEY", "A"], ["FEEL", "Fast Punk · 180"], ["CHORDS", "I-V-vi-IV"], ["LENGTH", "3:15"], ["LEVEL", "Intermediate"]].map(([k, v]) => `<span class="cell">${k}<b>${v}</b></span>`).join("")}</div><button type="button" class="btn2" style="margin-left:auto">EDIT SETUP</button></div></div>
+      <div class="row" style="justify-content:space-between;gap:12px">
+        <div class="row" style="gap:14px"><div class="g smoke slim"><div class="board">${[..."SWEATPANTS SUMMER"].map((ch) => (ch === " " ? '<span class="sp"></span>' : `<span>${ch}</span>`)).join("")}</div></div><div class="sm"><b style="color:var(--t1)">A · Fast Punk · 180 BPM · I-V-vi-IV</b><br>3:13 · 145 bars · Standard</div></div>
+        <div class="row"><button type="button" class="btn2">COPY LINK</button><button type="button" class="btn2">${IC.regen.replace("<svg", '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"')}BUILD AGAIN</button><button type="button" class="btn">${PLAY}PLAY SONG</button></div>
+      </div>
+      <div class="g smoke slim"><div class="map">${[["Intro", "0:00 · 16 bars"], ["Verse 1", "0:21 · 16 bars"], ["Pre-chorus 1", "0:43 · 8 bars"], ["Chorus 1", "0:53 · 16 bars"], ["Verse 2", "1:15 · 16 bars"], ["Pre-chorus 2", "1:36 · 8 bars"], ["Chorus 2", "1:47 · 16 bars"], ["Solo", "2:08 · 16 bars"], ["Breakdown", "2:29 · 16 bars"], ["Last chorus", "2:51 · 16 bars"], ["Ending", "3:12 · 1 bar"]].map(([n, t], i) => `<div class="${i === 1 ? "on" : ""}"><b>${n}</b>${t}</div>`).join("")}</div></div>
+      <div class="g on stack">
+        <div class="hd"><span class="num">02</span><h3>Verse</h3><span class="sm">8 bars · sounding</span><span class="r row"><span class="play hot">${PLAY}</span><span class="icon">${IC.regen}</span><span class="icon">${IC.lock}</span><span class="tag red">Verse 1 ×2 · 0:21</span><span class="tag">Verse 2 ×2 · adds a push · 1:15</span></span></div>
+        <div class="sm"><b style="color:var(--t1)">Progression, sparser: I-V-vi-IV</b> · 8 bars · Palm-muted eighths · Frets open-4 · ×2</div>
+        <div class="chips">${VERSE.map((c, i) => chipHTML(c, i === 1)).join("")}</div>
+        <div class="well"><pre class="tab">${tabText(VERSE)}</pre></div>
+        <div class="row" style="justify-content:flex-end"><button type="button" class="btn2">OPTIONS <span style="font-weight:400;color:var(--t3)">Palm-muted eighths</span> ${IC.chev.replace("<svg", '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"')}</button></div>
+      </div>
+      <div class="g stack">
+        <div class="hd"><span class="num">04</span><h3>Chorus</h3><span class="sm">8 bars · locked</span><span class="r row"><span class="play">${PLAY}</span><span class="icon">${IC.regen}</span><span class="icon" style="color:var(--t1);background:var(--pill);box-shadow:inset 0 0 0 1px var(--pill-ring)">${IC.lock}</span><span class="tag">Chorus 1 ×2 · 0:53</span></span></div>
+        <div class="sm"><b style="color:var(--t1)">Lift: IV-I-V-vi</b> · 8 bars · Driving eighths, open · Frets open-4</div>
+        <div class="chips">${CHORUS.map((c) => chipHTML(c)).join("")}</div>
+        <div class="well"><pre class="tab">${tabText(CHORUS, "open")}</pre></div>
+        <div class="row" style="justify-content:flex-end"><button type="button" class="btn2">OPTIONS <span style="font-weight:400;color:var(--t3)">Driving eighths</span></button></div>
+      </div>
+      <p class="sec-h">TAKE IT AWAY</p>
+      <div class="grid g2">
+        <div class="g stack"><h3 style="margin:0;font-family:var(--f-display);font-weight:400;font-size:18px">PDF songbook</h3><p class="sm" style="margin:0">A cover with the song's facts and running order, a chart of every chord shape and the form with times, then every section's full tab with bar numbers, rhythm and repeats.</p><div class="pages"><i></i><i></i><i></i><i></i><i></i></div><div class="row" style="justify-content:space-between">${seg(["A4", "LETTER"], "A4")}<button type="button" class="btn">${IC.down.replace("<svg", '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"')}DOWNLOAD PDF</button></div></div>
+        <div class="g stack"><h3 style="margin:0;font-family:var(--f-display);font-weight:400;font-size:18px">MIDI arrangement</h3><p class="sm" style="margin:0">One .mid file with a track per part, section markers, tempo and key. The guitars play exactly what the tabs show, at concert pitch.</p>
+          <div class="lanes"><span class="h">TRACK</span><span class="h">NOTES</span><span class="h">C1 TO C7</span>${[["Sub", "C1–D2", 0, 18], ["Bass", "C2–E3", 16, 22], ["Rhythm guitar", "Concert pitch", 22, 54, 1], ["Lead vocal (guide)", "A3–E5", 46, 26], ["Lead guitar", "Concert pitch", 22, 54, 1], ["Drums", "Channel 10", 0, 0]].map(([t, n, a, w, g]) => `<span>${t}</span><span>${n}</span><span class="range">${w ? `<i class="${g ? "g" : ""}" style="--a:${a}%;--w:${w}%"></i>` : ""}</span>`).join("")}</div>
+          <div class="row" style="justify-content:space-between"><span class="sm"><span style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--accent);color:var(--on-accent);margin-right:8px">✓</span>Include drums · 10 tracks</span><button type="button" class="btn">${IC.down.replace("<svg", '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"')}DOWNLOAD MIDI</button></div></div>
+      </div>
+      <div class="g stack"><h3 style="margin:0;font-family:var(--f-display);font-weight:400;font-size:18px">Share the song</h3><p class="sm" style="margin:0">The link holds the whole song: key, feel, chords, length, every part's take and options, and what's locked. Nothing is stored anywhere.</p><div class="row"><div class="field linkfield" style="box-shadow:inset 0 0 0 1px var(--well-ring)">palm-mute.app/generator/#song=eyJ2IjoxLCJrIjoiQSIsImYiOiJmYXN0LXB1bmsiLCJwIjoi…</div><button type="button" class="btn2">COPY LINK</button></div></div>
+      <div class="g smoke slim"><div class="transport"><span class="play hot">${PLAY}</span><span class="mono" style="font-size:12px"><b style="color:var(--on-dark)">Verse 1</b><br><span style="color:var(--on-dark-3)">0:24 / 3:13 · bar 3</span></span><span class="prog"><i></i></span><button type="button" class="btn2">LOOP PART</button><button type="button" class="btn2">COUNT-IN</button><span class="seg" style="background:rgb(0 0 0 / .3);box-shadow:inset 0 0 0 1px rgb(246 241 228 / .1)">${["100%", "90%", "75%", "50%"].map((t, i) => `<button type="button" aria-pressed="${i === 0}" style="${i ? "color:var(--on-dark-3)" : ""}">${t}</button>`).join("")}</span></div></div>
+      <div class="pad-b"></div>
+    </div>`;
+  }
+
+  /* ---------- the Chord Lab ---------- */
+  function chords() {
+    const G = 7;
+    const voicings = [[[3, 2, 0, 0, 0, 3], "open", 2], [[3, 2, 0, 0, 3, 3], "open", 3], [[3, 5, 5, 4, 3, 3], "frets 3–5 · E-shape barre", 4], [[null, null, 5, 4, 3, 3], "frets 3–5 · grip", 3], [[null, null, 5, 7, 8, 7], "frets 5–8 · D-shape", 4], [[null, 10, 12, 12, 12, 10], "frets 10–12 · A-shape barre", 4]];
+    const shapes = voicings.map(([fr, w, e], i) => `<div class="g shape ${i === 0 ? "on" : ""}">${diagram(fr, G)}<span class="nt">${fr.map((f, s) => (f === null ? "" : noteOf(s, f))).filter(Boolean).join(" ")}</span><span class="w">${w}</span><span class="ease">${"●".repeat(e)}<span style="opacity:.3">${"●".repeat(5 - e)}</span></span><div class="acts"><span>▷ STRUM</span><span>⋰ PICK</span></div></div>`).join("");
+    const tool = (n, title, hint, body, on = "") => `<div class="g stack ${on}"><div class="hd"><span class="num">0${n}</span><h3>${title}</h3><span class="sm">${hint}</span></div><div class="ruler"></div>${body}</div>`;
+    const builderChips = ["I", "V", "vi", "IV"].map((d) => chord("G", d));
+    const MOODS = [["vi-bVII-I-V", 40, 18], ["I-vi-ii-V", 11, 23], ["I-IV-vi-V", 50, 24], ["I-V-IV-V", 89, 22], ["I-vi-IV-V", 31, 31], ["vi-IV-I-V", 50, 31], ["I-IV-V", 90, 31], ["IV-V-vi", 10, 38], ["I-iv-I-V", 52, 38], ["vi-V-IV", 34, 43], ["vi-iii-IV-V", 9, 45], ["I-IV-bVII-IV", 74, 46], ["IV-I-V-vi", 31, 50], ["I-V-vi-IV", 52, 56, 1], ["I-V-IV", 88, 56], ["ii-V-I-vi", 11, 60], ["I-vi-iii-IV", 32, 62], ["I-bVII-IV", 74, 66], ["I-V-ii-IV", 50, 74], ["I-bVI-bVII-I", 76, 80], ["V-vi-IV-I", 51, 81], ["I-bVII-IV-I", 76, 87]];
+    return `<div class="col">
+      ${header("SONGWRITING TOOLS", "CHORD LAB")}
+      ${guide([["smoke", 1, "Look it up", "Pick a chord and see the shapes players actually use, on a box and on the neck."], ["red", 2, "Name it", "Tap a shape you know onto the neck; it says what chord it is and which keys it lives in."], ["", 3, "Build a loop", "Tap chords from your key into a loop; it suggests what comes next."], ["brass", 4, "Move it", "Find the key, then shift it: another key, a capo or a drop tuning."]], "10 CHORD TYPES · 4 TUNINGS · THE SHAPES PLAYERS USE")}
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))">
+        <div class="g stack" style="grid-column:span 2"><div class="sm"><span class="lab">KEY</span> <b style="color:var(--t1)">G</b> Used by the Builder, Key finder, scale and Mood map.</div>${pills(KEYS_A.map((k) => KEYS_C.find((x) => x[0] === k)), "G")}</div>
+        <div class="g stack"><div class="sm"><span class="lab">TUNING</span> <b style="color:var(--t1)">E standard</b></div>${seg(["E STD", "Eb STD", "DROP D", "DROP C#"], "E STD")}</div>
+        <div class="g stack"><span class="lab">HANDED</span>${seg(["RIGHT", "LEFT"], "RIGHT")}</div>
+      </div>
+      <div class="g smoke slim"><nav class="strip" aria-label="Lab tools (draft)">${[["01 Dictionary", "the shapes players actually use, up the neck"], ["02 Name that chord", "tap a shape, get its name"], ["03 Progression builder", "tap chords into a loop"], ["04 Key finder & transposer", "chords to key; move them"], ["05 Mood map", "dark to bright, settled to restless"]].map(([t, h], i) => `<a href="#" class="${i === 0 ? "on" : ""}"><b>${t}</b><br>${h}</a>`).join("")}</nav></div>
+      ${tool(1, "Dictionary", "the shapes players actually use, up the neck", `
+        <span class="lab">Root</span>${pills(KEYS_C, "G")}
+        <span class="lab">Type</span><div class="pills">${["5", "OCT", "MAJOR", "MINOR", "SUS2", "SUS4", "ADD9", "7", "MAJ7", "M7"].map((t) => `<button type="button" class="pill" aria-pressed="${t === "MAJOR"}">${t}</button>`).join("")}</div>
+        <div class="sm"><b style="color:var(--t1)">G</b> (major): G · B · D. Bright and settled.</div>
+        <div class="row">${seg(["ALL", "OPEN", "LOW", "MID", "HIGH"], "ALL")}<button type="button" class="btn2">EASY ONLY</button><button type="button" class="btn2">NO BARRES</button></div>
+        <div class="shapes">${shapes}</div>
+        <span class="lab">On the neck</span><div class="row"><span class="sm">Every G note; position 1 of 12 filled in.</span><button type="button" class="btn2">‹ PREV</button><button type="button" class="btn2">NEXT ›</button><button type="button" class="btn">${PLAY}STRUM IT</button></div>
+        <div class="row"><span class="lab">Scale of G (from the setup)</span>${seg(["OFF", "MAJOR", "PENTATONIC"], "OFF")}</div>
+        <div class="well neck">${neckSVG({ G: "R", B: "3", D: "5" })}</div>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Root</span><span><i style="background:var(--brass)"></i>3rd</span><span><i style="background:var(--t1)"></i>5th</span></div>`, "")}
+      ${tool(2, "Name that chord", "tap a shape, get its name", `
+        <div class="sm">Tap a fret on each string you play (tap it again to take it off), or type the shape low string first, like x32010.</div>
+        <div class="well neck">${neckSVG({})}</div>
+        <span class="lab">Shape, low string first</span>
+        <div class="row"><div class="field" style="flex:1">x32010<span class="ok">✓</span></div><button type="button" class="btn2">CLEAR</button></div>
+        <div class="row" style="gap:16px"><span style="font-family:var(--f-display);font-size:34px">C</span><span class="play">${PLAY}</span><span class="sm">also: Am7/C, Em/C</span></div>
+        <div class="sm">Notes, low to high: C · E · G · C · E</div>`)}
+      ${tool(3, "Progression builder", "tap chords into a loop", `
+        <span class="lab">Your key: G major. Tap a chord to add it (borrowed chords have a brass underline)</span>
+        <div class="pills">${[["I", "G5"], ["ii", "A5"], ["iii", "B5"], ["IV", "C5"], ["V", "D5"], ["vi", "E5"], ["bIII", "A#5", 1], ["iv", "C5", 1], ["bVI", "D#5", 1], ["bVII", "F5", 1]].map(([d, n, b]) => `<button type="button" class="pill ${b ? "borrowed" : ""}" aria-pressed="false" style="padding:0 12px">${d} <span style="font-weight:400;color:var(--t4)">${n}</span></button>`).join("")}</div>
+        <span class="lab">Loop (4 of 8): tap a chord to change it</span>
+        <div class="well loopwell">${builderChips.map((c, i) => `<span class="chip${i === 2 ? " now" : ""}" style="min-width:58px"><small>${c.deg}</small><b>${c.name}</b></span>`).join("")}</div>
+        <div class="row"><button type="button" class="btn">${PLAY}PLAY THE LOOP</button>${seg(["POWER CHORDS", "FULL CHORDS"], "POWER CHORDS")}<button type="button" class="btn2">FIND THIS LOOP'S KEY</button><button type="button" class="btn2">CLEAR</button><button type="button" class="btn2">START OVER</button></div>
+        <span class="lab">What next? After IV</span><div class="pills">${[["I", "G5"], ["V", "D5"], ["vi", "E5"]].map(([d, n]) => `<button type="button" class="pill" aria-pressed="false" style="padding:0 12px">${d} <span style="font-weight:400;color:var(--t4)">${n}</span></button>`).join("")}</div>
+        <div class="grid g3">${meter("Dark to bright", 77, "Bright: mostly major chords near home.")}${meter("Settled to restless", 51, "It ends part-way: it could stop or go on.")}${meter("How classic", 100, "One of the genre's own loops.")}</div>`)}
+      ${tool(4, "Key finder & transposer", "chords to key; move them", `
+        <span class="lab">Chords (2 to 8): G D Em C, G/B, F#m7 Bbadd9, A5 E5</span>
+        <div class="field">G D Em C<span class="ok">✓</span></div>
+        <div class="result best"><b class="k">G</b><b>Best fit</b> · G major (relative E minor): I · V · vi · IV</div>
+        <div class="result"><b class="k">D</b>D major (relative B minor): IV · I · ii · <span class="bor">bVII (borrowed)</span></div>
+        <div class="result"><b class="k">C</b>C major (relative A minor): V · <span class="out">D is outside the key</span> · iii · I</div>
+        <span class="lab">Move them</span>
+        <div class="row"><button type="button" class="btn2">−</button><span class="sm">0 semitones</span><button type="button" class="btn2">+</button><button type="button" class="btn2" style="opacity:.5">−</button><span class="sm">no capo</span><button type="button" class="btn2">+</button></div>
+        <div class="row"><button type="button" class="btn">${PLAY}HEAR IT</button></div>`)}
+      ${tool(5, "Mood map", "dark to bright, settled to restless", `
+        <div class="moodgrid">
+          <div><div class="mapbox"><span class="q" style="left:12px;top:10px">TENSE</span><span class="q" style="left:calc(50% + 10px);top:10px">ANTHEM</span><span class="q" style="left:12px;bottom:10px">BROODING</span><span class="q" style="right:12px;bottom:10px">FEEL-GOOD</span>${MOODS.map(([id, x, y, on]) => `<span class="d ${on ? "on" : ""}" style="left:${x}%;top:${y}%">${id}</span>`).join("")}</div><div class="sm" style="margin-top:8px">← darker · brighter → · Tap a dot to hear it.</div></div>
+          <div class="g stack" style="padding:16px"><span class="lab">Picked loop</span><span style="font-family:var(--f-display);font-size:24px">I-V-vi-IV</span><span class="sm">Middle of the map · one of the genre's ten</span><div class="chips">${[["I", "G"], ["V", "D"], ["vi", "Em"], ["IV", "C"]].map(([d, n]) => `<span class="chip" style="min-width:48px"><small>${d}</small><b>${n}</b></span>`).join("")}</div>${meter("Dark to bright · in the middle", 50, "")}${meter("Settled to restless · in the middle", 45, "")}<button type="button" class="btn" style="justify-content:center">${PLAY}HEAR IT IN G</button><span class="lab">All loops</span><div class="pills">${["I-V-vi-IV", "vi-IV-I-V", "I-IV-V", "I-V-IV-V", "vi-V-IV", "IV-I-V-vi"].map((p, i) => `<button type="button" class="pill" aria-pressed="${i === 0}" style="padding:0 10px">${p}</button>`).join("")}</div></div>
+        </div>`)}
+      <div class="pad-b"></div>
+    </div>`;
+  }
+
+  /* ---------- home ---------- */
+  function home() {
+    const form = [[3, ""], [4, ""], [2, ""], [4, "c"], [4, ""], [2, ""], [4, "c"], [4, "s"], [2, ""], [4, "c"], [0.5, ""]];
+    return `<div class="col">
+      <div class="hero">
+        <div class="hl"><div class="row" style="justify-content:space-between"><span class="lab">COUNT IN · ABOUT PALM/MUTE</span><span class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--accent)"><span class="dot"></span> LIVE · 180 BPM</span></div>
+          <h3 class="h1"><span>Songwriting</span><span class="o">formulas from</span><span>the bands that</span><span class="r">built pop-punk.</span></h3>
+          <p style="max-width:44ch;font-size:16px;line-height:1.6;color:var(--t2)">A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.</p>
+          <div class="row"><button type="button" class="btn">${PLAY}START WRITING</button><span class="sm">Open the Chord Lab →</span></div></div>
+        <div class="g stack"><div class="hd"><span class="num">01</span><h3>Verse 1</h3><span class="r badge" style="padding:5px 10px">KEY OF <b style="color:var(--accent)">A</b> · FAST PUNK</span></div>${pills(KEYS_A, "A")}<div class="chips" style="display:grid;grid-template-columns:repeat(4,1fr)">${VERSE.map((c, i) => chipHTML(c, i === 1)).join("")}</div><div class="well"><pre class="tab" style="font-size:10px">${tabText(VERSE)}</pre></div><div class="g smoke slim"><div class="transport"><span class="play hot">${PLAY}</span><span class="mono" style="font-size:12px;color:var(--on-dark-2)">0:10 / 3:00</span><span class="prog"><i></i></span><span class="mono" style="font-size:11px;color:var(--on-dark-3)">100%</span></div></div><div class="row" style="justify-content:space-between"><span class="lab"><span style="color:var(--accent)">●</span> NO TABS STORED</span><span class="lab">×2 · E STANDARD</span></div></div>
+      </div>
+      <dl class="g stats" style="margin:0">${[["KEYS", "12"], ["FEELS", "5"], ["SONG LENGTHS", "13"], ["TUNINGS", "4"], ["MIDI PARTS", "10"], ["TABS STORED", "0"]].map(([l, n]) => `<div><dt>${l}</dt><dd>${n}</dd></div>`).join("")}</dl>
+      <p class="sec-h">THE WHOLE KIT, AT A GLANCE</p>
+      <div class="bento">
+        <div class="g tile s5"><span class="lab" style="color:var(--accent)">01 · Key</span><h4>Twelve keys. One tap.</h4>${pills(KEYS_A, "A")}<div class="chips">${VERSE.map((c, i) => chipHTML(c, i === 2)).join("")}</div></div>
+        <div class="g smoke tile s3"><span class="lab" style="color:var(--accent-on-ink)">02 · Feel</span><div class="huge">180</div>${[["FAST PUNK", 180, 1], ["HALF-TIME", 180], ["MID-TEMPO", 140], ["POP STRUM", 150], ["BALLAD", 80]].map(([n, b, on]) => `<div class="feelrow ${on ? "on" : ""}"><span>${n}</span><span>${b}</span></div>`).join("")}</div>
+        <div class="g tile s4"><span class="lab" style="color:var(--accent)">03 · Length</span><h4>2:45 · 11 parts</h4><div class="well" style="padding:14px"><div style="height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent) 0 12%,var(--line-strong) 12%)"></div></div><div class="form">${form.map(([w, c]) => `<i class="${c}" style="flex:${w}"></i>`).join("")}</div><p class="sm">2:30 to 5:30, and every part is sized to fit.</p></div>
+        <div class="g smoke tile s5"><span class="lab" style="color:var(--accent-on-ink)">The count-in</span><div style="font-family:var(--f-display);font-size:44px;text-align:center;padding:24px 0;color:transparent;-webkit-text-stroke:1.5px var(--on-dark-3)">COUNT IT IN.</div><div class="row" style="gap:6px">${[1, 2, 3, 4].map((n) => `<span style="flex:1;height:4px;border-radius:2px;background:${n === 1 ? "var(--accent-on-ink)" : "rgb(246 241 228 / .14)"}"></span>`).join("")}</div><p style="color:var(--on-dark-2)">A bar of clicks before the music, so you come in on the one.</p></div>
+        <div class="g tile s7"><span class="lab" style="color:var(--accent)">04 · Every part, tabbed</span><h4>A whole song. Every bar.</h4><div class="well"><pre class="tab" style="font-size:10.5px">${tabText(VERSE)}</pre></div>${[["01", "Intro", "Chugs into open hits · A5 E5"], ["02", "Verse 1", "Gallop · palm-muted · ×2 · A5 E5 F#5 D5", 1], ["03", "Chorus", "Driving eighths · open · D5 A5 E5 F#5"]].map(([n, t, s, on]) => `<div class="partrow ${on ? "on" : ""}"><span class="num">${n}</span><div><b>${t}</b><span>${s}</span></div><span class="icon lock">${IC.lock}</span></div>`).join("")}</div>
+        <div class="g red tile s5"><span class="lab">05 · Practise</span><div class="huge">180</div><div class="g smoke slim"><div class="transport"><span class="play hot">${PLAY}</span><span class="seg" style="background:rgb(0 0 0 / .3);box-shadow:none">${["100%", "90%", "75%", "50%"].map((t, i) => `<button type="button" aria-pressed="${i === 0}" style="${i ? "color:var(--on-dark-3)" : ""}">${t}</button>`).join("")}</span></div></div><p>Loop any part, add a count-in, slow it down until your hands know it.</p></div>
+        <div class="g tile s7"><span class="lab" style="color:var(--accent)">Side A · Now playing</span><div class="tape"><div class="lbl"><span>A&nbsp;&nbsp;YOUR EX'S NEW PLACE</span><div class="reels"><i></i><i></i></div><span class="mono" style="font-size:10px;letter-spacing:.14em;text-align:right">PALM/MUTE · C-90 · E STANDARD</span></div></div><div class="vu"><div>${"<i class='on'></i>".repeat(11)}${"<i></i>".repeat(9)}</div><div>${"<i class='on'></i>".repeat(14)}${"<i></i>".repeat(6)}</div></div></div>
+        <div class="g smoke tile s5"><span class="lab" style="color:var(--accent-on-ink)">Root and fifth, on the beat</span><div style="font-family:var(--f-display);font-size:64px;text-align:right">F#5</div><div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--accent-on-ink);text-align:right">vi · E STRING · FRET 2</div><div class="well dk" style="height:120px;background:repeating-linear-gradient(90deg,rgb(246 241 228 / .5) 0 2px,transparent 2px 48px),repeating-linear-gradient(180deg,rgb(246 241 228 / .25) 0 1px,transparent 1px 20px),linear-gradient(#2B241D,#14100D)"></div></div>
+        <div class="g tile s7"><span class="lab" style="color:var(--accent)">06 · Make it yours</span><h4>Shape a part. Lock what you love.</h4>${[["Chugs into open hits", "INTRO"], ["Gallop", "VERSE", 1], ["Quarter-note climb", "PRECHORUS"], ["Driving eighths", "CHORUS"]].map(([a, b, on]) => `<div class="partrow ${on ? "on" : ""}" style="justify-content:space-between"><b style="font-size:14px">${a}</b><span>${b}</span></div>`).join("")}<div class="row"><button type="button" class="btn">BUILD AGAIN</button><span class="icon" style="box-shadow:inset 0 0 0 1px rgb(var(--accent-rgb) / .5);color:var(--accent)">${IC.lock}</span></div></div>
+        <div class="g tile s7"><span class="lab" style="color:var(--accent)">Mood map · vi-IV-I-V</span><div class="mapbox" style="aspect-ratio:16/8">${[["I-vi-IV-V", 30, 30], ["I-IV-vi-V", 50, 22], ["vi-IV-I-V", 50, 32, 1], ["vi-V-IV", 34, 46], ["I-V-vi-IV", 52, 58], ["I-V-IV-V", 82, 22], ["I-IV-V", 84, 34], ["I-V-IV", 84, 58], ["V-vi-IV-I", 52, 80]].map(([id, x, y, on]) => `<span class="d ${on ? "on" : ""}" style="left:${x}%;top:${y}%">${id}</span>`).join("")}</div><p class="sm">The Chord Lab maps every loop from dark to bright, settled to restless.</p></div>
+        <div class="g tile s5"><span class="lab" style="color:var(--accent)">MIDI · Ten parts</span><div class="g smoke slim"><div class="roll">${[["SUB", "var(--accent)", 22, 40], ["BASS", "var(--brass)", 30, 18], ["PIANO L", "#F6F1E4", 30, 10], ["RHYTHM", "var(--accent)", 28, 26], ["VOX", "var(--brass)", 16, 30], ["PADS", "var(--accent)", 30, 40], ["LEAD", "var(--brass)", 26, 12], ["DRUMS", "#A89C86", 20, 28]].map(([n, c, l, g]) => `<div><b style="font-weight:400">${n}</b><span style="--c:${c};--l:${l}px;--gap:${g}px"></span></div>`).join("")}</div></div><p class="sm">Every part on its own track, with a marker where each section starts.</p></div>
+        <div class="g tile s3"><span class="lab" style="color:var(--accent)">PDF songbook</span><div class="well" style="background:var(--surface);rotate:-2deg"><b style="font-family:var(--f-display);font-size:13px">YOUR EX'S NEW PLACE</b><pre class="tab" style="font-size:7.5px;margin-top:6px">${tabText(VERSE.slice(0, 2))}</pre></div><p class="sm">Every part's tab, ready to print.</p></div>
+        <div class="g brass tile s4"><span class="lab">Share</span><div style="font-family:var(--f-display);font-size:46px;line-height:.95">One link.</div><p>Your song lives in the page's address: send it and the band opens the exact same song.</p><div><button type="button" class="btn" style="background:#171310;color:#F6F1E4;box-shadow:none">${PLAY}WRITE ONE TO SEND</button></div></div>
+        <div class="g tile s5"><span class="lab" style="color:var(--accent)">The scope</span><div class="well" style="height:130px;background-image:linear-gradient(var(--well-ring) 1px,transparent 1px),linear-gradient(90deg,var(--well-ring) 1px,transparent 1px);background-size:40px 40px"></div><p class="sm">The same moving scope that sits behind the Generator and the Chord Lab.</p></div>
+        <div class="g tile s6"><span class="lab" style="color:var(--accent)">Chord Lab · G major</span><div class="row" style="justify-content:space-around;color:var(--t2)">${[[3, 2, 0, 0, 0, 3], [3, 2, 0, 0, 3, 3], [null, null, 5, 7, 8, 7]].map((f) => `<span style="width:78px">${diagram(f, 7)}</span>`).join("")}</div><p class="sm">Every chord, the shapes players use, up the neck.</p></div>
+        <div class="g tile s6"><span class="lab" style="color:var(--accent)">Did you know</span><h4>A power chord is only two notes.</h4><p class="sm">Root and fifth, no third: that's why it's the only shape pop-punk ever needed.</p></div>
+      </div>
+      <p class="sec-h">QUESTIONS</p>
+      <div class="faq">${[["Is it free?", "Yes. Palm/Mute runs in your browser: no download, no sign-up."], ["Do I need an account?", "No. Your song lives in the page's address, so copying the link keeps it."], ["Is it copying real songs?", "No. It studies chord degrees, rhythm templates and section lengths, never an artist's tab."]].map(([q, a], i) => `<details class="g" ${i === 0 ? "open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div>
+      <div class="g encore"><span class="lab" style="color:var(--accent)">The encore</span><h4>Count it in.</h4><div class="row" style="justify-content:center"><button type="button" class="btn">${PLAY}START WRITING</button><button type="button" class="btn2">OPEN THE CHORD LAB</button></div></div>
+      <div class="pad-b"></div>
+    </div>`;
+  }
+
+  /* ---------- frames ---------- */
+  const PAGES = { generator: ["Song Generator", generator], chords: ["Chord Lab", chords], home: ["Home", home] };
+  const S = { page: "generator", show: "both" };
+  function render() {
+    const [name, fn] = PAGES[S.page];
+    const themes = S.show === "both" ? ["light", "dark"] : [S.show];
+    document.getElementById("frames").innerHTML = themes.map((t) => `
+      <div class="frame-hd"><b>${name}</b><span>${t === "light" ? "LIGHT" : "DARK"}</span></div>
+      <div class="frame ${t === "light" ? "tl" : "td"}"><div class="stage">${fn()}</div></div>`).join("");
+    document.querySelectorAll("[data-page]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.page === S.page)));
+    document.querySelectorAll("[data-show]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.show === S.show)));
+  }
+  document.addEventListener("click", (e) => {
+    const p = e.target.closest("[data-page]"); if (p) { S.page = p.dataset.page; render(); return; }
+    const s = e.target.closest("[data-show]"); if (s) { S.show = s.dataset.show; render(); }
+  });
+  render();
+</script>
