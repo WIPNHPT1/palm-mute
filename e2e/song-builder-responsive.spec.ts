@@ -75,6 +75,8 @@ test.describe("song builder: every screen", () => {
 
   test("the transport is one row and fits", async ({ page }) => {
     await gotoAndSettle(page, "/generator/");
+    await page.getByRole("button", { name: "BUILD SONG" }).click(); // the bar waits for a song
+    await expect(page.locator("[data-transport]")).toBeVisible();
     expect(await problems(page, "[data-transport]")).toEqual([]);
     // One row: every control's middle on one line, and the bar no taller than its controls need.
     const box = (await page.locator("[data-transport]").boundingBox())!;

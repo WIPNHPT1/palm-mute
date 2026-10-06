@@ -441,3 +441,16 @@
 .hb-g5 .str { stroke: var(--t3); } .hb-g5 .fret { stroke: var(--line-strong); stroke-width: 1.5; } .hb-g5 .nut { stroke: var(--t1); stroke-width: 5; }
 .hb-g5 .inlay { fill: var(--line-strong); } .hb-g5 .lbl { font-family: var(--mono); font-size: 13px; fill: var(--t3); }
 .hb-g5 .fifth { fill: var(--t1); } .hb-g5 .fifth-l { fill: var(--paper); }
+
+/* ---------- UX audit (owner's picks 2026-10-06) ---------- */
+/* the small labels in the live card and the kit read at 12px, the site's floor (and stay 12px from 1440px, where
+   the design scale stops at 12px); on phones the card's "KEY OF A · FAST PUNK" tag may wrap */
+.hb-cap, .hb-glass-foot, .hb-pill.two, .hb-box .nt, .hb-box .ps { font-size: 12px; }
+/* at 12px a box's notes run into the next box's: tighter letters, wider gaps */
+.hb-box .nt { letter-spacing: .02em; }
+.hb-boxes { gap: 18px; }
+@media (max-width: 833px) { .hb-cap { white-space: normal; line-height: 1.35; } }
+/* very small phones (under 375px): the twelve keys go to four rows of three, so every key is at least 44px wide */
+@media (max-width: 374px) {
+  .hb-pills, .hb-glass .hb-pills { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

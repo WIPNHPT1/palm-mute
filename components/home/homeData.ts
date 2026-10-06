@@ -18,6 +18,8 @@ export const FEELS = FEEL_IDS.map((id) => ({ id, label: getFeel(id).label, bpm: 
 
 /** The practice speeds (the transport's). */
 export const SPEEDS = [1, 0.9, 0.75, 0.5];
+/** START WRITING: the Generator, in the key and feel picked here (it applies them, keeps the rest, and drops the query). */
+export const generatorHref = (s: HomeState) => `/generator/?key=${encodeURIComponent(KEY_NOTES[s.key])}&feel=${FEELS[s.feel].id}`;
 export const bpmOf = (s: HomeState) => Math.round(FEELS[s.feel].bpm * SPEEDS[s.speed]);
 /** The tempo to show for the feel and practice speed, as the Generator shows it. */
 export const shownBpmOf = (s: HomeState) => Math.round(FEELS[s.feel].shown * SPEEDS[s.speed]);

@@ -8,7 +8,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { applyTheme, currentTheme } from "@/lib/theme";
 
 export const LINKS = [
-  { href: "/", label: "Count In" },
+  { href: "/", label: "Home" },
   { href: "/generator/", label: "Generator" },
   { href: "/chords/", label: "Chord Lab" },
 ];

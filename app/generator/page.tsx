@@ -24,12 +24,12 @@ import { Transport } from "@/components/Transport";
 import { ShareCard, copyText } from "@/components/ShareCard";
 import { decodeSong } from "@/lib/share";
 import { type GeneratorState, inputsFor, useGenerator } from "@/context/GeneratorContext";
-import { DIFFICULTIES, DIFFICULTY, SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
+import { DIFFICULTIES, DIFFICULTY, FEEL_IDS, SECTION_IDS, type SectionId, getFeel, grooveChoices, libraryVoicings, plannedDegrees, renderSection } from "@/lib/generator";
 import { type PresetId, PRESETS, PRESET_IDS } from "@/lib/presets";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { styleLabel } from "@/lib/melody";
 import { sectionBars } from "@/lib/playback";
-import { keyDisplayName, progressions } from "@/lib/musicTheory";
+import { PITCH_CLASSES, keyDisplayName, progressions } from "@/lib/musicTheory";
 import { barSeconds, formatLength } from "@/lib/songLength";
 import { VARIATIONS, formLabel, formSpec, planNote, usesProgression } from "@/lib/songPlan";
 
@@ -115,6 +115,7 @@ export default function GeneratorPage() {
         loadShared(song);
         setShared(quietly ? null : "loaded");
         setSetupOpen(false);
+        setReady(true);
       } else {
         setShared("invalid");
         history.replaceState(null, "", location.pathname + location.search);
@@ -123,6 +124,18 @@ export default function GeneratorPage() {
     // The page opening: a reload, or Back to the page, is the visitor's own song; a link followed from elsewhere is a shared one.
     const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     open(nav?.type === "reload" || nav?.type === "back_forward");
+    // The home page's START WRITING ("?key=F%23&feel=half-time"): the key and feel picked there. Everything else
+    // set here stays. A song link wins; either way the query leaves the address so it can't apply twice.
+    const query = new URLSearchParams(location.search);
+    if (query.has("key") || query.has("feel")) {
+      if (!location.hash.includes("song=")) {
+        const key = PITCH_CLASSES.find((k) => k === query.get("key"));
+        const feel = FEEL_IDS.find((f) => f === query.get("feel"));
+        if (key) setKey(key);
+        if (feel) setFeel(feel);
+      }
+      history.replaceState(null, "", location.pathname + location.hash);
+    }
     // A link pasted into the open page only changes its address's hash: that's a link from elsewhere too. (The page's
     // own updates use replaceState, which doesn't fire this.)
     const onHash = () => open(false);
@@ -156,6 +169,11 @@ export default function GeneratorPage() {
 
   // The setup is open until BUILD SONG, then folds to a one-line summary (EDIT SETUP opens it again).
   const [setupOpen, setSetupOpen] = useState(true);
+  // The transport waits for a song to play: BUILD SONG, a song link, or the song starting (Space, the running order).
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (state.playing === "song") setReady(true);
+  }, [state.playing]);
   // Once a song is built (or opened from a link) its link follows it in the address bar, so a reload or Back brings
   // it back. Nothing is stored: the song is in the link. A fresh visit with no link behaves as it always did.
   useEffect(() => {
@@ -171,6 +189,7 @@ export default function GeneratorPage() {
   const build = () => {
     generate();
     setSetupOpen(false);
+    setReady(true);
     requestAnimationFrame(() => songRef.current?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" }));
   };
   const editSetup = (step: number) => {
@@ -425,18 +444,20 @@ export default function GeneratorPage() {
         </div>
       </section>
 
-      <Transport
-        playing={state.playing === "song"}
-        onPlay={() => togglePlay("song")}
-        partName={activePart !== null ? song[activePart]?.slot.name ?? null : position ? rendered[position.section].label : null}
-        songBar={position?.songBar ?? null}
-        totalBars={plan.bars}
-        barSeconds={barSeconds(bpm)}
-        practice={practice}
-        onSpeed={setSpeed}
-        onCountIn={setCountIn}
-        onLoopPart={setLoopPart}
-      />
+      {ready && (
+        <Transport
+          playing={state.playing === "song"}
+          onPlay={() => togglePlay("song")}
+          partName={activePart !== null ? song[activePart]?.slot.name ?? null : position ? rendered[position.section].label : null}
+          songBar={position?.songBar ?? null}
+          totalBars={plan.bars}
+          barSeconds={barSeconds(bpm)}
+          practice={practice}
+          onSpeed={setSpeed}
+          onCountIn={setCountIn}
+          onLoopPart={setLoopPart}
+        />
+      )}
     </div>
   );
 }

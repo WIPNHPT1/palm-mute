@@ -1,7 +1,7 @@
 import { expect, gotoAndSettle, horizontalOverflow, test } from "./fixtures";
 import { designUnit } from "./helpers";
 
-// "How to use" posters under the Generator and Chord Lab titles (owner's pick: Count In poster style).
+// "How to use" posters under the Generator and Chord Lab titles (owner's pick: the home page poster style).
 const GUIDES = [
   { path: "/generator/", label: "How to use the Generator", titles: ["Set up", "Build", "Shape each part", "Take it away"] },
   { path: "/chords/", label: "How to use the Chord Lab", titles: ["Look it up", "Name it", "Build a loop", "Move it"] },

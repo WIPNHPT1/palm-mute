@@ -1,4 +1,5 @@
 import { expect, gotoAndSettle, horizontalOverflow, lightOnly, onlyAtWidths, test } from "./fixtures";
+import { feel, key } from "./helpers";
 
 // The home page (docs/mockups/home-bento-eye-candy.html, owner's pick: "Live session · Bento"; the hero is "Studio
 // glass", docs/mockups/home-hero-premium.html): a live Song Generator card in the hero, the stats, a Bento grid of working tiles, questions, encore.
@@ -7,7 +8,8 @@ test.describe("home", () => {
   test("the hero: headline, CTAs, and a live card in A", async ({ page }) => {
     await gotoAndSettle(page, "/");
     await expect(page.getByRole("heading", { level: 1, name: "Songwriting formulas from the bands that built pop-punk." })).toBeVisible();
-    await expect(page.getByRole("link", { name: "START WRITING" }).first()).toHaveAttribute("href", /\/generator\/$/);
+    // START WRITING opens the Generator in the key and feel picked here (A, Fast Punk until you pick).
+    await expect(page.getByRole("link", { name: "START WRITING" }).first()).toHaveAttribute("href", /\/generator\/\?key=A&feel=fast-punk$/);
     await expect(page.getByRole("link", { name: /Open the Chord Lab/ })).toHaveAttribute("href", /\/chords\/$/);
     await expect(page.locator("[data-live-card] .hb-chip b")).toHaveText(["A5", "E5", "F#5", "D5"]);
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
@@ -81,6 +83,23 @@ test.describe("home", () => {
     // both chip rows, the live card's and the key tile's, re-voice in D
     await expect(page.locator("[data-live-card] .hb-chip b")).toHaveText(["D5", "A5", "B5", "G5"]);
     await expect(page.getByRole("group", { name: "Key, in the live card" }).getByRole("button", { name: "D", exact: true })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("START WRITING carries the key and feel to the Generator, and the rest of its setup stays", async ({ page }, info) => {
+    onlyAtWidths(info, [390, 1440]);
+    lightOnly(info);
+    // Something already set on the Generator (the song's length) survives the trip.
+    await gotoAndSettle(page, "/generator/");
+    await page.getByRole("slider", { name: "Song length" }).fill("240");
+    await page.locator("header a[href=\"/\"]").first().click(); // in the page, so the Generator keeps its setup
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole("group", { name: "Key, in the live card" }).getByRole("button", { name: "F", exact: true }).click();
+    await page.getByRole("group", { name: "Feel" }).getByRole("button", { name: /HALF-TIME/ }).click();
+    await page.getByRole("link", { name: "START WRITING" }).first().click();
+    await expect(page).toHaveURL(/\/generator\/$/); // the query is used once, then leaves the address
+    await expect(key(page, "F")).toHaveAttribute("aria-checked", "true");
+    await expect(feel(page, /HALF-TIME/)).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("slider", { name: "Song length" })).toHaveValue("240");
   });
 
   test("the length slider plans the song with the Generator's own planner", async ({ page }, info) => {

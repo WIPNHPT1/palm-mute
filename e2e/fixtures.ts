@@ -38,7 +38,7 @@ export const test = base.extend<{ consoleErrors: string[]; darkChoice: void }>({
 export { expect };
 
 export const ROUTES = [
-  { path: "/", h1: "Songwriting formulas from the bands that built pop-punk.", title: "Count In · Palm/Mute" },
+  { path: "/", h1: "Songwriting formulas from the bands that built pop-punk.", title: "Home · Palm/Mute" },
   { path: "/generator/", h1: "SONG GENERATOR", title: "Generator · Palm/Mute" },
   { path: "/chords/", h1: "CHORD LAB", title: "Chord Lab · Palm/Mute" },
 ] as const;

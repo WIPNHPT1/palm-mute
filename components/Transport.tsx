@@ -14,7 +14,8 @@ const SPEEDS = [1, 0.9, 0.75, 0.5];
  * stop the song, where it is (part, time, bar), loop the part playing, a bar of clicks first, and practice
  * speed. One row at every width: below 1280px the progress is a hairline on its top edge; phones get icon
  * buttons and one speed button that cycles. The page's bottom padding follows its height, so it never covers
- * the last of the page. It sits under the menu (z-index 40) and the header (50).
+ * the last of the page. It sits under the menu (z-index 40) and the header (50). The Generator only shows it once
+ * there's a song to play (built, opened from a link, or playing), and it slides up as it arrives.
  */
 export function Transport({
   playing,
@@ -57,7 +58,7 @@ export function Transport({
   const total = totalBars * barSeconds;
   const share = songBar === null ? 0 : Math.min(1, songBar / totalBars);
   const pct = `${Math.round(practice.speed * 100)}%`;
-  const toggle = "inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-[6px] rounded-mid border px-[10px] font-mono text-[12px] tracking-[0.06em] tablet:px-[12px]";
+  const toggle = "inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-[6px] rounded-mid border px-[8px] font-mono text-[12px] tracking-[0.06em] tablet:px-[12px]";
   const on = "border-text-on-dark-faint bg-ink-soft text-text-on-dark";
   const off = "border-ink-soft text-text-on-dark-muted hover:text-text-on-dark";
 
@@ -67,7 +68,7 @@ export function Transport({
       role="region"
       aria-label="Playback"
       data-transport
-      className="sig-stage-light glass-smoke fixed inset-x-0 bottom-0 z-30 bg-ink px-[12px] pb-[calc(8px+env(safe-area-inset-bottom,0px))] pt-[8px] text-text-on-dark shadow-[0_-10px_24px_-12px_rgba(23,19,16,0.45)] min-[400px]:px-[20px] tablet:px-[32px] desktop:px-[56px] dark:border-t dark:border-line-strong"
+      className="transport-in sig-stage-light glass-smoke fixed inset-x-0 bottom-0 z-30 bg-ink px-[12px] pb-[calc(8px+env(safe-area-inset-bottom,0px))] pt-[8px] text-text-on-dark shadow-[0_-10px_24px_-12px_rgba(23,19,16,0.45)] min-[400px]:px-[20px] tablet:px-[32px] desktop:px-[56px] dark:border-t dark:border-line-strong"
     >
       {/* Progress: a hairline on the top edge below 1280px. */}
       <div className="absolute inset-x-0 top-0 h-[3px] bg-ink-soft desktop:hidden" aria-hidden="true">
@@ -109,16 +110,22 @@ export function Transport({
             <span className="hidden tablet:inline">LOOP PART</span>
           </button>
           <button type="button" onClick={() => onCountIn(!practice.countIn)} aria-pressed={practice.countIn} aria-label="Count-in" className={`${toggle} ${practice.countIn ? on : off}`}>
-            <span className="tablet:hidden" aria-hidden="true">1234</span>
-            <span className="hidden tablet:inline">COUNT-IN</span>
+            {/* Phones: COUNT over IN, so the part and time keep their room. */}
+            <span className="flex flex-col leading-[1.15] tablet:flex-row tablet:leading-normal">
+              <span>COUNT</span>
+              <span>
+                <span className="hidden tablet:inline">-</span>IN
+              </span>
+            </span>
           </button>
-          {/* Phones: one button that cycles the speeds. */}
+          {/* Phones: one button that cycles the speeds, labelled SPEED over the speed. */}
           <button
             type="button"
             onClick={() => onSpeed(SPEEDS[(SPEEDS.indexOf(practice.speed) + 1) % SPEEDS.length])}
             aria-label={`Practice speed ${pct}, tap to change`}
-            className={`${toggle} ${practice.speed < 1 ? on : off} tabular-nums tablet:hidden`}
+            className={`${toggle} ${practice.speed < 1 ? on : off} flex-col !gap-0 leading-[1.15] tabular-nums tablet:hidden`}
           >
+            <span className="tracking-[0.08em] opacity-75">SPEED</span>
             {pct}
           </button>
           <span className="hidden font-mono text-[12px] tracking-[0.08em] text-text-on-dark-faint desktop:inline">SPEED</span>

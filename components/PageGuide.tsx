@@ -5,15 +5,15 @@ import { type GuidePage, guideHiddenClass, guideStorageKey } from "@/lib/guide";
 
 export type GuideStep = { title: string; body: ReactNode };
 
-// Poster colours, in order (Count In's "How it works" posters): ink, red, outlined, brass.
+// Poster colours, in order (the home page's "How it works" posters): ink, red, outlined, brass.
 const POSTERS = ["guide-ink", "guide-red", "guide-outline", "guide-brass"] as const;
 
 /**
- * "How to use" as four tilted poster cards under a page title (Count In style, owner's pick). "Hide the
+ * "How to use" as four tilted poster cards under a page title (the home page style, owner's pick). "Hide the
  * guide" is remembered per page and applied before first paint (lib/guide.ts GUIDE_SCRIPT); a small
  * "How to use" button brings it back. Visibility is driven by a class on <html>, so there's no flash.
  */
-export function PageGuide({ page, label, steps, signature }: { page: GuidePage; label: string; steps: GuideStep[]; signature: string }) {
+export function PageGuide({ page, label, steps, signature, swipe = false }: { page: GuidePage; label: string; steps: GuideStep[]; signature: string; swipe?: boolean }) {
   const hiddenClass = guideHiddenClass(page);
   const [hidden, setHidden] = useState(false);
   useEffect(() => setHidden(document.documentElement.classList.contains(hiddenClass)), [hiddenClass]);
@@ -30,7 +30,8 @@ export function PageGuide({ page, label, steps, signature }: { page: GuidePage; 
 
   return (
     <section aria-label={label} data-guide={page} className="guide">
-      <ol className="guide-posters">
+      {/* `swipe`: below tablet width the four posters are one short row you swipe through (the Chord Lab). */}
+      <ol className="guide-posters" data-swipe={swipe || undefined} tabIndex={swipe ? 0 : undefined} aria-label={swipe ? "Steps" : undefined}>
         {steps.map((s, i) => (
           <li key={s.title} className={`guide-poster ${POSTERS[i % POSTERS.length]}`}>
             <span className="guide-tag">STEP {String(i + 1).padStart(2, "0")}</span>

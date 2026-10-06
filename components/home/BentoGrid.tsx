@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Chips, KeyPills, PlayGlyph, Tab, Transport } from "@/components/home/HomeBento";
-import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, formFor, level, sectionFor, shownBpmOf } from "@/components/home/homeData";
+import { type HomeState, FEELS, G_SHAPES, KEYS, LANES, LENGTHS, MOOD, SPEEDS, formFor, generatorHref, level, sectionFor, shownBpmOf } from "@/components/home/homeData";
 import { LockIcon } from "@/components/icons/LockIcon";
 import { ChordBox } from "@/components/lab/ChordBox";
 import { TabBlock } from "@/components/TabBlock";
@@ -124,7 +124,7 @@ export function BentoGrid({ state, beat, bpm, moving, set }: Props) {
       <Tile className="brass s4" label="SHARE" d={2}>
         <div className="hb-huge" style={{ fontSize: "clamp(40px, 4vw, 64px)" }}>One link.</div>
         <p className="hb-p">Your song lives in the page&apos;s address: send it and the band opens the exact same song.</p>
-        <div><Link className="hb-btn sm inked" href="/generator/"><PlayGlyph />WRITE ONE TO SEND</Link></div>
+        <div><Link className="hb-btn sm inked" href={generatorHref(state)}><PlayGlyph />WRITE ONE TO SEND</Link></div>
       </Tile>
 
       <Tile className="s4" label="THE SCOPE">
