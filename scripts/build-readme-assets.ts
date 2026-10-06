@@ -1,20 +1,17 @@
 // Builds the README's images from the real app: `npm run build:readme` (after `npm run build`).
 //   docs/readme/hero.png             animated PNG: the bolt flips while a playhead sweeps a real engine tab
 //   docs/readme/social-preview.png   1280×640 image for GitHub's repository social preview (upload in Settings)
-//   docs/readme/*-light.jpg / *-dark.jpg   screenshots of the three pages, served from the static export
+//   docs/readme/*-light.jpg / *-dark.jpg   screenshots of the three pages (generator, chord-lab, home), served from the static export
 import { chromium, type Page } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tabText } from "@/lib/fretboard";
 import { renderSection } from "@/lib/generator";
+import { studioHtml } from "./brand-art";
 
 const OUT = join(process.cwd(), "docs/readme");
 const PORT = 4323;
-const INK = "#171310", PAPER = "#F6F1E4", ACCENT = "#E5573F", MUTED = "#A89C86", CELL = "#211B15", RED = "#C23A26";
-const BOLT = "M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z";
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-
 // ---------------------------------------------------------------------------
 // APNG: every frame is a same-size PNG screenshot; their IDAT data become the animation's frames.
 
@@ -86,44 +83,15 @@ function apng(frames: Frame[], delayMs: number[]): Buffer {
 
 // ---------------------------------------------------------------------------
 
-const FONTS = `<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=block" rel="stylesheet">`;
+const CARD = "<i>01</i><b>Verse 1</b><span>KEY OF A · FAST PUNK · ×2</span>";
+const COPY = "Pick a key and a feel. Get a whole song: real tabs, lifted choruses, intro melodies and guitar solos.";
 
 function heroHtml(tabLines: string[], specs: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8">${FONTS}<style>
-  * { margin:0; box-sizing:border-box; }
-  body { width:1280px; height:440px; background:${INK}; color:${PAPER}; font-family:"Space Mono", monospace; position:relative; overflow:hidden; }
-  .dots { position:absolute; inset:0; background-image:radial-gradient(circle, rgba(246,241,228,.07) 1.4px, transparent 1.9px); background-size:12px 12px; }
-  .left { position:absolute; left:64px; top:54px; width:620px; }
-  .kicker { color:${ACCENT}; font-size:17px; letter-spacing:.16em; }
-  .mark { font-family:"Archivo Black", sans-serif; font-size:86px; line-height:1; margin-top:14px; display:flex; align-items:center; letter-spacing:-.01em; }
-  .bolt { flex:none; display:inline-block; width:.6em; height:.9em; margin:0 .04em; perspective:200px; }
-  .bolt svg { width:100%; height:100%; transform:rotateY(var(--flip)); }
-  .tag { font-size:21px; line-height:1.5; margin-top:22px; }
-  .specs { position:absolute; left:64px; bottom:48px; font-size:15px; letter-spacing:.1em; color:${MUTED}; }
-  .specs b { color:${PAPER}; font-weight:700; }
-  .tab { position:absolute; right:56px; top:64px; background:${CELL}; border-radius:14px; padding:20px 22px; font-size:15px; line-height:1.5; white-space:pre; }
-  .tab .c { color:${ACCENT}; font-weight:700; } .tab .m { color:${MUTED}; }
-  .head { position:absolute; top:14px; bottom:14px; width:2px; background:${ACCENT}; box-shadow:0 0 12px ${ACCENT}; left:var(--x); }
-  .bar { position:absolute; left:0; right:0; bottom:0; height:10px; background:${RED}; }
-</style></head><body>
-<div class="left">
-  <div class="kicker">POP-PUNK SONGWRITING ENGINE</div>
-  <div class="mark">PALM<span class="bolt"><svg viewBox="0 0 12 20"><path d="${BOLT}" fill="${ACCENT}"/></svg></span>MUTE</div>
-  <div class="tag">Pick a key and a feel. Get a whole song: real tabs, lifted choruses, intro melodies and guitar solos.</div>
-</div>
-<div class="specs">${specs}</div>
-<div class="tab" id="tab">${tabLines.map((l, i) => (i === 0 ? `<span class="c">${esc(l)}</span>` : i < 3 ? `<span class="m">${esc(l)}</span>` : esc(l))).join("\n")}<div class="head"></div></div>
-<div class="bar"></div>
-</body></html>`;
+  return studioHtml({ width: 1280, height: 440, tab: tabLines, card: CARD, copy: COPY, foot: specs, mark: 84, playhead: true });
 }
 
 function socialHtml(tabLines: string[], specs: string): string {
-  return heroHtml(tabLines, specs)
-    .replace("height:440px", "height:640px")
-    .replace(".left { position:absolute; left:64px; top:54px;", ".left { position:absolute; left:72px; top:92px;")
-    .replace("font-size:86px", "font-size:108px")
-    .replace(".tab { position:absolute; right:56px; top:64px;", ".tab { position:absolute; right:64px; top:330px;")
-    .replace(".specs { position:absolute; left:64px; bottom:48px;", ".specs { position:absolute; left:72px; top:400px; max-width:560px; line-height:1.9;");
+  return studioHtml({ width: 1280, height: 640, tab: tabLines, card: CARD, copy: COPY, foot: specs, url: "palmmute.ai", mark: 84, playhead: true });
 }
 
 async function screenshot(page: Page, path: string, file: string, theme: "light" | "dark", setup?: (p: Page) => Promise<void>) {
@@ -141,9 +109,10 @@ async function screenshot(page: Page, path: string, file: string, theme: "light"
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const chorus = renderSection("chorus", { key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
-  const tab = tabText(chorus.tab.slice(0, 1)).split("\n").filter((l) => l.trim());
-  const specs = "<b>12</b> KEYS · <b>6</b> PROGRESSIONS · <b>3</b> FEELS · <b>97,200</b> PROOFS PER BUILD";
+  // the Verse the home page shows (A, Fast Punk, I–V–vi–IV), first line
+  const verse = renderSection("verse", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 1 });
+  const tab = tabText(verse.tab.slice(0, 1)).split("\n").filter((l) => l.trim());
+  const specs = "<b>12</b> KEYS · <b>10</b> PROGRESSIONS · <b>5</b> FEELS · <b>222,000</b> PROOFS PER BUILD";
 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 440 } });
@@ -153,13 +122,15 @@ async function main() {
   await page.evaluate(() => document.fonts.ready);
   const box = await page.locator("#tab").evaluate((el) => {
     const r = el.getBoundingClientRect();
-    const ch = (r.width - 44) / Math.max(...el.textContent!.split("\n").map((l) => l.length));
-    return { start: 22 + 2 * ch, end: r.width - 22 };
+    const pad = parseFloat(getComputedStyle(el).paddingLeft);
+    const ch = (r.width - 2 * pad) / Math.max(...el.textContent!.split("\n").map((l) => l.length));
+    return { start: pad + 2 * ch, end: r.width - pad };
   });
   const FRAMES = 32;
   const rect = (sel: string) => page.locator(sel).evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
   const tabBox = await rect("#tab");
   const boltBox = await rect(".bolt");
+  // the card around the tab moves nothing between frames: the patch is the well itself
   const frames: Frame[] = [];
   let prevX = box.start;
   let prevFlip = 0;
@@ -215,7 +186,11 @@ async function main() {
         await p.evaluate(() => document.getElementById("dictionary")!.scrollIntoView({ block: "start" }));
         await p.evaluate(() => window.scrollBy(0, -110));
       });
-      await screenshot(shot, "/", "count-in", theme);
+      // The home page: the headline beside the live glass card (reduced motion: everything shown, nothing pinned)
+      await screenshot(shot, "/", "home", theme, async (p) => {
+        await p.locator("[data-live-card]").waitFor();
+        await p.evaluate(() => document.querySelectorAll("[data-reveal]").forEach((e) => e.classList.add("in")));
+      });
     }
   } finally {
     server.kill();

@@ -1,5 +1,5 @@
 // Renders Palm/Mute's icons and share images with Playwright's Chromium (a dev dependency):
-// `npm run build:brand`. Colours come from tailwind.config.js tokens; the bolt is the wordmark's.
+// `npm run build:brand`. The art (the studio, the ember-gradient bolt, the glass card) is in scripts/brand-art.ts.
 //   app/icon.svg              favicon (modern browsers)
 //   app/favicon.ico           16/32/48px fallback
 //   app/apple-icon.png        180px home-screen icon (iOS)
@@ -10,24 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tabText } from "@/lib/fretboard";
 import { renderSection } from "@/lib/generator";
-
-const INK = "#171310";
-const PAPER = "#F6F1E4";
-const ACCENT = "#C23A26";
-const ACCENT_ON_INK = "#E5573F";
-const MUTED_ON_INK = "#A89C86";
-const BOARD_CELL = "#211B15";
-const BOLT = "M9.2 0 .4 12h5.4L3.4 20l8.4-12.4H6.4L9.2 0Z"; // components/Wordmark.tsx, 12×20
-
-/** The icon: the red bolt on an ink tile. `pad` is the share of the tile kept clear around the bolt. */
-function iconSvg(size: number, { pad = 0.2, round = 0.22 } = {}): string {
-  const inner = size * (1 - 2 * pad);
-  const scale = inner / 20;
-  const x = (size - 12 * scale) / 2, y = (size - 20 * scale) / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">` +
-    `<rect width="${size}" height="${size}" rx="${size * round}" fill="${INK}"/>` +
-    `<path d="${BOLT}" fill="${ACCENT_ON_INK}" transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${scale.toFixed(4)})"/></svg>`;
-}
+import { iconSvg, studioHtml } from "./brand-art";
 
 /** An .ico holding PNG images (supported by every browser that still asks for favicon.ico). */
 function ico(pngs: { size: number; data: Buffer }[]): Buffer {
@@ -53,38 +36,16 @@ function ico(pngs: { size: number; data: Buffer }[]): Buffer {
   return Buffer.concat([header, ...entries, ...pngs.map((p) => p.data)]);
 }
 
+/** The share image: the studio, the gradient bolt, and a glass card with the Verse the home page shows (A, Fast Punk). */
 function shareHtml(): string {
-  // A real tab from the engine: the key of G chorus (brief §4's lifted path), first two bars.
-  const chorus = renderSection("chorus", { key: "G", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 0 });
-  const tab = tabText(chorus.tab.slice(0, 1)).split("\n").filter((l) => l.trim());
-  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  return `<!doctype html><html><head><meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=block" rel="stylesheet">
-<style>
-  * { margin:0; box-sizing:border-box; }
-  body { width:1200px; height:630px; background:${INK}; color:${PAPER}; font-family:"Space Mono", monospace; position:relative; overflow:hidden; }
-  .dots { position:absolute; inset:0; background-image:radial-gradient(circle, rgba(246,241,228,.07) 1.4px, transparent 1.9px); background-size:12px 12px; }
-  .wrap { position:absolute; inset:64px 72px; display:flex; flex-direction:column; }
-  .kicker { color:${ACCENT_ON_INK}; font-size:22px; letter-spacing:.16em; }
-  .mark { font-family:"Archivo Black", sans-serif; font-size:124px; line-height:1; letter-spacing:-.01em; margin-top:18px; display:flex; align-items:center; }
-  .mark svg { width:.6em; height:.9em; margin:0 .04em; }
-  .tag { font-size:27px; line-height:1.45; color:${PAPER}; margin-top:26px; max-width:410px; }
-  .tab { position:absolute; right:72px; bottom:118px; background:${BOARD_CELL}; border-radius:14px; padding:22px 26px; font-size:17px; line-height:1.45; white-space:pre; color:${PAPER}; }
-  .tab .chord { color:${ACCENT_ON_INK}; font-weight:700; }
-  .tab .muted { color:${MUTED_ON_INK}; }
-  .foot { position:absolute; left:72px; right:72px; bottom:56px; display:flex; justify-content:space-between; font-size:20px; color:${MUTED_ON_INK}; letter-spacing:.08em; }
-  .bar { position:absolute; left:0; right:0; bottom:0; height:12px; background:${ACCENT}; }
-</style></head><body>
-<div class="dots"></div>
-<div class="wrap">
-  <div class="kicker">POP-PUNK SONGWRITING ENGINE</div>
-  <div class="mark">PALM<svg viewBox="0 0 12 20"><path d="${BOLT}" fill="${ACCENT_ON_INK}"/></svg>MUTE</div>
-  <div class="tag">Power-chord songs, intro melodies and solos, in any key.</div>
-</div>
-<div class="tab">${tab.map((l, i) => (i === 0 ? `<span class="chord">${esc(l)}</span>` : i < 3 ? `<span class="muted">${esc(l)}</span>` : esc(l))).join("\n")}</div>
-<div class="foot"><span>E STANDARD · 12 KEYS · REAL TABS</span><span>palmmute.ai</span></div>
-<div class="bar"></div>
-</body></html>`;
+  const verse = renderSection("verse", { key: "A", feel: "fast-punk", progressionId: "I-V-vi-IV", seed: 1 });
+  const tab = tabText(verse.tab.slice(0, 1)).split("\n").filter((l) => l.trim());
+  return studioHtml({
+    width: 1200, height: 630, tab, mark: 84,
+    card: "<i>01</i><b>Verse 1</b><span>KEY OF A · FAST PUNK · ×2</span>",
+    copy: "Songwriting formulas from the bands that built pop-punk. Pick a key and a feel; get the whole song.",
+    foot: "E STANDARD · 12 KEYS · REAL TABS", url: "palmmute.ai",
+  });
 }
 
 async function main() {
@@ -99,7 +60,7 @@ async function main() {
     await page.setContent(`<html><body style="margin:0;background:transparent">${svg}</body></html>`);
     return page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
   };
-  writeFileSync(join(root, "app/favicon.ico"), ico(await Promise.all([16, 32, 48].map(async (s) => ({ size: s, data: await png(iconSvg(s, { pad: 0.14 }), s) })))));
+  writeFileSync(join(root, "app/favicon.ico"), ico(await Promise.all([16, 32, 48].map(async (s) => ({ size: s, data: await png(iconSvg(s, { pad: 0.14, small: s < 48 }), s) })))));
   // iOS rounds the corners itself: a square, full-bleed tile.
   writeFileSync(join(root, "app/apple-icon.png"), await png(iconSvg(180, { round: 0 }), 180));
   writeFileSync(join(root, "public/icons/icon-192.png"), await png(iconSvg(192), 192));
