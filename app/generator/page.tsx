@@ -17,6 +17,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { SectionOptionsPanel } from "@/components/SectionOptionsPanel";
 import { SetupSummary } from "@/components/SetupSummary";
 import { SongHeader } from "@/components/SongHeader";
+import { CursorSpotlight } from "@/components/CursorSpotlight";
 import { SpeakerBand } from "@/components/SpeakerBand";
 import { StageBackground } from "@/components/StageBackground";
 import { Transport } from "@/components/Transport";
@@ -213,6 +214,7 @@ export default function GeneratorPage() {
   return (
     <div data-spotlight className="mx-auto flex w-full max-w-[var(--page-max)] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:flex-1 desktop:px-[56px] desktop:pb-[22px] desktop:pt-[32px]">
       <SpeakerBand />
+      <CursorSpotlight />
       <StageBackground playing={state.playing !== null} under="[data-speaker-band]" />
       <PageHeader kicker="SONGWRITING ENGINE" title="SONG GENERATOR" aside={<OriginalityBadge />} />
       <PageGuide page="generator" label="How to use the Generator" steps={GUIDE} signature="YOUR KEY · YOUR LENGTH · EVERY PART" />

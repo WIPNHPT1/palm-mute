@@ -6,6 +6,7 @@ import { Builder } from "@/components/lab/Builder";
 import { Dictionary } from "@/components/lab/Dictionary";
 import { KeyFinder } from "@/components/lab/KeyFinder";
 import { LabProvider, useLab } from "@/components/lab/LabContext";
+import { CursorSpotlight } from "@/components/CursorSpotlight";
 import { SpeakerBand } from "@/components/SpeakerBand";
 import { StageBackground } from "@/components/StageBackground";
 import { MoodMap } from "@/components/lab/MoodMap";
@@ -36,6 +37,7 @@ function LabStage() {
   return (
     <>
       <SpeakerBand />
+      <CursorSpotlight />
       <StageBackground playing={playing !== null} under="[data-speaker-band]" />
     </>
   );

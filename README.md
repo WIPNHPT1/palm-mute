@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://palmmute.ai"><img src="docs/readme/hero.png" alt="PALM/MUTE: a pop-punk songwriting engine. A real power-chord tab from the engine, with a playhead sweeping across it." width="100%"></a>
+  <a href="https://palmmute.ai"><img src="docs/readme/hero.png" alt="PALM/MUTE: a pop-punk songwriting engine. Verse 1 in A, straight from the engine, in a glass card with a playhead sweeping across it." width="100%"></a>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 | **Tuning** | E standard for the generated songs; the Chord Lab also does E♭ standard, Drop D and Drop C♯ |
 | **Keys** | All 12, with sharps and flats named properly (A#/Bb) |
 | **Progressions** | The 10 that pop-punk actually runs on (I-V-vi-IV, vi-IV-I-V, I-IV-V, I-V-IV-V, vi-V-IV, IV-I-V-vi, I-vi-IV-V, I-IV-vi-V, V-vi-IV-I, I-V-IV); the Chord Lab plots them and 12 more by mood |
-| **Feels** | Fast Punk (180 BPM), Half-Time (same click, half the snare), Mid-Tempo (140 BPM), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
+| **Feels** | Fast Punk (180 BPM), Half-Time (shown as 90 BPM: the same 180 click, half the snare), Mid-Tempo (140 BPM), Pop Strum (150 BPM, open down-up strum), Ballad (80 BPM, let ring) |
 | **Song sections** | Intro · Verse · Chorus · Solo · Breakdown, each lockable and regenerable on its own |
 | **Chord shapes** | 2-note, 3-note (octave), inverted, open-string and octave-riff power chords, frets 0–12 |
 | **Chord Lab** | A guitarist's chord toolbox, separate from the generator: a dictionary of the shapes players actually use for 10 chord types (4,612 shapes across 4 tunings, from the nut up the neck, left- or right-handed), the chord on a 15-fret neck, name-that-chord from a tapped shape, a progression builder with "what next?" and vibe meters, a key finder and transposer with a capo, and a mood map |
@@ -34,6 +34,7 @@
 | **Audio** | Synthesized in the browser (Tone.js): plays exactly the notes in the tab, with drums at the chosen feel |
 | **Proof** | 42,000 voicing renders covering 150,000 section combinations, plus 72,000 leads, on every build ([see below](#receipts)) |
 | **Accessibility** | 44px tap targets, 12px minimum text, 4.5:1 contrast in light and dark, screen readers hear note names instead of dashes |
+| **Look** | Studio glass in light and dark: edge-lit glass cards over a red and brass studio light, a speaker cone that pumps on the beat, the moving scope, a cursor spotlight ([see below](#look-and-feel)) |
 | **Backend** | None. It's a static site; nothing you make leaves your browser |
 
 ## What you get that a chord list doesn't give you
@@ -54,9 +55,24 @@
 <td width="50%"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/chord-lab-dark.jpg"><img src="docs/readme/chord-lab-light.jpg" alt="The Chord Lab: the Dictionary on G major, with every playable shape as a chord box and the chord everywhere on the neck"></picture><p align="center"><b>Chord Lab:</b> every shape, the whole neck, name it, build it, move it</p></td>
 </tr>
 <tr>
-<td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/count-in-dark.jpg"><img src="docs/readme/count-in-light.jpg" alt="Count In, the home page: 'Songwriting formulas from the bands that built pop-punk.'"></picture><p align="center"><b>Count In:</b> the home page (screenshots follow your GitHub theme)</p></td>
+<td colspan="2"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.jpg"><img src="docs/readme/home-light.jpg" alt="The home page: 'Songwriting formulas from the bands that built pop-punk.' beside a live glass card playing Verse 1 in A, over a speaker cone"></picture><p align="center"><b>Home:</b> a live Song Generator card playing the verse on the beat (screenshots follow your GitHub theme)</p></td>
 </tr>
 </table>
+
+## Look and feel
+
+The whole site is one studio, in light and dark:
+
+- **Studio glass:** every card is edge-lit glass (clear, smoked, red or brass) over a slow red and brass studio light, with no live blur, so scrolling stays smooth.
+- **The home page plays:**
+  - a live Song Generator card writes Verse 1 on the beat, the real tab from the engine, in whatever key you tap;
+  - a speaker cone behind it pumps on the kick;
+  - below, a bento grid of working tiles, a sideways "how it works", and a statement that fills in letter by letter.
+- **Scroll is volume:** scroll fast and the page shakes, the type splits red and cyan, and sparks fly off the edge; the encore lands with a shockwave. Then the cinematic credits roll.
+- **The tool pages:**
+  - a speaker cone across the top of the Song Generator and the Chord Lab that pumps on whatever is playing, fading into the moving scope;
+  - a soft spotlight follows your cursor.
+- **Everyone gets the content:** reduced motion turns all of it off, and phones get a gentler version. The look never changes what's on the page: the tabs, chips and diagrams on the home page are drawn by the same code as the Generator and the Chord Lab.
 
 ## Real output
 
@@ -174,9 +190,9 @@ npm run dev          # http://localhost:3000
 | `npm run build` | Static export to `out/` (what Netlify serves) |
 | `npm run lint` | ESLint over every source folder |
 | `npm run verify` | The music proofs above (about a minute) |
-| `npm run test:e2e` | Playwright: builds, serves `out/`, runs Chromium + WebKit × 5 widths × 2 themes |
+| `npm run test:e2e` | Playwright: builds, serves `out/`, runs Chromium + WebKit × 5 widths × 2 themes (CI runs it on every pull request) |
 | `npm run generate:chords` | Regenerates `data/chord-library.json` from the shape data |
-| `npm run build:brand` / `build:readme` | Regenerates icons and share images / this README's images |
+| `npm run build:brand` / `build:readme` | Regenerates the icons and share images / this README's images, both from `scripts/brand-art.ts` |
 
 ## Under the hood
 
