@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 
 /**
- * The built song's name and facts: its title on a split-flap board (the Count In title board's colours),
- * then key, feel, tempo, progression, length and form. `actions` holds PLAY SONG.
+ * The built song's name and facts: its title on a split-flap board (the home page title board's colours),
+ * then key, feel, tempo, progression, length and form. `actions` holds COPY LINK, BUILD AGAIN and PLAY SONG (the main, red one; first on phones).
  */
 export function SongHeader({ title, facts, detail, actions }: { title: string; facts: string; detail: string; actions: ReactNode }) {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-// The About content now lives on the Count In home page. Netlify answers /about/ with a permanent
+// The About content now lives on the home page. Netlify answers /about/ with a permanent
 // redirect (netlify.toml); this page is the fallback for hosts that don't read that file.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ export default function AboutMoved() {
       <p className="font-mono text-[13px] text-text-muted">
         About has moved to the home page.{" "}
         <Link href="/" className="text-accent underline underline-offset-4">
-          Go to Count In
+          Go to the home page
         </Link>
       </p>
     </div>

@@ -85,7 +85,8 @@ export async function layoutProblems(page: Page, root: string): Promise<string[]
         const text = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
         const style = getComputedStyle(el);
         if (text && el.getBoundingClientRect().width && parseFloat(style.fontSize) < 12 * u - 0.01) out.push(`text ${style.fontSize}: ${name(el)}`);
-        if ((style.overflowX === "auto" || style.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 1) out.push(`scrolls sideways: ${name(el)}`);
+        // A swipeable row ([data-swipe]: the Chord Lab's guide and tool strip on phones) scrolls sideways on purpose.
+        if ((style.overflowX === "auto" || style.overflowX === "scroll") && !el.hasAttribute("data-swipe") && el.scrollWidth > el.clientWidth + 1) out.push(`scrolls sideways: ${name(el)}`);
         if (text && style.overflow === "hidden" && el.scrollWidth > el.clientWidth + 1) out.push(`clipped: ${name(el)}`);
       }
     }

@@ -203,7 +203,7 @@ test.describe("generator UX", () => {
     await page.getByRole("button", { name: /^Play G .* strummed$/ }).first().click();
     expect(await lastPlayback(page)).not.toBeNull();
     await openMenu(page);
-    await page.locator("#site-menu").getByRole("link", { name: /Count In/ }).click();
+    await page.locator("#site-menu").getByRole("link", { name: /Home/ }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect.poll(() => lastPlayback(page)).toBeNull();
   });

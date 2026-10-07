@@ -9,7 +9,8 @@ import { onKick } from "@/lib/audio/engine";
  * 2×2 cab ("cab", the home kit) on it. The cones pump on a beat (harder on 1 and 3): the home page's beat clock
  * (`beat`), or with `engine`, whatever is playing, and harder still while the page scrolls fast. They drift a little
  * slower than the page (parallax). Faint and behind everything; hidden from screen readers. It only draws while its section is on screen, 30
- * frames a second, and draws one still frame (no pumping, no drift) with reduced motion.
+ * frames a second (full rate while the page scrolls under a mouse, so the drift keeps up; touch screens stay at 30), and draws
+ * one still frame (no pumping, no drift) with reduced motion.
  */
 export function Speaker({ kind, beat = 0, engine = false }: { kind: "one" | "cab" | "band"; beat?: number; engine?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -26,6 +27,7 @@ export function Speaker({ kind, beat = 0, engine = false }: { kind: "one" | "cab
     const ctx = cv?.getContext("2d");
     if (!cv || !ctx) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const touch = matchMedia("(pointer: coarse)");
     let raf = 0, last = 0, seen = false, vel = 0, lastY = scrollY;
     let cloth: CanvasPattern | null = null, clothFor = "";
 
@@ -100,8 +102,8 @@ export function Speaker({ kind, beat = 0, engine = false }: { kind: "one" | "cab
       raf = requestAnimationFrame(tick);
       vel += (scrollY - lastY - vel) * 0.25;
       lastY = scrollY;
-      // full rate while scrolling (the drift follows the page), 30 frames a second otherwise
-      if (document.hidden || (now - last < 1000 / 30 && Math.abs(vel) < 0.5)) return;
+      // full rate while scrolling with a mouse (the drift follows the page), 30 frames a second otherwise and on touch
+      if (document.hidden || (now - last < 1000 / 30 && (touch.matches || Math.abs(vel) < 0.5))) return;
       last = now;
       draw(now, false);
     };

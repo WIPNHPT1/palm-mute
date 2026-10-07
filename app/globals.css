@@ -512,7 +512,7 @@
 }
 
 /* ---- "How to use" guides under the Generator and Chords titles (components/PageGuide.tsx) ----
-   Count In's "How it works" posters in miniature: ink, red, outlined and brass cards with big outlined
+   the home page's "How it works" posters in miniature: ink, red, outlined and brass cards with big outlined
    step numbers. Hidden per page by a class on <html> (lib/guide.ts), so a hidden guide never flashes. */
 @layer components {
   .guide-posters {
@@ -611,6 +611,17 @@
     .guide-posters { grid-template-columns: minmax(0, 1fr); gap: 14px; }
     .guide-poster { min-height: 0; gap: 10px; padding: 16px 18px 18px; }
     .guide-no { font-size: 52px; top: 12px; }
+  }
+  /* a swipeable guide (the Chord Lab, below tablet width): one short row of the four posters, edge to edge, the
+     next one peeking in; about a third of a phone screen instead of four stacked posters */
+  @media (max-width: 833px) {
+    .guide-posters[data-swipe] {
+      display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+      margin: 0 -20px; padding: 8px 20px 10px; scroll-padding: 0 20px; scrollbar-width: none;
+    }
+    .guide-posters[data-swipe]::-webkit-scrollbar { display: none; }
+    .guide-posters[data-swipe] .guide-poster { flex: 0 0 min(80%, 320px); scroll-snap-align: start; min-height: 0; gap: 10px; padding: 16px 18px 18px; }
+    .guide-posters[data-swipe] .guide-no { font-size: 52px; top: 12px; }
   }
 
   .guide-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
@@ -757,6 +768,10 @@
 /* the transport keeps its red stage light, now over smoked glass, and runs the full width: a light along its top only */
 .glass-smoke.sig-stage-light::before { --glass-light: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 40%); }
 .glass-smoke.sig-stage-light { background: radial-gradient(60% 140% at 50% -40%, rgb(var(--color-accent) / 0.22), transparent 70%), linear-gradient(160deg, rgb(46 38 30 / 0.94), rgb(14 11 9 / 0.92)); }
+/* the transport slides up when the first song arrives (it isn't on the page before that) */
+.transport-in { animation: transport-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes transport-in { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .transport-in { animation: none; } }
 /* red glass and brass glass: today's red and brass cards */
 .glass-red, .guide-red {
   --glass-light: linear-gradient(140deg, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.05) 45%, rgb(255 255 255 / 0.2));

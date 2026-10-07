@@ -14,8 +14,8 @@ import { createPortal } from "react-dom";
  * - the statement fills in letter by letter as it's pinned, and thumps on the kick;
  * - the encore's "Count it in." slams in with shockwave rings and a burst of sparks;
  * - with a mouse: a soft spotlight follows the cursor and the main buttons pull toward it.
- * With reduced motion none of it runs (the stats and the statement simply show). Phones get a gentler shake and no
- * sparks, spotlight or magnets. It never touches the footer (only the home page's own sections move).
+ * With reduced motion none of it runs (the stats and the statement simply show). Touch screens get no shake or
+ * red-cyan split; phones also get no sparks, spotlight or magnets. It never touches the footer (only the home page's own sections move).
  */
 export function AmpFx({ root, beat }: { root: RefObject<HTMLDivElement | null>; beat: number }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -120,10 +120,12 @@ export function AmpFx({ root, beat }: { root: RefObject<HTMLDivElement | null>; 
       const pageBottom = el.getBoundingClientRect().bottom;
       const onPage = pageBottom > H * 0.35; // the footer's credits are on screen past this
 
-      // shake and the red-cyan split (sections only: the footer and the top bar never move)
-      const shake = onPage ? Math.min(phone ? 5 : 14, Math.abs(vel) * (phone ? 0.2 : 0.4)) : 0;
+      // shake and the red-cyan split (sections only: the footer and the top bar never move); with a mouse only, since
+      // on a touch screen the finger is already moving the page (and it reads as jank there)
+      const touch = !fine.matches;
+      const shake = onPage && !touch ? Math.min(phone ? 5 : 14, Math.abs(vel) * (phone ? 0.2 : 0.4)) : 0;
       sections.forEach((s) => (s.style.translate = shake > 0.6 ? `${(Math.random() - 0.5) * shake}px ${(Math.random() - 0.5) * shake}px` : ""));
-      const ab = clamp(vel * 0.5, -14, 14) + pulse * 1.5;
+      const ab = touch ? 0 : clamp(vel * 0.5, -14, 14) + pulse * 1.5;
       el.style.setProperty("--ab", ab.toFixed(2));
       el.classList.toggle("hb-split", Math.abs(ab) > 0.6);
       el.style.setProperty("--kick", pulse.toFixed(3));

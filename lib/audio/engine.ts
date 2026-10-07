@@ -24,7 +24,7 @@ declare global {
   interface Window {
     /** The last request handed to the engine; read by the browser tests to check sound = tab. */
     __palmMuteLastPlayback?: { bars: PlaybackBar[]; bpm: number; loop: boolean; countIn?: boolean } | null;
-    /** Strings plucked on the Count In page (MIDI note, velocity), newest last; read by the browser tests. */
+    /** Strings plucked on the home page (MIDI note, velocity), newest last; read by the browser tests. */
     __palmMutePlucks?: { midi: number; velocity: number }[];
   }
 }
@@ -254,7 +254,7 @@ export async function enable(): Promise<boolean> {
 }
 
 /**
- * One string plucked (the Count In strings), on the rhythm guitar voice, ringing open. `delay` in
+ * One string plucked (the home page strings), on the rhythm guitar voice, ringing open. `delay` in
  * seconds staggers a fast swipe into a strum. Silent (but still recorded) until enable() has run.
  */
 export function pluckString(midi: number, velocity: number, delay = 0) {

@@ -8,7 +8,8 @@ import { isActive } from "@/components/Nav";
 import { Wordmark } from "@/components/Wordmark";
 import { FEEL_IDS, getFeel, playbackBpm } from "@/lib/generator";
 import { TUNINGS } from "@/lib/lab/chords";
-import { getProgression } from "@/lib/musicTheory";
+import { getProgression, keyDisplayName } from "@/lib/musicTheory";
+import { useGenerator } from "@/context/GeneratorContext";
 
 export const REPO_URL = "https://github.com/WIPNHPT1/palm-mute";
 
@@ -19,13 +20,17 @@ const PAGES = [
   { href: "/chords/", label: "Chord Lab" },
 ];
 
-// The credits roll: the song every page opens on (the Generator's defaults) and the promise.
+// The credits roll: the song every page opens on (the Generator's defaults) and the promise. On the Generator the
+// song is the one on the page (its title, key, feel and chords, as its header shows them).
+type Credit = { role: string; name: string; red?: boolean; asWritten?: boolean };
 const FIRST_FEEL = FEEL_IDS[0];
-const CREDITS: { role: string; name: string; red?: boolean; asWritten?: boolean }[] = [
-  { role: "Written by", name: "You" },
-  { role: "In the key of", name: "A" },
-  { role: "Feel", name: `${getFeel(FIRST_FEEL).label} · ${playbackBpm(FIRST_FEEL)} BPM` },
-  { role: "Chords", name: getProgression("I-V-vi-IV").degrees.join(" – "), asWritten: true }, // case matters: vi is minor
+const songCredits = (key: string, feel: string, chords: string): Credit[] => [
+  { role: "In the key of", name: key },
+  { role: "Feel", name: feel },
+  { role: "Chords", name: getProgression(chords).degrees.join(" – "), asWritten: true }, // case matters: vi is minor
+];
+const DEFAULT_SONG = songCredits("A", `${getFeel(FIRST_FEEL).label} · ${playbackBpm(FIRST_FEEL)} BPM`, "I-V-vi-IV");
+const PROMISE: Credit[] = [
   { role: "Tuning", name: TUNINGS[0].label },
   { role: "Tabs stored", name: "None", red: true },
   { role: "Every riff", name: "Written fresh" },
@@ -41,6 +46,15 @@ const CREDITS: { role: string; name: string; red?: boolean; asWritten?: boolean 
  */
 export function Footer() {
   const pathname = usePathname() ?? "/";
+  const { state, bpm } = useGenerator();
+  const credits: Credit[] = isActive(pathname, "/generator/")
+    ? [
+        { role: "Song", name: state.title },
+        { role: "Written by", name: "You" },
+        ...songCredits(keyDisplayName(state.key), `${getFeel(state.feel).label} · ${bpm} BPM`, state.progressionId),
+        ...PROMISE,
+      ]
+    : [{ role: "Written by", name: "You" }, ...DEFAULT_SONG, ...PROMISE];
   const roll = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = roll.current!;
@@ -55,8 +69,8 @@ export function Footer() {
       <div ref={roll} className="credits-roll">
         {/* the list twice, end to end, so the roll loops with no gap; the copy is for the eye only */}
         <div className="credits-reel">
-          <dl className="credits-list"><CreditItems /></dl>
-          <div className="credits-list credits-copy" aria-hidden="true"><CreditItems /></div>
+          <dl className="credits-list"><CreditItems credits={credits} /></dl>
+          <div className="credits-list credits-copy" aria-hidden="true"><CreditItems credits={credits} /></div>
         </div>
       </div>
       <div className="credits-end">
@@ -83,8 +97,8 @@ export function Footer() {
   );
 }
 
-function CreditItems() {
-  return CREDITS.map((c) => (
+function CreditItems({ credits }: { credits: Credit[] }) {
+  return credits.map((c) => (
     <div key={c.role} className={[c.red && "red", c.asWritten && "as-written"].filter(Boolean).join(" ") || undefined}>
       <dt>{c.role}</dt>
       <dd>{c.name}</dd>

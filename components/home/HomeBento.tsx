@@ -7,7 +7,7 @@ import { Speaker } from "@/components/Speaker";
 import { AmpFx } from "@/components/home/AmpFx";
 import { HowItWorks, Statement } from "@/components/home/AmpSections";
 import { StageBackground } from "@/components/StageBackground";
-import { type HomeState, FEELS, KEYS, KEY_NOTES, SPEEDS, STATS, bpmOf, sectionFor, shownBpmOf } from "@/components/home/homeData";
+import { type HomeState, FEELS, KEYS, KEY_NOTES, SPEEDS, STATS, bpmOf, generatorHref, sectionFor, shownBpmOf } from "@/components/home/homeData";
 import { TabBlock } from "@/components/TabBlock";
 import { rhythmOf, tabFor } from "@/lib/generator";
 import { TAB_STRINGS, enharmonicOf } from "@/lib/musicTheory";
@@ -100,7 +100,7 @@ export function HomeBento() {
       </section>
       <Statement />
       <Questions />
-      <Encore bpm={bpm} />
+      <Encore bpm={bpm} state={state} />
     </div>
   );
 }
@@ -138,7 +138,7 @@ function Hero({ state, beat, onKey }: { state: HomeState; beat: number; onKey: (
       <div className="hb-wrap hb-hgrid">
         <div ref={col}>
           <div className="hb-htop">
-            <span className="hb-mono">COUNT IN · ABOUT PALM/MUTE</span>
+            <span className="hb-mono">HOME · ABOUT PALM/MUTE</span>
             <span className="hb-live" data-live-bpm={shownBpmOf(state)}><i />LIVE · {shownBpmOf(state)} BPM</span>
           </div>
           <h1 ref={kin} id="hb-title" className="hb-kin">
@@ -148,7 +148,7 @@ function Hero({ state, beat, onKey }: { state: HomeState; beat: number; onKey: (
           </h1>
           <p className="hb-hsub">A songwriting engine for pop-punk. Pick a key and a feel, and Palm/Mute writes the song, right there, as you watch.</p>
           <div className="hb-cta">
-            <Link className="hb-btn" href="/generator/"><PlayGlyph />START WRITING</Link>
+            <Link className="hb-btn" href={generatorHref(state)}><PlayGlyph />START WRITING</Link>
             <Link className="hb-lnk" href="/chords/">Open the Chord Lab →</Link>
           </div>
         </div>
@@ -284,7 +284,7 @@ function Questions() {
   );
 }
 
-function Encore({ bpm }: { bpm: number }) {
+function Encore({ bpm, state }: { bpm: number; state: HomeState }) {
   const row = (t: string) => <><span>{t}&nbsp;</span><span>{t}&nbsp;</span></>;
   return (
     <section className="hb-encore" aria-labelledby="hb-encore" data-quiet>
@@ -296,7 +296,7 @@ function Encore({ bpm }: { bpm: number }) {
       <div className="hb-wrap">
         <h2 id="hb-encore" className="hb-h2">Count it in.</h2>
         <div className="row">
-          <Link className="hb-btn" href="/generator/"><PlayGlyph />START WRITING</Link>
+          <Link className="hb-btn" href={generatorHref(state)}><PlayGlyph />START WRITING</Link>
           <Link className="hb-btn ghost" href="/chords/">OPEN THE CHORD LAB</Link>
         </div>
       </div>

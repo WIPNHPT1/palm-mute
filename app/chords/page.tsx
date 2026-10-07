@@ -49,7 +49,7 @@ export default function ChordLabPage() {
       <LabStage />
       <div data-spotlight className="mx-auto flex w-full max-w-[var(--page-max)] flex-col gap-[14px] px-[20px] pb-[28px] pt-[22px] tablet:gap-[18px] tablet:px-[32px] tablet:pb-[36px] tablet:pt-[28px] desktop:gap-[20px] desktop:px-[56px] desktop:pb-[40px] desktop:pt-[32px]">
         <PageHeader kicker="SONGWRITING TOOLS" title="CHORD LAB" />
-        <PageGuide page="chords" label="How to use the Chord Lab" steps={GUIDE} signature="10 CHORD TYPES · 4 TUNINGS · THE SHAPES PLAYERS USE" />
+        <PageGuide page="chords" label="How to use the Chord Lab" steps={GUIDE} signature="10 CHORD TYPES · 4 TUNINGS · THE SHAPES PLAYERS USE" swipe />
         <LabSetup />
         <ToolStrip tools={TOOLS} />
         <div className="flex flex-col gap-[14px] tablet:gap-[18px]">

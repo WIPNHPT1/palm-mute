@@ -21,6 +21,10 @@ test.describe("transport", () => {
     onlyAtWidths(info, [390, 1440]);
     lightOnly(info);
     await gotoAndSettle(page, "/generator/");
+    // The bar waits for a song: not there on a fresh visit, there once BUILD SONG makes one.
+    await expect(transport(page)).toHaveCount(0);
+    await page.getByRole("button", { name: "BUILD SONG" }).click();
+    await expect(transport(page)).toBeVisible();
   });
 
   test("plays the song at a practice speed, and says where it is", async ({ page }) => {
@@ -70,6 +74,12 @@ test.describe("transport", () => {
     const before = await song();
     await page.keyboard.press("r");
     await expect.poll(song).not.toBe(before);
+  });
+
+  test("phones: the count-in and speed buttons say what they are", async ({ page }) => {
+    const t = transport(page);
+    await expect(t.getByRole("button", { name: "Count-in" })).toHaveText("COUNT-IN");
+    if (projectWidth(test.info()) < 834) await expect(t.getByRole("button", { name: /^Practice speed/ })).toHaveText("SPEED100%");
   });
 
   test("never covers the end of the page", async ({ page }) => {
